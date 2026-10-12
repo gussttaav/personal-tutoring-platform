@@ -114,7 +114,7 @@ aiImages: false
       -O3; ASan: heap-buffer-overflow, READ of size 64, 0 bytes after 4-byte region.
     - buscar.c: «Sara: 8» y violación de segmento (exit 139). size_of de &Alumno y de
       Option<&Alumno>: 8 y 8.
-    - contador.c: a -O0, entre 1,0 y 2,2 millones en lugar de 4 millones (cambia en cada
+    - contador.c: a -O0, entre 1,0 y 2,3 millones en lugar de 4 millones (cambia en cada
       ejecución); a -O2, 4 000 000 siempre, porque gcc convierte el bucle en un único
       `addq $1000000, contador(%rip)`. TSan lo detecta.
     - cabe.c: 1 a -O0 y a -O2 (el ensamblador de -O0 compara y > 0 y no mira x); 0 con
@@ -569,7 +569,7 @@ int main(void) {
 }
 ```
 
-Compilado sin optimizar, cada ejecución da un número distinto, entre 1 y 2,2 millones en
+Compilado sin optimizar, cada ejecución da un número distinto, entre 1 y 2,3 millones en
 el portátil de prueba. `contador++` son tres pasos (leer, sumar, escribir), y cuando dos hilos los intercalan,
 uno de los incrementos se pierde. A eso se le llama una carrera de datos (*data race*).
 

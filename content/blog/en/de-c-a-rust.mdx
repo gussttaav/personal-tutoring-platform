@@ -1,0 +1,974 @@
+---
+slug: de-c-a-rust
+title: "Why C is being replaced by Rust, and why C won't disappear"
+date: "2026-10-12"
+minutes: 30
+summary: "A twenty-line C program compiles without a single warning, prints exactly what it should and reads memory that has already been freed. In Rust, the same program doesn't compile. What C leaves to the programmer, five classic errors and how Rust prevents them, what Rust doesn't fix, what switching costs, when to choose each, and why C, even so, isn't going away."
+draft: false
+reading:
+  - kind: paper
+    title: "C Is Not a Low-level Language"
+    authors: "David Chisnall"
+    year: "2018"
+    venue: "ACM Queue"
+    lang: en
+    url: "https://queue.acm.org/detail.cfm?id=3212479"
+    note: "Why the picture of C as a \"portable assembler\" no longer describes either the compiler or the processor, and how much undefined behaviour exists so that the optimiser can do its job."
+  - kind: blog
+    title: "What Every C Programmer Should Know About Undefined Behavior"
+    authors: "Chris Lattner"
+    year: "2011"
+    venue: "LLVM Project Blog"
+    lang: en
+    url: "https://blog.llvm.org/2011/05/what-every-c-programmer-should-know.html"
+    note: "Three posts by the creator of LLVM on what the compiler does with undefined behaviour. The first explains, with examples like the overflowing addition, why deleting those checks is both legal and profitable."
+  - kind: blog
+    title: "A proactive approach to more secure code"
+    authors: "MSRC (Microsoft Security Response Center)"
+    year: "2019"
+    venue: "MSRC Blog"
+    lang: en
+    url: "https://www.microsoft.com/en-us/msrc/blog/2019/07/a-proactive-approach-to-more-secure-code"
+    note: "The post behind the 70% figure. Figure 1 shows that the share of memory-safety bugs barely moved in twelve years, and the rest explains why Microsoft started looking beyond mitigations."
+  - kind: blog
+    title: "Eliminating Memory Safety Vulnerabilities at the Source"
+    authors: "Jeff Vander Stoep and Alex Rebert"
+    year: "2024"
+    venue: "Google Online Security Blog"
+    lang: en
+    url: "https://security.googleblog.com/2024/09/eliminating-memory-safety-vulnerabilities-Android.html"
+    note: "Why writing only the new code in a safe language is enough to bring bugs down across all of Android: vulnerabilities age, and five-year-old code has 3.4 to 7.4 times fewer of them than new code."
+  - kind: blog
+    title: "Rust in Android: move fast and fix things"
+    authors: "Jeff Vander Stoep"
+    year: "2025"
+    venue: "Google Security Blog"
+    lang: en
+    url: "https://blog.google/security/rust-in-android-move-fast-fix-things/"
+    note: "The 2025 numbers: memory-safety bugs below 20%, four times fewer rollbacks and shorter reviews. It also dissects the first Rust memory-safety bug that nearly shipped."
+  - kind: libro
+    title: "The Rust Programming Language, chapter 4: Understanding Ownership"
+    authors: "Steve Klabnik, Carol Nichols and Chris Krycho"
+    venue: "doc.rust-lang.org"
+    lang: en
+    url: "https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html"
+    note: "The ownership and borrowing rules from scratch, with the stack and the heap drawn out. It's the chapter to read before you start arguing with the compiler."
+  - kind: paper
+    title: "RustBelt: Securing the Foundations of the Rust Programming Language"
+    authors: "Ralf Jung, Jacques-Henri Jourdan, Robbert Krebbers and Derek Dreyer"
+    year: "2018"
+    venue: "POPL 2018"
+    lang: en
+    url: "https://plv.mpi-sws.org/rustbelt/popl18/"
+    note: "The formal proof that Rust's rules guarantee what they promise, including libraries that use unsafe internally, such as Arc and Mutex. The introduction explains the problem without asking you to follow the proofs."
+  - kind: interactivo
+    title: "Learning Rust With Entirely Too Many Linked Lists"
+    authors: "Alexis Beingessner"
+    venue: "rust-unofficial.github.io"
+    lang: en
+    url: "https://rust-unofficial.github.io/too-many-lists/"
+    note: "Half a dozen linked lists, from the most naive to a doubly linked one with unsafe. The best way to see where Rust pushes back and why: what takes twenty lines in C fills a whole book here."
+  - kind: paper
+    title: "Field Experience With Annex K: Bounds Checking Interfaces"
+    authors: "Carlos O'Donell and Martin Sebor"
+    year: "2015"
+    venue: "WG14, document N1967"
+    lang: en
+    url: "https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1967.htm"
+    note: "What happened to the C standard's attempt to add bounds-checked string functions (strcpy_s and friends): ten years on, hardly anyone implemented them, and the authors propose removing them."
+  - kind: video
+    title: "Null References: The Billion Dollar Mistake"
+    authors: "Tony Hoare"
+    year: "2009"
+    venue: "QCon London, InfoQ"
+    lang: en
+    url: "https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/"
+    note: "The inventor of the null reference explains why he added it to ALGOL W in 1965 (\"simply because it was so easy to implement\") and how much he reckons it has cost since."
+areas: ["programacion"]
+cover: "/blog/de-c-a-rust/vector-que-se-mueve.en.svg"
+tags: ["lenguajes", "seguridad", "rendimiento"]
+aiImages: false
+---
+
+{/*
+  BLOG-16: Why C is being replaced by Rust, and why C won't disappear. English translation of
+  content/blog/es/de-c-a-rust.mdx.
+
+  Thesis: C's classic bugs aren't isolated slips. C leaves three facts to the programmer that
+  its compiler never checks (how big a block of memory is, how long it lives and who touches it
+  at the same time), and the optimiser assumes they've been respected. Rust moves those three
+  facts into the type system and pays for it in learning curve, compile time and friction with
+  the C that already exists. That's why NEW code is written in Rust without rewriting the old,
+  and why C doesn't disappear: it stays as the interface everything talks through (Rust
+  included) and evolves slowly at the edges.
+
+  The post is about C. The Microsoft, Chromium and Android figures mix C and C++, and the text
+  says so each time. Alternatives: only C++ (the precedent), Go and Zig, in passing.
+
+  The CODE KEEPS ITS SPANISH NAMES and output strings (primero, latido, contador, "HOLA",
+  "clave-privada-del-servidor"...) and the text glosses them: every output and compiler message
+  quoted here is the real one, byte for byte the same as in the Spanish post. Only the code
+  comments are translated. The English-commented copies of the programs are in
+  public/blog/de-c-a-rust/ejemplos/en/ (same lines, same behaviour), with an English medir.sh.
+  The segfault line is bash's message in an English locale.
+
+  EVERY result is measured, none invented; the measurements, the machine and the sources of
+  every quoted figure are listed in the header of the Spanish post. Figures: the *.en.svg
+  siblings, written by the same run of scripts/figures/de-c-a-rust/make_svgs.py.
+*/}
+
+This C program ([primero.c](/blog/de-c-a-rust/ejemplos/en/primero.c)) stores four numbers in a
+vector that grows by itself, keeps a pointer to its first element, appends a fifth number and
+prints the first one:
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct { int *datos; size_t len, cap; } Vector;
+
+/* Appends x; if it doesn't fit, asks for a block twice as big. */
+void push(Vector *v, int x) {
+    if (v->len == v->cap) {
+        v->cap = v->cap ? 2 * v->cap : 4;
+        v->datos = realloc(v->datos, v->cap * sizeof *v->datos);
+    }
+    v->datos[v->len++] = x;
+}
+
+int main(void) {
+    Vector v = {0};
+    for (int i = 1; i <= 4; i++) push(&v, i);
+
+    int *primero = &v.datos[0];
+    push(&v, 5);
+    printf("primero = %d\n", *primero);
+}
+```
+
+(The examples were written for the Spanish edition of this post, so the names are Spanish:
+`datos` is the data and `primero` is "first".)
+
+It compiles without a single warning, even with `-Wall -Wextra`, which turn on a good share of
+the compiler's warnings. It prints `primero = 1`, which is correct, with and without
+optimisation. It would pass any test you threw at it. And it's wrong. Compiled with
+[AddressSanitizer](https://clang.llvm.org/docs/AddressSanitizer.html), an option in gcc and clang
+that watches every memory access while the program runs, it says this (trimmed):
+
+```text
+ERROR: AddressSanitizer: heap-use-after-free on address 0x75f2c59e0010
+READ of size 4 at 0x75f2c59e0010 thread T0
+    #0 in main primero.c:21
+```
+
+Line 21 reads, through `primero`, a block that `realloc` had already freed. Printing a 1 is luck,
+and that luck depends on things that aren't in these twenty lines. The same operations in Rust
+take four lines, and they don't compile:
+
+```rust
+let mut v = vec![1, 2, 3, 4];
+let primero = &v[0];
+v.push(5);
+println!("primero = {primero}");
+```
+
+```text
+error[E0502]: cannot borrow `v` as mutable because it is also borrowed as immutable
+```
+
+That, in miniature, is the difference between the two languages, and the reason a large part of
+the industry is now writing in Rust what ten years ago it would have written in C. **C leaves
+three facts to the programmer that the compiler never checks: how big a block of memory is, how
+long it lives and who touches it at the same time.** If any of them goes wrong, the program
+doesn't stop: it carries on, with the wrong data or with somebody else's. Rust turns those three
+facts into rules that the compiler checks before it produces the program. It pays for that with a
+learning curve, slower builds and friction with the C that already exists, which is why the
+replacement is slow, partial and, in some places, never going to happen.
+
+A **pointer** in C is a variable that holds a memory address: `primero` doesn't hold a 1, it
+holds where the 1 is. A program uses two areas of memory. The **stack** holds each function's
+local variables and is freed automatically when the function returns. The **heap** holds the
+blocks the program asks for while it runs, and in C the program has to free them itself. A
+language is **memory-safe** if a program written in it can't read or write outside the blocks
+that belong to it, or use a block after freeing it.
+
+The example uses `realloc`, which changes the size of a block of memory that's already allocated
+(usually to make it bigger) and keeps the data that was in it. If there's enough free memory
+right behind the block, `realloc` stretches it where it is and returns the same address. If
+another block is sitting right behind it, it can't stretch it: it allocates a new one somewhere
+else, copies the data across, frees the old one and returns a different address. That's the
+danger in this program: `primero` still holds the old address, and nothing in C tells it that the
+address is no longer valid.
+
+Every result in this post is measured. Each example links to its program, and
+[a script](/blog/de-c-a-rust/ejemplos/en/medir.sh) compiles and runs them all, so anyone can
+repeat them. The C compiler is gcc 15.2, with the C23 standard, and the Rust one is rustc 1.99.
+
+## Why C is everywhere
+
+C was born in 1972 at Bell Labs, created by Dennis Ritchie to write Unix, and a year later Unix
+had been rewritten in it. It was a small language designed to sit one step above the machine: its
+types are the processor's types, an array is a memory address plus some arithmetic, and nothing
+happens that the program doesn't explicitly ask for. That's why C was called a "portable
+assembler". A C compiler was easy to write, so every new processor soon had one, and with it you
+could take Unix, and everything written on top of it, to any machine.
+
+Fifty years later, C is still underneath almost everything. The Linux kernel is written in C, and
+so are large parts of the Windows and macOS kernels. So is each system's C standard library, which
+every program goes through to open a file or a connection. So are SQLite, Postgres, Redis, the
+Python interpreter, OpenSSL and curl, and the firmware in almost every microcontroller inside a
+car, a washing machine or a pacemaker.
+
+There's a second, less visible reason why C is everywhere: its **ABI** (*application binary
+interface*), the conventions for how a compiled function receives its arguments and returns its
+result. Operating systems publish their services as C functions, and almost any language that
+wants to talk to another one does it through them: Python calls C libraries, so does Java, and a
+Rust program that opens a file on Linux ends up in a C function. C isn't just a language that
+software is written in. It's the common language that software speaks.
+
+<figure>
+  <img
+    src="/blog/de-c-a-rust/linea-de-tiempo.en.svg"
+    alt="Timeline, not to scale, with ten milestones. In green, C and its standard: 1972, C is born, by Dennis Ritchie at Bell Labs; 1989, ANSI C, the first standard; 2011, C11, with threads and atomics; 2024, C23 is published. In orange, memory-safety failures: 1988, the Morris worm, which got in through a gets(); 2014, Heartbleed, in OpenSSL; 2019, Microsoft reports that 70% of its vulnerabilities are memory-safety bugs. In blue, Rust: 2015, Rust 1.0; 2022, Linux 6.1 accepts Rust code; 2025, Rust in Linux is no longer an experiment."
+    width="760"
+    height="166"
+  />
+  <figcaption>
+    Not to scale. Memory-safety failures have been with C from the start: the Morris worm, in 1988,
+    got in through an unbounded read in a Unix server.
+  </figcaption>
+</figure>
+
+That's why replacing it isn't like switching languages in a web application. There are billions
+of lines of C in production, much of that code has been running for decades, and everything else
+talks to it.
+
+## What C leaves to the programmer
+
+C was designed around a philosophy that its own standards committee summed up for years in a
+single phrase: *trust the programmer*. The language doesn't check what the programmer knows, and
+that trust rests on three facts.
+
+**How big a block of memory is.** In C, an array passed to a function turns into a pointer to its
+first element, and its length gets lost on the way. The function receives an address and has to
+believe whatever it's told about how much lies behind it. Nothing stops you reading element one
+hundred of a four-element array: the program works out the address and reads whatever happens to
+be there.
+
+**How long it lives.** A block obtained with `malloc` lives until someone calls `free`. The
+compiler doesn't know who is responsible for freeing it, or whether any pointers still point to it
+when it's freed. If it's freed twice, or used afterwards, the program never finds out.
+
+**Who modifies it at the same time.** Two threads of execution can write to the same variable at
+the same moment. C11 added threads and atomic operations to the standard, but the compiler doesn't
+check what data each thread shares, or whether that data is protected.
+
+Behind all three lies a fourth, subtler problem: **undefined behaviour**. The C standard lists the
+situations in which it doesn't say what should happen (the last public draft of C23 counts 221 of
+them), among them reading outside an array, using a pointer to memory that has been freed, two
+threads trampling on the same variable, and a signed integer addition that goes past the maximum.
+It doesn't mean "the result is unpredictable". It means something stronger: the compiler may
+assume it **never happens**, and optimise accordingly. If it does happen, the program has stopped
+meaning anything, and whatever it does, including working, is a coincidence.
+
+The C committee itself acknowledged in 2007, while preparing C11, that trusting the programmer
+was an outdated goal as far as security was concerned, and wrote it down in the charter that
+guides every revision of the standard. The numbers bear it out. In 2019 Microsoft reported that
+[around 70%](https://www.microsoft.com/en-us/msrc/blog/2019/07/a-proactive-approach-to-more-secure-code)
+of the vulnerabilities it assigns a CVE each year (the public identifier under which a security
+flaw is registered) are memory-safety bugs, and that the proportion had barely moved in twelve
+years. Chromium, the project Chrome is built from, gives
+[the same figure](https://www.chromium.org/Home/chromium-security/memory-safety/) for its serious
+security bugs, and half of those are uses of memory that had already been freed. Android was at
+76% in 2019. All three figures cover C and C++ code, and C++ shares C's memory model and, with it,
+the same bugs.
+
+## Five errors, in C and in Rust
+
+Each of the five examples below follows the same order: the program in C, what happens when it
+runs, the same program in Rust, and what the Rust compiler says or what the program does when it
+runs. All five compile with gcc without a single warning.
+
+### Reading past the end
+
+In April 2014 it came out that [Heartbleed](https://heartbleed.com/), a bug in OpenSSL, the
+library that encrypted a large share of the internet's connections, had been in released code for
+two years. The protocol had a heartbeat message: the client sends a few bytes and says how many it
+has sent, and the server sends them back to show it's still alive. The server believed whatever
+length it was given. If the client sent four bytes and claimed they were 64 KB, the server sent
+back the four bytes plus almost 64 KB more of its own memory, with whatever happened to be there:
+passwords, session cookies, private keys.
+
+This program ([latido.c](/blog/de-c-a-rust/ejemplos/en/latido.c)) reproduces the bug on a small
+scale. `latido` is the heartbeat, `mensaje` the message, `longitud` its length and
+`clave_del_servidor` the server's key:
+
+```c
+char *clave_del_servidor;   /* a secret the server keeps in memory */
+
+/* Answers a heartbeat: returns the `longitud` bytes the client says it sent. */
+char *responder(const char *mensaje, size_t longitud) {
+    char *respuesta = malloc(longitud);
+    memcpy(respuesta, mensaje, longitud);
+    return respuesta;
+}
+
+int main(void) {
+    char *mensaje = malloc(4);
+    memcpy(mensaje, "HOLA", 4);                 /* the client sends 4 bytes */
+
+    clave_del_servidor = malloc(32);
+    strcpy(clave_del_servidor, "clave-privada-del-servidor");
+
+    char *r = responder(mensaje, 64);           /* but says it sent 64 */
+    for (int i = 0; i < 64; i++)
+        putchar(r[i] >= 32 && r[i] < 127 ? r[i] : '.');
+    putchar('\n');
+}
+```
+
+```text
+HOLA....................1.......clave-privada-del-servidor......
+```
+
+The reply contains the message ("HOLA" is hello), a few bytes that `malloc` uses to keep track of
+its blocks (the dots and the 1) and, after them, the server's private key, which was in the next
+block. The same at `-O0`, `-O2` and `-O3`. AddressSanitizer catches it: `heap-buffer-overflow`, a
+64-byte read that starts right at the end of a 4-byte block. But only if the program is compiled
+with it, and in production that almost never happens, because it makes the program a good deal
+slower.
+
+In Rust, a reference to part of an array isn't just an address: it's the address and the length
+together, and the language won't let you separate them. That pair is called a *slice*. The same
+function looks like this:
+
+```rust
+fn responder(mensaje: &[u8], longitud: usize) -> Vec<u8> {
+    mensaje[..longitud].to_vec()
+}
+```
+
+And when it runs with the same lie:
+
+```text
+thread 'main' (19168) panicked at latido.rs:3:12:
+range end index 64 out of range for slice of length 4
+```
+
+The program stops instead of sending the key. A Rust *panic* is a controlled stop: the thread
+stops running and frees what it held, without touching anyone else's memory. For a server, being
+knocked over by a malformed message isn't great either, so the idiomatic way to write it asks for
+the slice with `get`, which returns "something or nothing" and forces you to decide what to do in
+each case:
+
+```rust
+match mensaje.get(..longitud) {
+    Some(trozo) => trozo.to_vec(),     // the length adds up
+    None => return None,               // malformed heartbeat: dropped
+}
+```
+
+**What it costs.** Checking the index on every access isn't free, but it nearly always looks like
+it is. The [benchmark](/blog/de-c-a-rust/ejemplos/en/indices.rs) adds up 16 million numbers in two
+ways. In order, from first to last, Rust takes the same time as C (10.2 ms against 10.0): the
+compiler can see the index never goes past the length and removes the check. Scattered, with
+indices that come from another array and that the compiler can't predict, the check stays. With a
+small table that fits entirely in the processor's cache, adding with the check takes 16.0 ms and
+without it 12.8: 25% more. That's the worst possible case, a loop that does nothing but read, and
+even so the figure is fragile: an earlier, almost identical version of the same program gave 55%.
+With a table of 16 million numbers, which doesn't fit in the cache, all three versions take the
+same time, about half a second, because waiting for memory costs far more than comparing two
+numbers. When the check really matters, Rust lets you remove it with `get_unchecked`, but only
+inside a block marked `unsafe`, which comes up further down.
+
+### Using memory that has already been freed
+
+Back to the program at the start. It prints a 1 because, in that program, there's nothing behind
+the vector's block: `realloc` stretches it where it is, and `primero` keeps pointing at the 1 by
+coincidence. All it takes is for the program to ask for memory for anything else in between, and
+`realloc` has to move the block
+([primero_movido.c](/blog/de-c-a-rust/ejemplos/en/primero_movido.c)):
+
+```c
+    for (int i = 1; i <= 4; i++) push(&v, i);
+    char *nombre = strdup("serie");          /* another allocation, right behind the vector */
+
+    int *primero = &v.datos[0];
+    push(&v, 5);
+    printf("%s: primero = %d\n", nombre, *primero);
+```
+
+```text
+serie: primero = 1430334168
+serie: primero = -2021578024
+```
+
+A different number on every run, which is whatever `malloc` wrote into the block when it freed it.
+The bug was already in the original program: as far as the C standard is concerned, after
+`realloc` the old pointer is no longer valid even if the address hasn't changed. The new line,
+which has nothing to do with the vector, has simply made it visible.
+
+<figure>
+  <img
+    src="/blog/de-c-a-rust/vector-que-se-mueve.en.svg"
+    alt="Three rows showing heap memory in the example primero.c. Row 1, before push(5): a block of four ints, 1, 2, 3 and 4; v.datos and primero point at its first cell. Row 2, if nothing is behind the block: realloc stretches it in place to eight cells, with the 5 in the fifth; v.datos and primero still point at the same 1, so the program prints 1 by luck. Row 3, if another allocation, the string serie, sits behind it: realloc gets a new block further on, copies the five ints and frees the old one; v.datos points at the new block, but primero still points at the old, freed one and reads garbage."
+    width="760"
+    height="362"
+  />
+  <figcaption>
+    If nothing is in the way, realloc stretches the block and the old pointer stays valid, by luck.
+    With another allocation behind it, realloc moves it, and the old pointer is left pointing at
+    freed memory.
+  </figcaption>
+</figure>
+
+Reading garbage is the harmless version. If the freed block gets reused for something else,
+writing through the old pointer changes that something else, and an attacker who manages to put
+data of their choosing there can end up controlling the program. That's why use-after-free bugs
+make up half of Chromium's serious memory-safety bugs.
+
+Rust prevents it with two rules, which are the central idea of the language and the hardest thing
+about learning it.
+
+1. **Every value has a single owner.** The vector belongs to the variable `v`. When `v` goes out of
+   existence, the vector is freed automatically. There's no `free`, so there's no forgotten `free`
+   and no `free` called twice. If `v` is assigned to another variable, the vector changes owner
+   (it's *moved*), and using `v` afterwards is a compile error.
+2. **A value can be lent, but in one of two ways, never both at once:** to many readers (`&v`), or
+   to a single writer (`&mut v`). And no loan can outlive the owner.
+
+`primero = &v[0]` is a loan for reading. `v.push(5)` needs a loan for writing, and the second rule
+doesn't allow that while `primero` is still in use. The compiler's full message points at the
+three lines involved:
+
+```text
+error[E0502]: cannot borrow `v` as mutable because it is also borrowed as immutable
+ --> primero.rs:6:5
+  |
+5 |     let primero = &v[0];
+  |                    - immutable borrow occurs here
+6 |     v.push(5);
+  |     ^^^^^^^^^ mutable borrow occurs here
+7 |     println!("primero = {primero}");
+  |                          ------- immutable borrow later used here
+```
+
+The part of the compiler that enforces these rules is called the *borrow checker*. It knows
+nothing about `realloc`: it has no idea that `push` might move the block. All it knows is that
+`push` asks to modify the vector, and that while someone is reading it nobody may modify it. That
+rule, applied without exceptions, covers the `realloc` case and every case like it. The fix, in
+Rust as in C, is not to keep the address: keep the index (`let primero = 0;` and read
+`v[primero]` later) or copy the value (`let primero = v[0];`).
+
+### NULL
+
+In C, a function that looks for something and might not find it usually returns `NULL`, the
+pointer that points to nothing. Whoever calls it has to remember to check
+([buscar.c](/blog/de-c-a-rust/ejemplos/en/buscar.c); `buscar` is "find", `clase` a class,
+`alumno` a student and `nota` their mark):
+
+```c
+typedef struct { const char *nombre; int nota; } Alumno;
+
+/* Returns the student with that name, or NULL if there isn't one. */
+Alumno *buscar(Alumno *clase, size_t n, const char *nombre) {
+    for (size_t i = 0; i < n; i++)
+        if (strcmp(clase[i].nombre, nombre) == 0) return &clase[i];
+    return NULL;
+}
+
+int main(void) {
+    Alumno clase[] = {{"Ana", 9}, {"Luis", 6}, {"Sara", 8}};
+    printf("Sara: %d\n", buscar(clase, 3, "Sara")->nota);
+    printf("Marta: %d\n", buscar(clase, 3, "Marta")->nota);
+}
+```
+
+```text
+Sara: 8
+Segmentation fault (core dumped)
+```
+
+In an ordinary program, reading through `NULL` ends like this, with the operating system stopping
+the program, and that's the best case. Tony Hoare, who invented the null reference for the ALGOL W
+language in 1965, called it in 2009 his "billion-dollar mistake".
+
+Rust has no `NULL`. A function that might not find anything says so in its type: it returns
+`Option<&Alumno>`, which is either `Some(alumno)` or `None`.
+
+```rust
+fn buscar<'a>(clase: &'a [Alumno], nombre: &str) -> Option<&'a Alumno> {
+    clase.iter().find(|a| a.nombre == nombre)
+}
+```
+
+(The `'a` says that the student it returns is borrowed from `clase` and can't outlive it.) If you
+use the result the way you would in C, without checking whether there's a student, it doesn't
+compile:
+
+```text
+error[E0609]: no field `nota` on type `Option<&Alumno>`
+```
+
+The compiler suggests `.unwrap()`, which means "I know there's a student, and if there isn't, stop
+the program". You can write it, but it stays written, and anyone reading the code can see where
+someone decided to take the risk. The normal thing is to handle both cases with `match`. And it
+costs nothing: in Rust, an `Option<&Alumno>` takes 8 bytes, the same as an `&Alumno`. The compiler
+represents `None` with the address zero, because a valid reference never has it, so the compiled
+program compares with zero exactly as the C one does. The difference is that in Rust that
+comparison can't be forgotten.
+
+### Two threads, one counter
+
+Four threads each add a million to the same variable
+([contador.c](/blog/de-c-a-rust/ejemplos/en/contador.c); `contador` is the counter, `sumar` "add"
+and `hilos` the threads). The result should be four million:
+
+```c
+#include <pthread.h>
+#include <stdio.h>
+
+long contador = 0;
+
+void *sumar(void *arg) {
+    (void)arg;
+    for (int i = 0; i < 1000000; i++) contador++;
+    return NULL;
+}
+
+int main(void) {
+    pthread_t hilos[4];
+    for (int i = 0; i < 4; i++) pthread_create(&hilos[i], NULL, sumar, NULL);
+    for (int i = 0; i < 4; i++) pthread_join(hilos[i], NULL);
+    printf("contador = %ld\n", contador);
+}
+```
+
+Compiled without optimisation, every run gives a different number, between 1 and 2.3 million on
+the test laptop. `contador++` is three steps (read, add, write), and when two threads interleave
+them, one of the increments is lost. That's called a *data race*.
+
+Compiled with `-O2`, the result is always 4,000,000. Not because the bug has gone away, but
+because the optimiser has turned the whole loop into a single instruction that adds a million in
+one go:
+
+```text
+sumar:
+    addq    $1000000, contador(%rip)
+```
+
+It's allowed to, because a data race is undefined behaviour: the compiler is entitled to assume no
+other thread touches `contador` while the loop runs. The window in which two threads can trip over
+each other has shrunk from a million iterations to one instruction, and the bug has gone into
+hiding. It will come back the day the loop does something more than add.
+[ThreadSanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html), AddressSanitizer's
+counterpart for threads, catches it: `WARNING: ThreadSanitizer: data race`.
+
+In Rust, the same program doesn't compile, because of the same rule as before. Every thread needs
+to modify `contador`, and there can only be one loan for writing at a time (the message, trimmed):
+
+```rust
+let mut contador: u64 = 0;
+thread::scope(|s| {
+    for _ in 0..4 {
+        s.spawn(|| {
+            for _ in 0..1_000_000 { contador += 1; }
+        });
+    }
+});
+```
+
+```text
+error[E0499]: cannot borrow `contador` as mutable more than once at a time
+ --> contador.rs:8:21
+  |
+8 |             s.spawn(|| {
+  |                     ^^ `contador` was mutably borrowed here in the previous iteration of the loop
+9 |                 for _ in 0..1_000_000 { contador += 1; }
+  |                                         -------- borrows occur due to use of `contador` in closure
+```
+
+The rule that prevented the use-after-free also prevents the data race, without a single extra
+line. To share something between threads you have to use a type that knows how to be shared: an
+atomic integer (`AtomicU64`, whose `fetch_add` adds in one indivisible step, so no other thread can
+get in between) or a lock (`Mutex`). With the atomic, the corrected version gives 4,000,000 on
+every run. Rust takes the check one step further: every type declares whether it can be sent to
+another thread and whether it can be shared between threads, and the compiler verifies it. A
+reference counter that isn't atomic, for instance, can't be sent to another thread, and the error
+shows up at compile time, not on the third day in production.
+
+### The check the compiler deletes
+
+The last example has no pointers. The function `cabe` ("it fits") wants to know whether `y` can be
+added to `x` without going past the maximum of an `int`
+([cabe.c](/blog/de-c-a-rust/ejemplos/en/cabe.c)), and it checks in the most natural way: if the
+addition overflows, the result wraps round and ends up smaller than `x`.
+
+```c
+/* Can y (positive) be added to x without going past the maximum of an int? */
+int cabe(int x, int y) {
+    return x + y > x;
+}
+```
+
+With `x = INT_MAX` and `y = 1` it should return 0. It returns 1, with and without optimisation.
+The assembly that gcc produces without optimising doesn't even look at `x`:
+
+```text
+cabe:
+    ...
+    cmpl    $0, -8(%rbp)      # compares y with 0
+    setg    %al               # returns y > 0
+```
+
+To the compiler, a signed integer addition that overflows is undefined behaviour, so it may assume
+it doesn't happen. And if it doesn't happen, `x + y > x` is the same as `y > 0`: plain school
+algebra. The overflow check has disappeared precisely because it was checking for an overflow.
+Compiled with `-fsanitize=undefined`, gcc warns at run time
+(`signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'`) and returns 0.
+
+This isn't a textbook curiosity. In 2009, the Linux kernel had a security hole in a network driver
+because a function used a pointer and, one line later, checked whether it was `NULL`. Since using
+it first already implied it wasn't, gcc deleted the check. Today Linux is compiled with options
+that forbid the compiler from drawing those conclusions: one for null pointers, added in the wake
+of that bug, and another for overflow. In other words, it's compiled for a dialect of C slightly
+different from the standard one.
+
+In Rust, an addition that overflows isn't undefined behaviour. Compiled without optimisation, the
+program stops (`attempt to add with overflow`); compiled with optimisation, the addition wraps
+round, as it does in the processor, and `cabe` returns `false`, which is correct. And to ask what
+the function actually wanted to ask, there's an operation that says it outright:
+`x.checked_add(y)` returns `None` if the sum doesn't fit.
+
+### And the everyday annoyances
+
+The five examples are about safety, but that's not all that wears you down in C. There are other
+areas where Rust also parts ways with it, and they start to weigh on you as a project grows:
+
+| | In C | In Rust |
+|---|---|---|
+| errors | a return code (`-1`) and the global variable `errno`, easy to ignore | `Result<T, E>`, which you have to look at; `?` propagates it in one character |
+| generic code | preprocessor macros or untyped `void *` pointers | generics and *traits*, checked by the compiler |
+| types with variants | a `struct` with a tag and a `union`, by hand | `enum` with data, and `match` warns if a case is missing |
+| strings | bytes ending in a zero; measuring one means walking through it | stored length and valid UTF-8 text |
+| dependencies and builds | `.h` headers, Make or CMake, no package manager | modules and Cargo, which builds, tests and fetches dependencies |
+
+None of these differences on its own would justify switching languages. Together they explain why
+people who move to Rust for the safety tend to stay for everything else.
+
+## What Rust doesn't fix
+
+Rust doesn't make everything above impossible. What it promises is more precise: **a program that
+doesn't use `unsafe` can't have undefined behaviour.**
+
+`unsafe` is a marker that allows, inside a block, five things the compiler can't check: reading
+through a raw pointer (one with no borrowing rules, like C's), calling functions marked as unsafe
+(all C functions among them), touching mutable global variables, and two more of lesser
+importance. You need it to talk to hardware, to call C code and to write some data structures. The
+standard library's own `Vec` uses `unsafe` internally to manage its block of memory. The idea is
+that `unsafe` stays locked inside small, carefully reviewed pieces that offer a safe interface to
+the outside. Whether those pieces really keep the rules isn't a matter of faith: the
+[RustBelt](https://plv.mpi-sws.org/rustbelt/popl18/) project proved formally, on a model of the
+language, that Rust's rules guarantee what they promise, including libraries such as `Arc` and
+`Mutex` that use `unsafe` internally. In Android, about 4% of the Rust code sits inside `unsafe`
+blocks.
+
+And that 4% is where the bugs have turned up. In 2025, Google came close to shipping its first Rust
+memory-safety bug in Android, an overflow in an AVIF image decoder, inside `unsafe` code. It found
+it before release, and Android's memory allocator would have stopped it being exploited anyway. In
+December 2025 came the
+[first CVE in Linux's Rust code](https://nvd.nist.gov/vuln/detail/CVE-2025-68260): in the binder
+driver, which Android uses for communication between processes, an `unsafe` block removed items
+from a list on the assumption that no other thread was touching it at the same time, and another
+thread was. It could hang the system, not take control of it.
+
+Beyond memory, Rust promises nothing, and there are things it lets through:
+
+- **Memory leaks.** To Rust, not freeing memory is safe: it isn't undefined behaviour. Two values
+  that point to each other through reference counters are never freed.
+- **Crashes.** A *panic* in a server is a denial of service, like the heartbeat earlier: the
+  program doesn't leak the key, but it stops answering.
+- **Deadlocks.** Two threads each waiting for the other's lock wait forever, in Rust just as in C.
+  Rust prevents data races, not things happening in the wrong order.
+- **Logic errors.** The compiler checks that the program doesn't break memory, not that it does
+  what it's supposed to do. The next section has an example.
+- **Dependencies.** Cargo makes adding libraries so easy that a medium-sized project depends on
+  hundreds of them, written by people nobody has vetted.
+
+## Who is adopting it, and how
+
+The best-documented case is Android, and its most important lesson isn't the one you'd expect.
+Around 2019, Google started writing Android's **new** code in memory-safe languages: Java and
+Kotlin where it could, and Rust in the system components that used to be written in C and C++. It
+didn't rewrite the old code. And even so, the share of Android's vulnerabilities that are
+memory-safety bugs fell like this:
+
+<figure>
+  <img
+    src="/blog/de-c-a-rust/android-memoria.en.svg"
+    alt="Bar chart. Share of Android's vulnerabilities that are memory-safety bugs, according to Google's security blog: 76% in 2019, 35% in 2022, 24% in 2024 (estimated for the full year) and below 20% in 2025. A dashed line marks 70%, the industry norm according to Google. 2020, 2021 and 2023 have no bar because Google does not give the figure in the text."
+    width="760"
+    height="300"
+  />
+  <figcaption>
+    Source: Google's security blog, posts from December 2022, September 2024 and November 2025.
+    Covers Android's C and C++ code.
+  </figcaption>
+</figure>
+
+The explanation is that
+[vulnerabilities age](https://security.googleblog.com/2024/09/eliminating-memory-safety-vulnerabilities-Android.html).
+Almost all of them are in code that was written or changed recently, and as code gets used, tested
+and fixed, fewer remain. According to Google's data, five-year-old code has between 3.4 and 7.4
+times fewer vulnerabilities than freshly written code. If you stop adding new C, the C that's left
+gets older and its bugs run out on their own. Rewriting the old code, which is the expensive part,
+is what pays off least.
+
+Google has published two more figures that are worth quoting carefully.
+[The first](https://blog.google/security/rust-in-android-move-fast-fix-things/) is bug density:
+roughly a thousand memory-safety bugs per million lines in Android's historical C and C++, against
+0.2 in its five million lines of Rust. That 0.2 comes from a single bug, the AVIF one, so it's a
+very rough estimate, but the gap is three orders of magnitude. The second was more of a surprise:
+medium and large changes in Rust get rolled back about four times less often than C++ ones, and
+spend around 25% less time in review. In Android, the safe code is also the code that ships
+sooner.
+
+In the Linux kernel, Rust came in with version 6.1, in December 2022, as an experiment. At the
+annual maintainers' meeting in December 2025, the experiment was declared a success: Rust is here
+to stay. There are already drivers written in it, such as Android's binder, and others on the way,
+such as Nova, for NVIDIA graphics cards. The maintainer of the graphics subsystem reckoned at the
+time that within a year he would stop accepting new graphics drivers written in C. Ubuntu 25.10,
+from October 2025, replaced `sudo` and the basic command-line utilities (`ls`, `cp`, `date` and
+the rest) with versions written in Rust by default. Git has announced that, from version 3.0, you
+will need Rust to build it.
+
+Governments are pushing too. In December 2023, the cybersecurity agencies of the United States
+(CISA and the NSA) and four other countries published
+[a guide](https://www.cisa.gov/resources-tools/resources/case-memory-safe-roadmaps) asking software
+makers for a plan to move away from languages without memory safety. In October 2024, CISA and the
+FBI went further and asked that products already written in those languages publish that plan by
+1 January 2026. These are recommendations, not laws, and they don't name a language: Java, C#, Go
+and Swift are memory-safe too. But all of them manage memory on their own while the program runs:
+Java, C# and Go with a garbage collector, which pauses the program or burns processor time whenever
+it suits it, and Swift by counting references on every assignment. In an operating system kernel,
+a driver or a microcontroller, that isn't acceptable. Rust is the most mature and widely used of
+the few languages that offer memory safety without any of that, which is why it's taking C's
+place, not Java's.
+
+## What switching costs
+
+**Rewriting is risky.** Old code is ugly, but it carries decades of fixes for odd cases that
+nobody documented. In October 2025, shortly after its release, Ubuntu 25.10 stopped installing
+automatic updates. The cause was the new Rust version of `date`: it accepted the `-r` option,
+which gives a file's modification date, but ignored it and returned the current date instead. The
+program that decides whether it's time to look for updates compares the age of a file, always got
+zero and never decided it was time. It's a logic error the Rust compiler couldn't see, and exactly
+the kind of bug any rewrite brings, in any language.
+
+**The boundary between C and Rust is work.** A Rust program calls C by declaring the functions
+with `extern "C"`, and every call is `unsafe`, because the compiler can't check what happens on the
+other side. There are tools that generate those declarations from the C headers, but the important
+things aren't in the headers: who frees each block, how long each pointer lives, which functions
+can be called from several threads. Someone has to read the C code, understand it and translate it
+into Rust types. In Linux, that sparked public and bitter arguments between maintainers over who
+fixes the Rust side when a C interface changes, and some people left the project over them.
+
+**Two compilers instead of one.** The project now depends on two toolchains, each with its own
+versions. And not every processor has both. The Rust compiler uses LLVM to generate code, and gcc
+reaches architectures LLVM doesn't. When the maintainer of APT, Debian's package manager, announced
+in 2025 that he planned to make Rust mandatory, the first to be affected were the Debian ports for
+old processors (m68k, Alpha, PA-RISC, SuperH), which had no decent Rust compiler. There are two
+projects to make gcc compile Rust, and neither is finished.
+
+**Certification is expensive.** In aircraft, cars or medical equipment, the compiler has to be
+certified against standards such as ISO 26262. C has had certified compilers for decades. The
+first one for Rust, [Ferrocene](https://ferrocene.dev/), arrived in 2023. The language
+specification needed to certify it was written by the same company, which in 2025 donated it to
+the Rust project, since the project didn't have one.
+
+**Learning takes time, though less than people say.** In an
+[internal Google survey](https://opensource.googleblog.com/2023/06/rust-fact-vs-fiction-5-insights-from-googles-rust-journey-2022.html)
+of more than a thousand developers who wrote Rust in 2022, over two thirds felt able to contribute
+to a Rust codebase within two months or less. A third were as productive as in their previous
+language within that time, and more than half within four months.
+
+## Rust's drawbacks compared with C
+
+On top of what the switch costs, Rust has drawbacks of its own, which would still be there in a
+project started from scratch.
+
+**The borrow checker rejects correct programs.** It's conservative: if it can't prove a program is
+safe, it rejects it, even when it is. Structures where many parts point at each other (graphs,
+doubly linked lists, trees whose nodes know their parent) run head-on into the single-owner rule.
+In C, a doubly linked list is twenty lines. In Rust there's
+[an entire book](https://rust-unofficial.github.io/too-many-lists/) about writing linked lists,
+and the doubly linked one ends up using `unsafe` or reference counters. The usual solution is a
+different way of thinking: keep the nodes in a vector and have them point at each other by index.
+It works, but it has to be learned.
+
+**It compiles slowly.** With a five-line program you don't notice: gcc takes 0.10 seconds and
+rustc 0.15. With a large project you do. Rust generates a copy of each generic function's code for
+every type it's used with, the borrow checker has its work to do, and dependencies are compiled
+from source. In Google's survey, slow builds were by far the number one complaint, and in the Rust
+project's own annual survey they still top the list of productivity problems.
+
+**The executables are bigger.** The program that prints "hola" takes 15,952 bytes in C and
+4,536,368 in Rust, which drop to 336,744 once the debugging information is stripped. The difference
+is that the C program uses the standard library already installed on the system, while the Rust
+one carries its own. On a server it doesn't matter. On a microcontroller with 64 KB of memory it
+does, which is why Rust lets you do without the standard library, at the cost of giving up much of
+what it provides.
+
+**It has no stable ABI.** The way Rust lays out data and passes arguments can change between
+compiler versions. A Rust library that has to be called from another language, or from Rust built
+with another version, has to expose functions with the C convention (`extern "C"`) and data laid
+out as in C (`#[repr(C)]`). To talk to the world, Rust speaks C too.
+
+**There's only one real compiler.** C has gcc, clang, Microsoft's compiler and dozens of compilers
+for microcontrollers, and an ISO standard that says what they must do. Rust has `rustc`, and its
+official specification dates from 2025. For most projects that doesn't matter. For those that need
+two independent implementations, or a compiler for an unusual processor, it does.
+
+Anyone who wants something closer to C, without the borrow checker, has
+[Zig](https://ziglang.org/): a small language that compiles C and mixes with it seamlessly, checks
+indices in its safe build modes and has no implicit `NULL`, but doesn't prevent use-after-free or
+data races. Projects such as Bun, TigerBeetle and Ghostty use it, although in 2026 it still hasn't
+reached version 1.0 and each new release tends to break code written for the previous one.
+
+## When to choose each
+
+The useful question isn't "C or Rust?" in general, but for which code.
+
+| situation | choice | why |
+|---|---|---|
+| code that reads data from outside: network protocols, file formats, parsers | Rust | it's where almost all the vulnerabilities are |
+| a new project that will live for years and have many authors | Rust | the compiler keeps track of what nobody will remember in five years |
+| heavy concurrency | Rust | data races are compile errors |
+| a large project already in C | C, with Rust for new code | rewriting the old code is what pays off least |
+| a microcontroller whose vendor only provides a C compiler | C | there's no realistic alternative |
+| a library that many languages will call | a C interface | the implementation can be Rust |
+| learning how memory works | C | Rust deliberately hides what you need to see |
+
+In some cases the answer is neither. If a garbage collector is acceptable, as it is in almost any
+network service or command-line tool, [Go](https://go.dev/) is simpler than both, and it's what
+Docker and Kubernetes are written in.
+
+And if you have to stay with C, you can write considerably safer C: compile with `-Wall -Wextra`
+and treat warnings as errors, run the tests with `-fsanitize=address,undefined` (and `thread` if
+there are threads), test with randomly generated inputs (*fuzzing*), and build what you ship with
+the compiler's hardening options (`-fhardened` in gcc 14 or later). None of these turns C into a
+safe language, but one or another of them would have caught every example in this post.
+
+## How C is evolving
+
+C isn't standing still. It changes slowly, and on purpose: its value lies in code from forty
+years ago still compiling, and in there being a compiler for every processor, so every new feature
+has to win over the people who maintain dozens of compilers.
+
+The standard's first serious attempt to tackle overflows went badly. C11 added an optional annex
+with versions of the string functions that take the size of the destination (`strcpy_s`,
+`memcpy_s` and company). Four years later, a
+[report to the committee itself](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1967.htm) found
+that hardly anyone had implemented them, that Linux's C library had rejected them several times
+and that code using them came out no safer, and it proposed removing them.
+
+C23, the standard published in 2024, is the biggest revision since 1999, and several of its new
+features target the problems in this post: `nullptr`, a null pointer with a type of its own;
+`[[nodiscard]]`, so that the compiler warns if a function's return value is ignored; signed
+integers are now required to be two's complement (although overflowing them is still undefined
+behaviour); and there's
+[`<stdckdint.h>`](https://en.cppreference.com/w/c/header/stdckdint), with additions, subtractions
+and multiplications that tell you whether they overflowed. With it, the example function comes out
+right:
+
+```c
+#include <stdckdint.h>
+
+int cabe(int x, int y) {
+    int suma;
+    return !ckd_add(&suma, x, y);     /* ckd_add returns true if it overflowed */
+}
+```
+
+It returns 0 for `INT_MAX` and 1, with and without optimisation. The next revision, which the
+committee calls C2y until it has a year, already includes `_Countof`, which gives the number of
+elements in an array without the trick of dividing sizes with `sizeof`, a trick that fails
+silently when the array has already become a pointer. And `defer`, so that a function can release
+its resources on the way out without repeating the `free` before every `return`, is moving forward
+as a separate technical specification, a document compilers can implement before it makes it into
+the standard.
+
+Outside the standard, things move faster. Compilers keep adding protections: `-fhardened` turns
+on, in one go, the checks on string functions, stack protection and several more.
+[Fil-C](https://fil-c.org/) is a C compiler that makes ordinary C memory-safe, with almost no
+changes to the code, using a garbage collector and checks on every access, in exchange for a
+slower program (between one and four times slower, according to published measurements). And the
+hardware has started to help. ARM's memory tagging (MTE), which Pixel phones have offered since the
+Pixel 8 and Apple switches on in the iPhone 17, tags each block and each pointer and stops the
+program when the tags don't match. And processors with
+[CHERI](https://www.cl.cam.ac.uk/research/security/ctsrd/cheri/), still mostly experimental, turn
+every pointer into a capability that carries its own bounds.
+
+All these measures have something in common: they catch the error while the program is running, or
+make it harder to exploit. None of them prevents it at compile time, the way the borrow checker
+does. And C can't add one without breaking almost all the C in existence, because almost all the C
+in existence shares and frees memory in ways those rules forbid. A C with borrowing would be a
+different language.
+
+## Will C disappear?
+
+There's a precedent. C++ was born in the early eighties as a better C, compatible with it, with
+the explicit aim of replacing it. Forty years later, C is still here, and C++ shares its memory
+problems. Fortran and COBOL, older than C, still run in banks and computing centres, and both got
+a new standard in 2023. Languages with a lot of code behind them don't die: people simply stop
+starting new things in them.
+
+C also has three reasons to stay that those languages didn't have.
+
+**It's the common language.** As long as operating systems publish their services as C functions,
+and languages call each other through the C ABI, C will go on existing even if nobody writes a
+whole program in it. To talk to the world, Rust speaks C.
+
+**The existing code isn't worth rewriting.** That's Android's lesson: old code, if left alone,
+gets safer over the years. What pays off is writing the new code in another language, and that
+leaves billions of lines of C running for decades, with someone who has to maintain them.
+
+**There are places Rust doesn't reach.** 8-bit microcontrollers, signal processors with a vendor
+compiler, certified environments where changing compilers takes years. There, C isn't competing
+with Rust. It's competing with assembly.
+
+What will change is what gets written in C. The code that reads data from outside, the code that
+produces the most vulnerabilities, is moving to Rust, pushed by Google, Microsoft, Linux and the
+regulators. C is on its way to taking assembly's place: it never disappeared, it's still underneath
+everything, but fewer people write it, for specific tasks, knowing why.
+
+And C is evolving, though not to stop being C. The new features in C23 and C2y smooth off rough
+edges, the tools catch more errors and the hardware makes them harder to exploit. None of that
+gives it what Rust has, because what Rust has is exactly what C chose not to have: a compiler that
+doesn't trust the programmer.
+
+## What to take away
+
+If you take away only one thing, make it this: **C's memory-safety bugs aren't the slips of bad
+programmers. They're the result of a language that leaves the programmer in charge of how big each
+block is, how long it lives and who touches it at the same time, and of a compiler that assumes
+the programmer got it right.** Rust doesn't make programmers better. It makes the compiler check
+those three facts, and the price is learning to write programs the compiler can check.
+
+And if you take away three more, make them practical ones.
+
+**If you write C, run your tests with the sanitizers.** `-fsanitize=address,undefined` would have
+found four of the five errors in this post, and `-fsanitize=thread` the fifth. They cost one line
+in the test build.
+
+**Write new code that reads data from outside in Rust.** A parser, a protocol, a file format.
+That's where the exploitable bugs are, and where Rust makes the biggest difference.
+
+**Don't rewrite what works just for the sake of it.** Old C code, left alone, has fewer bugs every
+year. Write the new code in Rust, look after the boundary between the two, and let the C grow old.
+
+C has spent fifty years trusting the programmer, and for most of that time it was the only way to
+write systems software that was fast. It isn't any more. What won't go away is the need to
+understand what C teaches: what an address is, how long a block of memory lives, what happens when
+two threads touch the same thing. Rust doesn't make any of that matter less. All it does is have
+the compiler check it for you.
