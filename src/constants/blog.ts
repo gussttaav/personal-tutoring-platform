@@ -31,11 +31,13 @@ export const BLOG_TOPICS = [
   "evaluacion",
   "grafos",
   "indices",
+  "lenguajes",
   "llm",
   "nlp",
   "optimizacion",
   "rag",
   "rendimiento",
+  "seguridad",
   "sql",
   "tokenizacion",
 ] as const satisfies readonly BlogTopic[];

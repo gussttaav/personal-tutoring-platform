@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img"
+ aria-label="Gráfico de barras. Parte de las vulnerabilidades de Android que son fallos de memoria, según el blog de seguridad de Google: 76 % en 2019, 35 % en 2022, 24 % en 2024 (estimado para el año entero) y menos del 20 % en 2025. Una línea discontinua marca el 70 %, lo habitual en el sector según Google. Los años 2020, 2021 y 2023 no tienen barra porque Google no da la cifra en el texto.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.12); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.12); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  .mo.d { fill: #86948a; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; stroke-width: 1.5; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-width: 1.5; marker-end: url(#ax); }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .sep { stroke: #2a2a2c; stroke-width: 1; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="sb" x="16.0" y="18.0">% de las vulnerabilidades de Android que son de memoria</text>
+<line class="ed" x1="64.0" y1="252.0" x2="720.0" y2="252.0"/>
+<text class="sb" x="54.0" y="256.0" style="text-anchor:end">0</text>
+<line class="gl" x1="64.0" y1="198.0" x2="720.0" y2="198.0"/>
+<text class="sb" x="54.0" y="202.0" style="text-anchor:end">20</text>
+<line class="gl" x1="64.0" y1="144.0" x2="720.0" y2="144.0"/>
+<text class="sb" x="54.0" y="148.0" style="text-anchor:end">40</text>
+<line class="gl" x1="64.0" y1="90.0" x2="720.0" y2="90.0"/>
+<text class="sb" x="54.0" y="94.0" style="text-anchor:end">60</text>
+<line class="gl" x1="64.0" y1="36.0" x2="720.0" y2="36.0"/>
+<text class="sb" x="54.0" y="40.0" style="text-anchor:end">80</text>
+<line class="rf" x1="64.0" y1="63.0" x2="720.0" y2="63.0"/>
+<text class="sb" x="720.0" y="56.0" style="text-anchor:end">70 %: lo habitual en el sector, según Google</text>
+<path d="M87.9,252.0 L87.9,50.8 Q87.9,46.8 91.9,46.8 L129.9,46.8 Q133.9,46.8 133.9,50.8 L133.9,252.0 Z" fill="#e8a24c"/>
+<text class="lb" x="110.9" y="38.8" style="text-anchor:middle">76 %</text>
+<path d="M369.0,252.0 L369.0,161.5 Q369.0,157.5 373.0,157.5 L411.0,157.5 Q415.0,157.5 415.0,161.5 L415.0,252.0 Z" fill="#e8a24c"/>
+<text class="lb" x="392.0" y="149.5" style="text-anchor:middle">35 %</text>
+<path d="M556.4,252.0 L556.4,191.2 Q556.4,187.2 560.4,187.2 L598.4,187.2 Q602.4,187.2 602.4,191.2 L602.4,252.0 Z" fill="#e8a24c"/>
+<text class="lb" x="579.4" y="179.2" style="text-anchor:middle">24 %</text>
+<text class="sb" x="579.4" y="165.2" style="text-anchor:middle">estimado para el año entero</text>
+<path d="M650.1,252.0 L650.1,202.0 Q650.1,198.0 654.1,198.0 L692.1,198.0 Q696.1,198.0 696.1,202.0 L696.1,252.0 Z" fill="none" stroke="#e8a24c" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text class="lb" x="673.1" y="190.0" style="text-anchor:middle">&lt; 20 %</text>
+<text class="tx" x="110.9" y="270.0" style="text-anchor:middle">2019</text>
+<text class="sb" x="204.6" y="270.0" style="text-anchor:middle">2020</text>
+<text class="sb" x="298.3" y="270.0" style="text-anchor:middle">2021</text>
+<text class="tx" x="392.0" y="270.0" style="text-anchor:middle">2022</text>
+<text class="sb" x="485.7" y="270.0" style="text-anchor:middle">2023</text>
+<text class="tx" x="579.4" y="270.0" style="text-anchor:middle">2024</text>
+<text class="tx" x="673.1" y="270.0" style="text-anchor:middle">2025</text>
+</svg>

@@ -172,6 +172,9 @@ describe("static-file detection vs dotted path segments", () => {
     "/admin/students/someone%40example.co.uk",
     "/admin/students/a%40b.es",
     "/admin/students/a%40b.dev",
+    // BLOG-16: `.rs` and `.sh` are file extensions under /blog/<slug>/ only.
+    "/admin/students/a%40b.rs",
+    "/admin/students/a%40b.sh",
   ])("locale-routes the admin student page for %s", (path) => {
     expect(wentThroughIntl(middleware(request(path)))).toBe(true);
   });
@@ -185,9 +188,20 @@ describe("static-file detection vs dotted path segments", () => {
     "/robots.txt",
     "/sitemap.xml",
     "/courses/diagram.webp",
+    // BLOG-16: a post's source files, whatever their extension.
+    "/blog/de-c-a-rust/ejemplos/latido.c",
+    "/blog/de-c-a-rust/ejemplos/latido.rs",
+    "/blog/de-c-a-rust/ejemplos/medir.sh",
   ])("lets the real static asset %s bypass locale routing", (path) => {
     expect(wentThroughIntl(middleware(request(path)))).toBe(false);
   });
+
+  it.each(["/blog", "/blog/de-c-a-rust"])(
+    "BLOG-16: still locale-routes the blog page %s",
+    (path) => {
+      expect(wentThroughIntl(middleware(request(path)))).toBe(true);
+    },
+  );
 
   it("still traces bypassed asset requests with a request id", () => {
     expect(middleware(request("/avatar.png")).headers.get("x-request-id")).toMatch(/^req_/);

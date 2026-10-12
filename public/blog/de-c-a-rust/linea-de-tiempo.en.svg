@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 166" width="760" height="166" role="img"
+ aria-label="Timeline, not to scale, with ten milestones. In green, C and its standard: 1972, C is born, by Dennis Ritchie at Bell Labs; 1989, ANSI C, the first standard; 2011, C11, with threads and atomics; 2024, C23 is published. In orange, memory-safety failures: 1988, the Morris worm, which got in through a gets(); 2014, Heartbleed, in OpenSSL; 2019, Microsoft reports that 70% of its vulnerabilities are memory-safety bugs. In blue, Rust: 2015, Rust 1.0; 2022, Linux 6.1 accepts Rust code; 2025, Rust in Linux is no longer an experiment.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.12); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.12); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  .mo.d { fill: #86948a; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; stroke-width: 1.5; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-width: 1.5; marker-end: url(#ax); }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .sep { stroke: #2a2a2c; stroke-width: 1; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<line class="ed" x1="8.0" y1="96.0" x2="752.0" y2="96.0"/>
+<circle cx="62.0" cy="96" r="4.5" fill="#4edea3"/>
+<line class="ed" x1="62.0" y1="90.0" x2="62.0" y2="80.0"/>
+<text class="lb m" x="62.0" y="50.0" style="text-anchor:middle">1972</text>
+<text class="tx" x="62.0" y="64.0" style="text-anchor:middle">C is born</text>
+<text class="sb" x="62.0" y="77.0" style="text-anchor:middle">Ritchie, Bell Labs</text>
+<circle cx="132.7" cy="96" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="132.7" y1="102.0" x2="132.7" y2="112.0"/>
+<text class="lb w" x="132.7" y="126.0" style="text-anchor:middle">1988</text>
+<text class="tx" x="132.7" y="140.0" style="text-anchor:middle">Morris worm</text>
+<text class="sb" x="132.7" y="153.0" style="text-anchor:middle">one gets() too many</text>
+<circle cx="203.3" cy="96" r="4.5" fill="#4edea3"/>
+<line class="ed" x1="203.3" y1="90.0" x2="203.3" y2="80.0"/>
+<text class="lb m" x="203.3" y="50.0" style="text-anchor:middle">1989</text>
+<text class="tx" x="203.3" y="64.0" style="text-anchor:middle">ANSI C</text>
+<text class="sb" x="203.3" y="77.0" style="text-anchor:middle">the first standard</text>
+<circle cx="274.0" cy="96" r="4.5" fill="#4edea3"/>
+<line class="ed" x1="274.0" y1="102.0" x2="274.0" y2="112.0"/>
+<text class="lb m" x="274.0" y="126.0" style="text-anchor:middle">2011</text>
+<text class="tx" x="274.0" y="140.0" style="text-anchor:middle">C11</text>
+<text class="sb" x="274.0" y="153.0" style="text-anchor:middle">threads, atomics</text>
+<circle cx="344.7" cy="96" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="344.7" y1="90.0" x2="344.7" y2="80.0"/>
+<text class="lb w" x="344.7" y="50.0" style="text-anchor:middle">2014</text>
+<text class="tx" x="344.7" y="64.0" style="text-anchor:middle">Heartbleed</text>
+<text class="sb" x="344.7" y="77.0" style="text-anchor:middle">OpenSSL</text>
+<circle cx="415.3" cy="96" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="415.3" y1="102.0" x2="415.3" y2="112.0"/>
+<text class="lb b" x="415.3" y="126.0" style="text-anchor:middle">2015</text>
+<text class="tx" x="415.3" y="140.0" style="text-anchor:middle">Rust 1.0</text>
+<text class="sb" x="415.3" y="153.0" style="text-anchor:middle">Mozilla</text>
+<circle cx="486.0" cy="96" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="486.0" y1="90.0" x2="486.0" y2="80.0"/>
+<text class="lb w" x="486.0" y="50.0" style="text-anchor:middle">2019</text>
+<text class="tx" x="486.0" y="64.0" style="text-anchor:middle">70% at Microsoft</text>
+<text class="sb" x="486.0" y="77.0" style="text-anchor:middle">memory-safety bugs</text>
+<circle cx="556.7" cy="96" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="556.7" y1="102.0" x2="556.7" y2="112.0"/>
+<text class="lb b" x="556.7" y="126.0" style="text-anchor:middle">2022</text>
+<text class="tx" x="556.7" y="140.0" style="text-anchor:middle">Linux 6.1</text>
+<text class="sb" x="556.7" y="153.0" style="text-anchor:middle">accepts Rust</text>
+<circle cx="627.3" cy="96" r="4.5" fill="#4edea3"/>
+<line class="ed" x1="627.3" y1="90.0" x2="627.3" y2="80.0"/>
+<text class="lb m" x="627.3" y="50.0" style="text-anchor:middle">2024</text>
+<text class="tx" x="627.3" y="64.0" style="text-anchor:middle">C23</text>
+<text class="sb" x="627.3" y="77.0" style="text-anchor:middle">is published</text>
+<circle cx="698.0" cy="96" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="698.0" y1="102.0" x2="698.0" y2="112.0"/>
+<text class="lb b" x="698.0" y="126.0" style="text-anchor:middle">2025</text>
+<text class="tx" x="698.0" y="140.0" style="text-anchor:middle">Rust in Linux</text>
+<text class="sb" x="698.0" y="153.0" style="text-anchor:middle">experiment over</text>
+<circle cx="694" cy="12" r="4.5" fill="#6fb1e8"/>
+<text class="sb" x="704.0" y="16.0">Rust</text>
+<circle cx="508" cy="12" r="4.5" fill="#e8a24c"/>
+<text class="sb" x="518.0" y="16.0">memory-safety failures</text>
+<circle cx="350" cy="12" r="4.5" fill="#4edea3"/>
+<text class="sb" x="360.0" y="16.0">C and its standard</text>
+</svg>

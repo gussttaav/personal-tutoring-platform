@@ -106,6 +106,16 @@ const nextConfig = {
           { key: "Content-Security-Policy",   value: csp.join("; ") },
         ],
       },
+      // BLOG-16: a post's runnable examples (public/blog/<slug>/ejemplos/) are source
+      // code to read in the browser. By extension they would be served as `application/x-sh`
+      // (a download) or, for `.rs`, `application/rls-services+xml`, which the browser
+      // tries to parse as XML and fails.
+      {
+        source: "/blog/:slug/ejemplos/:file*",
+        headers: [
+          { key: "Content-Type", value: "text/plain; charset=utf-8" },
+        ],
+      },
       // Session page — allow camera/mic + enable SharedArrayBuffer for Zoom SDK.
       // SharedArrayBuffer requires COOP + COEP (Chrome/Firefox block it otherwise).
       // Using COEP "credentialless" (not "require-corp") so Zoom's CDN scripts
