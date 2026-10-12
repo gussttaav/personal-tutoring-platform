@@ -16,7 +16,7 @@ Personal tutoring platform for booking programming, mathematics and AI classes.
 
 ## Overview
 
-Full-stack booking platform for online tutoring sessions. Students can schedule individual sessions or purchase class packs, pay securely inside the app, join live virtual classrooms embedded in the platform, and manage all their bookings from a personal dashboard. An AI assistant powered by Gemini answers questions about services, pricing, and scheduling around the clock. The customer-facing experience is fully **bilingual (Spanish / English)** with automatic browser-language detection and a manual switcher.
+Full-stack booking platform for online tutoring sessions. Students can schedule individual sessions or purchase class packs, pay securely inside the app, join live virtual classrooms embedded in the platform, and manage all their bookings from a personal dashboard. An AI assistant powered by Claude answers questions about services, pricing, and scheduling around the clock. The customer-facing experience is fully **bilingual (Spanish / English)** with automatic browser-language detection and a manual switcher.
 
 ---
 
@@ -33,7 +33,7 @@ Full-stack booking platform for online tutoring sessions. Students can schedule 
 | **Google Calendar API** | Reads real-time availability; creates and deletes calendar events on booking/cancellation |
 | **Zoom Video SDK** | Embedded virtual classroom inside the platform; no external app or install required |
 | **Upstash Redis** | Ephemeral state only: rate limiting, slot locking, availability cache, in-session chat state |
-| **Gemini API** | AI assistant trained on full service details, pricing, and cancellation policy |
+| **Claude API** (Anthropic) | AI assistant (Claude Haiku 5.5) briefed on full service details, pricing, and cancellation policy |
 | **Resend** | Transactional email: booking confirmations, cancellation notices, reschedule links |
 | **Sentry** | Error tracking and monitoring in production |
 | **Jest** | Unit and integration tests |
@@ -52,7 +52,7 @@ Full-stack booking platform for online tutoring sessions. Students can schedule 
 - **Embedded virtual classroom** — sessions run in a Zoom-powered room inside the platform; no install, no redirect
 - **Personal dashboard** — students see all their upcoming and past sessions and can join, reschedule, or cancel from one place
 - **Email notifications** — every booking triggers a confirmation email with calendar link, join link, and one-click reschedule/cancel links
-- **AI assistant** — Gemini chat widget answers questions about services, pricing, cancellation policy, and Gustavo's background without the student needing to send an email
+- **AI assistant** — Claude chat widget answers questions about services, pricing, cancellation policy, and Gustavo's background without the student needing to send an email
 - **Bilingual (Spanish / English)** — Spanish is the default at unprefixed URLs; English lives under `/en`. First-time visitors are auto-routed by browser language, and a navbar switcher lets anyone change language on the fly (persisted in a cookie). The full customer UI and transactional emails are translated; the admin panel stays Spanish
 - **Automatic session closing** — a pending termination row is written at booking time; a daily cron sweeps and closes virtual rooms once their grace period has elapsed
 - **Google OAuth** — sign-in required before booking; session is verified server-side on all API routes
@@ -183,7 +183,7 @@ ZOOM_SDK_KEY=
 ZOOM_SDK_SECRET=
 
 # ── AI assistant ──────────────────────────────────────────────────────
-GEMINI_API_KEY=
+ANTHROPIC_API_KEY=sk-ant-...
 
 # ── Resend (transactional email) ──────────────────────────────────────
 RESEND_API_KEY=re_...

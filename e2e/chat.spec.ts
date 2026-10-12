@@ -3,7 +3,7 @@
  *
  * TEST-02: AI chat widget smoke tests.
  *
- * The /api/chat endpoint calls Gemini and has a real monetary cost.
+ * The /api/chat endpoint calls the Claude API and has a real monetary cost.
  * All tests in this file intercept /api/chat with page.route() and return
  * a canned response — no real API calls are made.
  *
@@ -21,7 +21,7 @@ const MOCK_RESPONSE = "Soy un tutor de **programación** y matemáticas. ¿En qu
 test.describe("AI chat widget (mocked API)", () => {
   test.beforeEach(async ({ page }) => {
     // Intercept all /api/chat requests and return a canned plain-text response.
-    // This avoids any Gemini API calls and prevents monetary charges.
+    // This avoids any Claude API calls and prevents monetary charges.
     await page.route("**/api/chat", async (route) => {
       await route.fulfill({
         status:      200,
