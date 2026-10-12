@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (6/8) | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (7/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -1024,3 +1024,45 @@ before the cells. Decisions:
   errors; the cells in Node Pyodide and Chromium on `pnpm start` with identical output; the challenge's
   starter fails in the browser and the solution passes 6/6 in Node Pyodide; the numeric quiz right and
   wrong in the browser; no horizontal page scroll at 360 px (emulated). Not on a phone.
+
+Lesson 16 `de-donde-salen-las-preferencias` authored on `staging` (2026-10-12). 1 671 words (inside
+the target, above the block md's «hold it to the floor» and `bert-y-gpt`'s 1 482), 2 display
+equations, no widget, **no cell** (hasCode: false), 4 quiz, no challenge, 5 readings (Ouyang et al.
+2022 §5.2, Bai et al. 2022 / Constitutional AI, Zheng et al. 2023, Sharma et al. 2023, DeepSeek-R1
+2025; arXiv pages checked, the CAI section and appendix references against the paper's HTML).
+`minutes: 20` (lint ≈18). No `modelo` runs: the lesson is the block's map. Decisions, confirmed by
+Gustavo at review:
+- **The claims:** RLHF and DPO reproduce $p_{\text{pref}}$, whoever writes it (their optimum puts
+  each margin at the log odds of the observed proportion). Three sources, stated with the papers'
+  numbers: raters with a guía (InstructGPT: ~40 screened contractors; helpfulness first while
+  collecting, truthfulness and harmlessness first in the final evaluation), a constitución
+  (Constitutional AI: 16 principles; phase 1 = four critique/revision rounds → SFT pairs on a
+  pretrained model; phase 2 = a model's normalised (A)/(B) probabilities as soft labels in
+  $\mathcal{L}_{\text{R}}$, then RLHF; helpfulness labels stayed human), and a juez (GPT-4 85 %
+  agreement with humans vs 81 % human–human, 65 % order-consistent, 30 % first-position; weaker
+  judges fooled by padded answers; signposted to Block 3's evals). The rater is not lesson 10's
+  «quien escribió la instrucción»: the buena it targeted is reached only through what the rater
+  recognises.
+- **Step 4 is a worked example on paper** (shared §1's code-free form): 60/40 raters → margin
+  $\ln 1.5$ → $\pi^{\star}(y_A)/\pi^{\star}(y_B) = 1.5^{1/\beta}$ with an even reference: 60 / 69 / 98
+  of 100 at β = 1 / 0.5 / 0.1. Then Bradley–Terry's one number per response cannot tell hesitating
+  raters from two groups who want different things.
+- **«Alineado» is defined with its complement** (aligned with a source), with InstructGPT §5.2 for
+  «with whom» and Sharma et al. for «not correct»: complacencia is not lesson 5's reward hacking
+  (the reward is right about the raters) and the KL does not brake it. RLVR, GRPO (lesson 5's
+  baseline, divided by the group's std) and process rewards are the block md's signposts, in one
+  paragraph and in `reading`.
+- **The intuition is a critique/revision trace on an honesty principle** (the Great Wall myth),
+  written by the author and disclosed as such; the paper applied the method to harmlessness, and
+  the lesson says so.
+- **Terms added before writing:** `guía` (de anotación), `utilidad` / `veracidad` / `inocuidad`,
+  `constitución` / `principio`, `crítica` / `revisión`, `juez` (Block 3 inherits it),
+  `alineado` / `alineamiento`, `complacencia` in the delta's §4; RLAIF, RLVR, GRPO in its acronyms.
+  No new symbol in `NOTATION.md`. «alineado» takes «…», not `<W>`, as in lesson 15's bridge.
+- **Lesson 15's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 17 (`proyecto-sft-colab`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors in both locales; all four quiz questions right and wrong in the Browser pane on
+  `pnpm start` (the numeric accepts 0.8448, refuses 0.849 and 0.84); no horizontal page scroll at
+  360 px (the two displays, 406 and 483 px, scroll in their own boxes and fit the desktop column;
+  tables 328 px). Not on a phone.
