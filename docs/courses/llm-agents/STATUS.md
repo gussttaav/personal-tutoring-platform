@@ -38,7 +38,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
-| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
+| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (1/7) | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
@@ -1116,3 +1116,44 @@ confirmed by Gustavo at review:
   boxes; all fit the 650 px desktop column). The notebook ran end to end on CPU with a tiny
   stand-in model for the training cells, and through the «before» measurements with the real one;
   the GPU run is Gustavo's. Not on a phone.
+
+**COURSE-C2-P1-03** — In progress (started 2026-10-13). Lesson 18 `el-prompt-es-una-especificacion`
+authored on `staging`, the block's first. 1 998 words, 6 display equations, no widget (the block md
+assigns none), **2 cells** (17 + 39 lines; the plan said 1, but as one cell it was 54 lines, and
+AUTHORING §3's fix is the split: the class with a pointer demo, then the specification and the
+comprobación), 4 quiz, no challenge, 3 readings (IFEval, Sclar et al. 2023, Wallace et al. 2024 /
+the instruction hierarchy; arXiv pages checked, the 76-point spread is LLaMA-2-13B's in their
+abstract). `minutes: 25` (lint ≈27). Runs on the **scripted model**, introduced in this lesson with
+the reason; the cells do not load the mini-GPT. Decisions, confirmed by Gustavo at review:
+- **The formal content:** the prompt as $\pi_\theta(y \mid s, e_{1:K}, x)$; the system prompt enters
+  lesson 8's Bayes rule as one more factor, $p_{\text{SFT}}(s \mid \omega)$ (describing and showing
+  move the same posterior; a description covers casos no ejemplo shows, an ejemplo fixes the
+  form); the masa on $\text{cumple}$ split over tareas, bounded below by the intended tarea's term
+  and equal to $p_{\text{SFT}}(\text{cumple} \mid x, \omega_1)$ once the prompt fixes it («el prompt
+  quita ambigüedad, no añade capacidad»); and $0.99^{100} \approx 0.37$ (AM–GM for unequal rates),
+  so the especificación is written twice, in the prompt and as a comprobación in the harness. The
+  reduced model is stated with $\pi_\theta = p_{\text{SFT}}$ and the lesson says it holds as far as that
+  does.
+- **Letters and terms added before writing:** $s$ for the system prompt (every lowercase Latin
+  letter is spent; Block 1's step never shares a page with it), the third event in words
+  $\text{cumple}$, $p_{\text{SFT}}$ with a latent tarea, $\omega_1$ as the tarea a specification
+  describes; the seeded $\hat{s}$ (an evaluator's score) is to be re-lettered by the evals lesson.
+  Terms: `especificación`, `cumplir` (set against `obedecer`: the opening case obeys and does not
+  meet the spec), `comprobación` (the format-only check; correctness is evaluation, lesson 23),
+  `guion` / `modelo guionizado` (the name STATUS asked to review, confirmed).
+- **`ModeloGuionizado`:** a guion of (the mensajes it expects, the respuesta it gives), a pointer,
+  `__call__(mensajes, herramientas=())` that returns the next respuesta, raises `ValueError` naming
+  the first mensaje that deviates and `RuntimeError` when the guion runs out. Mensajes are lesson
+  11's `(rol, contenido)` tuples; when Blocks 4–5 move to content blocks is still open. The class
+  lives in the cell, not frozen as a public asset like `modelo.py`; freeze it when a later lesson
+  first needs to load it.
+- **The delta §2 table** now says the first Block 3 lesson introduces the scripted model and says
+  why, and the first Block 4 lesson restates it in one clause.
+- **Lesson 17's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 19 (`cadena-de-pensamiento`) in prose with the usual comment, and promises only what
+  the gotcha allows: cost measured in the browser, benefit cited from large models.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors; both cells run in Pyodide in the Browser pane on `pnpm start`, output as the prose quotes;
+  all four quiz questions right and wrong (the numeric accepts 0.367, refuses 0.37); no horizontal
+  page scroll at 360 px (four displays, 403–601 px, scroll in their own boxes and fit the desktop
+  column). Not on a phone.

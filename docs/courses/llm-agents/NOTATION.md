@@ -382,6 +382,10 @@ in `dl-nlp`'s table, and the two never share a page.
 | $A_t \subseteq V$ | the allowed set at position $t$: the vocabulary entries $\mathcal{G}$ admits next, given the prefix |
 | $\hat{s}$ | a score — what an evaluator assigns one response |
 | $\text{acierto}$ | accuracy on an evaluation set, $\text{acierto}(D)$, as the first course wrote it |
+| $s$ | the prompt de sistema, a token sequence: the contenido of the mensaje of rol `sistema`. With Block 1 lesson 8's $e_{1:K}$ and $x$, the three pieces of a prompt, $\pi_\theta(y \mid s, e_{1:K}, x)$; each ejemplo is two mensajes, its caso as the usuario's and its respuesta as the asistente's, and $x$ is the last usuario mensaje (Block 3 lesson 1) |
+| $\pi_\theta(\text{cumple} \mid s, e_{1:K}, x)$ | the masa on the respuestas that meet an especificación: the third event in words, after Block 2 lesson 1's $\text{obedece}$ and $\text{buena}$. A respuesta can obey and not meet it, which is the lesson's opening case (Block 3 lesson 1) |
+| $p_{\text{SFT}}(\omega)$, $p_{\text{SFT}}(s \mid \omega)$ | Block 2 lesson 3's $p_{\text{SFT}}$ read with Block 1 lesson 8's latent tarea: the conversations of the ajuste in the place of that lesson's documents, each following a tarea $\omega$ and most opening on a prompt de sistema that describes it (Block 3 lesson 1) |
+| $\omega_1$ | the tarea an especificación describes, against every other $\omega$: Block 1 lesson 8's $\omega_1$, the first of two tareas compared, given that role (Block 3 lesson 1) |
 
 **The $\mathbf{q}$ collision, resolved by context and said once.** $\mathbf{q}$ is the attention
 query throughout the first course. In Block 1 here it always carries its position, $\mathbf{q}_t$
@@ -396,6 +400,21 @@ makes for $t$ and $d$ in the first course.
 and $\text{acierto}(D)$ as its symbol (its Block 2 lesson 10), and the evals lesson here measures
 the same quantity — the fraction a model gets right on a held-out set. One concept, one symbol,
 across both courses; the English *accuracy* is given once per lesson, as the acronym rule asks.
+
+**$s$ is the prompt de sistema, and Block 1's step never meets it** (`COURSE-C2-P1-03`, Block 3
+lesson 1). The block task md writes $p_\theta(y \mid s, e_{1:k}, x)$, and every lowercase Latin
+letter is spent somewhere in the course, so the choice is which collision to tolerate. $s$ was Block 1
+lesson 3's training step ($\theta_s$, $S$), and from this block on $\theta$ does not move: no page
+of Blocks 3–5 counts a step, and the lesson says so in a clause. The examples are $e_{1:K}$, not the
+task md's $e_{1:k}$ (Block 1 lesson 8's row). The model is written with the policy, $\pi_\theta$,
+because the prompt is a conversation read through the plantilla (Block 2 lesson 2), and the
+decomposition over tareas with $p_{\text{SFT}}$, because a prompt de sistema exists only in the
+conversations of an ajuste: the lesson states that the model imitates it, $\pi_\theta = p_{\text{SFT}}$,
+and that the derivation holds as far as that does. **The seeded $\hat{s}$ row above** (an
+evaluator's score) now collides with this $s$ inside the block, and its hat already broke Block 1
+lesson 3's rule that a hat means «estimated from a batch»: the evals lesson re-letters it before
+writing. $\text{cumple}$ is the third event in words, under the device Block 2 lesson 1 limited to
+two; like those, it names a set of respuestas, never the string <W>cumple</W>.
 
 ### Block 4 — El puente: de texto a acciones
 
