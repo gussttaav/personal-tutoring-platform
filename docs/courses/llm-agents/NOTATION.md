@@ -265,6 +265,7 @@ together, and the lesson states that shape when the cache first appears.
 | $Z(x)$ | the partition function, $\sum_{y} \pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}$: what makes $\pi^{\star}(\cdot \mid x)$ add up to 1, a sum over every response, and a function of the instrucción only (Block 2 lesson 6) |
 | $r_\theta(x, y)$ | the implicit reward of the policy, $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$: the reward whose $\pi^{\star}$ is $\pi_\theta$, up to $\kappa(x)$ (Block 2 lesson 6) |
 | $\mathcal{L}_{\text{DPO}}(\theta)$ | $\mathbb{E}_{(x, y_w, y_l) \sim p_{\text{pref}}}\left[-\log \sigma\big(r_\theta(x, y_w) - r_\theta(x, y_l)\big)\right]$: lesson 4's $\mathcal{L}_{\text{R}}$ with $r_\theta$ for $r_\phi$ (Block 2 lesson 6) |
+| $\texttt{<\|im\_start\|>}$, $\texttt{<\|im\_end\|>}$ | ChatML's two tokens especiales in Qwen2.5's vocabulary, ids 151644 and 151645: the first opens a mensaje of any rol, whose name follows as ordinary text and a line break; the second closes it, the mini-GPT's $\texttt{<\|fin\|>}$. Spelled as the vocabulary spells them, the $\texttt{<\|fin\|>}$ rule, with the underscore escaped; in prose `<W>\<\|im_end\|></W>` (Block 2 lesson 8) |
 
 **An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
 distribution, roman text names the set of respuestas it describes, and the probability is that

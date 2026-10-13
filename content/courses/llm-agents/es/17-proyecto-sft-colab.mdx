@@ -1,0 +1,297 @@
+---
+slug: proyecto-sft-colab
+title: "Proyecto: ajustar un modelo pequeño en Colab"
+block: 2
+order: 8
+minutes: 20
+summary: "El ajuste supervisado del mini-GPT, sobre un modelo de verdad: Qwen2.5-0.5B, 494 millones de parámetros, con 3 249 pares escritos en español por voluntarios. Ajustarlo entero pide 7.9 GB antes de la primera activación, casi el doble de lo que puede direccionar el Python del navegador, así que el proyecto es un cuaderno de Colab con GPU. Dentro del modelo espera un problema conocido: sus dos tokens de plantilla comparten fila con otros 290 que el preentrenamiento no distinguió, y el modelo no puede terminar una respuesta."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-por-que-colab
+    type: multi
+    prompt: 'Ajustar entero Qwen2.5-0.5B no cabe en una celda del curso. Marca lo que, por sí solo, ya lo impediría.'
+    options:
+      - { id: a, text: 'Los pesos, sus gradientes y las dos medias móviles de AdamW ocupan $7.9$ GB, y el Python del navegador, compilado a WebAssembly de 32 bits, no puede direccionar más de $2^{32}$ bytes.' }
+      - { id: b, text: 'Al ritmo del mini-GPT en el navegador, una época sobre los pares del cuaderno tardaría más de un mes, y una celda se corta a los diez segundos.' }
+      - { id: c, text: 'Pyodide no trae PyTorch, y sin PyTorch no hay forma de entrenar una red.' }
+      - { id: d, text: 'Los logits de una posición son $151\,936$ números, y un vector tan largo no cabe en una celda.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b), cada una por su cuenta. La (c) es verdad en su primera mitad y falsa en la segunda: el mini-GPT se entrenó en NumPy, sin PyTorch, y nada impide escribir igual la ida y la vuelta de Qwen y leer sus pesos del fichero. Escribir más código no da más memoria ni más velocidad, y eso es lo que falta. La (d) confunde lo grande con lo imposible: $151\,936$ números de cuatro bytes son unos 600 KB, y los logits de 512 posiciones, $0.31$ GB, caben en una pestaña. Lo que no cabe es todo lo demás a la vez.'
+    hint: 'Para cada opción, pregúntate si escribir más código la arreglaría.'
+  - id: q-que-se-cobra
+    type: multi
+    prompt: 'Con la plantilla de Qwen, un par del cuaderno termina en estos tokens: <W>\<|im_start|></W>, <W>assistant</W>, un salto de línea, los siete de <W>La nieve es blanca.</W>, <W>\<|im_end|></W> y otro salto de línea. Marca los que entran en la pérdida del ajuste.'
+    options:
+      - { id: a, text: '<W>\<|im_start|></W>' }
+      - { id: b, text: '<W>assistant</W> y el salto de línea que lo sigue' }
+      - { id: c, text: 'Los siete tokens de <W>La nieve es blanca.</W>' }
+      - { id: d, text: '<W>\<|im_end|></W>' }
+      - { id: e, text: 'El último salto de línea' }
+    answer: [c, d]
+    explanation: 'La (c) y la (d): el contenido de la respuesta y el token que la cierra. Los de la (a) y la (b) los escribe la plantilla antes de que el modelo tome la palabra, y son parte de lo que lee antes de responder; cobrarlos sería enseñarle a escribir algo que nunca va a tener que escribir. El de la (e) llega cuando la generación ya ha parado en <W>\<|im_end|></W>. Y la (d) es la que no puede faltar: en el modelo preentrenado, <W>\<|im_end|></W> empata con otros 291 tokens, y cerrar una respuesta es justo lo que no sabe hacer.'
+    hint: '¿Cuáles de esos tokens tendrá que escribir el modelo cuando le hagas una pregunta?'
+  - id: q-cota
+    type: single
+    prompt: 'En el modelo preentrenado, la fila de <W>\<|im_end|></W> es la de otros 291 tokens. Muestreas respuestas con el modelo tal cual, con $\tau = 1$ y sin ningún corte, hasta que sale <W>\<|im_end|></W>. ¿Qué puedes asegurar de su longitud?'
+    options:
+      - { id: a, text: 'Que de media tiene al menos 292 tokens, porque cada posición cierra con probabilidad $1/292$ como mucho.' }
+      - { id: b, text: 'Que tiene como mucho 292 tokens: en 292 posiciones, alguno de los tokens empatados tiene que salir.' }
+      - { id: c, text: 'Que de media tiene exactamente 292 tokens, porque cada posición cierra con probabilidad $1/292$.' }
+      - { id: d, text: 'Nada: la cota sólo vale para la generación voraz.' }
+    answer: a
+    explanation: 'La (a). La cota dice que $p_\theta(\texttt{<|im\_end|>} \mid x, y_{<j}) \le 1/292$ en cada posición. Con exactamente $1/292$ en cada una, el número de tokens hasta el primer cierre sería una geométrica de media $292$; con menos, tarda más. La (c) toma la cota por una igualdad, y las 292 entradas empatadas casi nunca se llevan entre todas la masa entera: donde una respuesta reservada acaba, el cuaderno mide para <W>\<|im_end|></W> $5.1 \times 10^{-8}$ de media. La (b) confunde un tope por posición con un tope de longitud. Y la (d) va al revés: la cota vale para cualquier manera de sacar tokens de $p_\theta$, y la generación voraz es el caso peor, en el que, en la práctica, la respuesta no se cierra.'
+    hint: 'Si una moneda sale cara con probabilidad $q$, ¿cuántas tiradas hacen falta, de media, para ver la primera?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Qwen2.5 Technical Report'
+    authors: 'Qwen: Yang, Yang, Zhang, Hui, Zheng y otros'
+    year: '2024'
+    venue: 'arXiv:2412.15115'
+    lang: en
+    url: 'https://arxiv.org/abs/2412.15115'
+    note: 'El informe del modelo del cuaderno. Su preentrenamiento leyó 18 billones de tokens, y la versión instruct añade encima lo que este bloque ha contado: un ajuste supervisado con más de un millón de ejemplos y varias etapas de refuerzo.'
+  - kind: paper
+    title: 'OpenAssistant Conversations: Democratizing Large Language Model Alignment'
+    authors: 'Köpf, Kilcher, von Rütte, Anagnostidis, Tam, Stevens y otros'
+    year: '2023'
+    venue: 'NeurIPS 2023 · arXiv:2304.07327'
+    lang: en
+    url: 'https://arxiv.org/abs/2304.07327'
+    note: 'Los datos del cuaderno: 161 443 mensajes en 35 idiomas, escritos y puntuados por más de 13 500 voluntarios. Cuenta cómo se clasificaron las respuestas, de donde sale la preferida que el cuaderno toma de cada conversación.'
+  - kind: paper
+    title: 'LoRA: Low-Rank Adaptation of Large Language Models'
+    authors: 'Hu, Shen, Wallis, Allen-Zhu, Li, Wang y otros'
+    year: '2021'
+    venue: 'ICLR 2022 · arXiv:2106.09685'
+    lang: en
+    url: 'https://arxiv.org/abs/2106.09685'
+    note: 'La salida cuando el ajuste entero no cabe, que esta lección enuncia sin derivar: congelar los pesos y entrenar dos matrices estrechas al lado de cada uno. En GPT-3, la memoria del ajuste baja de 1.2 TB a 350 GB.'
+---
+
+{/* COURSE-C2-P1-02 — Bloque 2, lección 8: el proyecto del bloque. Sin celdas: corre en el cuaderno
+    docs/courses/llm-agents/notebooks/ajuste-supervisado-qwen.ipynb, en Colab, sobre Qwen2.5-0.5B. */}
+
+De la cadena que el bloque ha montado sobre el mini-GPT, el primer eslabón dejó una predicción por
+comprobar. <Leccion slug="sft">El ajuste supervisado</Leccion> (*supervised fine-tuning*, SFT) le
+enseñó a un modelo preentrenado con $125\,789$ tokens de Galdós la forma de diez respuestas y ningún
+contenido, y la lección anticipó lo que pasaría en el otro extremo: con miles de pares variados y un
+modelo que lo ha leído casi todo, respuestas útiles. De ese otro extremo salen los modelos abiertos,
+y la referencia de la que parte todo lo que el bloque ha puesto después.
+
+¿Qué cuesta comprobarlo? Esa cuenta es lo primero que hace esta lección, porque decide dónde corre
+el proyecto. El modelo es Qwen2.5-0.5B, uno de los modelos abiertos más pequeños que se publican, y
+ajustarlo entero pide casi el doble de la memoria que el Python del navegador puede llegar a usar:
+su implementación es un cuaderno de Colab, con una GPU (*graphics processing unit*) prestada. Lo
+segundo es mirar dentro del modelo antes de ajustarlo, y lo que aparece es un problema que el bloque
+ya conoce.
+
+El cuaderno repite, línea por línea, el ajuste supervisado del mini-GPT: una plantilla con otros
+nombres, la misma máscara, la misma pérdida y el bucle de
+<Leccion slug="entrenar-un-mini-gpt">la lección sobre entrenar el mini-GPT</Leccion>. Cambian los
+números:
+
+| | el mini-GPT | Qwen2.5-0.5B |
+|---|---|---|
+| parámetros | $136\,704$ | $494\,032\,768$ |
+| entradas del vocabulario | $516$ | $151\,936$ |
+| texto del preentrenamiento | $125\,789$ tokens de una novela | $18 \times 10^{12}$ tokens |
+| pares del ajuste | $10$, escritos por mí | $3\,249$, escritos por voluntarios |
+| tokens especiales de la plantilla | $4$, sin entrenar | $2$, sin entrenar |
+| dónde se ajusta | una celda del navegador | un cuaderno de Colab, con GPU |
+
+La fila que decide el resultado es la tercera. La pérdida del ajuste sólo habla de los pares del
+conjunto, y lo que el modelo haga con cualquier otra instrucción lo deciden los pesos que comparten
+todas y el sitio del que partieron: es
+<Leccion slug="sft" ancla="lo-que-la-pérdida-no-dice">lo que la pérdida no dice</Leccion>. Para el
+mini-GPT, ese sitio era una novela, y diez pares de colores no tenían ningún contenido que sacar de
+ella. Qwen leyó en su preentrenamiento unos ciento cuarenta millones de veces más texto, en más de
+29 idiomas, el español entre ellos. El contenido ya está en sus pesos, y lo que los pares tienen que
+enseñarle es a sacarlo en forma de respuesta.
+
+<Callout type="intuition" title="La idea en una frase">
+El ajuste de un modelo de verdad es el del mini-GPT con otros números. Lo que cambia el resultado es
+de dónde parte: un modelo que ya sabe casi todo lo que va a decir, y que no sabe terminar una
+respuesta.
+</Callout>
+
+## Lo que cuesta ajustar 494 millones de parámetros
+
+Contemos primero lo que hay que mover. Qwen2.5-0.5B tiene $L = 24$ bloques de
+$d_{\text{model}} = 896$ y un vocabulario de $\lvert V \rvert = 151\,936$ entradas, y el fichero de
+sus pesos trae $N = 494\,032\,768$ parámetros. Más de la cuarta parte son la tabla de embeddings,
+atada a la salida como la del mini-GPT:
+
+$$
+\lvert V \rvert \cdot d_{\text{model}} = 151\,936 \cdot 896 = 136\,134\,656.
+$$
+
+El total sale del fichero y no de la cuenta por bloque de
+<Leccion slug="kv-cache">la lección sobre la caché</Leccion>, que aquí no da exacta: el perceptrón
+de Qwen tiene tres matrices y no dos, y sus cabezas comparten las claves y los valores por grupos.
+
+Entrenar pide más que los pesos. Cada parámetro lleva al lado su gradiente, y AdamW guarda por cada
+uno las dos medias móviles del `Adam` del mini-GPT, $\mathbf{m}_s$ y $\mathbf{v}_s$. Son cuatro
+números por parámetro, de cuatro bytes cada uno en coma flotante de 32 bits:
+
+$$
+4 \cdot 4 \cdot N = 16 \cdot 494\,032\,768 \approx 7.9 \times 10^{9} \ \text{bytes},
+$$
+
+y todavía no se ha guardado ni una activación. Las de la ida, que la vuelta necesita, crecen con la
+longitud de la conversación, y sólo los logits de una posición son ya $151\,936$ números: con 512
+posiciones, $0.31$ GB.
+
+Una pestaña del navegador no llega. Pyodide, el Python que ejecuta las celdas del curso, está
+compilado a WebAssembly de 32 bits: una dirección de memoria tiene 32 bits, y con ellas se numeran
+como mucho $2^{32}$ bytes, unos $4.3$ GB. Los pesos y sus gradientes ya ocupan $3.95$ de ellos. A Pyodide le
+falta también PyTorch, pero eso tendría arreglo, porque el mini-GPT se entrenó en NumPy sin él. La
+memoria, no.
+
+Ni el tiempo. La lección sobre entrenar el mini-GPT midió en el navegador algo menos de un
+milisegundo por token de ida y vuelta para sus $136\,448$ parámetros, y lo que cuesta un token es
+proporcional a $N$: es el $6N$ de <Leccion slug="leyes-de-escala">la lección sobre las leyes de
+escala</Leccion>. Qwen tiene $3\,621$ veces más parámetros, unos $3.6$ segundos por token. Los
+pares del cuaderno suman $788\,511$ tokens, y una sola época tardaría
+
+$$
+788\,511 \cdot 3.6 \ \text{s} \approx 2.8 \times 10^{6} \ \text{s},
+$$
+
+más de un mes con la pestaña abierta. Las celdas del curso se cortan a los diez segundos.
+
+En una GPU, las cuentas cambian de escala. El cálculo de esa época, en operaciones de coma flotante
+(*floating-point operations*, FLOPs), es el $C \approx 6ND$ de aquella lección con $D = 788\,511$:
+
+$$
+C \approx 6 \cdot 494\,032\,768 \cdot 788\,511 \approx 2.3 \times 10^{15}.
+$$
+
+La T4 que Colab presta gratis hace hasta $8.1 \times 10^{12}$ de esas operaciones por segundo en coma
+flotante de 32 bits. A pleno rendimiento son cinco minutos; en la práctica, más. Tiene 16 GB de memoria, y el ajuste cabe entero: los $7.9$ GB, y al lado las
+activaciones de una conversación cada vez.
+
+Si no cupiera, la salida habitual sería no mover los $N$ parámetros. LoRA (*low-rank adaptation*)
+los congela y entrena, al lado de cada matriz, dos matrices estrechas cuyo producto se le suma, y
+los gradientes y las medias móviles se quedan en una fracción mínima de los $7.9$ GB. Aquí no hace
+falta, y queda fuera del curso.
+
+## La misma pérdida, con la plantilla de Qwen
+
+Qwen usa ChatML (*Chat Markup Language*), la plantilla que
+<Leccion slug="plantilla-de-chat">la lección sobre la plantilla de chat</Leccion> nombró como la más
+extendida entre los modelos abiertos. Tiene dos tokens especiales y una diferencia con la del
+mini-GPT: el rol no tiene token propio. Cada mensaje abre con <W>\<|im_start|></W>, sigue con el
+nombre del rol escrito en tokens corrientes, <W>user</W> o <W>assistant</W>, y un salto de línea, y
+cierra con <W>\<|im_end|></W>, el token de fin de mensaje, y otro salto.
+
+La máscara es la de aquella lección: 1 en el contenido de la respuesta y en su
+<W>\<|im_end|></W>, 0 en todo lo demás, el rol del asistente y su salto incluidos, porque los
+escribe la plantilla antes de que el modelo tome la palabra. En la respuesta de la nieve se cobran
+ocho tokens, los siete de <W>La nieve es blanca.</W> y el <W>\<|im_end|></W>. La pérdida es la
+$\mathcal{L}_{\text{SFT}}$ de la lección sobre el ajuste supervisado sin cambiar un símbolo: en cada
+paso, la suma de $-\log p_\theta$ sobre los tokens cobrados de un *batch*, dividida entre cuántos
+son.
+
+### Dos filas que el preentrenamiento no distinguió
+
+Ahí está el problema conocido. En el modelo preentrenado, la fila de <W>\<|im_end|></W> en la tabla
+de embeddings es, hasta el redondeo, la de <W>\<|im_start|></W>, y la de las 290 entradas que van
+detrás hasta el final de la tabla: otros especiales que Qwen reserva para otros usos y filas de
+relleno que no corresponden a ningún token. El cuaderno lo comprueba: las 292 filas miden entre
+$0.3009$ y $0.3010$, y el coseno entre dos cualesquiera es 1 hasta la cuarta cifra. El
+preentrenamiento no distinguió nunca entre ellas.
+
+Con la tabla atada, el logit de una entrada es $z_v = \mathbf{e}_v^{\top}\mathbf{h}$, y filas iguales
+dan logits iguales en cualquier posición. Las 292 entradas empatan, y el softmax les da a todas la
+misma probabilidad. Entre todas no pasan de 1, así que cada una, y <W>\<|im_end|></W> con ellas,
+se queda en
+
+$$
+p_\theta(\texttt{<|im\_end|>} \mid x, y_{<j}) \le \frac{1}{292} \approx 0.0034
+$$
+
+en cada posición de cualquier respuesta. Es la cota de la lección sobre la plantilla, $1/516$ para
+un especial del mini-GPT, con otra razón detrás: allí, las filas nuevas empezaban en la media de la
+tabla; aquí, el preentrenamiento las ha dejado iguales.
+
+La consecuencia se ve en cuanto el modelo escribe. Si cada posición cierra con probabilidad $1/292$
+como mucho, una respuesta muestreada tiene de media 292 tokens o más, y la generación voraz, que
+sólo elegiría <W>\<|im_end|></W> si ninguna otra entrada pasara de $1/292$, no la cierra. El modelo
+preentrenado no sabe terminar. De todo lo que el ajuste le enseña, lo más nuevo es el token que
+cierra cada respuesta, y ningún texto se lo enseñó antes.
+
+## El cuaderno, y qué mirar mientras corre
+
+El proyecto no corre sobre tu mini-GPT ni sobre ningún modelo del navegador. Corre sobre
+Qwen2.5-0.5B en su versión preentrenada, la que Qwen publica como *base*, frente a la *instruct*, ya
+ajustada. Su licencia es Apache 2.0, y el cuaderno lo carga fijado a un *commit*, igual que fija las versiones de las bibliotecas.
+
+<ColabLink notebook="github/gussttaav/ai-notebooks/blob/ce958eab2281b74c93ed4913778cfda34739f07c/notebooks/ajuste-supervisado-qwen.ipynb">
+Abrir el cuaderno en Colab
+</ColabLink>
+
+Antes de ejecutar nada, elige en el menú de Colab un entorno con GPU; la segunda celda dice cuál te
+ha tocado. Después, el cuaderno recorre esta lección en orden. Imprime las cuentas de la primera
+sección, escribe la plantilla a mano y la compara con la que trae la biblioteca (que, si no le das
+un mensaje de sistema, añade uno en inglés que nadie ha escrito), y mide las 292 filas. Le hace al
+modelo preentrenado cinco instrucciones que he escrito yo, y ninguna de las cinco respuestas llega a
+su <W>\<|im_end|></W>: cuatro repiten la instrucción una y otra vez, y la quinta da vueltas a una
+frase.
+
+Los pares salen de OpenAssistant Conversations, un conjunto que escribieron y puntuaron más de
+$13\,500$ voluntarios en 2023, en 35 idiomas, con licencia Apache 2.0. De cada conversación en
+español, el cuaderno toma el primer mensaje y la respuesta que los voluntarios pusieron primera al
+compararla con las demás: un par de ajuste supervisado escogido con una comparación, como las de
+<Leccion slug="de-donde-salen-las-preferencias">la lección sobre de dónde salen las
+preferencias</Leccion>. Descarta las conversaciones de más de 512 tokens en vez de cortarlas,
+porque una respuesta cortada no llega a su <W>\<|im_end|></W>. Quedan $3\,249$ pares con
+$788\,511$ tokens, de los que se cobra el 86 %, y los 169 de la parte de validación
+quedan reservados para medir.
+
+El ajuste es una época, 203 pasos de 16 conversaciones, con el bucle de la lección sobre entrenar
+el mini-GPT: AdamW, recorte del gradiente a norma 1 y su calendario, calentamiento y coseno hasta
+la décima parte. La tasa máxima es $\eta_{\max} = 2 \times 10^{-5}$, 250 veces menos que la del
+ajuste del mini-GPT, que tenía que verse en doce pasos y se llevó la novela por delante; ésta tiene
+que dejar en su sitio lo que Qwen sabe. Las conversaciones pasan de una en una y cada una suma su
+gradiente al del *batch*, así que ninguna se rellena. Al final, la celda imprime cuánto ha tardado y
+la memoria que llegó a ocupar la GPU: compárala con los $7.9$ GB.
+
+El cuaderno mide tres números antes del ajuste y después. La pérdida en las respuestas reservadas,
+en nats por token cobrado: antes, $1.75$, cuando repartir por igual costaría
+$\ln 151\,936 \approx 11.9$. El texto de las respuestas ya lo predice bien, aunque no sepa
+escribirlo en su turno. La probabilidad media que da a <W>\<|im_end|></W> justo donde una respuesta
+reservada acaba: antes, $5.1 \times 10^{-8}$, más de sesenta mil veces por debajo de la cota. Y la
+pérdida en el final de *Marianela*, de donde salió el trozo con que la lección sobre el ajuste
+supervisado midió el olvido: antes, $3.24$ nats por token de Qwen, un número que sólo se compara con
+el suyo de después. Mira cuánto se mueve cada uno, y vuelve a darle las cinco instrucciones. La
+última es la pregunta de la Gran Muralla de la lección anterior: fíjate en qué contesta, y
+pregúntate de dónde lo saca.
+
+## Comprueba tu intuición
+
+Tres preguntas: por qué esto no cabe en el navegador, qué tokens cobra el ajuste y qué asegura la
+cota.
+
+<Quiz id="q-por-que-colab" />
+
+<Quiz id="q-que-se-cobra" />
+
+<Quiz id="q-cota" />
+
+---
+
+El ajuste supervisado hace obedecer a un modelo en la forma de sus pares. Lo que el modelo dice, en
+cambio, sale de dos sitios y de ninguno más: de lo que sus pesos guardaron del preentrenamiento y de
+cómo escribían quienes redactaron las respuestas. Nada en el ajuste comprueba que sea verdad. Si los
+pesos no saben si la Muralla se ve desde la Luna, la respuesta tendrá igual forma de respuesta.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la primera lección del
+    bloque 3 (slug el-prompt-es-una-especificacion), envolver «La lección siguiente» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+Queda una palanca que no toca los pesos: lo que va en el prompt. Un prompt puede darle al modelo lo
+que sus pesos no saben, pedirle una respuesta que se pueda comprobar y decirle con exactitud qué se
+espera de ella. La lección siguiente abre el bloque 3 por ahí, con el prompt como especificación.

@@ -1,6 +1,6 @@
 # P1-02 — Block 2: De predecir texto a seguir instrucciones
 
-**Tag:** `COURSE-C2-P1-02` · **Effort:** XL · **Owner:** _tbd_ · **Status:** 🔄
+**Tag:** `COURSE-C2-P1-02` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ✅
 **Depends on:** P1-01 · Block 2 widgets (built in this task) · the Colab notebook (written here)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** derivation
 **Runs on:** the mini-GPT (every method is applied to it in a cell); Colab for the project
@@ -54,7 +54,7 @@ you *put in the prompt* is the next block.
 - [x] 14. `rlhf`
 - [x] 15. `dpo`
 - [x] 16. `de-donde-salen-las-preferencias`
-- [ ] 17. `proyecto-sft-colab`
+- [x] 17. `proyecto-sft-colab`
 
 ## Mathematical content
 

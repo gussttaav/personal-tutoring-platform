@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (7/8) | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -740,7 +740,7 @@ for the reviewer of the block:
   360 px (the trace
   table scrolls 36 px inside its own box at 360). The pane carried the English locale cookie again.
 
-**COURSE-C2-P1-02** — In progress (started 2026-10-01). Lesson 10 `predecir-no-es-obedecer` authored on
+**COURSE-C2-P1-02** — Closed (2026-10-13; started 2026-10-01). Lesson 10 `predecir-no-es-obedecer` authored on
 `staging`, the block's first. 2 000 words, 7 display equations, no widget (the block md assigns
 none), 1 cell (35 lines), 4 quiz, no challenge, 4 readings (Ouyang et al. 2022, Askell et al. 2021,
 Reynolds & McDonell 2021, Wei et al. 2022 / FLAN; titles and arXiv links checked). Runs on the
@@ -1066,3 +1066,53 @@ Gustavo at review:
   `pnpm start` (the numeric accepts 0.8448, refuses 0.849 and 0.84); no horizontal page scroll at
   360 px (the two displays, 406 and 483 px, scroll in their own boxes and fit the desktop column;
   tables 328 px). Not on a phone.
+
+Lesson 17 `proyecto-sft-colab` authored on `staging` (2026-10-13), the block's last: Block 2 is
+closed. 1 994 words (at the target's top), 5 display equations, no widget, **no cell** (hasCode:
+false, the `fine-tuning-colab` precedent), 3 quiz, no challenge, 3 readings (Qwen2.5 technical
+report, OpenAssistant Conversations, LoRA; arXiv pages checked, LoRA's 1.2 TB → 350 GB in its
+§4.2, OASST at NeurIPS 2023 Datasets and Benchmarks). `minutes: 20` (lint ≈20). Decisions,
+confirmed by Gustavo at review:
+- **The notebook:** `docs/courses/llm-agents/notebooks/ajuste-supervisado-qwen.ipynb`, pushed to
+  `gussttaav/ai-notebooks` (`ce958ea`, with its README entry) and linked at that commit. Full
+  fine-tuning in float32 of **Qwen2.5-0.5B** in its pretrained (*base*) version, Apache 2.0, at Hub
+  commit `060db649…`; data: the Spanish part of **OpenAssistant `oasst1`** (Apache 2.0, commit
+  `fdf72ae0…`), first message + the reply the volunteers ranked first, conversations over 512 tokens
+  dropped rather than cut (3 249 of 3 716 pairs, 788 511 tokens, 86 % counted; 169 held out from
+  the validation split). Pinned `transformers==5.17.0`, `tokenizers==0.23.3`,
+  `huggingface_hub==1.33.0`; `torch` is Colab's. The loop is lesson 3's by hand (AdamW, clip at 1,
+  warm-up + cosine to a tenth), one epoch of 203 steps of 16 conversations at η_max = 2e-5, one
+  conversation at a time with the gradient accumulated (no padding, no gradient checkpointing),
+  the loss divided by the batch's counted tokens. The template is ChatML written by hand and
+  checked against `apply_chat_template` (which adds an English system message when none is given).
+- **LoRA is the stated fallback and was not needed:** 16 bytes per parameter = 7.9 GB, plus
+  activations measured at ≈3.6 GB for a 512-token conversation (saved-tensor hooks, CPU, an upper
+  bound) fit the T4. Gustavo ran the notebook on Colab and it works.
+- **The finding the lesson is built on:** in the pretrained model the rows of `<|im_start|>`,
+  `<|im_end|>` and the 290 entries after them are, up to bf16 rounding, one vector (norms
+  0.3009–0.3010, cosine 1.0000), so with the tied table p(`<|im_end|>`) ≤ 1/292 at every position:
+  lesson 11's 1/516 bound with another cause. The base model never closes a response (greedy: four
+  of the five test instructions echo the instruction in a loop, the fifth circles a phrase).
+- **The «before» numbers, from the notebook's own code on CPU float32:** held-out responses 1.750
+  nats per counted token; mean p(`<|im_end|>`) where a held-out response ends 5.1e-08; the last
+  6 000 characters of *Marianela* 3.237 nats per Qwen token. No «after» number is quoted, as in
+  `fine-tuning-colab`.
+- **Why not in the browser, with the numbers:** 7.9 GB against Pyodide's 2³² bytes (wasm32);
+  lesson 3's «algo menos de un milisegundo por token» × 3 621 → ≈3.6 s per token, 2.8 × 10⁶ s for
+  the epoch; on the T4, C ≈ 6ND ≈ 2.3 × 10¹⁵ FLOPs, five minutes at its 8.1 TFLOPS. Pyodide 0.29.3
+  has no PyTorch, and the lesson (and a quiz) says that alone would not stop it.
+- **Terms and symbols added before writing:** `modelo preentrenado` (Qwen's *base* / *instruct*
+  named once as labels; «modelo base» refused, it is the `referencia` row's) and `cuaderno` in the
+  delta's §4; the two ChatML tokens in `NOTATION.md`. «revisión» is avoided for a pinned commit
+  (Constitutional AI's word since lesson 16).
+- **Proposed, not applied:** the delta's §2 table has three implementations of `modelo`; this
+  lesson runs on a fourth (an open pretrained model in a Colab notebook) and says so in prose
+  before the link.
+- **Lesson 16's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names Block 3's first lesson (`el-prompt-es-una-especificacion`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors; all three quiz questions right and wrong in the Browser pane on `pnpm start`; no
+  horizontal page scroll at 360 px (displays up to 397 px and the 392 px table scroll in their own
+  boxes; all fit the 650 px desktop column). The notebook ran end to end on CPU with a tiny
+  stand-in model for the training cells, and through the «before» measurements with the real one;
+  the GPU run is Gustavo's. Not on a phone.
