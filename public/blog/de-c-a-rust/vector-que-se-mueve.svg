@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 362" width="760" height="362" role="img"
+ aria-label="Tres filas que muestran la memoria del heap en el ejemplo primero.c. Fila 1, antes de push(5): un bloque de cuatro enteros, 1, 2, 3 y 4; v.datos y primero apuntan a su primera casilla. Fila 2, si detrás del bloque no hay nada: realloc lo estira en el mismo sitio hasta ocho casillas, con el 5 en la quinta; v.datos y primero siguen apuntando al mismo 1, así que el programa imprime 1 por suerte. Fila 3, si detrás hay otra reserva, la cadena serie: realloc pide un bloque nuevo más adelante, copia los cinco enteros y libera el viejo; v.datos apunta al bloque nuevo, pero primero sigue apuntando al viejo, ya liberado, y lee basura.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.12); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.12); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  .mo.d { fill: #86948a; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; stroke-width: 1.5; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-width: 1.5; marker-end: url(#ax); }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .sep { stroke: #2a2a2c; stroke-width: 1; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="lb" x="16.0" y="62.0">Antes de push(5)</text>
+<text class="sb" x="16.0" y="78.0">cuatro enteros, bloque lleno</text>
+<text class="sb" x="250.0" y="104.0">heap</text>
+<line class="gl" x1="242.0" y1="75.0" x2="744.0" y2="75.0"/>
+<rect class="bx m" x="250.0" y="62.0" width="136.0" height="26.0" rx="3"/>
+<text class="mo" x="267.0" y="79.5" style="text-anchor:middle">1</text>
+<line class="ed" x1="284.0" y1="62.0" x2="284.0" y2="88.0"/>
+<text class="mo" x="301.0" y="79.5" style="text-anchor:middle">2</text>
+<line class="ed" x1="318.0" y1="62.0" x2="318.0" y2="88.0"/>
+<text class="mo" x="335.0" y="79.5" style="text-anchor:middle">3</text>
+<line class="ed" x1="352.0" y1="62.0" x2="352.0" y2="88.0"/>
+<text class="mo" x="369.0" y="79.5" style="text-anchor:middle">4</text>
+<text class="mo m" x="267.0" y="26.0" style="text-anchor:middle">v.datos</text>
+<path class="ar m" d="M267.0,31.0 L267.0,59.0"/>
+<text class="mo m" x="345.0" y="26.0" style="text-anchor:middle">primero</text>
+<path class="ar m" d="M345.0,31.0 L274.0,59.0"/>
+<line class="sep" x1="16.0" y1="120.0" x2="744.0" y2="120.0"/>
+<text class="lb" x="16.0" y="180.0">Si detrás no hay nada</text>
+<text class="sb" x="16.0" y="196.0">realloc estira el bloque</text>
+<line class="gl" x1="242.0" y1="193.0" x2="744.0" y2="193.0"/>
+<rect class="bx m" x="250.0" y="180.0" width="272.0" height="26.0" rx="3"/>
+<text class="mo" x="267.0" y="197.5" style="text-anchor:middle">1</text>
+<line class="ed" x1="284.0" y1="180.0" x2="284.0" y2="206.0"/>
+<text class="mo" x="301.0" y="197.5" style="text-anchor:middle">2</text>
+<line class="ed" x1="318.0" y1="180.0" x2="318.0" y2="206.0"/>
+<text class="mo" x="335.0" y="197.5" style="text-anchor:middle">3</text>
+<line class="ed" x1="352.0" y1="180.0" x2="352.0" y2="206.0"/>
+<text class="mo" x="369.0" y="197.5" style="text-anchor:middle">4</text>
+<line class="ed" x1="386.0" y1="180.0" x2="386.0" y2="206.0"/>
+<text class="mo" x="403.0" y="197.5" style="text-anchor:middle">5</text>
+<line class="ed" x1="420.0" y1="180.0" x2="420.0" y2="206.0"/>
+<line class="ed" x1="454.0" y1="180.0" x2="454.0" y2="206.0"/>
+<line class="ed" x1="488.0" y1="180.0" x2="488.0" y2="206.0"/>
+<text class="mo m" x="267.0" y="144.0" style="text-anchor:middle">v.datos</text>
+<path class="ar m" d="M267.0,149.0 L267.0,177.0"/>
+<text class="mo m" x="345.0" y="144.0" style="text-anchor:middle">primero</text>
+<path class="ar m" d="M345.0,149.0 L274.0,177.0"/>
+<text class="tx" x="538.0" y="197.5">primero = 1, por suerte</text>
+<line class="sep" x1="16.0" y1="238.0" x2="744.0" y2="238.0"/>
+<text class="lb" x="16.0" y="298.0">Si detrás hay otra reserva</text>
+<text class="sb" x="16.0" y="314.0">realloc lo muda</text>
+<line class="gl" x1="242.0" y1="311.0" x2="744.0" y2="311.0"/>
+<rect class="bx x" x="250.0" y="298.0" width="136.0" height="26.0" rx="3"/>
+<text class="mo d" x="318.0" y="315.5" style="text-anchor:middle">· · · ·</text>
+<text class="sb" x="318.0" y="340.0" style="text-anchor:middle">liberado: malloc lo reutiliza</text>
+<rect class="bx s" x="400.0" y="298.0" width="62.0" height="26.0" rx="3"/>
+<text class="mo d" x="431.0" y="315.5" style="text-anchor:middle">"serie"</text>
+<rect class="bx m" x="476.0" y="298.0" width="272.0" height="26.0" rx="3"/>
+<text class="mo" x="493.0" y="315.5" style="text-anchor:middle">1</text>
+<line class="ed" x1="510.0" y1="298.0" x2="510.0" y2="324.0"/>
+<text class="mo" x="527.0" y="315.5" style="text-anchor:middle">2</text>
+<line class="ed" x1="544.0" y1="298.0" x2="544.0" y2="324.0"/>
+<text class="mo" x="561.0" y="315.5" style="text-anchor:middle">3</text>
+<line class="ed" x1="578.0" y1="298.0" x2="578.0" y2="324.0"/>
+<text class="mo" x="595.0" y="315.5" style="text-anchor:middle">4</text>
+<line class="ed" x1="612.0" y1="298.0" x2="612.0" y2="324.0"/>
+<text class="mo" x="629.0" y="315.5" style="text-anchor:middle">5</text>
+<line class="ed" x1="646.0" y1="298.0" x2="646.0" y2="324.0"/>
+<line class="ed" x1="680.0" y1="298.0" x2="680.0" y2="324.0"/>
+<line class="ed" x1="714.0" y1="298.0" x2="714.0" y2="324.0"/>
+<text class="mo m" x="493.0" y="262.0" style="text-anchor:middle">v.datos</text>
+<path class="ar m" d="M493.0,267.0 L493.0,295.0"/>
+<text class="mo x" x="345.0" y="262.0" style="text-anchor:middle">primero</text>
+<path class="ar x" d="M345.0,267.0 L274.0,295.0"/>
+<text class="tx x" x="376.0" y="262.0">= basura</text>
+</svg>

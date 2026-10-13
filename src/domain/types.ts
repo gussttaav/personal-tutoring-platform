@@ -538,11 +538,13 @@ export type BlogTopic =
   | "evaluacion"
   | "grafos"
   | "indices"
+  | "lenguajes"
   | "llm"
   | "nlp"
   | "optimizacion"
   | "rag"
   | "rendimiento"
+  | "seguridad"
   | "sql"
   | "tokenizacion";
 

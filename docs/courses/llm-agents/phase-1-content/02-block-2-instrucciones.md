@@ -53,7 +53,7 @@ you *put in the prompt* is the next block.
 - [x] 13. `modelo-de-recompensa`
 - [x] 14. `rlhf`
 - [x] 15. `dpo`
-- [ ] 16. `de-donde-salen-las-preferencias`
+- [x] 16. `de-donde-salen-las-preferencias`
 - [ ] 17. `proyecto-sft-colab`
 
 ## Mathematical content

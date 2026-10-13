@@ -126,7 +126,7 @@ export default function Chat() {
     const saved = loadFromSession();
     return saved ?? initialMessages;
   });
-  // REFACTOR-P2-03: Server-side session ID for Gemini history continuity.
+  // REFACTOR-P2-03: Server-side session ID for chat history continuity.
   // localStorage keeps the session alive across page reloads.
   const [sessionId,       setSessionId]       = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem(LOCAL_STORAGE_KEY) : null

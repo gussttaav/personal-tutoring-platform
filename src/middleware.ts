@@ -66,6 +66,14 @@ const LANDING_MARKER = "x-landing-rewrite";
 const STATIC_FILE =
   /\.(?:ico|json|png|py|sql|svg|txt|webmanifest|webp|jpe?g|gif|avif|mp4|webm|pdf|xml|css|js|map|woff2?|ttf|eot)$/i;
 
+/** BLOG-16: a post's own files live in /public/blog/<slug>/, and some of them are
+ *  source code (the C-and-Rust post publishes .c, .rs and .sh). Under /blog/<slug>/
+ *  ANY extension is a file: the only blog routes are /blog and /blog/<slug>, never
+ *  deeper. Scoped to that prefix rather than added to STATIC_FILE because `.rs` and
+ *  `.sh` are also country domains, and an admin path ending in a student's
+ *  `…%40example.rs` must keep its locale routing (PRICING-STUDENT-01). */
+const BLOG_POST_FILE = /^\/blog\/[^/]+\/.+\.[a-z0-9]+$/i;
+
 /** LANDING-01: an in-app navigation (link, reload, RSC fetch) is `same-origin`;
  *  everything else — typed URL, bookmark, external link, no header — is a landing. */
 function isLanding(req: NextRequest): boolean {
@@ -99,7 +107,8 @@ export function middleware(req: NextRequest) {
   const isUiPath =
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/monitoring") &&
-    !STATIC_FILE.test(pathname);
+    !STATIC_FILE.test(pathname) &&
+    !BLOG_POST_FILE.test(pathname);
 
   if (isUiPath) {
     // Inject the request ID onto the incoming request headers so server

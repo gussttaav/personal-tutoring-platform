@@ -55,7 +55,7 @@ const nextConfig = {
           "default-src 'self'",
           `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
+          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us
@@ -79,7 +79,7 @@ const nextConfig = {
           // on preview/staging deployments only (not production).
           `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
+          `connect-src 'self' https://www.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us
@@ -104,6 +104,16 @@ const nextConfig = {
           { key: "Referrer-Policy",           value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy",        value: "camera=(), microphone=(), geolocation=()" },
           { key: "Content-Security-Policy",   value: csp.join("; ") },
+        ],
+      },
+      // BLOG-16: a post's runnable examples (public/blog/<slug>/ejemplos/) are source
+      // code to read in the browser. By extension they would be served as `application/x-sh`
+      // (a download) or, for `.rs`, `application/rls-services+xml`, which the browser
+      // tries to parse as XML and fails.
+      {
+        source: "/blog/:slug/ejemplos/:file*",
+        headers: [
+          { key: "Content-Type", value: "text/plain; charset=utf-8" },
         ],
       },
       // Session page — allow camera/mic + enable SharedArrayBuffer for Zoom SDK.

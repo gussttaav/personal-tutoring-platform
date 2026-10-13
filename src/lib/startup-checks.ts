@@ -46,7 +46,7 @@ const REQUIRED_ENV_VARS = [
   // App
   "NEXT_PUBLIC_BASE_URL",
   "CANCEL_SECRET",
-  "GEMINI_API_KEY",
+  "ANTHROPIC_API_KEY", // CHAT-CLAUDE-01: chat assistant (was GEMINI_API_KEY)
   "TUTOR_EMAIL",
 
   // Admin access (comma-separated emails — REL-03)

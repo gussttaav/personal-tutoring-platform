@@ -272,6 +272,13 @@ this work.
 | a comparison whose factor has fallen near 0, so that it barely moves the gradient | `apagarse` (Block 2 lesson 6): «la comparación se apaga» | callarse; saturarse (the first course's word for a sigmoid at its flat ends); desaparecer |
 | $\sum_y \pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}$, $Z(x)$: what divides the optimal policy so that it adds up to 1 | `función de partición` (Block 2 lesson 6), with *partition function* given once | constante de normalización as the term (it is what it does, fine as the gloss); normalizador; constante alone (it changes with $x$) |
 | $r_\theta(x, y) = \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$: the reward a policy defines through its reference | `recompensa implícita` (Block 2 lesson 6), with *implicit reward* given once | recompensa oculta, recompensa latente; modelo de recompensa (that is $r_\phi$, a network trained apart: the lesson's claim is that the policy is one, and it says so in those words once) |
+| the document that tells anotadores what «better» means, written by whoever trains the model | `guía` (de anotación) (Block 2 lesson 7), with *labeling guidelines* given once | instrucciones (that is the `instrucción` row's: what the model receives); directrices, normas, manual as the term |
+| InstructGPT's three criteria for a respuesta: *helpful*, *truthful*, *harmless* | `utilidad`, `veracidad`, `inocuidad` (Block 2 lesson 7) | ayuda; honestidad as the criterion (fine for the CAI principle that says *honest*); seguridad (*safety*, a whole field, out of the block's scope) |
+| a written list of the qualities a model must prefer in a respuesta, applied by a model to criticise, revise and compare respuestas; one entry of it | `constitución`, `principio` (Block 2 lesson 7); *Constitutional AI* is the method's proper name, never translated | reglas, normas, código, valores as the term; regla for a principio |
+| the two requests of Constitutional AI's first phase: the model says what is wrong with its last respuesta according to a principio, then rewrites it | `crítica`, `revisión` · `criticar`, `revisar` (Block 2 lesson 7) | corrección, corregir as the term (lesson 6's bridge says «critique y corrija» in passing, before the term existed); reescritura (fine as the gloss of revisión) |
+| a model that compares two respuestas in place of an anotador | `juez` (Block 2 lesson 7), «un modelo que juzga» in prose; Block 3's evals use the same word for the same object put to measuring | evaluador; anotador artificial; modelo de retroalimentación (the CAI paper's *feedback model*); juez for the reward model or the anotador (those rows refuse it) |
+| what a model is when it writes what a given source of comparisons prefers; the work of making it so | `alineado` (con), `alineamiento` (Block 2 lesson 7), with *alignment* given once | alineación (a team's line-up); ajustado (that is `ajustar`, SFT's verb); obediente (`obedecer` is lesson 1's, and a model can obey and still not be aligned) |
+| a policy that tells whoever asks what they want to hear, agreeing with them where they are wrong, because the comparisons reward it | `complacencia`, `complaciente` (Block 2 lesson 7), with *sycophancy* given once | adulación (flattery is narrower: agreeing with a false belief flatters nobody); servilismo; *sycophancy* in prose |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,
@@ -327,8 +334,11 @@ Unchanged from the shared §5 — expand on **first use, in every lesson**, then
 course has more of them: *aprendizaje por refuerzo con retroalimentación humana (reinforcement
 learning from human feedback, RLHF)*, *optimización directa de preferencias (direct preference
 optimization, DPO)*, *generación aumentada por recuperación (retrieval-augmented generation,
-RAG)*, *proximal policy optimization (PPO)*, *Model Context Protocol (MCP)*. The Spanish expansion
-is given where one is in use; where none is (PPO, MCP), the English expansion alone, once.
+RAG)*, *proximal policy optimization (PPO)*, *Model Context Protocol (MCP)*, *aprendizaje por refuerzo
+con retroalimentación de inteligencia artificial (reinforcement learning from AI feedback,
+RLAIF)*, *aprendizaje por refuerzo con recompensas verificables (reinforcement learning with
+verifiable rewards, RLVR)*, *group relative policy optimization (GRPO)*. The Spanish expansion
+is given where one is in use; where none is (PPO, MCP, GRPO), the English expansion alone, once.
 
 ## 5. Product names (added)
 

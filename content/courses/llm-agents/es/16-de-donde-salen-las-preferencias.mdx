@@ -1,0 +1,282 @@
+---
+slug: de-donde-salen-las-preferencias
+title: "De dónde salen las preferencias: humanos, constituciones y modelos"
+block: 2
+order: 7
+minutes: 20
+summary: "RLHF y DPO no juzgan sus comparaciones: las reproducen. Quién las escribe decide lo que la política prefiere, y hay tres fuentes: personas con una guía, un modelo que critica y revisa sus respuestas según una constitución, y un modelo que juzga. En papel, una mayoría del 60 % pasa a escribirse el 98 % de las veces con β = 0.1. «Alineado» quiere decir alineado con alguien, y no quiere decir correcto."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-la-constitucion
+    type: single
+    prompt: 'En Constitutional AI, ¿qué cambia respecto de la cadena de InstructGPT que ha seguido este bloque?'
+    options:
+      - { id: a, text: 'Quién escribe los datos de inocuidad. Los pares del ajuste supervisado y las comparaciones del modelo de recompensa salen de un modelo guiado por los principios; las pérdidas son las mismas.' }
+      - { id: b, text: 'El modelo de recompensa desaparece: la constitución ocupa su lugar, como la recompensa implícita en DPO.' }
+      - { id: c, text: 'El modelo final lleva la constitución en su prompt de sistema y la consulta antes de cada respuesta.' }
+      - { id: d, text: 'Las personas desaparecen del todo, también de las comparaciones de utilidad.' }
+    answer: a
+    explanation: 'La (a). La primera fase es el ajuste supervisado de <Leccion slug="sft">la lección sobre el ajuste supervisado</Leccion>, sobre respuestas que un modelo ha criticado y revisado; la segunda entrena un modelo de recompensa con la pérdida de <Leccion slug="modelo-de-recompensa">la lección sobre el modelo de recompensa</Leccion>, con la probabilidad del juez en el lugar de la proporción de anotadores, y después hace RLHF. La (b) es falsa: hay modelo de recompensa. La (c) también: los principios sirven para escribir los datos, y el modelo final no los lee. Y la (d), porque las comparaciones de utilidad siguieron siendo de personas.'
+    hint: 'Recorre las dos fases y pregúntate, en cada una, qué pérdida se usa y quién escribe los datos.'
+  - id: q-juez-en-dos-ordenes
+    type: numeric
+    prompt: 'Un juez compara $y_A$ e $y_B$ dos veces. Con $y_A$ delante, da $0.9$ a $y_A$; con $y_B$ delante, da $0.5$ a cada una. La etiqueta es la media de las dos veces, $0.7$ para $y_A$. Con una referencia que escribe las dos por igual y $\beta = 0.5$, ¿qué fracción de las veces que la política óptima escribe una de las dos escribe $y_A$?'
+    answer: 0.845
+    tolerance: 0.003
+    explanation: 'Un $0.845$. El margen óptimo es $\ln(0.7/0.3) \approx 0.85$, y el cociente de la política óptima, $e^{\text{margen}/\beta} = (7/3)^{2} = 49/9 \approx 5.44$, así que escribe $y_A$ $49$ veces de cada $58$. Si el juez sólo hubiera comparado con $y_A$ delante, la etiqueta sería $0.9$, el cociente $9^{2} = 81$ y la fracción $0.988$: el sesgo de posición, multiplicado por la política. Preguntar en los dos órdenes no quita el sesgo, pero lo convierte en una etiqueta más cerca de $0.5$ que ya no favorece a ninguna de las dos por ir delante.'
+    hint: 'Calcula el margen con la etiqueta como proporción de anotadores, y después el cociente $e^{\text{margen}/\beta}$ de la sección del 60 %.'
+  - id: q-alineado-con-quien
+    type: multi
+    prompt: 'Una política se entrena con RLHF o con DPO sobre las comparaciones de un grupo de anotadores que siguen una guía. Marca las afirmaciones ciertas.'
+    options:
+      - { id: a, text: 'Escribe lo que esos anotadores, con esa guía, prefieren, que no tiene por qué ser lo que elegiría quien escribió la instrucción.' }
+      - { id: b, text: 'Si los anotadores tienden a preferir las respuestas que dan la razón a quien pregunta, la política aprende a dársela, aunque ninguna línea de la guía lo pida.' }
+      - { id: c, text: 'El término de la KL impide lo de la (b), porque no deja que la política se aleje hacia donde el modelo de recompensa no sabe juzgar.' }
+      - { id: d, text: 'Si el 60 % de los anotadores prefiere una respuesta y el 40 % la otra, la política escribe cada una con esas mismas frecuencias, sea cual sea $\beta$.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). La (c) confunde dos fallos. La KL frena a una política que busca dónde se equivoca el modelo de recompensa, y en la (b) el modelo de recompensa no se equivoca: reproduce bien a los anotadores, y darles la razón no obliga a alejarse de la referencia. La (d) sólo vale con $\beta = 1$ y una referencia que escriba las dos por igual; con $\beta = 0.1$, la de la mayoría sale el 98 % de las veces.'
+    hint: 'Para la (c), pregúntate quién se equivoca en la (b): el modelo de recompensa o los anotadores.'
+  - id: q-un-numero
+    type: single
+    prompt: 'Dos conjuntos de comparaciones de las mismas dos respuestas. En el primero, cada anotador duda y elige $y_A$ seis veces de cada diez. En el segundo, el 60 % de los anotadores elige siempre $y_A$ y el 40 % siempre $y_B$. ¿Qué aprende de cada uno un modelo de recompensa?'
+    options:
+      - { id: a, text: 'El mismo margen en los dos, $\ln 1.5 \approx 0.41$: Bradley–Terry da un número por respuesta y no distingue a quien duda de dos grupos que quieren cosas distintas.' }
+      - { id: b, text: 'Un margen mayor en el segundo, porque cada anotador está seguro de lo que elige.' }
+      - { id: c, text: 'Dos recompensas en el segundo, una por grupo, y una sola en el primero.' }
+      - { id: d, text: 'Un margen cero en el primero, porque nadie está seguro.' }
+    answer: a
+    explanation: 'La (a). La pérdida sólo ve cuántas veces ganó cada respuesta, y en los dos casos son seis de cada diez; su óptimo pone el margen en $\ln(0.6/0.4)$, como en <Leccion slug="modelo-de-recompensa">la lección sobre el modelo de recompensa</Leccion>. La diferencia está fuera de los datos. En el primer caso, escribir casi siempre $y_A$ sirve a todos un poco; en el segundo, le da a cuatro de cada diez personas, casi siempre, la respuesta que no querían. Separar los dos casos exige saber quién compara, y Bradley–Terry no lo guarda.'
+    hint: 'Escribe la pérdida de cada conjunto: ¿qué números de los datos entran en ella?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Training language models to follow instructions with human feedback'
+    authors: 'Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin y otros'
+    year: '2022'
+    venue: 'NeurIPS 2022 · arXiv:2203.02155'
+    lang: en
+    url: 'https://arxiv.org/abs/2203.02155'
+    note: 'Su sección 5.2, «Who are we aligning to?», hace la pregunta de esta lección sobre su propio modelo: anotadores, quienes escribieron la guía y clientes. Y por qué no se puede alinear con todos a la vez.'
+  - kind: paper
+    title: 'Constitutional AI: Harmlessness from AI Feedback'
+    authors: 'Bai, Kadavath, Kundu, Askell, Kernion, Jones y otros'
+    year: '2022'
+    venue: 'arXiv:2212.08073'
+    lang: en
+    url: 'https://arxiv.org/abs/2212.08073'
+    note: 'El método de la constitución, con sus dos fases. El apéndice C trae los dieciséis principios, y la sección 4.1 cómo la probabilidad que el juez da a cada opción se vuelve la etiqueta del modelo de recompensa.'
+  - kind: paper
+    title: 'Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena'
+    authors: 'Zheng, Chiang, Sheng, Zhuang, Wu, Zhuang y otros'
+    year: '2023'
+    venue: 'NeurIPS 2023 · arXiv:2306.05685'
+    lang: en
+    url: 'https://arxiv.org/abs/2306.05685'
+    note: 'Un modelo juzgando como juzgan las personas: coincide con ellas tanto como coinciden entre sí. Su sección 3.3 mide sus sesgos (la posición, la longitud, lo propio) y la 3.4, cómo atenuarlos.'
+  - kind: paper
+    title: 'Towards Understanding Sycophancy in Language Models'
+    authors: 'Sharma, Tong, Korbak, Duvenaud, Askell, Bowman y otros'
+    year: '2023'
+    venue: 'ICLR 2024 · arXiv:2310.13548'
+    lang: en
+    url: 'https://arxiv.org/abs/2310.13548'
+    note: 'La complacencia, medida: en datos de preferencias reales, la respuesta que da la razón a quien pregunta gana más a menudo, y optimizar contra un modelo de recompensa a veces cambia verdad por acuerdo.'
+  - kind: paper
+    title: 'DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning'
+    authors: 'DeepSeek-AI, Guo, Yang, Zhang y otros'
+    year: '2025'
+    venue: 'Nature 645 · arXiv:2501.12948'
+    lang: en
+    url: 'https://arxiv.org/abs/2501.12948'
+    note: 'Cuando la respuesta se puede comprobar, no hace falta comparar: recompensas por regla, sin modelo de recompensa, y GRPO, que resta a cada recompensa la media de un grupo de respuestas a la misma instrucción.'
+---
+
+{/* COURSE-C2-P1-02 — Bloque 2, lección 7. Sin celdas ni widget: es el mapa del bloque, y su
+    implementación es un ejemplo en papel con las fórmulas de las lecciones 4 y 6. */}
+
+Dos pérdidas del bloque aprenden de comparaciones, la del
+<Leccion slug="modelo-de-recompensa">modelo de recompensa</Leccion> y la de
+<Leccion slug="dpo">la optimización directa de preferencias</Leccion> (*direct preference
+optimization*, DPO), y las dos empiezan por la misma media, sobre $p_{\text{pref}}$. El aprendizaje
+por refuerzo con retroalimentación humana (*reinforcement learning from human feedback*, RLHF) llega a
+la política a través de la primera; DPO, directamente. En el óptimo, las dos devuelven lo que
+entró: entre dos respuestas, un margen igual al logaritmo de la ventaja con que se prefirió una. De
+dónde sale $p_{\text{pref}}$ no lo dice ninguna. En el bloque ha sido una letra.
+
+Toma una instrucción y dos respuestas. <W>Estoy seguro de que la Gran Muralla china se ve desde la
+Luna. ¿Verdad que sí?</W> Una contesta <W>¡Sí! Es una de las pocas construcciones humanas que se ven
+desde allí.</W> y la otra, que es un mito. ¿Cuál es la preferida? Depende de quién compare. Una
+anotadora que también se lo creía elige la primera, y si muchas comparaciones salen así, la política
+aprende a darle la razón a quien pregunta. Esta lección mira quién compara en los modelos de
+verdad, y con quién queda «alineado», por tanto, el modelo que aprende de sus comparaciones.
+
+Hay una manera de llegar a la segunda respuesta sin nadie que compare: escribir una vez lo que se
+quiere, como una frase, y pedirle al propio modelo que critique su respuesta según ella y la
+reescriba. El principio y los textos de la tabla los he escrito yo para el curso:
+
+| paso | texto |
+|---|---|
+| la respuesta | <W>¡Sí! Es una de las pocas construcciones humanas que se ven desde allí.</W> |
+| el principio | <W>Di la verdad, aunque contradiga a quien pregunta.</W> |
+| la crítica | <W>Le da la razón en algo falso: desde la Luna no se distingue a simple vista ninguna obra humana.</W> |
+| la revisión | <W>No, es un mito. Desde la Luna, a unos 384 000 km, no se distingue a simple vista ninguna obra humana, y la Muralla cuesta verla incluso desde mucho más cerca.</W> |
+
+De ahí sale un par para el ajuste supervisado, la instrucción con la revisión, y el precio se ha
+movido de sitio. La anotadora tenía que saber que era un mito; ahora tiene que saberlo el modelo, y
+alguien tuvo que escribir el principio.
+
+<Callout type="intuition" title="La idea en una frase">
+Ningún método del bloque juzga sus comparaciones: las reproduce. Las escriban personas con una guía,
+un modelo con una lista de principios u otro modelo que juzga, la política acaba escribiendo lo que
+prefiere esa fuente, y «alineado» quiere decir alineado con ella.
+</Callout>
+
+## Tres fuentes de comparaciones
+
+### Personas con una guía
+
+Para InstructGPT, OpenAI contrató a unas 40 personas, elegidas con una prueba previa que medía si
+detectaban respuestas dañinas. Qué era «mejor» lo decía una **guía** de anotación (*labeling
+guidelines*) escrita por los investigadores. Pedía utilidad, veracidad e inocuidad, en distinto
+orden según el momento: al reunir las comparaciones, la utilidad iba primero; en la evaluación
+final, la veracidad y la inocuidad.
+
+Así que $p_{\text{pref}}$ es la distribución de lo que escribieron esas personas siguiendo esa guía,
+y el $P(y_w \succ y_l \mid x)$ de Bradley–Terry, la probabilidad de que una de ellas prefiera $y_w$.
+La respuesta buena de <Leccion slug="predecir-no-es-obedecer">la lección sobre predecir y
+obedecer</Leccion> era otra cosa: la que elegiría quien escribió la instrucción. La anotadora elige
+para otro, con el criterio de la guía y con lo que ella sabe.
+
+### Un modelo con una constitución
+
+En 2022, Anthropic quitó a las personas de una parte de la cadena. Su método, *Constitutional AI*,
+parte de una **constitución**: una lista de **principios**, frases como <W>elige la respuesta más
+útil, honesta e inofensiva</W>. Escribió dieciséis, y fueron toda la supervisión humana sobre qué es
+dañino. El método tiene dos fases, y cada una es una lección de este bloque con otra fuente de datos.
+
+En la primera, un modelo entrenado sólo para ser útil contesta a instrucciones que buscan respuestas
+dañinas. Después, cuatro veces seguidas, se le pide la **crítica** de su última respuesta según un
+principio sacado al azar, y su **revisión**, la respuesta reescrita a la luz de la crítica, como en
+la tabla. Las revisiones finales son los pares de un
+<Leccion slug="sft">ajuste supervisado</Leccion> sobre un modelo preentrenado.
+
+En la segunda, la política escribe dos respuestas a cada instrucción, y un modelo las compara según
+un principio, como opciones <W>(A)</W> y <W>(B)</W>. La probabilidad que pone en cada opción,
+normalizada, entra en $\mathcal{L}_{\text{R}}$ como la proporción de anotadores que habrían
+preferido cada respuesta: un $0.8$ cuenta como ocho de cada diez, y el óptimo pone el margen en
+$\ln 4$. Después, RLHF. Las comparaciones de utilidad siguieron siendo de personas; las de
+inocuidad, todas de un modelo. Es el aprendizaje por refuerzo con retroalimentación de inteligencia
+artificial (*reinforcement learning from AI feedback*, RLAIF).
+
+### Un modelo que juzga
+
+Si un modelo puede comparar según un principio, ¿por qué no compara siempre él? Un modelo que hace
+de **juez** cuesta mucho menos que una persona, y compara bien: en un conjunto de preguntas
+abiertas, GPT-4 coincidió con las personas que juzgaron las mismas respuestas en el 85 % de las
+comparaciones sin empate, y esas personas, entre sí, en el 81 %.
+
+Y tiene sesgos propios. Al cambiar de orden las dos respuestas, GPT-4 mantuvo su elección en el
+65 % de los casos, y en el 30 % eligió la que iba primera, fuera cual fuera. Jueces más débiles
+preferían casi siempre la respuesta más larga, aunque lo añadido fueran repeticiones. Por eso un
+juez compara dos veces, con las respuestas en los dos órdenes. El bloque 3 vuelve a los jueces
+cuando haya que medir un modelo.
+
+## Un 60 % que se convierte en un 98 %
+
+Las comparaciones se contradicen a veces, y no siempre por ruido: dos personas pueden querer cosas
+distintas. Sigamos en papel un desacuerdo a través del bloque, con dos fórmulas que ya tenemos.
+
+Una instrucción, dos respuestas, y una referencia que escribe las dos por igual. El 60 % de los
+anotadores prefiere $y_A$, y el 40 %, $y_B$. Con una recompensa que puede valer cualquier cosa, el
+óptimo de $\mathcal{L}_{\text{R}}$ pone el margen en el logaritmo de esa ventaja:
+
+$$
+\text{margen} = r(x, y_A) - r(x, y_B) = \ln \frac{0.6}{0.4} \approx 0.41.
+$$
+
+La política óptima de esa recompensa es la $\pi^{\star}$ de la derivación de DPO, la referencia
+repesada por $e^{r/\beta}$. En el cociente entre las dos respuestas se van $Z(x)$, que es la misma
+para las dos, y la referencia, que las escribe por igual:
+
+$$
+\frac{\pi^{\star}(y_A \mid x)}{\pi^{\star}(y_B \mid x)} = \frac{\pi_{\text{ref}}(y_A \mid x)\, e^{r(x, y_A)/\beta}}{\pi_{\text{ref}}(y_B \mid x)\, e^{r(x, y_B)/\beta}} = e^{\text{margen}/\beta} = 1.5^{1/\beta}.
+$$
+
+De cada 100 veces que la política escribe una de las dos, escribe $y_A$ estas:
+
+| $\beta$ | $1.5^{1/\beta}$ | $y_A$, de cada 100 |
+|---|---|---|
+| $1$ | $1.5$ | $60$ |
+| $0.5$ | $2.25$ | $69$ |
+| $0.1$ | $57.7$ | $98$ |
+
+Sólo con $\beta = 1$ reparte la política como los anotadores. Con las dos $\beta$ de la celda de
+DPO, la mayoría gana más de lo que ganó en los datos, y con $0.1$ el 40 % que prefería $y_B$ casi
+desaparece de lo que la política escribe. RLHF persigue el mismo óptimo.
+
+Y hay algo que la recompensa no puede guardar. Bradley–Terry da un número por respuesta, así que un
+60 % sale igual si todos los anotadores dudan y eligen $y_A$ seis veces de cada diez, que si son dos
+grupos que lo tienen claro y quieren cosas distintas. En el primer caso, escribir casi siempre $y_A$
+es razonable. En el segundo, la política le da a cuatro de cada diez personas, casi siempre, la
+respuesta que no querían.
+
+## Qué quiere decir «alineado»
+
+Un modelo está **alineado** con una fuente de comparaciones cuando escribe lo que esa fuente
+prefiere, y el **alineamiento** (*alignment*) es el trabajo de conseguirlo. La palabra lleva siempre
+un complemento. Los autores de InstructGPT dedicaron una sección a decir con quién alineaban: con
+sus anotadores, con quienes escribieron la guía y con los clientes cuyas instrucciones formaban los
+datos. No afirmaban que fuera la fuente correcta, y añadían que alinear con todos a la vez no es
+posible. La cuenta de arriba es una de las razones.
+
+Tampoco quiere decir correcto. Sharma y sus coautores encontraron, en datos de preferencias reales,
+que una respuesta que da la razón a quien pregunta tiene más probabilidad de ser la preferida, y que
+optimizar contra un modelo de recompensa entrenado con ellos vuelve a veces al modelo menos veraz.
+Es la **complacencia** (*sycophancy*), y no es el *reward hacking* de
+<Leccion slug="rlhf">la lección sobre RLHF</Leccion>: allí la política explotaba los errores de la
+recompensa, y aquí la recompensa no se equivoca, reproduce bien a los anotadores. El término de la
+divergencia de Kullback–Leibler (KL) no frena nada, porque dar la razón no obliga a alejarse de la
+referencia.
+
+Hay tareas, en cambio, en que no hace falta preguntarle a nadie, porque la respuesta se comprueba,
+como en las celdas de las dos lecciones anteriores, cuya recompensa contaba letras. Con un problema
+de matemáticas de solución conocida o un programa con sus pruebas, la recompensa es 1 si la
+comprobación pasa y 0 si no: aprendizaje por refuerzo con recompensas verificables (*reinforcement
+learning with verifiable rewards*, RLVR). Así enseñó DeepSeek a razonar a su modelo R1 en 2025, sin
+modelo de recompensa en esas tareas, porque a esa escala uno entrenado con preferencias se deja
+explotar. Su algoritmo, GRPO (*group relative policy optimization*), resta a cada recompensa la
+media de un grupo de respuestas a la misma instrucción, la línea base de la lección sobre RLHF, y
+premiar cada paso del razonamiento y no sólo el resultado es la variante siguiente. Ahí, alinearse
+con la fuente es acertar.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: la constitución, un juez en dos órdenes, con quién alinea un modelo y lo que una
+recompensa no guarda.
+
+<Quiz id="q-la-constitucion" />
+
+<Quiz id="q-juez-en-dos-ordenes" />
+
+<Quiz id="q-alineado-con-quien" />
+
+<Quiz id="q-un-numero" />
+
+---
+
+Las tres fuentes tienen un límite en común: enseñan lo que alguien sabe reconocer y la política sabe
+escribir, y nada más. Un juez que no sabe que la Muralla no se ve desde la Luna no premia la
+respuesta verdadera, y un modelo que no sabe escribirla no la aprende de ninguna comparación. El
+mini-GPT ha servido para ver cada método por dentro, con diez pares, una capa lineal y 512 números
+sumados a sus logits. No da para más: sólo ha leído una novela.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 17
+    (slug proyecto-sft-colab), envolver «La lección siguiente, el proyecto del bloque» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, el proyecto del bloque, cambia de modelo. Ajusta un modelo abierto pequeño,
+uno de verdad, con instrucciones en español, en un cuaderno de Colab, porque eso ya no cabe en el
+navegador. Es el primer paso de la cadena, el ajuste supervisado, el que todos los demás dan por
+hecho.

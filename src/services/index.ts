@@ -42,7 +42,7 @@ import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
 import { StripeClient }    from "@/infrastructure/stripe/StripeClient";
-import { GeminiClient }    from "@/infrastructure/gemini";
+import { ClaudeClient }    from "@/infrastructure/anthropic"; // CHAT-CLAUDE-01
 import { redisConfigCache } from "@/infrastructure/redis";
 
 export const userService = new UserService(supabaseUserRepository);
@@ -85,7 +85,7 @@ export const paymentService = new PaymentService(
   scheduleService,
 );
 
-export const chatService = new ChatService(new GeminiClient());
+export const chatService = new ChatService(new ClaudeClient());
 
 export const subscriptionService = new SubscriptionService(supabaseSubscriptionRepository, userService);
 
