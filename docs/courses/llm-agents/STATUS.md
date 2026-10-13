@@ -1105,9 +1105,9 @@ confirmed by Gustavo at review:
   named once as labels; «modelo base» refused, it is the `referencia` row's) and `cuaderno` in the
   delta's §4; the two ChatML tokens in `NOTATION.md`. «revisión» is avoided for a pinned commit
   (Constitutional AI's word since lesson 16).
-- **Proposed, not applied:** the delta's §2 table has three implementations of `modelo`; this
-  lesson runs on a fourth (an open pretrained model in a Colab notebook) and says so in prose
-  before the link.
+- **The delta's §2 table gains a fourth row** (applied after review): an open pretrained model
+  fine-tuned in a Colab notebook, named in prose before the `<ColabLink>`, with a note that it is
+  not an implementation of `modelo` (the project never calls it through the signature).
 - **Lesson 16's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
   names Block 3's first lesson (`el-prompt-es-una-especificacion`) in prose with the usual comment.
 - Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX

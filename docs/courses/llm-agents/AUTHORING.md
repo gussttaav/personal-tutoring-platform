@@ -118,6 +118,13 @@ code cell (a Block 5 lesson does it in the opening `<Callout>` above). The block
 | the NumPy mini-GPT the student trains in Block 1, from the pinned checkpoint | the browser (Pyodide) | 1, 2, 3 | «el mini-GPT», «tu mini-GPT del bloque 1» |
 | a scripted model: a deterministic Python class that returns pre-authored tool calls | the browser (Pyodide) | 3, 4 | «el modelo guionizado» — and the first Block 4 lesson says *why* it is scripted (determinism, testability, isolation from the model's randomness) |
 | a real local model, served on the student's machine over the Messages API | the student's terminal | 5 | «un modelo local» — the runner and tag pinned in the callout, never in the prose |
+| an open pretrained model, fine-tuned in a Colab notebook | Colab, on a GPU | 2 (the project) | its name and version, «Qwen2.5-0.5B en su versión preentrenada», in prose before the `<ColabLink>` — the Hub commit pinned in the notebook, never in the prose; the publisher's *base* / *instruct* named once, as labels (§4, `modelo preentrenado`) |
+
+The fourth row is not an implementation of `modelo`: Block 2's project trains a real model outside
+the browser and never calls it through the signature. It is in the table because the rule is the
+same, and because it matters more there — a student who has run every cell for sixteen lessons on
+the mini-GPT has to be told, before the link, that this one runs on something else, and where
+(`COURSE-C2-P1-02`, lesson 17).
 
 Two consequences. **A lesson never mixes two** without saying so at the switch — the Block 3
 lessons that move from the mini-GPT to the scripted model say so in one clause, exactly as the
