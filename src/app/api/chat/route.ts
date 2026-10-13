@@ -4,11 +4,13 @@
  * Applied fixes:
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
  *   REL-04: Tiered rate limiting — authenticated users get 20/min by email;
- *           anonymous users get 5/min + 30/day by IP to cap Gemini spend.
+ *           anonymous users get 5/min + 30/day by IP to cap model spend.
  *   REFACTOR-P2-03: History moved server-side. Client supplies `sessionId`;
  *           server loads/stores history in Redis. Client-supplied `history`
  *           field is ignored. A daily request counter kills the circuit if
  *           the global request ceiling is breached.
+ *   CHAT-CLAUDE-01: the assistant runs on the Claude API (was Gemini). The
+ *           kill-switch counter moved to `chat:requests:<date>`.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -25,7 +27,7 @@ import { kv } from "@/infrastructure/redis/client";
 import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
 const MAX_MESSAGE_LENGTH        = 1000;
-const MAX_DAILY_GEMINI_REQUESTS = 1000;
+const MAX_DAILY_CHAT_REQUESTS   = 1000;
 
 async function postHandler(req: NextRequest) {
   // ── CSRF ───────────────────────────────────────────────────────────────────
@@ -72,14 +74,14 @@ async function postHandler(req: NextRequest) {
 
   // REFACTOR-P2-03: Daily spend kill-switch. Per-IP rate limits cap individual
   // abusers; this caps total cost across all users for the day.
-  const todayKey   = `gemini:requests:${new Date().toISOString().slice(0, 10)}`;
+  const todayKey   = `chat:requests:${new Date().toISOString().slice(0, 10)}`;
   const todaySpend = await kv.incr(todayKey);
   if (todaySpend === 1) await kv.expire(todayKey, 86400);
-  if (todaySpend > MAX_DAILY_GEMINI_REQUESTS) {
-    log("error", "Gemini daily request cap exceeded — circuit open", {
+  if (todaySpend > MAX_DAILY_CHAT_REQUESTS) {
+    log("error", "Chat daily request cap exceeded — circuit open", {
       service: "chat",
       todaySpend,
-      limit: MAX_DAILY_GEMINI_REQUESTS,
+      limit: MAX_DAILY_CHAT_REQUESTS,
     });
     return NextResponse.json(
       { error: "Servicio temporalmente no disponible. Inténtalo más tarde." },
@@ -156,7 +158,7 @@ async function postHandler(req: NextRequest) {
     });
     return NextResponse.json({ reply, sessionId: newSessionId });
   } catch (err) {
-    log("error", "Gemini API error", { service: "chat", error: String(err) });
+    log("error", "Chat model error", { service: "chat", error: String(err) });
     return NextResponse.json(
       { error: "Error al contactar con el asistente. Inténtalo de nuevo." },
       { status: 502 }

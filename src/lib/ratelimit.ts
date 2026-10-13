@@ -66,7 +66,7 @@ export const chatRatelimitAnon = new Ratelimit({
 });
 
 // REL-04 — Anonymous chat daily cap: 30 messages per day per IP.
-// Caps total Gemini spend per anonymous IP. Authenticated users
+// Caps total chat model spend per anonymous IP. Authenticated users
 // rely on the 20/min limiter only (no daily cap for signed-in users).
 export const chatRatelimitAnonDaily = new Ratelimit({
   redis:   kv,
