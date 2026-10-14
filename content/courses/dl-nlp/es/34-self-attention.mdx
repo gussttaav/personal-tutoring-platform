@@ -4,7 +4,7 @@ title: "Auto-atención: la secuencia se mira a sí misma"
 block: 5
 order: 2
 minutes: 29
-summary: "Sin decoder no hay quien fabrique las consultas, y la salida es que las fabrique la propia frase. Pero usar los vectores tal cual no vale: con las tres listas iguales, lo que más se parece a un vector es él mismo, la diagonal gana todas las filas y la capa devuelve lo que le entró, sin un solo parámetro que entrenar. Lo que arregla eso son tres proyecciones de la misma X —una para preguntar, otra para ser preguntado, otra para mezclarse—, y con ellas la rejilla se vuelve cuadrada, deja de ser simétrica y cuesta un número de pesos donde la longitud de la frase no aparece."
+summary: "Sin el decoder recurrente no hay quien fabrique las consultas, y la salida es que las fabrique la propia frase. Pero usar los vectores tal cual no vale: con las tres listas iguales, lo que más se parece a un vector es él mismo, la diagonal gana todas las filas y la capa devuelve lo que le entró, sin un solo parámetro que entrenar. Lo que arregla eso son tres proyecciones de la misma X —una para preguntar, otra para ser preguntado, otra para mezclarse—, y con ellas la rejilla se vuelve cuadrada, deja de ser simétrica y cuesta un número de pesos donde la longitud de la frase no aparece."
 draft: false
 hasCode: true
 hasQuiz: true
