@@ -18,6 +18,12 @@
  *
  * All Week 4 fixes are carried forward:
  *   - QUAL-01: Components typed via react-markdown's Components interface
+ *
+ * CHAT-GLOBAL-01: mounted once by `ChatProvider` (root layout), which also owns the open state
+ * (`useChat()`), so the Navbar icon and the Footer link open this same panel. There is no
+ * floating button: it sat on the reading column of lessons and posts between 1024 and ~1270px,
+ * so the Navbar icon is the entry point at every width and the panel drops from under it. The
+ * mobile hero-overlap tracking (the FAB hid itself while it sat on the hero CTAs) went with it.
  */
 
 import {
@@ -33,6 +39,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import ChatAvatarIcon from "@/components/icons/ChatAvatarIcon";
+import { useChat } from "@/hooks/useChat";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -131,16 +138,19 @@ export default function Chat() {
   const [sessionId,       setSessionId]       = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem(LOCAL_STORAGE_KEY) : null
   );
-  const [isOpen,          setIsOpen]          = useState(false);
+  const { isOpen, close } = useChat();
   const [isExpanded,      setIsExpanded]      = useState(false);
   const [input,           setInput]           = useState("");
   const [isLoading,       setIsLoading]       = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
-  const [showDot,         setShowDot]         = useState(true);
-  // UX: on mobile the FAB sits exactly over the hero "Ver disponibilidad"
-  // button. Track whether the hero CTA row is on screen so we can hide the
-  // FAB while it would overlap and reveal it once the user scrolls past.
-  const [heroCtaOnScreen, setHeroCtaOnScreen] = useState(true);
+
+  // A closed panel always reopens at its normal size, wherever the close came from (the ✕ or
+  // the Navbar icon, which this component doesn't see) — adjusted during render.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (!isOpen) setIsExpanded(false);
+  }
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
@@ -161,58 +171,6 @@ export default function Chat() {
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 220);
   }, [isOpen]);
-
-  // Hide the FAB while it would overlap the hero CTAs (mobile overlap fix).
-  // The CSS only acts on the resulting class below the mobile breakpoint,
-  // so desktop is unaffected regardless of this state.
-  //
-  // The FAB sits in the bottom ~96px of the viewport (32px offset + 64px
-  // height). We hide it while the hero CTA row's bottom edge is still within
-  // that band (+16px gap) and reveal it the moment the row scrolls clear —
-  // i.e. as soon as "Ver disponibilidad" rises above the FAB, not only once
-  // the hero has left the screen entirely. An IntersectionObserver can't
-  // express a px-from-bottom line, so we measure the row directly on scroll,
-  // rAF-throttled and only writing state on an actual change.
-  useEffect(() => {
-    const heroCta = document.getElementById("hero-cta-row");
-    if (!heroCta) return;
-
-    const FAB_ZONE = 112; // 32px offset + 64px height + 16px gap
-    let frame = 0;
-
-    const measure = () => {
-      frame = 0;
-      const overlapping =
-        heroCta.getBoundingClientRect().bottom > window.innerHeight - FAB_ZONE;
-      setHeroCtaOnScreen((prev) => (prev === overlapping ? prev : overlapping));
-    };
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(measure);
-    };
-
-    measure(); // sync initial state with current scroll position
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleOpenChat() { setIsOpen(true); setShowDot(false); }
-    window.addEventListener("open-chat", handleOpenChat);
-    return () => window.removeEventListener("open-chat", handleOpenChat);
-  }, []);
-
-  function togglePanel() {
-    setIsOpen((prev) => !prev);
-    setShowDot(false);
-    if (isOpen) setIsExpanded(false);
-  }
 
   function toggleExpand() { setIsExpanded((prev) => !prev); }
 
@@ -256,76 +214,61 @@ export default function Chat() {
   }
 
   return (
-    <>
-      <div
-        className={`chat-panel${isOpen ? " chat-panel--open" : ""}${isExpanded ? " chat-panel--expanded" : ""}`}
-        role="dialog" aria-modal="true" aria-label={t("assistantLabel")}
-      >
-        <div className="chat-header">
-          <div className="chat-header-avatar" aria-hidden="true"><ChatAvatarIcon size={22} /></div>
-          <div className="chat-header-info">
-            <div className="chat-header-name">{t("title")}</div>
-            <div className="chat-header-status">{t("status")}</div>
-          </div>
-          <div className="chat-header-actions">
-            <button className="chat-expand-btn" onClick={toggleExpand} aria-label={isExpanded ? t("minimize") : t("expand")} title={isExpanded ? t("minimize") : t("expand")}>
-              {isExpanded
-                ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" /></svg>
-                : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-              }
-            </button>
-            <button className="chat-close-btn" onClick={togglePanel} aria-label={t("close")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
+    <div
+      className={`chat-panel${isOpen ? " chat-panel--open" : ""}${isExpanded ? " chat-panel--expanded" : ""}`}
+      role="dialog" aria-modal="true" aria-label={t("assistantLabel")}
+    >
+      <div className="chat-header">
+        <div className="chat-header-avatar" aria-hidden="true"><ChatAvatarIcon size={22} /></div>
+        <div className="chat-header-info">
+          <div className="chat-header-name">{t("title")}</div>
+          <div className="chat-header-status">{t("status")}</div>
         </div>
-
-        <div className="chat-messages" role="log" aria-live="polite">
-          {messages.map((msg, i) => (
-            <div key={i} className={`chat-msg chat-msg--${msg.role}`}>
-              {msg.role === "bot" ? <BotMessage text={msg.text} /> : msg.text}
-            </div>
-          ))}
-          {isLoading && <div className="chat-typing" aria-label={t("status")}><span /><span /><span /></div>}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {showSuggestions && (
-          <div className="chat-suggestions">
-            {suggestions.map((s) => (
-              <button key={s} className="chat-suggestion" onClick={() => sendMessage(s)} disabled={isLoading}>{s}</button>
-            ))}
-          </div>
-        )}
-
-        <div className="chat-input-row">
-          <input
-            ref={inputRef} className="chat-input" type="text" placeholder={t("placeholder")}
-            value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}
-            disabled={isLoading} maxLength={1000} aria-label={t("placeholderShort")}
-          />
-          <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} aria-label={t("send")}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+        <div className="chat-header-actions">
+          <button className="chat-expand-btn" onClick={toggleExpand} aria-label={isExpanded ? t("minimize") : t("expand")} title={isExpanded ? t("minimize") : t("expand")}>
+            {isExpanded
+              ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" /></svg>
+              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+            }
+          </button>
+          <button className="chat-close-btn" onClick={close} aria-label={t("close")}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
       </div>
 
-      <button
-        className={`chat-fab${isOpen ? " chat-fab--open" : ""}${heroCtaOnScreen && !isOpen ? " chat-fab--hero-overlap" : ""}`}
-        onClick={togglePanel} aria-label={isOpen ? t("closeAssistant") : t("openAssistant")} aria-expanded={isOpen}
-      >
-        {showDot && !isOpen && <div className="chat-fab-dot" aria-hidden="true" />}
-        <svg className="chat-fab-icon-chat" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-        <svg className="chat-fab-icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
-    </>
+      <div className="chat-messages" role="log" aria-live="polite">
+        {messages.map((msg, i) => (
+          <div key={i} className={`chat-msg chat-msg--${msg.role}`}>
+            {msg.role === "bot" ? <BotMessage text={msg.text} /> : msg.text}
+          </div>
+        ))}
+        {isLoading && <div className="chat-typing" aria-label={t("status")}><span /><span /><span /></div>}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {showSuggestions && (
+        <div className="chat-suggestions">
+          {suggestions.map((s) => (
+            <button key={s} className="chat-suggestion" onClick={() => sendMessage(s)} disabled={isLoading}>{s}</button>
+          ))}
+        </div>
+      )}
+
+      <div className="chat-input-row">
+        <input
+          ref={inputRef} className="chat-input" type="text" placeholder={t("placeholder")}
+          value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}
+          disabled={isLoading} maxLength={1000} aria-label={t("placeholderShort")}
+        />
+        <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} aria-label={t("send")}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+        </button>
+      </div>
+    </div>
   );
 }

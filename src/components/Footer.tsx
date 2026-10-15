@@ -19,6 +19,10 @@
  * opened on `/mentoria` did nothing (a same-URL navigation keeps the overlay mounted). The three
  * page links go through `requestBookingExit`, like the Navbar's: an open booking closes in place
  * for its own page and replaces its history entry for another one.
+ *
+ * CHAT-GLOBAL-01: «Pregunta al asistente IA» opens the app-wide chat (`useChat()`), so it works
+ * on every page now, not only where a page happened to mount the chat. It is hidden where the
+ * chat is not offered (the classroom's pre-join page renders this footer).
  */
 
 import { useTranslations } from "next-intl";
@@ -26,9 +30,11 @@ import { Link } from "@/i18n/navigation";
 import { requestBookingExit } from "@/lib/booking-exit";
 import FooterModals from "@/features/landing/FooterModals";
 import BrandLogo from "@/components/BrandLogo";
+import { useChat } from "@/hooks/useChat";
 
 export default function Footer() {
   const t = useTranslations("footer");
+  const chat = useChat();
 
   return (
     <footer
@@ -230,33 +236,35 @@ export default function Footer() {
                 </svg>
                 contacto@gustavoai.dev
               </a>
-              <button
-                onClick={() => {
-                  window.dispatchEvent(new Event("open-chat"));
-                  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  fontSize: "13px",
-                  color: "#86948a",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  textAlign: "left",
-                  padding: 0,
-                  transition: "color 0.15s",
-                }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="#4edea3" aria-hidden="true">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                {t("askAssistant")}
-              </button>
+              {chat.available && (
+                <button
+                  onClick={() => {
+                    chat.open();
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    fontSize: "13px",
+                    color: "#86948a",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    textAlign: "left",
+                    padding: 0,
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#4edea3" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  {t("askAssistant")}
+                </button>
+              )}
             </div>
           </div>
         </div>

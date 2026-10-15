@@ -9,8 +9,10 @@
  * subject chips and the stats are gone from this page; the stats live on the home (`HomeStats`).
  *
  * Server Component: everything here is static HTML except `MentoriaCtas` (two buttons
- * dispatching the shell's events), so the boundary sits there. `#hero-cta-row` stays on the
- * CTA row: `Chat.tsx` watches it to keep the FAB out of the buttons' way.
+ * dispatching the shell's events), so the boundary sits there.
+ *
+ * CHAT-GLOBAL-01: the CTA row lost its `#hero-cta-row` id. `Chat.tsx` watched it to keep the
+ * mobile FAB off the buttons, and there is no FAB below 1024px any more.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -41,7 +43,7 @@ export default async function MentoriaHeader({ locale }: MentoriaHeaderProps) {
       <p className="mt-lead">{t("lead")}</p>
 
       {/* ── CTAs ── */}
-      <div id="hero-cta-row" className="hero-cta-row mt-cta-row" style={{ gap: "16px" }}>
+      <div className="hero-cta-row mt-cta-row" style={{ gap: "16px" }}>
         <MentoriaCtas />
       </div>
 

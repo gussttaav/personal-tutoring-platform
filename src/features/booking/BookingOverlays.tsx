@@ -21,8 +21,8 @@
  * (`rescheduleGate`), exactly the `router.* || reschedule.*` merge the shell did — see
  * `RescheduleBridge.tsx` for why the reschedule hook can't sit next to the router any more.
  *
- * Do not render `<Chat />` from here: the sections render it on `/mentoria`, and P1-04 mounts
- * it on `/` separately — one FAB per page.
+ * Do not render `<Chat />` from here: `ChatProvider` mounts it once for the whole app
+ * (CHAT-GLOBAL-01), and it deliberately stays up over these screens.
  *
  * The pack booking screen is `BookingModeView` on its own: it renders `BookingLayout`, which is
  * the whole screen (fixed to the viewport, its own Navbar, the sidebar + calendar, the exit
@@ -33,7 +33,7 @@
  * under the navbar: invisible, and its back button unreachable (`elementFromPoint` returned the
  * navbar's logo, which closes the overlay AND navigates to `/`). Everything the bar said or did
  * the layout already covers (sidebar, calendar header, exit bar), so it is gone rather than
- * moved; the overlay keeps the z-index 40 contract that `HomeChat` / `InteractiveShell` rely on.
+ * moved; the overlay keeps its z-index 40 (under the z-50 navbar).
  *
  * BOOKING-EXIT-01: «Cambiar tipo de sesión» is gone from both screens. Leaving is the exit button
  * («Salir de la reserva»; BOOKING-STEPS-01: left of the wizard's steps, below the pack screen's
@@ -186,8 +186,7 @@ function Overlays() {
 // ─── Public component ──────────────────────────────────────────────────────────
 
 /**
- * `<BookingOverlays><HomeChat /></BookingOverlays>` on `/` (P1-04: the chat FAB is its only
- * child there, gated on the overlays like the sections are);
+ * `<BookingOverlays />` on `/` (no children since CHAT-GLOBAL-01 moved the chat FAB out);
  * `<BookingOverlays><InteractiveShell /></BookingOverlays>` on `/mentoria`;
  * `<BookingOverlays><PersonalArea /></BookingOverlays>` on `/area-personal`. One per page.
  */

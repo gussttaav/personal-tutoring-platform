@@ -12,6 +12,10 @@
  *   - Suggestion buttons are visible and clickable
  *   - A mocked response is rendered in the chat thread (including markdown)
  *   - The UI does not crash when the chat endpoint returns an error
+ *
+ * CHAT-GLOBAL-01: the chat is mounted app-wide (root layout), so it is also checked off the
+ * booking pages (courses, blog). Its entry point is the Navbar icon at every width; there is
+ * no floating button.
  */
 
 import { test, expect } from "@playwright/test";
@@ -53,8 +57,8 @@ test.describe("AI chat widget (mocked API)", () => {
   test("clicking a suggestion shows the mocked response", async ({ page }) => {
     await page.goto("/mentoria");
 
-    // Open the chat panel via the FAB — the panel needs pointer-events: all for
-    // the suggestion click to register (closed panel has pointer-events: none).
+    // Open the chat panel via the Navbar icon — the panel needs pointer-events: all
+    // for the suggestion click to register (closed panel has pointer-events: none).
     await page.getByRole("button", { name: /abrir asistente/i }).click();
 
     // Use .chat-suggestion class to avoid accidentally matching pack booking
@@ -71,7 +75,7 @@ test.describe("AI chat widget (mocked API)", () => {
   test("chat renders markdown in responses", async ({ page }) => {
     await page.goto("/mentoria");
 
-    // Open the chat panel via the FAB — needed for pointer-events: all
+    // Open the chat panel via the Navbar icon — needed for pointer-events: all
     await page.getByRole("button", { name: /abrir asistente/i }).click();
 
     // Scope to .chat-suggestion class to avoid matching booking buttons
@@ -82,5 +86,41 @@ test.describe("AI chat widget (mocked API)", () => {
     // "programación" is wrapped in **...** — verify the <strong> tag is present
     const boldText = page.locator(".chat-messages strong", { hasText: /programación/i });
     await expect(boldText).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("the Navbar icon opens the chat on /cursos (desktop, no floating button)", async ({ page }) => {
+    await page.goto("/cursos");
+
+    const icon = page.locator("nav .chat-nav-btn");
+    await expect(icon).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(".chat-fab")).toHaveCount(0);
+
+    await icon.click();
+    await expect(page.locator(".chat-panel--open")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("footer link opens the chat on /blog", async ({ page }) => {
+    await page.goto("/blog");
+
+    await page.getByRole("button", { name: /pregunta al asistente ia/i }).click();
+    await expect(page.locator(".chat-panel--open")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test.describe("below 1024px", () => {
+    test.use({ viewport: { width: 390, height: 844 } });
+
+    test("the Navbar icon opens and closes the chat", async ({ page }) => {
+      await page.goto("/cursos");
+
+      const icon = page.locator(".chat-nav-btn");
+      await expect(icon).toBeVisible({ timeout: 15_000 });
+
+      await icon.click();
+      await expect(page.locator(".chat-panel--open")).toBeVisible();
+      await expect(icon).toHaveAttribute("aria-expanded", "true");
+
+      await icon.click();
+      await expect(page.locator(".chat-panel--open")).toHaveCount(0);
+    });
   });
 });

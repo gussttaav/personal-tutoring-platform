@@ -261,73 +261,54 @@ body::after {
 
 /* ─── Chat widget ────────────────────────────────────────────────────────── */
 
-.chat-fab {
-  position: fixed;
-  bottom: 32px;
-  right: 32px;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--green);
-  border: none;
-  cursor: pointer;
+@keyframes chat-dot-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* CHAT-GLOBAL-01: the Navbar's assistant icon is the chat's only entry point, at every width:
+   the rightmost control of the bar (left of the hamburger below 1024px). There is no floating
+   button; it covered the reading column of lessons and posts between 1024 and ~1270px. */
+.chat-nav-btn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 24px rgba(78, 222, 163, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4);
-  z-index: 1000;
-  transition: transform 0.25s ease, box-shadow 0.2s ease, opacity 0.25s ease;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.chat-fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 32px rgba(78, 222, 163, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+.chat-nav-btn:hover,
+.chat-nav-btn[aria-expanded="true"] {
+  background: rgba(78, 222, 163, 0.08);
 }
 
-.chat-fab-icon-chat,
-.chat-fab-icon-close {
+.chat-nav-dot {
   position: absolute;
-  transition: opacity 0.15s, transform 0.15s;
-}
-
-.chat-fab-icon-close {
-  opacity: 0;
-  transform: rotate(-90deg) scale(0.7);
-}
-
-.chat-fab--open .chat-fab-icon-chat {
-  opacity: 0;
-  transform: rotate(90deg) scale(0.7);
-}
-
-.chat-fab--open .chat-fab-icon-close {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-.chat-fab-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 10px;
-  height: 10px;
+  top: 5px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
   background: #ffb4ab;
   border-radius: 50%;
   border: 2px solid var(--bg);
   animation: chat-dot-pulse 2s ease-in-out infinite;
 }
 
-@keyframes chat-dot-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-}
-
+/* The panel drops from under the Navbar icon. The bar's content is 1280px at most, centered,
+   with 32px side padding (`md:px-8`), so the icon's right edge sits that far from the
+   viewport's; `100%` here is the viewport width WITHOUT the scrollbar, like the bar's own. */
 .chat-panel {
   position: fixed;
-  bottom: 108px;
-  right: 32px;
+  top: 80px;
+  right: calc(max(0px, (100% - 1280px) / 2) + 32px);
   width: 340px;
-  height: 530px;
+  height: min(530px, calc(100dvh - 96px));
   background: var(--surface-high);
   border: 1px solid rgba(78, 222, 163, 0.2);
   border-radius: 18px;
@@ -337,10 +318,10 @@ body::after {
   flex-direction: column;
   overflow: hidden;
   opacity: 0;
-  transform: translateY(16px) scale(0.97);
+  transform: translateY(-16px) scale(0.97);
   pointer-events: none;
   transition: opacity 0.22s ease, transform 0.22s ease;
-  transform-origin: bottom right;
+  transform-origin: top right;
 }
 
 .chat-panel--open {
@@ -603,17 +584,14 @@ body::after {
   width: min(90vw, 800px) !important;
   height: min(85vh, 700px) !important;
   max-width: 90vw;
-  max-height: 85vh;
+  /* Hangs from the navbar (top: 80px), so it must also stop 16px above the viewport's bottom. */
+  max-height: calc(100dvh - 96px);
 }
 
-.chat-panel--expanded ~ .chat-fab,
-body:has(.chat-panel--expanded) .chat-fab {
-  display: none;
-}
-
+/* Below `md` the Navbar's side padding is 24px (`px-6`), not 32px. */
 @media (max-width: 767px) {
-  body.pack-modal-open .chat-fab {
-    display: none;
+  .chat-panel {
+    right: 24px;
   }
 }
 
@@ -622,8 +600,7 @@ body:has(.chat-panel--expanded) .chat-fab {
     left: 12px;
     right: 12px;
     width: auto;
-    bottom: 90px;
-    transform-origin: bottom center;
+    transform-origin: top right;
   }
 
   .chat-panel--expanded {
@@ -636,19 +613,6 @@ body:has(.chat-panel--expanded) .chat-fab {
     left: 0 !important;
     right: 0 !important;
     border-radius: 0 !important;
-  }
-  .chat-panel--expanded ~ .chat-fab,
-  body:has(.chat-panel--expanded) .chat-fab {
-    display: none !important;
-  }
-
-  /* Mobile only: hide the FAB while it would overlap the hero CTAs.
-     Toggled by the IntersectionObserver in Chat.tsx; revealed with a
-     fade/scale once the user scrolls past the hero. */
-  .chat-fab--hero-overlap {
-    opacity: 0;
-    transform: scale(0.6);
-    pointer-events: none;
   }
 }
 

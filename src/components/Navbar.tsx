@@ -21,6 +21,12 @@
  * mounted — and only the logo closed it. Now the booking's owner takes the click: the current
  * page closes the overlay in place, another page replaces the booking's history entry. With
  * nothing open the event goes unanswered and the link navigates exactly as before.
+ *
+ * CHAT-GLOBAL-01: the AI assistant has no floating button; its one entry point is the
+ * assistant icon here, at every width — the bar's rightmost control, left of the hamburger
+ * below `lg` — driving the page-wide `useChat()` state. It is absent where the chat is not
+ * offered (the classroom). The icon and the hamburger close each other's panel, so the menu
+ * and the chat are never open together.
  */
 
 import { useState } from "react";
@@ -32,7 +38,9 @@ import { useUserSession } from "@/hooks/useUserSession";
 import { signInWithPopup } from "@/lib/auth-popup";
 import { requestBookingExit } from "@/lib/booking-exit";
 import BrandLogo from "@/components/BrandLogo";
+import ChatAvatarIcon from "@/components/icons/ChatAvatarIcon";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { useChat } from "@/hooks/useChat";
 
 function openPackBooking() {
   window.dispatchEvent(new CustomEvent("open-pack-booking"));
@@ -40,8 +48,10 @@ function openPackBooking() {
 
 export default function Navbar() {
   const t = useTranslations("nav");
+  const tChat = useTranslations("chat");
   const { data: session, status, update } = useSession();
   const { packSession } = useUserSession();
+  const chat = useChat();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // COURSE-P6-03: `usePathname` from @/i18n/navigation returns the pathname with the locale
@@ -298,11 +308,26 @@ export default function Navbar() {
             <LocaleSwitcher />
           </div>
 
+          {/* ── AI assistant (every width; the chat panel drops from under it) ── */}
+          {chat.available && (
+            <button
+              type="button"
+              className="chat-nav-btn"
+              onClick={() => { setMobileOpen(false); chat.toggle(); }}
+              aria-label={chat.isOpen ? tChat("closeAssistant") : tChat("openAssistant")}
+              title={chat.isOpen ? tChat("closeAssistant") : tChat("openAssistant")}
+              aria-expanded={chat.isOpen}
+            >
+              <ChatAvatarIcon size={24} />
+              {chat.unseen && !chat.isOpen && <span className="chat-nav-dot" aria-hidden="true" />}
+            </button>
+          )}
+
           {/* ── Hamburger button (mobile) ── */}
           <button
             className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
             style={{ background: mobileOpen ? "rgba(78,222,163,0.08)" : "transparent", border: "none", cursor: "pointer", color: "#e5e1e4" }}
-            onClick={() => setMobileOpen((prev) => !prev)}
+            onClick={() => { chat.close(); setMobileOpen((prev) => !prev); }}
             aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
             aria-expanded={mobileOpen}
           >
