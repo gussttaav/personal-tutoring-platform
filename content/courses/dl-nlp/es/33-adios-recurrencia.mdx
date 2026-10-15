@@ -64,12 +64,13 @@ reading:
 
 {/* COURSE-P5-05 — Bloque 5, lección 1. */}
 
-El bloque anterior terminó dejando la atención en los huesos: tres listas de vectores, una función
-que compara y una suma ponderada, sin una sola recurrencia por dentro. Lo que no tocó fue la
-máquina que la rodea, y esa sigue siendo recurrente de arriba abajo: las claves y los valores son
-estados de un encoder recurrente, y cada consulta es un estado del decoder, que produce uno por paso
-y no sabe producir el siguiente antes que el anterior. Por dentro, la atención ya no espera a nada;
-por fuera, cada llamada espera a que el decoder termine el paso anterior y le entregue su consulta.
+El bloque anterior terminó dejando la atención en los huesos: tres papeles (consultas, claves y
+valores), una función que compara y una suma ponderada, sin una sola recurrencia por dentro. Lo que
+no tocó fue la máquina que la rodea, y esa sigue siendo recurrente de arriba abajo: las claves y los
+valores son estados de un encoder recurrente, y cada consulta es un estado del decoder, que produce
+uno por paso y no sabe producir el siguiente antes que el anterior. Por dentro, la atención ya no
+espera a nada; por fuera, cada llamada espera a que el decoder termine el paso anterior y le
+entregue su consulta.
 
 Esta lección no construye ninguna pieza nueva, y conviene decir desde el principio qué quita y qué
 deja. Quita la recurrencia, no el encoder ni el decoder. El encoder sigue leyendo la frase de origen
@@ -130,12 +131,13 @@ y ahí no aparece ningún $e$ de ninguna otra pareja. La espera con la que acab�
 la de cada fila de $\mathbf{Q}$ por la de antes, no está en esta fórmula: está en el decoder que
 fabrica las consultas, que para dar la consulta $i+1$ necesita el contexto de la llamada $i$. Por
 eso allí la llamada se hacía una vez por paso, fila a fila. Quita ese decoder y supón, de momento,
-que las tres listas llegan enteras, una fila por posición de la frase; quién las fabrica sin
-recurrencia es la pregunta con la que acaba esta lección. Con las tres delante, cada una de las
-$T^{2}$ puntuaciones sale de dos vectores que ya están ahí, y las $T^{2}$ se pueden calcular a la
-vez: eso es lo que significa que quepan en un solo producto de matrices, $\mathbf{Q}\mathbf{K}^{\top}$.
-El softmax normaliza cada fila con la suya y ninguna fila mira a otra; la mezcla es un segundo
-producto. Tres operaciones en fila, y ese tres no se mueve cuando el texto se alarga.
+que $\mathbf{Q}$, $\mathbf{K}$ y $\mathbf{V}$ llegan enteras, una fila por posición de la frase;
+quién las fabrica sin recurrencia es la pregunta con la que acaba esta lección. Con las tres
+delante, cada una de las $T^{2}$ puntuaciones sale de dos vectores que ya están ahí, y las $T^{2}$
+se pueden calcular a la vez: eso es lo que significa que quepan en un solo producto de matrices,
+$\mathbf{Q}\mathbf{K}^{\top}$. El softmax normaliza cada fila con la suya y ninguna fila mira a
+otra; la mezcla es un segundo producto. Tres operaciones en fila, y ese tres no se mueve cuando el
+texto se alarga.
 
 Una salvedad, para no leer en esto más de lo que dice. Al generar texto, el decoder sigue
 escribiendo un token por paso, porque no puede mirar uno que todavía no ha escrito. Lo que
@@ -175,7 +177,7 @@ Nada de esto es gratis, y el precio se cuenta en multiplicaciones. Empieza por l
 paso multiplica $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ por un vector y
 $\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$ por otro, y multiplicar una matriz
 por un vector cuesta una multiplicación por casilla, así que el paso cuesta un producto por cada
-peso que tiene. Esa es la cuenta de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN (*recurrent neural
+casilla de sus matrices. Esa es la cuenta de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN (*recurrent neural
 network*) vanilla</Leccion>, leída como coste en lugar de como memoria. Sobre la frase entera:
 
 $$
@@ -221,7 +223,7 @@ capa como el mismo conjunto de vectores. La recurrencia no tenía este problema,
 propia: lo tenía resuelto de nacimiento, porque leía en orden y el orden de lectura era el orden de
 la frase. El MLP (*multilayer perceptron*) concatenado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué
 falla el MLP en secuencias</Leccion>, tampoco lo tenía, por la razón contraria: cada posición multiplicaba su
-propio bloque de pesos, y por eso sabía distinguirlas y no sabía generalizar entre ellas. La
+propio bloque de columnas, y por eso sabía distinguirlas y no sabía generalizar entre ellas. La
 atención no tiene ni lo uno ni lo otro.
 
 La concesión es grande y esta lección no la arregla: quitar la recurrencia se lleva por delante lo
@@ -264,15 +266,15 @@ barajas las filas y qué le ocurre al camino entre dos posiciones lejanas.
 
 ---
 
-Queda un hueco en el sitio más visible. La llamada de atención necesita tres listas, y en todo el
-bloque anterior las fabricaban dos redes recurrentes: las consultas eran los estados del decoder,
-uno por paso, y las claves y los valores los del encoder. Esos estados se han ido con la
-recurrencia, y con ellos quien fabricaba las tres listas. Sin ellas, la operación que esta lección
-ha puesto en el centro de la arquitectura no tiene con qué empezar.
+Queda un hueco en el sitio más visible. La llamada de atención necesita consultas, claves y
+valores, y en todo el bloque anterior los fabricaban dos redes recurrentes: las consultas eran los
+estados del decoder, uno por paso, y las claves y los valores los del encoder. Esos estados se han
+ido con la recurrencia, y sin ellos la operación que esta lección ha puesto en el centro de la
+arquitectura no tiene con qué empezar.
 
 La respuesta es la que le da nombre a <Leccion slug="self-attention">la lección siguiente, sobre la auto-atención</Leccion>: que
-pregunte la propia secuencia. Si las consultas, las claves y los valores son tres lecturas de la
-misma lista de vectores, no hace falta ninguna segunda red que produzca nada, y cada posición pasa
-a mirar a todas las demás, incluida ella misma. Es la operación de siempre con los tres papeles
-repartidos de otra manera, y es lo que convierte el diagrama de arriba en algo que se puede
-calcular.
+pregunte la propia secuencia. Si las consultas, las claves y los valores son tres lecturas de los
+mismos vectores, uno por posición, no hace falta ninguna segunda red que produzca nada, y cada
+posición pasa a mirar a todas las demás, incluida ella misma. Es la misma atención del bloque
+anterior, con los tres papeles en manos de una sola secuencia, y es lo que convierte el diagrama de
+arriba en algo que se puede calcular.

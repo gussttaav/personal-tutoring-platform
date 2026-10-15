@@ -43,7 +43,7 @@ quiz:
     type: multi
     prompt: 'Inicializas las $h$ cabezas con exactamente las mismas $\mathbf{W}^Q_i$, $\mathbf{W}^K_i$ y $\mathbf{W}^V_i$. Marca lo que es cierto de la capa en ese momento.'
     options:
-      - { id: a, text: 'Los $h$ mapas salen idénticos casilla a casilla, porque cada uno se calcula de la misma $\mathbf{X}$ con los mismos pesos.' }
+      - { id: a, text: 'Los $h$ mapas salen idénticos casilla a casilla, porque cada uno se calcula de la misma $\mathbf{X}$ con los mismos parámetros.' }
       - { id: b, text: 'La concatenación es el mismo bloque repetido $h$ veces, así que $\mathbf{W}^O$ sólo puede combinar copias de un único vector por posición.' }
       - { id: c, text: 'Lo que separa a unas cabezas de otras tiene que venir de la inicialización: ningún término de la pérdida le asigna un papel a ninguna.' }
       - { id: d, text: 'Las filas dejan de sumar $1$, porque $h$ mapas repartiendo una unidad cada uno reparten $h$ en total.' }
@@ -411,13 +411,13 @@ for hh in (1, 2, 4, 8, 16):
 
 Las dos filas impresas son la misma posición vista por dos cabezas, y no se parecen en nada: la
 primera pone $0.591$ sobre la posición $1$ y la segunda $0.531$ sobre la $5$, con la que la primera
-gastaba $0.005$. Aquí las cabezas se han separado sólo porque `rng` les dio pesos distintos, que es
-todo lo que las separa también en un modelo entrenado. Y la tabla es la cancelación de arriba
+gastaba $0.005$. Aquí las cabezas se han separado sólo porque `rng` les dio matrices distintas, que
+es todo lo que las separa también en un modelo entrenado. Y la tabla es la cancelación de arriba
 comprobada: las tres columnas de la derecha no se mueven de $786\,432$, $262\,144$ y $1\,048\,576$
 mientras $d_k$ baja de $512$ a $32$.
 
-La segunda celda mide la concesión. Si las $h$ cabezas empiezan con los mismos pesos, no hay $h$
-cabezas.
+La segunda celda mide la concesión. Si las $h$ cabezas empiezan con los mismos parámetros, no hay
+$h$ cabezas.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -443,7 +443,7 @@ def mapas(Wq, Wk):
 
 
 bloque = rng.normal(size=(d_model, d_k)) * 0.6
-iguales = np.tile(bloque, (1, h))                 # las h cabezas, con los mismos pesos
+iguales = np.tile(bloque, (1, h))                 # las h cabezas, con las mismas matrices
 A = mapas(iguales, iguales)
 print("h mapas identicos:", bool(np.allclose(A, A[0])))
 print("mayor diferencia con la cabeza 1:", np.abs(A - A[0]).max(axis=(1, 2)))

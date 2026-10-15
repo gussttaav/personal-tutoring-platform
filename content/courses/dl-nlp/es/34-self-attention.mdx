@@ -4,7 +4,7 @@ title: "Auto-atención: la secuencia se mira a sí misma"
 block: 5
 order: 2
 minutes: 29
-summary: "Sin el decoder recurrente no hay quien fabrique las consultas, y la salida es que las fabrique la propia frase. Pero usar los vectores tal cual no vale: con las tres listas iguales, lo que más se parece a un vector es él mismo, la diagonal gana todas las filas y la capa devuelve lo que le entró, sin un solo parámetro que entrenar. Lo que arregla eso son tres proyecciones de la misma X —una para preguntar, otra para ser preguntado, otra para mezclarse—, y con ellas la rejilla se vuelve cuadrada, deja de ser simétrica y cuesta un número de pesos donde la longitud de la frase no aparece."
+summary: "Sin encoder ni decoder recurrentes no hay quien fabrique las consultas, las claves ni los valores, y la salida es que los fabrique la propia frase. Pero usar sus vectores tal cual en los tres papeles no vale: lo que más se parece a un vector es él mismo, la diagonal gana todas las filas y la capa devuelve lo que le entró, sin un solo parámetro que entrenar. Lo que arregla eso son tres proyecciones de la misma X (una para preguntar, otra para ser preguntado, otra para mezclarse), y con ellas la rejilla se vuelve cuadrada, deja de ser simétrica y cuesta un número de parámetros donde la longitud de la frase no aparece."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -18,26 +18,26 @@ quiz:
       - { id: c, text: 'Las tres son $\mathbf{X}$ tal cual. Las proyecciones aparecen después, para ahorrar cuentas cuando $d_{\text{model}}$ es grande.' }
       - { id: d, text: 'La consulta sale de la posición que pregunta y las claves y los valores de las posiciones anteriores a ella, que son las únicas que ya se han leído.' }
     answer: a
-    explanation: 'La (a), y ahí está el «auto» del nombre: una sola lista de vectores leída de tres maneras. La (b) parte la capa en dos sitios que no existen —no hay ninguna otra red produciendo nada, que es justo lo que la lección anterior dejó vacío—. La (c) es la trampa que esta lección desmonta entera: con las tres listas iguales la rejilla se va a su propia diagonal y la capa no tiene un solo peso que aprender, así que las proyecciones no ahorran nada, son lo único que hace que la operación sirva. La (d) describe una máscara, que es otra cosa y llega en <Leccion slug="encoder-decoder-masking">la lección sobre el encoder, el decoder y las máscaras</Leccion>; sin ella toda posición mira a todas.'
-    hint: '¿Cuántas listas de vectores distintas hay en la entrada de la capa?'
+    explanation: 'La (a), y ahí está el «auto» del nombre: una sola matriz, $\mathbf{X}$, leída de tres maneras. La (b) parte la capa en dos sitios que no existen: no hay ninguna otra red produciendo nada, que es justo lo que la lección anterior dejó vacío. La (c) es la trampa que esta lección desmonta entera: con $\mathbf{Q}$, $\mathbf{K}$ y $\mathbf{V}$ iguales a $\mathbf{X}$ la rejilla se va a su propia diagonal y la capa no tiene un solo parámetro que aprender, así que las proyecciones no ahorran nada, son lo único que hace que la operación sirva. La (d) describe una máscara, que es otra cosa y llega en <Leccion slug="encoder-decoder-masking">la lección sobre el encoder, el decoder y las máscaras</Leccion>; sin ella toda posición mira a todas.'
+    hint: '¿Cuántas matrices distintas entran en la capa?'
   - id: q-forma-cuadrada
     type: numeric
     prompt: 'Una frase de $T = 12$ tokens entra en una capa de auto-atención con $d_{\text{model}} = 512$ y $d_k = d_v = 64$. ¿Cuántos números tiene el mapa de pesos $\mathbf{A}$?'
     answer: 144
     tolerance: 0
     unit: números
-    explanation: 'Ciento cuarenta y cuatro: $\mathbf{A}$ es $T \times T$, y $12^{2} = 144$. Ni $d_k$ ni $d_v$ ni $d_{\text{model}}$ entran en la cuenta —viven dentro de la comparación y de la mezcla, y ninguno de los tres sobrevive al peso, que es un solo número por pareja de posiciones—. Guarda la forma de la respuesta más que el número: lo único que decide el tamaño del mapa es la longitud de la frase, y lo hace al cuadrado.'
+    explanation: 'Ciento cuarenta y cuatro: $\mathbf{A}$ es $T \times T$, y $12^{2} = 144$. Ni $d_k$ ni $d_v$ ni $d_{\text{model}}$ entran en la cuenta: viven dentro de la comparación y de la mezcla, y ninguno de los tres sobrevive al peso, que es un solo número por pareja de posiciones. Guarda la forma de la respuesta más que el número: lo único que decide el tamaño del mapa es la longitud de la frase, y lo hace al cuadrado.'
     hint: 'Una fila por posición que pregunta, una columna por posición que contesta.'
   - id: q-sin-proyecciones
     type: single
-    prompt: 'Quitas las tres proyecciones —$\mathbf{Q} = \mathbf{K} = \mathbf{V} = \mathbf{X}$— con vectores de token de la misma longitud. ¿Qué calcula la capa?'
+    prompt: 'Quitas las tres proyecciones ($\mathbf{Q} = \mathbf{K} = \mathbf{V} = \mathbf{X}$) con vectores de token de la misma longitud. ¿Qué calcula la capa?'
     options:
       - { id: a, text: 'Cada fila pone su peso mayor en su propia diagonal, en todas a la vez, así que la mezcla se inclina hacia el vector de la propia posición; y no queda un solo parámetro que entrenar.' }
       - { id: b, text: 'Un reparto uniforme, $1/T$ en cada casilla, porque todos los vectores miden lo mismo y ninguno destaca sobre los demás.' }
       - { id: c, text: 'Nada: las formas no encajan, porque la consulta y la clave tienen que medir $d_k$ y $\mathbf{X}$ mide $d_{\text{model}}$.' }
       - { id: d, text: 'La misma rejilla que con proyecciones, sólo que congelada: los pesos salen iguales y lo que se pierde es poder ajustarlos.' }
     answer: a
-    explanation: 'La (a). La cuenta es de una línea: con todos los vectores de longitud $r$, Cauchy–Schwarz da $\mathbf{x}_i^{\top}\mathbf{x}_j \le r^{2} = \mathbf{x}_i^{\top}\mathbf{x}_i$, así que la casilla de la diagonal es la mayor de su fila y el softmax le da el peso más alto. La (b) confunde tener la misma longitud con apuntar en la misma dirección: son las direcciones las que reparten. La (c) inventa una restricción de formas —la consulta y la clave tienen que medir lo mismo *entre sí*, y $\mathbf{X}$ contra $\mathbf{X}$ lo cumple—. La (d) es la más tentadora y falla en lo que importa: sin las matrices no hay ningún reparto que congelar, porque el que sale no depende de nada aprendido.'
+    explanation: 'La (a). La cuenta es de una línea: con todos los vectores de longitud $r$, Cauchy–Schwarz da $\mathbf{x}_i^{\top}\mathbf{x}_j \le r^{2} = \mathbf{x}_i^{\top}\mathbf{x}_i$, así que la casilla de la diagonal es la mayor de su fila y el softmax le da el peso más alto. La (b) confunde tener la misma longitud con apuntar en la misma dirección: son las direcciones las que reparten. La (c) inventa una restricción de formas: la consulta y la clave tienen que medir lo mismo *entre sí*, y $\mathbf{X}$ contra $\mathbf{X}$ lo cumple. La (d) es la más tentadora y falla en lo que importa: sin las matrices no hay ningún reparto que congelar, porque el que sale no depende de nada aprendido.'
     hint: '¿Con qué vector se parece más un vector: con el de al lado o consigo mismo?'
   - id: q-simetria
     type: single
@@ -48,24 +48,24 @@ quiz:
       - { id: c, text: 'Ninguno de los dos: el producto escalar deja de ser simétrico en cuanto se divide por $\sqrt{d_k}$, que es distinto en cada fila.' }
       - { id: d, text: 'Los pesos sí y las puntuaciones no, que es al revés de lo que parece: el softmax reparte una unidad por fila y eso iguala las dos direcciones.' }
     answer: a
-    explanation: 'La (a), y la distinción vale para toda la lección: el producto escalar no distingue el orden de sus dos factores, pero el softmax de la fila $i$ divide entre la suma de la fila $i$, que no tiene por qué valer lo que la de la fila $j$. La (b) usa una propiedad cierta —el softmax es creciente— para concluir algo que no se sigue: conserva el *orden* dentro de una fila, no las igualdades entre filas distintas. La (c) se inventa un divisor por filas: $\sqrt{d_k}$ es el mismo número en toda la rejilla. La (d) da la vuelta a los dos hechos. Y con las proyecciones puestas se rompe también la simetría de las puntuaciones, que es lo que hace falta: en <W>las llaves del coche están ahí</W>, <W>están</W> necesita mirar a <W>llaves</W> mucho más de lo que <W>llaves</W> necesita mirar a <W>están</W>.'
+    explanation: 'La (a), y la distinción vale para toda la lección: el producto escalar no distingue el orden de sus dos factores, pero el softmax de la fila $i$ divide entre la suma de la fila $i$, que no tiene por qué valer lo que la de la fila $j$. La (b) usa una propiedad cierta (el softmax es creciente) para concluir algo que no se sigue: conserva el *orden* dentro de una fila, no las igualdades entre filas distintas. La (c) se inventa un divisor por filas: $\sqrt{d_k}$ es el mismo número en toda la rejilla. La (d) da la vuelta a los dos hechos. Y con las proyecciones puestas se rompe también la simetría de las puntuaciones, que es lo que hace falta: en <W>las llaves del coche están ahí</W>, <W>están</W> necesita mirar a <W>llaves</W> mucho más de lo que <W>llaves</W> necesita mirar a <W>están</W>.'
     hint: 'Escribe $\alpha_{ij}$ y $\alpha_{ji}$ con sus denominadores delante.'
   - id: q-que-crece-con-t
     type: multi
     prompt: 'La misma capa recibe primero una frase de $T = 20$ tokens y luego una de $T = 200$. Marca lo que es cierto.'
     options:
       - { id: a, text: 'El mapa $\mathbf{A}$ pasa de $400$ a $40\,000$ casillas.' }
-      - { id: b, text: 'El número de pesos de la capa no cambia: es $d_{\text{model}}\left(2d_k + d_v\right)$, y $T$ no aparece ahí.' }
+      - { id: b, text: 'El número de parámetros de la capa no cambia: es $d_{\text{model}}\left(2d_k + d_v\right)$, y $T$ no aparece ahí.' }
       - { id: c, text: 'Cada fila del mapa sigue sumando $1$, sólo que reparte esa unidad entre diez veces más posiciones.' }
       - { id: d, text: 'Lo que sale de cada posición pasa a tener más coordenadas, porque hay más valores que mezclar.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras. La (a) es la rejilla cuadrada: $T^{2}$ casillas, que es la cuenta cuyo precio midió la lección anterior. La (b) es la propiedad que separa esta capa del MLP (*multilayer perceptron*) concatenado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué falla el MLP en secuencias</Leccion>: allí cada posición tenía su propio bloque de pesos y alargar la entrada obligaba a añadir parámetros, y aquí las tres matrices multiplican filas, no posiciones. La (c) es lo que hace el softmax por filas, y de paso dice algo incómodo que recoge más adelante <Leccion slug="scaled-dot-product">la lección sobre el producto interno escalado</Leccion>: repartir una unidad entre $200$ posiciones deja pesos muy pequeños. La (d) es falsa: lo que sale es una mezcla de valores, así que mide $d_v$ vengan diez valores o doscientos.'
+    explanation: 'Las tres primeras. La (a) es la rejilla cuadrada: $T^{2}$ casillas, que es la cuenta cuyo precio midió la lección anterior. La (b) es la propiedad que separa esta capa del MLP (*multilayer perceptron*) concatenado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué falla el MLP en secuencias</Leccion>: allí cada posición tenía su propio bloque de columnas y alargar la entrada obligaba a añadir parámetros, y aquí las tres matrices multiplican filas, no posiciones. La (c) es lo que hace el softmax por filas, y de paso dice algo incómodo que recoge más adelante <Leccion slug="scaled-dot-product">la lección sobre el producto interno escalado</Leccion>: repartir una unidad entre $200$ posiciones deja pesos muy pequeños. La (d) es falsa: lo que sale es una mezcla de valores, así que mide $d_v$ vengan diez valores o doscientos.'
     hint: 'Mira dónde aparece $T$ en cada una de las tres formas: $\mathbf{A}$, las matrices y la salida.'
 challenges:
   - id: ch-auto-atencion
     prompt: |
       Escribe `auto_atencion(X, Wq, Wk, Wv)`. Recibe la frase ya vectorizada, `X` de forma
-      $(T, d_{\text{model}})$ —una fila por posición—, y las tres proyecciones: `Wq` y `Wk` de
+      $(T, d_{\text{model}})$ con una fila por posición, y las tres proyecciones: `Wq` y `Wk` de
       forma $(d_{\text{model}}, d_k)$ y `Wv` de forma $(d_{\text{model}}, d_v)$. Devuelve *la
       pareja* `(salida, A)`, en ese orden: la salida de forma $(T, d_v)$ y el mapa de pesos
       $\mathbf{A}$ de forma $(T, T)$, ya normalizado por filas.
@@ -153,12 +153,12 @@ challenges:
           return A @ V, A
     explanation: |
       Una línea más que el desafío de <Leccion slug="atencion-como-consulta">la lección sobre la consulta, la
-      clave y el valor</Leccion>, y esa línea es la lección entera: las tres listas se fabrican de la misma
-      `X`. A partir de ahí no hay nada nuevo —producto, softmax por filas, mezcla—, y las formas
-      se encadenan solas: $(T, d_{\text{model}})$ contra $(d_{\text{model}}, d_k)$ da $(T, d_k)$,
-      y $\mathbf{Q}\mathbf{K}^{\top}$ sale $(T, T)$ porque las dos son la misma frase. `Wq.shape[1]`
-      es $d_k$, que es lo que hay que meter en la raíz; leerlo de `X` da $d_{\text{model}}$ y el
-      reparto sale distinto.
+      clave y el valor</Leccion>, y esa línea es la lección entera: $\mathbf{Q}$, $\mathbf{K}$ y
+      $\mathbf{V}$ se fabrican de la misma `X`. A partir de ahí no hay nada nuevo (producto, softmax
+      por filas, mezcla), y las formas se encadenan solas: $(T, d_{\text{model}})$ contra
+      $(d_{\text{model}}, d_k)$ da $(T, d_k)$, y $\mathbf{Q}\mathbf{K}^{\top}$ sale $(T, T)$ porque
+      las dos son la misma frase. `Wq.shape[1]` es $d_k$, que es lo que hay que meter en la raíz;
+      leerlo de `X` da $d_{\text{model}}$ y el reparto sale distinto.
 reading:
   - kind: paper
     title: 'Attention Is All You Need'
@@ -167,7 +167,7 @@ reading:
     venue: 'arXiv:1706.03762'
     lang: en
     url: 'https://arxiv.org/abs/1706.03762'
-    note: 'La operación está en su ecuación (1); que las tres listas salgan de la misma secuencia, en su §3.2.3, en una frase. Lo que el artículo no hace es defender las proyecciones: por qué sin ellas la capa se copia a sí misma es tuyo.'
+    note: 'La operación está en su ecuación (1); que Q, K y V salgan de la misma secuencia, en su §3.2.3, en una frase. Lo que el artículo no hace es defender las proyecciones: por qué sin ellas la capa se copia a sí misma es tuyo.'
   - kind: blog
     title: 'The Illustrated Transformer'
     authors: 'Jay Alammar'
@@ -182,24 +182,28 @@ reading:
 
 La arquitectura terminó la lección anterior sin una sola pieza recurrente y con una única operación
 en el centro, la atención, a la que hay que pasarle tres cosas: consultas (*queries*), claves
-(*keys*) y valores (*values*). Las primeras se han quedado sin quien las haga. Era el decoder, un
-paso detrás de otro, y el decoder era recurrente. Lo único que sigue teniendo una fila por posición
-es la frase misma, ya convertida en vectores, así que para los tres papeles hay un candidato y no
-hay dos.
+(*keys*) y valores (*values*). Ninguna de las tres tiene ya quien la fabrique. Las consultas salían
+del decoder, un paso detrás de otro, y las claves y los valores, del encoder, y las dos redes eran
+recurrentes. Lo único que sigue teniendo una fila por posición es la frase misma, ya convertida en
+vectores, así que para los tres papeles hay un candidato y no hay dos.
 
 Usarlo tal cual, eso sí, no funciona, y falla por algo que se dice en una línea: a lo que más se
 parece un vector es a sí mismo. Cada posición se daría a sí misma el peso más alto, en todas las
-filas a la vez, y la capa se limitaría a devolverle a cada una lo que ya traía —sin un solo
-parámetro con el que hacer otra cosa—. Y hace falta que haga otra: en <W>las llaves del coche están
+filas a la vez, y la capa se limitaría a devolverle a cada una lo que ya traía, sin un solo
+parámetro con el que hacer otra cosa. Y hace falta que haga otra: en <W>las llaves del coche están
 ahí</W>, para conjugar <W>están</W> hay que haber mirado <W>llaves</W>, tres posiciones más atrás, y
 no <W>coche</W>, que está pegado y en singular. Esta lección monta la capa que sabe hacer eso, y lo
-que cuesta son tres matrices.
+que cuesta son tres matrices que se aprenden, una por papel. Multiplicar un vector por una de ellas
+es *proyectarlo*: sale otro vector, normalmente más corto, cuyas coordenadas son combinaciones de
+las del original, y cuáles son lo decide la matriz. Cada posición se proyecta tres veces, y de ahí
+salen su consulta, su clave y su valor.
 
 La rejilla de abajo es una frase contra sí misma: la fila es quien pregunta, la columna es quien
-contesta, y cada casilla es cuánto de esa columna entra en lo que lee esa fila. Escribe la frase
-que quieras y, sobre todo, apaga y enciende las proyecciones. Apagadas, la casilla más alta de cada
-fila es la que esa posición se da a sí misma, en las seis filas a la vez. Encendidas, la fila de
-<W>están</W> se va a buscar <W>llaves</W> por encima de todo lo demás.
+contesta, y cada casilla es cuánto de esa columna entra en lo que lee esa fila. Escribe la frase que
+quieras y, sobre todo, apaga y enciende las proyecciones. Apagadas, las consultas, las claves y los
+valores son los vectores de la frase tal cual, y la casilla más alta de cada fila es la que esa
+posición se da a sí misma, en las seis filas a la vez. Encendidas, la fila de <W>están</W> se va a
+buscar <W>llaves</W> por encima de todo lo demás.
 
 <Explorable
   id="self-attention-heatmap"
@@ -207,11 +211,12 @@ fila es la que esa posición se da a sí misma, en las seis filas a la vez. Ence
 />
 
 <Callout type="intuition" title="La idea en una frase">
-Auto-atención es la operación de siempre con las tres listas leídas del mismo sitio: la frase
-pregunta, la frase contesta y la frase se mezcla consigo misma.
+Auto-atención es la atención del bloque anterior con las consultas, las claves y los valores
+sacados de la misma frase: cada posición pregunta a todas las de su propia frase, incluida ella
+misma, y se lleva una mezcla de lo que contestan.
 </Callout>
 
-## Tres lecturas de la misma lista
+## Tres lecturas de la misma matriz
 
 Apila la frase por filas, como el bloque anterior apilaba los estados del encoder:
 
@@ -220,10 +225,10 @@ $$
 $$
 
 donde la fila $t$ es $\mathbf{x}_t^{\top}$, el vector del token que ocupa la posición $t$
-—transpuesto, porque en este curso los vectores son columnas—. Eso es todo lo que entra en la capa:
+(transpuesto, porque en este curso los vectores son columnas). Eso es todo lo que entra en la capa:
 una sola matriz, ninguna segunda red.
 
-Las tres listas salen de ahí, cada una por su propia matriz:
+Las consultas, las claves y los valores salen de ahí, cada uno por su propia matriz:
 
 $$
 \mathbf{Q} = \mathbf{X}\mathbf{W}^Q, \qquad \mathbf{K} = \mathbf{X}\mathbf{W}^K, \qquad \mathbf{V} = \mathbf{X}\mathbf{W}^V,
@@ -234,31 +239,43 @@ $\mathbf{W}^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$, de modo que
 $\mathbf{Q}, \mathbf{K} \in \mathbb{R}^{T \times d_k}$ y $\mathbf{V} \in \mathbb{R}^{T \times d_v}$.
 Los superíndices de estas tres matrices son *etiquetas del papel que hace cada una*, no índices de
 capa: es el único sitio del curso donde un superíndice no cuenta capas, y viene de la notación del
-artículo. Aquí hay una sola de estas tres parejas de proyecciones; una capa de verdad lleva varias
-en paralelo, y eso es <Leccion slug="multi-head">una lección más adelante, sobre la atención multi-head</Leccion>.
+artículo. Aquí hay un solo juego de estas tres proyecciones; una capa de verdad lleva varios en
+paralelo, y eso es <Leccion slug="multi-head">una lección más adelante, sobre la atención multi-head</Leccion>.
 
-Ahí está el «auto» del nombre, y es lo único que separa esta lección de <Leccion slug="atencion-como-consulta">la lección
+Ahí está el «auto» del nombre, y es lo que separa esta lección de <Leccion slug="atencion-como-consulta">la lección
 sobre la consulta, la clave y el valor</Leccion>. Allí la consulta era el estado de una red y las
-claves y los valores eran los estados de otra: tres listas de dos sitios distintos. Aquí las tres
-salen de la misma $\mathbf{X}$, y lo que cambia no es la operación —es idéntica— sino quién le pasa
-los argumentos.
+claves y los valores eran los estados de otra: dos fuentes para tres papeles. Aquí los tres salen
+de la misma $\mathbf{X}$. La operación que los recibe es la de aquella lección con un solo añadido,
+el divisor que el artículo pone en la puntuación:
 
 $$
 \text{Attention}\left(\mathbf{Q}, \mathbf{K}, \mathbf{V}\right) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V} \in \mathbb{R}^{T \times d_v},
 $$
 
-con el softmax por filas. El divisor $\sqrt{d_k}$ es lo único de esa línea que todavía no ha
+con el softmax por filas. Ese divisor, $\sqrt{d_k}$, es lo único de la línea que todavía no ha
 justificado nadie; queda anotado y vuelvo a él al final.
 
-Mira la forma del mapa de pesos, que es donde se nota que la entrada y la salida son la misma
-frase. $\mathbf{Q}\mathbf{K}^{\top}$ multiplica una matriz $T \times d_k$ por una $d_k \times T$, así
-que $\mathbf{A} \in \mathbb{R}^{T \times T}$ es *cuadrada*: una fila y una columna por posición. En
-el bloque anterior era $T_y \times T_x$ y sus dos ejes eran dos frases distintas; aquí los dos ejes
-son la misma, y por eso la casilla $\alpha_{ii}$ existe y significa algo —cuánto de sí misma se
-queda una posición—. Cada fila sigue sumando $1$, porque el softmax sigue normalizando una fila cada
-vez, y ninguna posición está excluida de ninguna fila: todas se miran a todas.
+Que $\mathbf{Q}$ salga entera de $\mathbf{X}$ no contradice la salvedad de la lección anterior, la
+de que al generar el decoder sigue escribiendo un token por paso. Aquí $\mathbf{X}$ es una frase que
+ya está entera (la de origen, o la de destino durante el entrenamiento), y entonces todas las
+consultas salen a la vez. Al generar, la $\mathbf{X}$ del decoder es lo que lleva escrito y gana una
+fila por paso, y $\mathbf{Q}$ con ella. Pero la consulta nueva es esa fila multiplicada por
+$\mathbf{W}^Q$, no el estado de una red que necesite el del paso anterior: lo único que obliga a ir
+de uno en uno es que el token siguiente todavía no está escrito. Cómo se monta ese decoder es
+<Leccion slug="encoder-decoder-masking">la lección sobre las máscaras</Leccion>.
 
-Y cuenta los pesos, que es la otra propiedad de forma que decide el resto del bloque. Las tres
+Fíjate ahora en las formas, que es donde se nota que la entrada y la salida son la misma frase.
+$\mathbf{Q}\mathbf{K}^{\top}$ multiplica una matriz $T \times d_k$ por una $d_k \times T$, así que el
+producto es *cuadrado*, $T \times T$: una fila y una columna por posición. El softmax no cambia esa
+forma, de modo que el mapa de pesos $\mathbf{A}$ que sale de él también es $T \times T$, con el peso
+$\alpha_{ij}$ en la casilla $(i, j)$: cuánto de la posición $j$ entra en lo que lee la posición $i$.
+Es la rejilla del principio de la lección, y en inglés se llama *attention weights* o *attention
+map*. En el bloque anterior era $T_y \times T_x$ y sus dos ejes eran dos frases distintas; aquí los
+dos ejes son la misma, y por eso la casilla $\alpha_{ii}$ existe y significa algo: cuánto de sí
+misma se queda una posición. Cada fila sigue sumando $1$, porque el softmax sigue normalizando una
+fila cada vez, y ninguna posición está excluida de ninguna fila: todas se miran a todas.
+
+Y cuenta los parámetros, que es la otra propiedad de forma que decide el resto del bloque. Las tres
 matrices juntan
 
 $$
@@ -268,31 +285,31 @@ $$
 y $T$ no aparece en esa cuenta. Multiplican filas de $\mathbf{X}$, y les da igual cuántas filas
 haya. Ponlo al lado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué falla el MLP (*multilayer
 perceptron*) en secuencias</Leccion>: allí cada posición tenía su propio bloque de columnas
-$\mathbf{W}^{(1)}_t$, así que alargar la entrada obligaba a añadir pesos y cada posición aprendía
-por su cuenta. Estas tres matrices son las mismas para todas las posiciones y para todas las
-longitudes.
+$\mathbf{W}^{(1)}_t$, así que alargar la entrada obligaba a añadir parámetros y cada posición
+aprendía por su cuenta. Estas tres matrices son las mismas para todas las posiciones y para todas
+las longitudes.
 
 ### Sin proyecciones, la capa se copia a sí misma
 
-Queda por defender lo que parece un rodeo: si las tres listas son lecturas de $\mathbf{X}$, ¿por qué
-no leerla tal cual y ahorrarse las matrices? Pon $\mathbf{Q} = \mathbf{K} = \mathbf{V} = \mathbf{X}$
-y desarrolla. La puntuación de la pareja $(i,j)$ pasa a ser el producto escalar de los dos vectores
-de token,
+Queda por defender lo que parece un rodeo: si $\mathbf{Q}$, $\mathbf{K}$ y $\mathbf{V}$ son lecturas
+de $\mathbf{X}$, ¿por qué no usarla tal cual y ahorrarse las tres proyecciones? Pon
+$\mathbf{Q} = \mathbf{K} = \mathbf{V} = \mathbf{X}$ y desarrolla. La puntuación de la pareja $(i,j)$
+pasa a ser el producto escalar de los dos vectores de token,
 
 $$
 e_{ij} = \frac{\mathbf{x}_i^{\top}\mathbf{x}_j}{\sqrt{d_{\text{model}}}},
 $$
 
-y de ahí salen dos cosas, ninguna buena. La primera: $\mathbf{x}_i^{\top}\mathbf{x}_j =
-\mathbf{x}_j^{\top}\mathbf{x}_i$, de modo que la rejilla de puntuaciones es *simétrica*. Los pesos
-no lo son —cada fila se divide entre la suma de la suya, y esas sumas no tienen por qué coincidir—,
-pero el orden dentro de cada fila lo fija un número que no distingue quién pregunta de quién
-contesta. Un idioma sí los distingue: <W>están</W> necesita a <W>llaves</W> mucho más de lo que
-<W>llaves</W> necesita a <W>están</W>.
+y de ahí salen dos cosas, ninguna buena. La primera:
+$\mathbf{x}_i^{\top}\mathbf{x}_j = \mathbf{x}_j^{\top}\mathbf{x}_i$, de modo que la rejilla de
+puntuaciones es *simétrica*. Los pesos no lo son (cada fila se divide entre la suma de la suya, y
+esas sumas no tienen por qué coincidir), pero el orden dentro de cada fila lo fija un número que no
+distingue quién pregunta de quién contesta. Un idioma sí los distingue: <W>están</W> necesita a
+<W>llaves</W> mucho más de lo que <W>llaves</W> necesita a <W>están</W>.
 
-La segunda es peor. Supongamos que todos los vectores de token miden lo mismo, $\lVert \mathbf{x}_t
-\rVert = r$ —lo supongo yo aquí para que la cuenta salga exacta; la desigualdad de Cauchy-Schwarz
-hace el resto—:
+La segunda es peor. Supongamos que todos los vectores de token miden lo mismo,
+$\lVert \mathbf{x}_t \rVert = r$. Lo supongo yo aquí para que la cuenta salga exacta, y la
+desigualdad de Cauchy–Schwarz hace el resto:
 
 $$
 \mathbf{x}_i^{\top}\mathbf{x}_j \le \lVert \mathbf{x}_i \rVert \lVert \mathbf{x}_j \rVert = r^{2} = \mathbf{x}_i^{\top}\mathbf{x}_i,
@@ -301,16 +318,16 @@ $$
 con igualdad sólo cuando $\mathbf{x}_j$ apunta en la dirección de $\mathbf{x}_i$. La casilla de la
 diagonal es la mayor de su fila, siempre, en todas las filas a la vez, así que el softmax le da el
 peso más alto a la propia posición y la mezcla se inclina hacia $\mathbf{x}_i$: la capa devuelve una
-versión desteñida de lo que le entró. Cuánto se inclina depende de lo que midan los vectores —cuanto
-mayor es $r$, más se cierra la fila sobre su diagonal—, y con longitudes distintas entre sí la
+versión desteñida de lo que le entró. Cuánto se inclina depende de lo que midan los vectores: cuanto
+mayor es $r$, más se cierra la fila sobre su diagonal. Con longitudes distintas entre sí la
 conclusión no cambia de forma: la fila se la lleva entonces la posición cuyo vector sea más largo,
 que sigue siendo una propiedad de los vectores y no de lo que la frase necesita.
 
 Lo que remata el argumento no es ninguna de las dos, sino lo que falta en las dos. Esa capa *no
 tiene un solo parámetro*. No hay nada que ajustar, así que no hay forma de que aprenda que un verbo
-en plural tiene que ir a buscar un sustantivo en plural. Las tres matrices son lo que separa los tres
-papeles —comparar no es ser comparado, y ninguno de los dos es aportar contenido— y, de paso, lo
-único que la capa puede aprender.
+en plural tiene que ir a buscar un sustantivo en plural. Las tres matrices son lo que separa los
+tres papeles (comparar no es ser comparado, y ninguno de los dos es aportar contenido) y, de paso,
+lo único que la capa puede aprender.
 
 ## La secuencia en los tres papeles, en NumPy
 
@@ -368,7 +385,7 @@ def atencion(Q, K, V):
     return A @ V, A
 
 
-# 1. Sin proyectar: las tres listas son X.
+# 1. Sin proyectar: Q, K y V son X.
 _, A0 = atencion(X, X, X)
 print("puntuaciones simetricas:", bool(np.allclose(X @ X.T, (X @ X.T).T)))
 print("la diagonal gana su fila:", bool(np.all(A0.argmax(axis=1) == np.arange(T))))
@@ -402,8 +419,9 @@ y conviene leerlo despacio, porque es de lo que trata la lección siguiente.
 
 ## Comprueba tu intuición
 
-Cinco preguntas: de dónde salen las tres listas, qué tamaño tiene el mapa, qué calcula la capa sin
-sus matrices, qué es simétrico y qué no, y qué se mueve cuando la frase se alarga.
+Cinco preguntas: de dónde salen $\mathbf{Q}$, $\mathbf{K}$ y $\mathbf{V}$, qué tamaño tiene el mapa,
+qué calcula la capa sin sus proyecciones, qué es simétrico y qué no, y qué se mueve cuando la frase
+se alarga.
 
 <Quiz id="q-tres-lecturas" />
 
@@ -420,11 +438,12 @@ sus matrices, qué es simétrico y qué no, y qué se mueve cuando la frase se a
 ---
 
 Queda el divisor, y ya no se puede dejar pasar. El tercer bloque de la última celda lo mide sin
-tocar nada más: con consultas y claves de $d_k = 8$ el mayor peso de una fila se queda en $0.558$,
-y con los mismos vectores aleatorios a $d_k = 512$ sube a $0.983$. Una fila así ha dejado de ser una
-mezcla —es quedarse con una posición y tirar las otras cinco—, y eso tiene nombre desde <Leccion slug="funciones-activacion">la lección
-sobre las funciones de activación</Leccion>: está saturada. Dividiendo entre $\sqrt{d_k}$ el
-máximo también crece, pero despacio, de $0.330$ a $0.486$, y la fila sigue repartiendo.
+tocar nada más: con consultas y claves de $d_k = 8$ el mayor peso de una fila se queda en $0.558$, y
+con los mismos vectores aleatorios a $d_k = 512$ sube a $0.983$. Una fila así ha dejado de ser una
+mezcla: es quedarse con una posición y tirar las otras cinco. Eso tiene nombre desde
+<Leccion slug="funciones-activacion">la lección sobre las funciones de activación</Leccion>: está
+saturada. Dividiendo entre $\sqrt{d_k}$ el máximo también crece, pero despacio, de $0.330$ a
+$0.486$, y la fila sigue repartiendo.
 
 Esa raíz no es una constante que alguien fuera probando hasta que las cosas salieron bien: se
 calcula, y lo que hay que calcular es cuánto crece un producto escalar a medida que se le añaden

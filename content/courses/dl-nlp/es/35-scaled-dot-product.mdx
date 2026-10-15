@@ -53,7 +53,7 @@ quiz:
     type: boolean
     prompt: 'Dividir las puntuaciones de una fila entre $\sqrt{d_k}$ puede cambiar cuál de las posiciones se lleva el peso mayor.'
     answer: false
-    explanation: 'Falso. $\sqrt{d_k}$ es positivo y es el mismo número en toda la rejilla, así que dividir conserva el orden de las puntuaciones dentro de la fila, y el softmax es creciente: la posición que ganaba sigue ganando. Lo que cambia es por cuánto —las distancias entre las puntuaciones se encogen con el mismo factor, y con ellas lo cerrada que queda la fila—. Guarda de paso la otra cosa que no cambia: el divisor es una constante, no un peso, así que la cuenta de parámetros de la lección anterior, $d_{\text{model}}\left(2d_k + d_v\right)$, se queda exactamente igual.'
+    explanation: 'Falso. $\sqrt{d_k}$ es positivo y es el mismo número en toda la rejilla, así que dividir conserva el orden de las puntuaciones dentro de la fila, y el softmax es creciente: la posición que ganaba sigue ganando. Lo que cambia es por cuánto —las distancias entre las puntuaciones se encogen con el mismo factor, y con ellas lo cerrada que queda la fila—. Guarda de paso la otra cosa que no cambia: el divisor es una constante y no se aprende, así que la cuenta de parámetros de la lección anterior, $d_{\text{model}}\left(2d_k + d_v\right)$, se queda exactamente igual.'
     hint: '¿Qué le hace a un orden dividir todos sus números entre el mismo número positivo?'
 challenges:
   - id: ch-gradiente-softmax
@@ -266,7 +266,7 @@ sobre implementar el MLP (*multilayer perceptron*)</Leccion>, entre ellas—, y 
 deja el mismo $\mathbb{E}\left[e^{2}\right] = d_k$. La primera celda lo mide.
 
 Conviene decir en voz alta de qué habla esa hipótesis, porque no habla del modelo que te
-encontrarás. Habla de pesos *recién inicializados*: nada garantiza que después de miles de pasos
+encontrarás. Habla de una red *recién inicializada*: nada garantiza que después de miles de pasos
 las coordenadas de $\mathbf{q}$ sigan siendo independientes ni midiendo $1$. Por eso el divisor se
 fija al diseñar la capa y no se mide sobre la marcha —arregla el arranque, que es donde el problema
 detiene el entrenamiento antes de que llegue a empezar—.
@@ -319,7 +319,7 @@ Merece la pena pararse en por qué el bloque 2 no se topó con esto, porque la d
 línea. Allí el *softmax* iba seguido de la entropía cruzada, y el $-\log$ de la pérdida aporta el
 factor inverso exacto: las dos juntas dieron
 $\nabla_{\mathbf{z}}\,\ell = \hat{\mathbf{y}} - \mathbf{y}$, que vale $\hat{y}_c - 1$ en la clase correcta y no se anula por muy segura que esté la red. Aquí
-detrás del *softmax* no hay ningún logaritmo, sólo la multiplicación por $\mathbf{V}$, la lista de
+detrás del *softmax* no hay ningún logaritmo, sólo la multiplicación por $\mathbf{V}$, la matriz de
 valores (*values*). La jacobiana no se cancela contra nada: se queda entera, ceros incluidos.
 
 Y así reaparecen dos cosas que el curso dio por cerradas en bloques distintos. La curva
