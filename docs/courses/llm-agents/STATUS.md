@@ -38,7 +38,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
-| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (1/7) | _tbd_ | |
+| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (2/7) | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
@@ -1157,3 +1157,36 @@ the reason; the cells do not load the mini-GPT. Decisions, confirmed by Gustavo 
   all four quiz questions right and wrong (the numeric accepts 0.367, refuses 0.37); no horizontal
   page scroll at 360 px (four displays, 403–601 px, scroll in their own boxes and fit the desktop
   column). Not on a phone.
+
+Lesson 19 `cadena-de-pensamiento` authored on the block branch, merged into `staging`. 1 996 words,
+4 display equations (under the 5–12 target, accepted for a «medium» block), no widget, 1 cell (43
+lines), 4 quiz, no challenge, 5 readings (Wei et al. 2022, Kojima et al. 2022, Merrill & Sabharwal
+2023, Pfau et al. 2024, Turpin et al. 2023; numbers checked against the arXiv abstracts and Wei's
+tables). `minutes: 25` (lint ≈24). Decisions, confirmed by Gustavo at review:
+- **Runs on the mini-GPT, not the scripted model:** what the cell measures is the cost of a token,
+  and the scripted model has no network. The block md's `Runs on:` line now reads «(19, 20, 21)».
+- **The formal content:** a camino through the causal network climbs one capa per arrow, so the
+  logits of any position sit at profundidad $L$ however long the prompt (more anchura, no depth);
+  a written token re-enters at the bottom, so a cadena of $R$ tokens gives $(R + 1)L$, and only a
+  token goes back down ($\le \log_2 \lvert V \rvert$ bits, so constant dots add no depth: Pfau et
+  al.'s gains are anchura). The bill is lesson 5's $c(t)$ summed over the cadena,
+  $R\,c_{\text{fila}} + LR(2T + R + 1) \cdot d_{\text{model}}$, paid at the writing rate. That
+  depth matters is cited (Merrill & Sabharwal), and that it helps is cited (Wei, Kojima; only from
+  ~100 B parameters), never demonstrated: the lesson says which claim is which.
+- **The cell:** the mini-GPT writes $R \in \{0, 12, 24, 48\}$ tokens after <W>¿Dónde está la
+  bola?</W> (12 tokens), then reads the same tokens in the prompt. Same multiplications
+  (6 739 968 at $R = 48$), answer logits equal to 5e-15, writing ≈5× slower than reading (75 vs
+  14 ms in the browser), depth 98 vs 2. The cadena is novel-like noise: the bill does not read
+  what it pays for.
+- **Letters and terms added before writing:** $R$ (a count is a capital; $R(x, y)$ was never
+  given a letter, the reward is lowercase $r$) and $\mathbf{h}^{(l)}_t$ in `NOTATION.md`;
+  `pasada` (in use since lesson 5), `cadena de pensamiento`, `camino`, `profundidad` / `anchura` in
+  the delta's §4.
+- **The harness consequence:** a cadena breaks «responde sólo con la fecha», so the
+  especificación says where the answer goes and the comprobación reads it there; the bridge names
+  lesson 20 (`salida-estructurada`) in prose with the usual comment.
+- **Lesson 18's bridge now links this lesson** (placeholder comment removed).
+- Verified: `pnpm lint:content` (no warnings for lessons 18 and 19), `pnpm build` green with 0
+  KaTeX errors; the cell run in the Browser pane on `pnpm start` and in a Node Pyodide 0.29.3
+  harness, identical output; all four quiz questions right and wrong; no horizontal page scroll
+  at 360 px (two displays, 466 and 403 px, scroll in their own boxes). Not on a phone.

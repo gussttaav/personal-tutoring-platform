@@ -1,0 +1,340 @@
+---
+slug: cadena-de-pensamiento
+title: "Cadena de pensamiento: más tokens, más cómputo"
+block: 3
+order: 2
+minutes: 25
+summary: "Cada token recibe una pasada por las mismas capas, sea fácil o difícil. La lección demuestra que una cadena de pensamiento multiplica la profundidad de lo que la red puede calcular antes de responder, cuenta lo que cuesta, mide en el mini-GPT que escribir un token sale mucho más caro que leerlo, y cita lo que se sabe de cuánto ayuda, que sólo se ve en modelos grandes."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-capas-en-serie
+    type: numeric
+    prompt: 'El mini-GPT tiene $L = 2$ capas. Ante una pregunta de $T = 12$ tokens escribe una cadena de 30 tokens y después la respuesta. ¿Cuántas capas cruza, como mucho, un camino que va de la pregunta al primer token de la respuesta?'
+    answer: 62
+    tolerance: 0
+    explanation: '62, que es $(30 + 1) \cdot 2$. Dos capas en la posición 12, cuyos logits sortean el primer token de la cadena, y dos más por cada uno de los 30 tokens escritos, que vuelven a entrar por abajo; los logits del último sortean la respuesta. 60 olvida la primera subida, y 2 es lo que habría sin cadena. $T$ no cuenta: una pregunta más larga da anchura, no profundidad.'
+    hint: 'Cuenta las subidas completas por la red que hay entre la pregunta y la respuesta: una por pasada.'
+  - id: q-leer-o-escribir
+    type: multi
+    prompt: 'En vez de dejar que el modelo escriba la cadena, le das tú esos mismos tokens, ya escritos, al final del prompt. Marca lo que es cierto.'
+    options:
+      - { id: a, text: 'Los logits del primer token de la respuesta son los mismos.' }
+      - { id: b, text: 'La respuesta empieza antes.' }
+      - { id: c, text: 'Pasan menos filas por las matrices de la red.' }
+      - { id: d, text: 'La profundidad del cálculo que lleva de la pregunta a la respuesta es la misma.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). La red lee las mismas filas y da los mismos logits, como enseña la penúltima línea de la celda, que sólo difiere en el redondeo. Leídos, los tokens entran en una pasada y se reparten su coste fijo; escritos, cada uno es una pasada. La (c) es falsa: las filas son las mismas, y las multiplicaciones también, en una pasada en vez de en $R$. La (d) también: leída, la cadena es entrada, y de la pregunta a la respuesta hay $L$ capas. El trabajo de los pasos lo hiciste tú, fuera de la red.'
+    hint: '¿Qué filas ve la red en cada caso, y cuántas pasadas le hacen falta?'
+  - id: q-que-demuestra
+    type: multi
+    prompt: 'La celda corre sobre el mini-GPT. Marca lo que demuestra.'
+    options:
+      - { id: a, text: 'Que escribir un token cuesta una pasada propia, y leerlo no.' }
+      - { id: b, text: 'Que una cadena de pensamiento mejora la respuesta.' }
+      - { id: c, text: 'Que lo que cuesta una cadena no depende de lo que dice.' }
+      - { id: d, text: 'Que una cadena más larga lleva más información a la respuesta.' }
+    answer: [a, c]
+    explanation: 'La (a) y la (c). Las pasadas y el reloj enseñan la primera, y la columna de multiplicaciones depende sólo de $T$ y de $R$: con otra semilla la cadena cambia y la factura no. La (b) no se puede ver en el mini-GPT, cuya cadena imita la novela; se ha medido en modelos de más de 100 000 millones de parámetros, y por debajo de 10 000 millones suele empeorar el acierto. La (d) confunde lo que una cadena hace posible con lo que hace: cada token puede llevar 9 bits hacia abajo, y los de la celda no llevan nada sobre la bola.'
+    hint: 'Separa lo que depende de quién escribió la cadena de lo que no.'
+  - id: q-donde-va-la-respuesta
+    type: single
+    prompt: 'Quieres que el modelo de las fechas piense antes de responder, y el programa sigue necesitando una fecha <W>AAAA-MM-DD</W> que pueda comprobar. ¿Qué especificación eliges?'
+    options:
+      - { id: a, text: 'La de siempre, que pide responder sólo con la fecha, con <W>Piensa paso a paso.</W> añadido al final.' }
+      - { id: b, text: 'La fecha en la primera línea y, debajo, los pasos que llevan a ella; la comprobación lee la primera línea.' }
+      - { id: c, text: 'Primero los pasos y, en la última línea, <W>Fecha:</W> seguido de la fecha; la comprobación lee esa línea.' }
+      - { id: d, text: 'Primero los pasos y después la fecha, sin comprobación: con los pasos a la vista, ya se ve si está bien.' }
+    answer: c
+    explanation: 'La (c). La (a) pide dos cosas incompatibles, nada más que la fecha y además los pasos, y cada respuesta incumple una de las dos. La (b) respeta la forma y no compra nada: cuando llegan los pasos, la fecha ya está sorteada, y ningún token posterior la cambia. La (d) olvida que la comprobación está ahí porque la forma falla a veces, y que una cadena no es el registro de lo que calculó la red.'
+    hint: '¿Qué tokens pueden influir en la fecha, los que van antes o los que van después?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Chain-of-Thought Prompting Elicits Reasoning in Large Language Models'
+    authors: 'Wei, Wang, Schuurmans, Bosma, Ichter, Xia, Chi, Le y Zhou'
+    year: '2022'
+    venue: 'NeurIPS 2022 · arXiv:2201.11903'
+    lang: en
+    url: 'https://arxiv.org/abs/2201.11903'
+    note: 'Ocho ejemplos con su cadena en el prompt llevan un modelo de 540 000 millones de parámetros del 17.9 % al 56.9 % en GSM8K. Su figura de la escala es el límite de esta lección: por debajo de unos 100 000 millones, no ayuda.'
+  - kind: paper
+    title: 'Large Language Models are Zero-Shot Reasoners'
+    authors: 'Kojima, Gu, Reid, Matsuo e Iwasawa'
+    year: '2022'
+    venue: 'NeurIPS 2022 · arXiv:2205.11916'
+    lang: en
+    url: 'https://arxiv.org/abs/2205.11916'
+    note: 'Sin ejemplos, con una frase escrita delante de la respuesta: «Let''s think step by step». Con InstructGPT, del 17.7 % al 78.7 % en MultiArith. La cadena se pide con una frase; la factura es la misma.'
+  - kind: paper
+    title: 'The Expressive Power of Transformers with Chain of Thought'
+    authors: 'Merrill y Sabharwal'
+    year: '2023'
+    venue: 'ICLR 2024 · arXiv:2310.07923'
+    lang: en
+    url: 'https://arxiv.org/abs/2310.07923'
+    note: 'La versión rigurosa del argumento de la profundidad: cuánto amplía una cadena lo que un Transformer puede calcular, según su longitud. Con tantos pasos como la entrada, ya sigue un autómata finito cualquiera.'
+  - kind: paper
+    title: 'Let''s Think Dot by Dot: Hidden Computation in Transformer Language Models'
+    authors: 'Pfau, Merrill y Bowman'
+    year: '2024'
+    venue: 'arXiv:2404.15758'
+    lang: en
+    url: 'https://arxiv.org/abs/2404.15758'
+    note: 'Modelos que resuelven dos tareas con una fila de puntos antes de la respuesta, y sin ella fallan: más posiciones calculando a la vez, sin que ningún token lleve un paso. Aprender a usarla les costó una supervisión muy específica.'
+  - kind: paper
+    title: 'Language Models Don''t Always Say What They Think: Unfaithful Explanations in Chain-of-Thought Prompting'
+    authors: 'Turpin, Michael, Perez y Bowman'
+    year: '2023'
+    venue: 'NeurIPS 2023 · arXiv:2305.04388'
+    lang: en
+    url: 'https://arxiv.org/abs/2305.04388'
+    note: 'Con ejemplos sesgados para que la respuesta buena sea siempre la (A), los modelos eligen la (A) y escriben una cadena que lo justifica sin nombrar el sesgo. La cadena no es el registro de lo que calculó la red.'
+---
+
+{/* COURSE-C2-P1-03 — Bloque 3, lección 2. La celda corre sobre el mini-GPT y no sobre el modelo
+    guionizado: lo que mide es el coste de un token, y eso es de la red. */}
+
+<Leccion slug="el-prompt-es-una-especificacion">La lección sobre la especificación</Leccion> le puso
+un techo a cualquier prompt: cuando ya no queda duda sobre la tarea, la probabilidad de cumplir es la
+de esa tarea con ese caso, y escribir mejor no la sube. Aquella cuenta tomaba al modelo por una
+imitación perfecta de su texto. Una red de verdad imita con un trabajo fijo por token: escribe de
+token en token, y a cada uno le dedica una pasada por las mismas capas, sea una coma o la cifra que
+decide el problema. Así que lo que el modelo hace bien depende también de cuántos tokens escribe antes
+de comprometerse con la respuesta.
+
+Tres cubiletes boca abajo y una bola bajo el de la izquierda. El trilero cambia el de la izquierda
+con el del centro, luego el del centro con el de la derecha, y luego otra vez el de la izquierda con
+el del centro. ¿Dónde está la bola? Un modelo que contesta de entrada tiene que decidir <W>a la
+derecha</W> en la pasada que escribe su primer token: los tres cambios, uno detrás de
+otro, resueltos dentro de las capas que tenga. Uno que antes escribe <W>al centro; a la derecha;
+sigue a la derecha</W> resuelve cada cambio en las pasadas de su propio trozo de texto, a partir de
+lo que dejó escrito el anterior. ¿Qué compra ese texto, y cuánto cuesta?
+
+Ese texto previo es la **cadena de pensamiento** (*chain of thought*, CoT): los tokens que un modelo
+escribe entre la pregunta y la respuesta, con los pasos intermedios. La pide el prompt, con una
+frase como <W>Piensa paso a paso antes de responder.</W> o con ejemplos que la lleven, y lo que
+cambia no está en la red. Cambia el recorrido. Lo que una pasada calcula se pierde al acabar, salvo
+dos cosas: las claves y los valores que deja en la caché, que las pasadas siguientes leen capa por
+capa, a la misma altura, y el token que sale sorteado, que vuelve a entrar por abajo. Escribir un
+paso es dejar su resultado donde la pasada siguiente puede empezar a trabajar con él.
+
+<Callout type="intuition" title="La idea en una frase">
+Cada token recibe una pasada, con la profundidad fija de las capas de la red. Una cadena de
+pensamiento no añade capas: hace que lo que calcula una pasada vuelva a entrar por abajo en la
+siguiente, y lo cobra al precio de un token escrito. Que eso mejore las respuestas se ha medido en
+modelos grandes; el mini-GPT sólo puede enseñar la factura.
+</Callout>
+
+## Una pasada, una profundidad fija
+
+Fijemos la red de <Leccion slug="kv-cache">la lección sobre la caché</Leccion>, con $L$ capas y una
+fila por posición en cada una. Llamemos $\mathbf{h}^{(l)}_t$ a la fila de la posición $t$ a la salida
+de la capa $l$, y $\mathbf{h}^{(0)}_t$ a la de entrada, el *embedding* del token más el vector de su
+posición. Por la máscara causal, $\mathbf{h}^{(l)}_t$ se calcula con las filas
+$\mathbf{h}^{(l-1)}_1, \dots, \mathbf{h}^{(l-1)}_t$ y con nada más: la suma residual también viene de
+la capa de abajo.
+
+Un **camino** hasta los logits $\mathbf{z}_t$ es una sucesión de filas en la que cada una entra en el
+cálculo de la siguiente. Cada flecha sube exactamente una capa, así que todos tienen la forma
+
+$$
+\mathbf{h}^{(0)}_{i_0} \to \mathbf{h}^{(1)}_{i_1} \to \cdots \to \mathbf{h}^{(L)}_{i_L}, \qquad i_0 \le i_1 \le \cdots \le i_L = t,
+$$
+
+y cruzan $L$ capas, ni una más, sea cual sea $t$. Llamemos **profundidad** de un cálculo al mayor
+número de capas que uno de sus caminos cruza en serie. La de los logits de cualquier posición es $L$.
+Un prompt más largo le da a cada capa más filas que leer, más anchura, y ni una capa más de
+profundidad. La caché tampoco la añade: lleva hacia delante las claves y los valores de cada
+posición, pero de la capa $l - 1$ a la $l$, nunca hacia abajo.
+
+Generar cambia eso en un solo sitio. El token $x_{t+1}$ se sortea con $\mathbf{z}_t$, que sale de
+$\mathbf{h}^{(L)}_t$, y entra en $\mathbf{h}^{(0)}_{t+1}$: un camino puede subir las $L$ capas en la
+posición $t$, salir por el sorteo y volver a entrar por abajo en la siguiente. Si entre la pregunta,
+de $T$ tokens, y la respuesta el modelo escribe una cadena de $R$ tokens, el primer token de la
+respuesta se sortea con $\mathbf{z}_{T+R}$, y el camino más largo desde la pregunta hasta él cruza
+
+$$
+(R + 1)\,L \quad \text{capas},
+$$
+
+con $R$ sorteos por medio. Sin cadena, $L$. La red es la misma, y la profundidad de lo que puede
+calcular antes de responder se ha multiplicado por $R + 1$.
+
+### Lo único que vuelve abajo es un token
+
+Por cada vuelta pasa un token y nada más. El resto de $\mathbf{h}^{(L)}_t$ (64 números en el
+mini-GPT) sólo sirve para los logits de su posición. Un token es una entrada de $V$, así que lleva
+como mucho
+
+$$
+\log_2 \lvert V \rvert \quad \text{bits},
+$$
+
+9 en el mini-GPT, unos 17 con un vocabulario de 100 000 entradas. Por eso una cadena sirve en la
+medida en que sus tokens llevan los resultados intermedios, como <W>a la derecha</W> lleva dónde
+está la bola. Un token que el modelo escribe siempre igual, un punto tras otro, no lleva nada hacia
+abajo: el camino existe y no transporta información. Pfau y sus coautores entrenaron modelos que
+resuelven dos tareas con una fila de puntos entre la pregunta y la respuesta, y sin ella fallan; lo que esos puntos les dan es
+anchura, más posiciones calculando a la vez en cada capa, y aprender a usarla les costó una
+supervisión muy específica.
+
+Que la profundidad importe, es decir, que haya problemas que ninguna red de $L$ capas resuelve en
+una pasada para entradas de cualquier longitud y que una cadena sí resuelve, es teoría de la
+complejidad, con hipótesis que se creen ciertas y que quedan fuera del curso. Merrill y Sabharwal
+reúnen problemas así de sencillos (seguir un autómata finito, una máquina de estados como la bola
+del trile) y demuestran que con una cadena tan larga como la entrada un Transformer los resuelve.
+El argumento de arriba dice qué hace posible una cadena. No dice que un modelo concreto lo aproveche.
+
+## Lo que cuesta una cadena
+
+Cada uno de los $R$ tokens es una pasada, con el coste por token de la lección sobre
+la caché: $c(t) = c_{\text{fila}} + 2Lt \cdot d_{\text{model}}$ multiplicaciones en la posición $t$,
+una por cada peso de las matrices más la atención sobre las $t$ posiciones. La cadena ocupa de la
+posición $T + 1$ a la $T + R$, y con $\sum_{t=T+1}^{T+R} t = RT + R(R+1)/2$,
+
+$$
+\sum_{t=T+1}^{T+R} c(t) = R\,c_{\text{fila}} + LR\,(2T + R + 1) \cdot d_{\text{model}}.
+$$
+
+Las matrices cobran lo mismo por cada token, y la atención, más cuanto más tarde llega: lo primero
+crece en línea recta con $R$, y lo segundo, en una cadena larga, con $R^{2}$. La respuesta, que ahora
+empieza $R$ posiciones más tarde, paga $2LR \cdot d_{\text{model}}$ multiplicaciones más por cada uno de
+sus tokens.
+
+Las multiplicaciones no son toda la factura. La caché dejó medido que un token escrito no comparte
+pasada con el siguiente, que no existe hasta que se sortea, mientras que los del prompt entran juntos
+y se reparten el coste fijo de cada pasada. Los $R$ tokens de la cadena son de los caros: el tiempo
+hasta la respuesta crece con $R$ al ritmo de escribir, no al de leer. Quien sirve un modelo a través de
+una API (*application programming interface*) suele cobrar el token generado varias veces más caro
+que el leído, por esa misma razón, y hay quien no enseña la cadena de su modelo y la cobra igual.
+
+### Lo que compra, según los modelos grandes
+
+Que una cadena compre algo se ha medido, y en modelos mucho mayores que el tuyo. Wei y sus coautores
+pusieron en el prompt ocho ejemplos con su cadena escrita, y un modelo de 540 000 millones de
+parámetros pasó de resolver el 17.9 % de los problemas de GSM8K (*Grade School Math*, unos 8 500
+problemas de matemáticas de primaria) a resolver el 56.9 %. Kojima y los suyos lo consiguieron sin
+ejemplos, con una frase delante de la respuesta, <W>Let's think step by step</W>: en otro conjunto
+de problemas aritméticos, del 17.7 % al 78.7 %.
+
+El primero encontró también el límite. La cadena sólo ayuda desde unos 100 000
+millones de parámetros, y por debajo de 10 000 millones suele empeorar el acierto, porque el modelo
+escribe cadenas fluidas y sin lógica. Tu mini-GPT tiene 136 448.
+
+Tampoco hay que leer la cadena como el registro de lo que la red calculó. Turpin y sus coautores
+reordenaron las opciones de los ejemplos de un prompt para que la buena fuera siempre la (A); los
+modelos eligieron la (A) también donde era falsa, escribieron cadenas que lo justificaban, y rara vez
+mencionaban el orden. El texto es lo que pasa de una pasada a la siguiente; si es además la razón de
+la respuesta, hay que medirlo. Y los modelos que hoy escriben cadenas largas antes de responder no lo
+hacen por una frase del prompt: los entrenaron para ello con recompensas que se comprueban, como
+contó <Leccion slug="de-donde-salen-las-preferencias">la lección sobre el origen de las
+preferencias</Leccion>, y pagan esta factura en cada pregunta.
+
+Tres clases de afirmaciones, entonces. Lo que cuesta una cadena se mide, y la celda de abajo lo mide
+en el navegador. Lo que hace posible se argumenta, con el camino. Que mejore las respuestas se cita.
+
+## La factura, medida en el mini-GPT
+
+La celda corre sobre tu mini-GPT del bloque 1 y no sobre el modelo guionizado: lo que mide es el
+coste de un token, y eso es cosa de la red, por la que el modelo guionizado no pasa. Le da la
+pregunta del trile reducida a <W>¿Dónde está la bola?</W>, porque en su ventana de 64 tokens no
+caben el enunciado entero y una cadena, y le deja escribir $R$ tokens antes del primero de la
+respuesta. Después le da esos mismos $R$ tokens ya escritos, al final del prompt, para que los lea en
+una pasada. Mira tres cosas: las pasadas, el reloj y las dos últimas líneas.
+
+<PyCell packages={["numpy"]} code={`
+import time
+import numpy as np
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())    # red, F, llenar, avanzar, codificar
+
+L, d = red.cfg["n_capas"], red.cfg["d_model"]
+c_fila = L * (4 * d * d + 2 * d * red.cfg["d_ff"]) + d * red.cfg["n_v"]
+c = lambda t: c_fila + 2 * L * t * d                      # el token de la posición t, con caché
+pregunta = codificar("¿Dónde está la bola?", F)
+T = len(pregunta)                                         # 12 tokens
+
+def escrita(R, semilla):
+    """El mini-GPT escribe R tokens de cadena: una pasada por la pregunta y otra por token."""
+    rng = np.random.default_rng(semilla)
+    z, cache = llenar(red, pregunta)
+    cadena = []
+    for _ in range(R):
+        cadena.append(muestrear(z, 1.0, None, 0.9, rng))
+        z = avanzar(red, cadena[-1], cache)
+    return cadena, z                                      # z: logits del primer token de la respuesta
+
+def leida(cadena):
+    """Los mismos tokens, ya escritos, al final del prompt: una sola pasada."""
+    return llenar(red, pregunta + cadena)[0]
+
+def ms(f, veces=5):
+    """La mediana de varias medidas de f(), en milisegundos."""
+    medidas = []
+    for _ in range(veces):
+        t0 = time.perf_counter(); f(); medidas.append(1000 * (time.perf_counter() - t0))
+    return np.median(medidas)
+
+escrita(48, 0); leida(list(range(48)))                    # calentamiento: la primera vez es lenta
+miles = lambda n: format(n, ",").replace(",", " ")
+print("  R   multiplicaciones   pasadas: escrita leída   ms: escrita leída   capas: escrita leída")
+dif = 0
+for R in [0, 12, 24, 48]:
+    cadena, z = escrita(R, semilla=0)
+    dif = max(dif, np.abs(z - leida(cadena)).max())
+    print("%3d %18s %16d %5d %12.0f %5.0f %14d %5d" % (R, miles(sum(c(t) for t in range(T + 1, T + R + 1))),
+          1 + R, 1, ms(lambda: escrita(R, 0)), ms(lambda: leida(cadena)), (R + 1) * L, L))
+print("\\nlogits de la respuesta, escrita o leída la cadena: difieren en %.0e" % dif)
+print("la cadena de 48 tokens:", repr(decodificar(cadena, F)))
+`} />
+
+La columna de multiplicaciones es la fórmula de arriba con $T = 12$: para $R = 48$,
+$6\,739\,968$, lo mismo con la cadena escrita que leída, porque pasan las mismas filas por las mismas
+matrices. El reloj no está de acuerdo. Escrita, la cadena tarda en proporción a $R$, una pasada por
+token; leída, es una sola pasada que reparte su coste fijo, y con $R = 48$ sale varias veces más
+rápida. Tus milisegundos serán otros, y la proporción, parecida.
+
+La penúltima línea es la que más importa. Los logits del primer token de la respuesta son los mismos,
+salvo el redondeo, tanto si el mini-GPT escribió la cadena como si se la diste escrita: a la
+respuesta le llega lo mismo, y la profundidad de la última columna dice quién hizo el trabajo. Una
+cadena leída es un trabajo que hizo otro. La última línea es la cadena: frases a medio hacer con el aire
+de *Marianela*, sin rastro de ninguna bola. Costó lo mismo que una cadena que la siguiera, porque la factura no lee lo que
+paga. Cambia la semilla de `escrita` en el bucle y compruébalo: otra cadena, la misma columna.
+
+Queda una consecuencia para el harness. La especificación de las fechas pedía la fecha y nada más,
+y una cadena delante la incumple por definición: pensar y no escribir nada más que la respuesta son
+dos peticiones incompatibles. La especificación tiene que decir dónde va la respuesta (en la última
+línea, tras <W>Fecha:</W>, por ejemplo), y la comprobación tiene que leerla ahí. El orden no es
+indiferente: una fecha escrita antes que los pasos ya está sorteada cuando llegan, y no hay cadena
+que la cambie.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: la profundidad, leer frente a escribir, lo que demuestra la celda y dónde va la
+respuesta.
+
+<Quiz id="q-capas-en-serie" />
+
+<Quiz id="q-leer-o-escribir" />
+
+<Quiz id="q-que-demuestra" />
+
+<Quiz id="q-donde-va-la-respuesta" />
+
+---
+
+Una cadena le da a la red profundidad a cambio de tokens, y deja al programa un problema que antes
+no tenía: la respuesta llega al final de un texto libre, y hay que encontrarla. Pedir su forma en el
+prompt sube la masa en las respuestas que la respetan, pero no la lleva a 1, y cada respuesta que se
+sale de ella es una llamada perdida, con su cadena pagada.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug salida-estructurada), envolver «La lección siguiente» en su Leccion slug=…; el lint
+    falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, sobre la salida estructurada, deja de pedir la forma y la impone en el sorteo:
+en cada posición, los tokens que la romperían reciben probabilidad cero antes de sortear. Funciona
+con cualquier modelo que dé logits, también con tu mini-GPT, al que ningún prompt le saca una
+respuesta con forma fija.

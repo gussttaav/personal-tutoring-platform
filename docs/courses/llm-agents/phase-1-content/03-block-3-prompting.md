@@ -4,7 +4,7 @@
 **Depends on:** P1-02 · Block 3 widgets (built in this task)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** derivation → systems
 **Runs on:** the **scripted model** from lesson 18; the mini-GPT where the mechanism is
-model-agnostic (20, 21) · **Publication:** lesson by lesson
+model-agnostic (19, 20, 21) · **Publication:** lesson by lesson
 
 ## TL;DR
 
@@ -50,7 +50,7 @@ it. Nothing it outputs touches the world. That is the bridge block.
 ## Lesson progress
 
 - [x] 18. `el-prompt-es-una-especificacion`
-- [ ] 19. `cadena-de-pensamiento`
+- [x] 19. `cadena-de-pensamiento`
 - [ ] 20. `salida-estructurada`
 - [ ] 21. `recuperacion`
 - [ ] 22. `ventana-de-contexto`

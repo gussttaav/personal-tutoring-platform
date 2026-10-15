@@ -386,6 +386,8 @@ in `dl-nlp`'s table, and the two never share a page.
 | $\pi_\theta(\text{cumple} \mid s, e_{1:K}, x)$ | the masa on the respuestas that meet an especificación: the third event in words, after Block 2 lesson 1's $\text{obedece}$ and $\text{buena}$. A respuesta can obey and not meet it, which is the lesson's opening case (Block 3 lesson 1) |
 | $p_{\text{SFT}}(\omega)$, $p_{\text{SFT}}(s \mid \omega)$ | Block 2 lesson 3's $p_{\text{SFT}}$ read with Block 1 lesson 8's latent tarea: the conversations of the ajuste in the place of that lesson's documents, each following a tarea $\omega$ and most opening on a prompt de sistema that describes it (Block 3 lesson 1) |
 | $\omega_1$ | the tarea an especificación describes, against every other $\omega$: Block 1 lesson 8's $\omega_1$, the first of two tareas compared, given that role (Block 3 lesson 1) |
+| $\mathbf{h}^{(l)}_t$ | the row of position $t$ at the output of capa $l$; $\mathbf{h}^{(0)}_t$ is the input row, the embedding of $x_t$ plus its position's vector. The first course's $\mathbf{h}^{(l)}$ with the position as subscript (shared §2); $\mathbf{h}^{(L)}_t$ is Block 2's $\mathbf{h}$ before the final layer norm (Block 3 lesson 2) |
+| $R$ | the tokens of a cadena de pensamiento: how many the model writes between the question, of $T$ tokens, and the first token of its respuesta, which is drawn with $\mathbf{z}_{T+R}$ (Block 3 lesson 2) |
 
 **The $\mathbf{q}$ collision, resolved by context and said once.** $\mathbf{q}$ is the attention
 query throughout the first course. In Block 1 here it always carries its position, $\mathbf{q}_t$
@@ -415,6 +417,17 @@ evaluator's score) now collides with this $s$ inside the block, and its hat alre
 lesson 3's rule that a hat means «estimated from a batch»: the evals lesson re-letters it before
 writing. $\text{cumple}$ is the third event in words, under the device Block 2 lesson 1 limited to
 two; like those, it names a set of respuestas, never the string <W>cumple</W>.
+
+**A count is a capital, and the cadena's is $R$** (`COURSE-C2-P1-03`, Block 3 lesson 2). Every
+lowercase Latin letter is spent (the $s$ note above), $K$ is lesson 1's ejemplos, and $n$ is Block
+1's bytes and, in the task md, the evals lesson's items. The course's counts are capitals ($B$, $K$,
+$L$, $N$, $S$, $T$), and $R$ is free in both courses: Block 2 gave Ziegler et al.'s $R(x, y)$ no
+letter on purpose, and the reward is lowercase $r$. Lesson 2 writes no reward. Its positions are
+those of Block 1: the question is $x_{1:T}$, the cadena takes positions $T + 1$ to $T + R$, and the
+respuesta is drawn from $\mathbf{z}_{T+R}$. $\mathbf{h}^{(l)}_t$ is built from the shared §2 rules
+(layer superscript, position subscript) and needs no new convention; the lesson that writes it never
+writes Block 2's bare $\mathbf{h}$. The indices of a camino, $i_0 \le \dots \le i_L$, live in one
+display and take no row.
 
 ### Block 4 — El puente: de texto a acciones
 
