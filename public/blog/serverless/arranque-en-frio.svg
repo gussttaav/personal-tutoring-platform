@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 232" width="760" height="232" role="img"
+ aria-label="Dos barras sobre el mismo eje de tiempo, de 0 a 520 milisegundos, con las medianas medidas. Arranque en frío: conexión TCP y TLS, 171 ms; preparar la instancia, unos 134 ms, que Lambda no registra ni cobra; Init, arrancar Python e importar el fichero, 116 ms; el handler, 2 ms; la red, unos 74 ms. Total, 0,51 s, de los que se cobran 119 ms. Petición en caliente: conexión, 168 ms; handler, 2 ms; red, 74 ms. Total, 0,24 s, de los que se cobran 2 ms.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.06); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.h { stroke: #86948a; fill: rgba(134,148,138,0.18); stroke-dasharray: 3 3; }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .sb.n { font-size: 10px; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .mo.s { font-size: 10px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .x { fill: #ffb4ab; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+</style>
+<rect class="bx w" x="674.4" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="690.4" y="14.0">se cobra</text>
+<rect class="bx h" x="580.4" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="596.4" y="14.0">sin cobrar</text>
+<rect class="bx b" x="529.8" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="545.8" y="14.0">red</text>
+<text class="lb" x="16.0" y="79.0">Arranque en frío</text>
+<rect class="bx b" x="150.0" y="58.0" width="190.7" height="32.0" rx="2"/>
+<text class="tx" x="245.4" y="72.0" style="text-anchor:middle">conexión</text>
+<text class="sb" x="245.4" y="85.0" style="text-anchor:middle">TCP y TLS</text>
+<rect class="bx h" x="340.7" y="58.0" width="149.5" height="32.0" rx="2"/>
+<text class="tx" x="415.5" y="72.0" style="text-anchor:middle">preparar la instancia</text>
+<text class="sb" x="415.5" y="85.0" style="text-anchor:middle">sin registrar ni cobrar</text>
+<rect class="bx w" x="490.2" y="58.0" width="129.4" height="32.0" rx="2"/>
+<text class="tx" x="554.9" y="72.0" style="text-anchor:middle">Init</text>
+<text class="sb" x="554.9" y="85.0" style="text-anchor:middle">Python y el fichero</text>
+<rect class="bx w" x="619.6" y="58.0" width="2.6" height="32.0" rx="2"/>
+<rect class="bx b" x="622.1" y="58.0" width="82.5" height="32.0" rx="2"/>
+<text class="tx" x="663.4" y="72.0" style="text-anchor:middle">red</text>
+<line class="ed" x1="622.1" y1="56.0" x2="622.1" y2="46.0"/>
+<text class="sb" x="626.1" y="54.0">handler</text>
+<text class="lb" x="712.7" y="79.0">0,51 s</text>
+<path class="br" d="M490.2,96.0 L490.2,102.0 L622.1,102.0 L622.1,96.0"/>
+<text class="sb w" x="556.2" y="114.0" style="text-anchor:middle">se cobra: 119 ms</text>
+<text class="lb" x="16.0" y="157.0">Petición en caliente</text>
+<rect class="bx b" x="150.0" y="136.0" width="187.4" height="32.0" rx="2"/>
+<text class="tx" x="243.7" y="150.0" style="text-anchor:middle">conexión</text>
+<text class="sb" x="243.7" y="163.0" style="text-anchor:middle">TCP y TLS</text>
+<rect class="bx w" x="337.4" y="136.0" width="1.9" height="32.0" rx="2"/>
+<rect class="bx b" x="339.3" y="136.0" width="82.5" height="32.0" rx="2"/>
+<text class="tx" x="380.6" y="150.0" style="text-anchor:middle">red</text>
+<line class="ed" x1="339.3" y1="134.0" x2="339.3" y2="124.0"/>
+<text class="sb" x="343.3" y="132.0">handler</text>
+<text class="lb" x="429.8" y="157.0">0,24 s</text>
+<path class="br" d="M337.4,174.0 L337.4,180.0 L339.3,180.0 L339.3,174.0"/>
+<text class="sb w" x="337.4" y="192.0">se cobra: 2 ms</text>
+<line class="ed" x1="150.0" y1="194.0" x2="730.0" y2="194.0"/>
+<line class="ed" x1="150.0" y1="194.0" x2="150.0" y2="198.0"/>
+<text class="sb" x="150.0" y="209.0" style="text-anchor:middle">0</text>
+<line class="ed" x1="261.5" y1="194.0" x2="261.5" y2="198.0"/>
+<text class="sb" x="261.5" y="209.0" style="text-anchor:middle">100</text>
+<line class="ed" x1="373.1" y1="194.0" x2="373.1" y2="198.0"/>
+<text class="sb" x="373.1" y="209.0" style="text-anchor:middle">200</text>
+<line class="ed" x1="484.6" y1="194.0" x2="484.6" y2="198.0"/>
+<text class="sb" x="484.6" y="209.0" style="text-anchor:middle">300</text>
+<line class="ed" x1="596.2" y1="194.0" x2="596.2" y2="198.0"/>
+<text class="sb" x="596.2" y="209.0" style="text-anchor:middle">400</text>
+<line class="ed" x1="707.7" y1="194.0" x2="707.7" y2="198.0"/>
+<text class="sb" x="707.7" y="209.0" style="text-anchor:middle">500</text>
+<text class="sb" x="440.0" y="226.0" style="text-anchor:middle">milisegundos desde que empieza la petición</text>
+</svg>

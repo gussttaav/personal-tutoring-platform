@@ -31,6 +31,7 @@ export const BLOG_TOPICS = [
   "evaluacion",
   "grafos",
   "indices",
+  "infraestructura",
   "lenguajes",
   "llm",
   "nlp",

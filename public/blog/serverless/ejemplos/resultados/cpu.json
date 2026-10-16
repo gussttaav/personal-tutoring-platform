@@ -1,0 +1,759 @@
+{
+ "cpu": [
+  {
+   "memoria": 128,
+   "t": 1792148837.3225722,
+   "estado": 200,
+   "request_id": "404b72e2-a87e-4689-81e4-980480b1c4e4",
+   "conexion": 0.128274,
+   "tls": 0.195963,
+   "primer_byte": 3.512513,
+   "total": 3.512597,
+   "cuerpo": {
+    "memoria_mb": 128,
+    "cpus": 2,
+    "segundos": 3.0912,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 3131.03,
+    "facturado_ms": 3132,
+    "memoria_mb": 128,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 128,
+   "t": 1792148840.71341,
+   "estado": 200,
+   "request_id": "5c0f58bc-587a-4417-bf49-d4a448d7434d",
+   "conexion": 0.093473,
+   "tls": 0.1663,
+   "primer_byte": 3.362135,
+   "total": 3.362234,
+   "cuerpo": {
+    "memoria_mb": 128,
+    "cpus": 2,
+    "segundos": 3.064,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 3122.11,
+    "facturado_ms": 3123,
+    "memoria_mb": 128,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 128,
+   "t": 1792148844.0954714,
+   "estado": 200,
+   "request_id": "af9ad3e8-0c02-494d-9003-5010c89dd49a",
+   "conexion": 0.097587,
+   "tls": 0.16258,
+   "primer_byte": 3.368277,
+   "total": 3.368373,
+   "cuerpo": {
+    "memoria_mb": 128,
+    "cpus": 2,
+    "segundos": 3.1106,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 3169.3,
+    "facturado_ms": 3170,
+    "memoria_mb": 128,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 128,
+   "t": 1792148847.5754688,
+   "estado": 200,
+   "request_id": "7621b418-413b-4ff8-ad7c-fa60354b968c",
+   "conexion": 0.178779,
+   "tls": 0.260588,
+   "primer_byte": 3.465654,
+   "total": 3.465757,
+   "cuerpo": {
+    "memoria_mb": 128,
+    "cpus": 2,
+    "segundos": 3.11,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 3149.7,
+    "facturado_ms": 3150,
+    "memoria_mb": 128,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 128,
+   "t": 1792148851.0197372,
+   "estado": 200,
+   "request_id": "deb85c6c-1659-4f71-83b0-2ca462a7aec7",
+   "conexion": 0.131362,
+   "tls": 0.220842,
+   "primer_byte": 3.428062,
+   "total": 3.428175,
+   "cuerpo": {
+    "memoria_mb": 128,
+    "cpus": 2,
+    "segundos": 3.1076,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 3128.43,
+    "facturado_ms": 3129,
+    "memoria_mb": 128,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 256,
+   "t": 1792148864.5136704,
+   "estado": 200,
+   "request_id": "614704ff-ea22-426f-be0d-3544afdd7c83",
+   "conexion": 0.094247,
+   "tls": 0.169806,
+   "primer_byte": 1.770883,
+   "total": 1.770997,
+   "cuerpo": {
+    "memoria_mb": 256,
+    "cpus": 2,
+    "segundos": 1.5296,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 1549.55,
+    "facturado_ms": 1550,
+    "memoria_mb": 256,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 256,
+   "t": 1792148866.356565,
+   "estado": 200,
+   "request_id": "061e8e58-37e7-4eae-9718-876fecd70e47",
+   "conexion": 0.096968,
+   "tls": 0.178265,
+   "primer_byte": 1.828338,
+   "total": 1.828425,
+   "cuerpo": {
+    "memoria_mb": 256,
+    "cpus": 2,
+    "segundos": 1.5094,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 1546.94,
+    "facturado_ms": 1547,
+    "memoria_mb": 256,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 256,
+   "t": 1792148868.2080436,
+   "estado": 200,
+   "request_id": "ffcd1a2d-fc32-4456-969e-b034b164be9c",
+   "conexion": 0.092286,
+   "tls": 0.157811,
+   "primer_byte": 1.827956,
+   "total": 1.828183,
+   "cuerpo": {
+    "memoria_mb": 256,
+    "cpus": 2,
+    "segundos": 1.5317,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 1533.69,
+    "facturado_ms": 1534,
+    "memoria_mb": 256,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 256,
+   "t": 1792148870.022711,
+   "estado": 200,
+   "request_id": "ccb997b0-4ad2-4b08-a6d8-c488aafcb964",
+   "conexion": 0.105954,
+   "tls": 0.17638,
+   "primer_byte": 1.776476,
+   "total": 1.776762,
+   "cuerpo": {
+    "memoria_mb": 256,
+    "cpus": 2,
+    "segundos": 1.526,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 1546.5,
+    "facturado_ms": 1547,
+    "memoria_mb": 256,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 256,
+   "t": 1792148871.8366451,
+   "estado": 200,
+   "request_id": "debf8e10-0f91-4a3b-9244-74a91cf478bf",
+   "conexion": 0.116584,
+   "tls": 0.180282,
+   "primer_byte": 1.789438,
+   "total": 1.789568,
+   "cuerpo": {
+    "memoria_mb": 256,
+    "cpus": 2,
+    "segundos": 1.5349,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 1536.85,
+    "facturado_ms": 1537,
+    "memoria_mb": 256,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 512,
+   "t": 1792148887.4023736,
+   "estado": 200,
+   "request_id": "1a683393-fd7d-4cb4-a893-9f6a7559c091",
+   "conexion": 0.090085,
+   "tls": 0.155102,
+   "primer_byte": 1.021192,
+   "total": 1.021336,
+   "cuerpo": {
+    "memoria_mb": 512,
+    "cpus": 2,
+    "segundos": 0.7768,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 808.09,
+    "facturado_ms": 809,
+    "memoria_mb": 512,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 512,
+   "t": 1792148888.4535286,
+   "estado": 200,
+   "request_id": "2596bc3a-878e-4e04-b98d-606f5bd6236b",
+   "conexion": 0.093037,
+   "tls": 0.167041,
+   "primer_byte": 1.027377,
+   "total": 1.027603,
+   "cuerpo": {
+    "memoria_mb": 512,
+    "cpus": 2,
+    "segundos": 0.7853,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 803.44,
+    "facturado_ms": 804,
+    "memoria_mb": 512,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 512,
+   "t": 1792148889.5129693,
+   "estado": 200,
+   "request_id": "0a5fa361-f23e-4d05-807a-81b73f4daa48",
+   "conexion": 0.092553,
+   "tls": 0.166062,
+   "primer_byte": 1.026931,
+   "total": 1.027291,
+   "cuerpo": {
+    "memoria_mb": 512,
+    "cpus": 2,
+    "segundos": 0.7817,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 798.59,
+    "facturado_ms": 799,
+    "memoria_mb": 512,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 512,
+   "t": 1792148890.5908358,
+   "estado": 200,
+   "request_id": "81e45b8f-770f-40eb-897b-ca90488da936",
+   "conexion": 0.114883,
+   "tls": 0.187017,
+   "primer_byte": 1.052198,
+   "total": 1.052483,
+   "cuerpo": {
+    "memoria_mb": 512,
+    "cpus": 2,
+    "segundos": 0.7862,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 789.45,
+    "facturado_ms": 790,
+    "memoria_mb": 512,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 512,
+   "t": 1792148891.6903238,
+   "estado": 200,
+   "request_id": "d6455e1d-5e00-4c41-8b8b-462d479e3b84",
+   "conexion": 0.1213,
+   "tls": 0.194159,
+   "primer_byte": 1.062183,
+   "total": 1.062397,
+   "cuerpo": {
+    "memoria_mb": 512,
+    "cpus": 2,
+    "segundos": 0.7746,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 776.8,
+    "facturado_ms": 777,
+    "memoria_mb": 512,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1024,
+   "t": 1792148906.1612325,
+   "estado": 200,
+   "request_id": "1efd7b94-1df6-4b5c-8217-26de8a760009",
+   "conexion": 0.100762,
+   "tls": 0.174207,
+   "primer_byte": 0.66591,
+   "total": 0.666137,
+   "cuerpo": {
+    "memoria_mb": 1024,
+    "cpus": 2,
+    "segundos": 0.4175,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 420.71,
+    "facturado_ms": 421,
+    "memoria_mb": 1024,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1024,
+   "t": 1792148906.854182,
+   "estado": 200,
+   "request_id": "97ba987f-5b88-4b6a-b0ca-31567da2bda8",
+   "conexion": 0.088935,
+   "tls": 0.157907,
+   "primer_byte": 0.655973,
+   "total": 0.656208,
+   "cuerpo": {
+    "memoria_mb": 1024,
+    "cpus": 2,
+    "segundos": 0.4111,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 413.1,
+    "facturado_ms": 414,
+    "memoria_mb": 1024,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1024,
+   "t": 1792148907.5287213,
+   "estado": 200,
+   "request_id": "47f60eb4-c8c0-4407-ba1c-ace7617b72cf",
+   "conexion": 0.093035,
+   "tls": 0.162657,
+   "primer_byte": 0.638902,
+   "total": 0.639104,
+   "cuerpo": {
+    "memoria_mb": 1024,
+    "cpus": 2,
+    "segundos": 0.4042,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 416.39,
+    "facturado_ms": 417,
+    "memoria_mb": 1024,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1024,
+   "t": 1792148908.256238,
+   "estado": 200,
+   "request_id": "de3a7633-bde1-41df-a79e-d9132ebeaa8c",
+   "conexion": 0.089986,
+   "tls": 0.161166,
+   "primer_byte": 0.690947,
+   "total": 0.691233,
+   "cuerpo": {
+    "memoria_mb": 1024,
+    "cpus": 2,
+    "segundos": 0.4435,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 446.65,
+    "facturado_ms": 447,
+    "memoria_mb": 1024,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1024,
+   "t": 1792148908.9433763,
+   "estado": 200,
+   "request_id": "9111c6e9-6400-448f-af24-1b1d91b996b2",
+   "conexion": 0.093717,
+   "tls": 0.163399,
+   "primer_byte": 0.650119,
+   "total": 0.65033,
+   "cuerpo": {
+    "memoria_mb": 1024,
+    "cpus": 2,
+    "segundos": 0.4072,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 412.13,
+    "facturado_ms": 413,
+    "memoria_mb": 1024,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1769,
+   "t": 1792148922.7878768,
+   "estado": 200,
+   "request_id": "ec702932-1597-408e-babb-4bcea9396e8c",
+   "conexion": 0.093026,
+   "tls": 0.159721,
+   "primer_byte": 0.46814,
+   "total": 0.468251,
+   "cuerpo": {
+    "memoria_mb": 1769,
+    "cpus": 2,
+    "segundos": 0.2315,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 233.68,
+    "facturado_ms": 234,
+    "memoria_mb": 1769,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1769,
+   "t": 1792148923.279862,
+   "estado": 200,
+   "request_id": "6d403e23-89ba-4440-afde-70a945524926",
+   "conexion": 0.101389,
+   "tls": 0.166399,
+   "primer_byte": 0.471828,
+   "total": 0.47193,
+   "cuerpo": {
+    "memoria_mb": 1769,
+    "cpus": 2,
+    "segundos": 0.2306,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 232.55,
+    "facturado_ms": 233,
+    "memoria_mb": 1769,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1769,
+   "t": 1792148923.8106382,
+   "estado": 200,
+   "request_id": "e3860953-1fbd-4021-b31e-2e32379db9ed",
+   "conexion": 0.116987,
+   "tls": 0.198116,
+   "primer_byte": 0.510953,
+   "total": 0.511168,
+   "cuerpo": {
+    "memoria_mb": 1769,
+    "cpus": 2,
+    "segundos": 0.2329,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 234.96,
+    "facturado_ms": 235,
+    "memoria_mb": 1769,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1769,
+   "t": 1792148924.4292471,
+   "estado": 200,
+   "request_id": "4db3e449-2589-4eb3-8f8f-1cb98b42a2f3",
+   "conexion": 0.215953,
+   "tls": 0.28681,
+   "primer_byte": 0.598954,
+   "total": 0.599052,
+   "cuerpo": {
+    "memoria_mb": 1769,
+    "cpus": 2,
+    "segundos": 0.2325,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 234.44,
+    "facturado_ms": 235,
+    "memoria_mb": 1769,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 1769,
+   "t": 1792148924.9557016,
+   "estado": 200,
+   "request_id": "28ad6d55-67ee-479d-9fbb-55ca85928fe1",
+   "conexion": 0.113926,
+   "tls": 0.181781,
+   "primer_byte": 0.499948,
+   "total": 0.500048,
+   "cuerpo": {
+    "memoria_mb": 1769,
+    "cpus": 2,
+    "segundos": 0.2324,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 234.36,
+    "facturado_ms": 235,
+    "memoria_mb": 1769,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 3008,
+   "t": 1792148940.4064965,
+   "estado": 200,
+   "request_id": "cc3a73bd-77b6-411b-807f-79aa63db9a43",
+   "conexion": 0.103547,
+   "tls": 0.172279,
+   "primer_byte": 0.493274,
+   "total": 0.493547,
+   "cuerpo": {
+    "memoria_mb": 3008,
+    "cpus": 2,
+    "segundos": 0.231,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 233.06,
+    "facturado_ms": 234,
+    "memoria_mb": 3008,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 3008,
+   "t": 1792148940.9153798,
+   "estado": 200,
+   "request_id": "e47b2149-d80a-44e7-9fe2-a9487dacb803",
+   "conexion": 0.095745,
+   "tls": 0.165124,
+   "primer_byte": 0.478397,
+   "total": 0.478476,
+   "cuerpo": {
+    "memoria_mb": 3008,
+    "cpus": 2,
+    "segundos": 0.2315,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 233.53,
+    "facturado_ms": 234,
+    "memoria_mb": 3008,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 3008,
+   "t": 1792148941.4151344,
+   "estado": 200,
+   "request_id": "8416e21b-c273-43b1-863a-2b4e13adedf6",
+   "conexion": 0.091147,
+   "tls": 0.155893,
+   "primer_byte": 0.484213,
+   "total": 0.484545,
+   "cuerpo": {
+    "memoria_mb": 3008,
+    "cpus": 2,
+    "segundos": 0.2317,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 233.9,
+    "facturado_ms": 234,
+    "memoria_mb": 3008,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 3008,
+   "t": 1792148941.9064083,
+   "estado": 200,
+   "request_id": "81a22178-98ed-490a-8cbd-922a8dd54816",
+   "conexion": 0.096749,
+   "tls": 0.163285,
+   "primer_byte": 0.471264,
+   "total": 0.471404,
+   "cuerpo": {
+    "memoria_mb": 3008,
+    "cpus": 2,
+    "segundos": 0.2313,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 234.42,
+    "facturado_ms": 235,
+    "memoria_mb": 3008,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  },
+  {
+   "memoria": 3008,
+   "t": 1792148942.4184737,
+   "estado": 200,
+   "request_id": "6f5848b6-abd5-47a3-8366-12fd6be778fc",
+   "conexion": 0.096658,
+   "tls": 0.172673,
+   "primer_byte": 0.479856,
+   "total": 0.480389,
+   "cuerpo": {
+    "memoria_mb": 3008,
+    "cpus": 2,
+    "segundos": 0.2311,
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.50GHz"
+   },
+   "report": {
+    "duracion_ms": 233.13,
+    "facturado_ms": 234,
+    "memoria_mb": 3008,
+    "usada_mb": 44,
+    "init_ms": null
+   }
+  }
+ ],
+ "espera": [
+  {
+   "t": 1792148972.1908643,
+   "estado": 200,
+   "request_id": "d67c3967-4d34-49bd-8a52-36612de5c50a",
+   "conexion": 0.095793,
+   "tls": 0.167856,
+   "primer_byte": 5.493369,
+   "total": 5.493608,
+   "cuerpo": {
+    "llamadas": 1,
+    "instancia": "fba14fb7",
+    "edad_s": 5.0
+   },
+   "report": {
+    "duracion_ms": 5002.98,
+    "facturado_ms": 5126,
+    "memoria_mb": 128,
+    "usada_mb": 39,
+    "init_ms": 122.94
+   }
+  },
+  {
+   "t": 1792148977.5787277,
+   "estado": 200,
+   "request_id": "29578168-1194-4b73-82fe-a73334c9bb16",
+   "conexion": 0.115412,
+   "tls": 0.190303,
+   "primer_byte": 5.344434,
+   "total": 5.344789,
+   "cuerpo": {
+    "llamadas": 2,
+    "instancia": "fba14fb7",
+    "edad_s": 10.3
+   },
+   "report": {
+    "duracion_ms": 5002.07,
+    "facturado_ms": 5003,
+    "memoria_mb": 128,
+    "usada_mb": 39,
+    "init_ms": null
+   }
+  },
+  {
+   "t": 1792148982.9011533,
+   "estado": 200,
+   "request_id": "08ac7667-b094-442a-90c0-056da8be5ce6",
+   "conexion": 0.095915,
+   "tls": 0.168582,
+   "primer_byte": 5.274633,
+   "total": 5.274921,
+   "cuerpo": {
+    "llamadas": 3,
+    "instancia": "fba14fb7",
+    "edad_s": 15.7
+   },
+   "report": {
+    "duracion_ms": 5002.23,
+    "facturado_ms": 5003,
+    "memoria_mb": 128,
+    "usada_mb": 39,
+    "init_ms": null
+   }
+  }
+ ]
+}
