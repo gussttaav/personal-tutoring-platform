@@ -378,8 +378,13 @@ in `dl-nlp`'s table, and the two never share a page.
 | Symbol | Meaning |
 |---|---|
 | $\mathbf{q}$, $\mathbf{d}_i$ | the query embedding and the $i$-th document embedding in retrieval; the score is $\mathbf{q}^{\top}\mathbf{d}_i$ or $\cos(\mathbf{q}, \mathbf{d}_i)$ |
-| $\mathcal{G}$ | a grammar — the set of strings constrained decoding may produce |
-| $A_t \subseteq V$ | the allowed set at position $t$: the vocabulary entries $\mathcal{G}$ admits next, given the prefix |
+| $\mathcal{G}$ | a gramática: a set of texts, the ones a generación restringida may produce. A respuesta $y$ is in $\mathcal{G}$ when its text, as bytes, is one of them; several token sequences can spell one text (Block 3 lesson 3) |
+| $A_j \subseteq V$ | the allowed set for token $j$ of the respuesta: the entries whose bytes, after those of $y_{<j}$, are still the beginning of a text of $\mathcal{G}$. Indexed by $j$, like the $y_j$ it draws; the seed and the task md wrote $A_t$ (Block 3 lesson 3) |
+| $p_\theta(A_j \mid x, y_{<j})$ | the masa of the allowed set, $\sum_{v \in A_j} p_\theta(v \mid x, y_{<j})$: what the máscara keeps at that position (Block 3 lesson 3) |
+| $p_\theta(\mathcal{G} \mid x)$ · $p_\theta(\mathcal{G} \mid x, y_{\le j})$ | the masa of the respuestas in $\mathcal{G}$, the task md's $P(\text{válido})$ · the probability that the model, having written $y_{\le j}$, ends on a text of $\mathcal{G}$. Both without the mask, with the harness stopping at the first text of $\mathcal{G}$ or at the first token that leaves its beginnings (Block 3 lesson 3) |
+| $p_\theta(y \mid x, \mathcal{G})$ | the condicionada: $p_\theta(y \mid x) / p_\theta(\mathcal{G} \mid x)$ for $y \in \mathcal{G}$, $0$ elsewhere. What muestreo por rechazo draws from (Block 3 lesson 3) |
+| $\tilde{q}(v \mid x, y_{<j})$ · $\tilde{q}(y \mid x)$ | Block 1 lesson 9's rows read with the máscara as the corte: $p_\theta(v \mid x, y_{<j}) / p_\theta(A_j \mid x, y_{<j})$ on $A_j$, and their product over the respuesta (Block 3 lesson 3) |
+| $\text{intentos}$ | the number of whole respuestas muestreo por rechazo draws until one is in $\mathcal{G}$: geometric, with $\mathbb{E}[\text{intentos}] = 1/p_\theta(\mathcal{G} \mid x)$. Roman, a word, like $\text{margen}$; an English lesson writes $\text{tries}$ (Block 3 lesson 3) |
 | $\hat{s}$ | a score — what an evaluator assigns one response |
 | $\text{acierto}$ | accuracy on an evaluation set, $\text{acierto}(D)$, as the first course wrote it |
 | $s$ | the prompt de sistema, a token sequence: the contenido of the mensaje of rol `sistema`. With Block 1 lesson 8's $e_{1:K}$ and $x$, the three pieces of a prompt, $\pi_\theta(y \mid s, e_{1:K}, x)$; each ejemplo is two mensajes, its caso as the usuario's and its respuesta as the asistente's, and $x$ is the last usuario mensaje (Block 3 lesson 1) |
@@ -417,6 +422,19 @@ evaluator's score) now collides with this $s$ inside the block, and its hat alre
 lesson 3's rule that a hat means «estimated from a batch»: the evals lesson re-letters it before
 writing. $\text{cumple}$ is the third event in words, under the device Block 2 lesson 1 limited to
 two; like those, it names a set of respuestas, never the string <W>cumple</W>.
+
+**A grammar is a set, and its masses take no letter** (`COURSE-C2-P1-03`, Block 3 lesson 3).
+The allowed set is indexed by the token it draws, $A_j$ beside $y_j$, not the seed's $A_t$: the
+respuesta's tokens have been $y_j$ since Block 1 lesson 8, and a $t$ would count the positions of the
+whole prompt. Its masa is written with the model, $p_\theta(A_j \mid x, y_{<j})$, as Block 2 lesson 1
+wrote $p_\theta(\text{obedece} \mid x)$: a set inside the distribution names the sum over it. That
+device, extended from words to two lettered sets, is why neither quantity gets a letter: $M_j$ is
+Block 1 lesson 4's masa of the $j$ most probable entries, and a bare $P$ for the task md's
+$P(\text{válido})$ would sit beside Block 2 lesson 4's $P(y_A \succ y_B \mid x)$. The máscara's
+distribution is Block 1 lesson 4's tilde, because it is that lesson's corte with $A_j$ in place of
+the núcleo, and the lesson says so; with $\tau = 1$ and no other corte, $\mathbf{q}$ is $p_\theta$
+itself, which is the case the lesson writes. The geometric sum of the expected $\text{intentos}$
+runs over a bare $i$, local to its display.
 
 **A count is a capital, and the cadena's is $R$** (`COURSE-C2-P1-03`, Block 3 lesson 2). Every
 lowercase Latin letter is spent (the $s$ note above), $K$ is lesson 1's ejemplos, and $n$ is Block

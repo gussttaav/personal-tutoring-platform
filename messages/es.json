@@ -1791,6 +1791,28 @@
         "sliderL": "Logaritmo del cociente de la rechazada",
         "sliderBeta": "β",
         "shiftNote": "Sube o baja los dos logaritmos a la vez y el punto recorre una diagonal del mismo color: la pérdida sólo ve su diferencia."
+      },
+      "logit-mask": {
+        "groupAria": "Generación restringida en el mini-GPT: en cada posición, lo que permite la gramática y la distribución del modelo antes y después de la máscara",
+        "prompt": "Prompt:",
+        "pathLabel": "Camino hacia",
+        "pathAria": "El camino que escribe «{name}»",
+        "tokenAria": "Posición {n}: «{token}»",
+        "position": "Posición {n} de {total}.",
+        "allowed": "{n, plural, =1 {Una sola entrada permitida: se lleva toda la masa.} other {# entradas permitidas de {size}.}}",
+        "kept": "Masa del modelo que conserva la máscara: {kept}. El resto se tira.",
+        "headBefore": "sin máscara",
+        "headAfter": "con máscara",
+        "rowAria": "«{token}»: {before} sin máscara, {after} con ella",
+        "rowCutAria": "«{token}»: {before} sin máscara; la gramática no lo permite",
+        "percent": "{value} %",
+        "cut": "fuera",
+        "rest": "otras {n}",
+        "restAria": "Las otras {n} entradas: {before} sin máscara; la gramática no permite ninguna",
+        "legendBefore": "sin máscara: lo que da el modelo",
+        "legendAfter": "con máscara: renormalizado en las permitidas",
+        "legendCut": "fuera de la gramática",
+        "totals": "Este camino, hasta aquí: {raw} sin máscara, {masked} con ella."
       }
     }
   },

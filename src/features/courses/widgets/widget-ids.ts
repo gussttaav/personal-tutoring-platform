@@ -56,6 +56,8 @@ export const WIDGET_IDS = [
   "bradley-terry",
   // COURSE-C2-P1-02 — llm-agents Block 2 lesson 6 (DPO: la derivación completa).
   "dpo-loss",
+  // COURSE-C2-P1-03 — llm-agents Block 3 lesson 3 (salida estructurada: generación restringida).
+  "logit-mask",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
