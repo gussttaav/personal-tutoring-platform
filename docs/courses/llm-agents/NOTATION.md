@@ -265,6 +265,7 @@ together, and the lesson states that shape when the cache first appears.
 | $Z(x)$ | the partition function, $\sum_{y} \pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}$: what makes $\pi^{\star}(\cdot \mid x)$ add up to 1, a sum over every response, and a function of the instrucción only (Block 2 lesson 6) |
 | $r_\theta(x, y)$ | the implicit reward of the policy, $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$: the reward whose $\pi^{\star}$ is $\pi_\theta$, up to $\kappa(x)$ (Block 2 lesson 6) |
 | $\mathcal{L}_{\text{DPO}}(\theta)$ | $\mathbb{E}_{(x, y_w, y_l) \sim p_{\text{pref}}}\left[-\log \sigma\big(r_\theta(x, y_w) - r_\theta(x, y_l)\big)\right]$: lesson 4's $\mathcal{L}_{\text{R}}$ with $r_\theta$ for $r_\phi$ (Block 2 lesson 6) |
+| $\texttt{<\|im\_start\|>}$, $\texttt{<\|im\_end\|>}$ | ChatML's two tokens especiales in Qwen2.5's vocabulary, ids 151644 and 151645: the first opens a mensaje of any rol, whose name follows as ordinary text and a line break; the second closes it, the mini-GPT's $\texttt{<\|fin\|>}$. Spelled as the vocabulary spells them, the $\texttt{<\|fin\|>}$ rule, with the underscore escaped; in prose `<W>\<\|im_end\|></W>` (Block 2 lesson 8) |
 
 **An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
 distribution, roman text names the set of respuestas it describes, and the probability is that
@@ -377,10 +378,21 @@ in `dl-nlp`'s table, and the two never share a page.
 | Symbol | Meaning |
 |---|---|
 | $\mathbf{q}$, $\mathbf{d}_i$ | the query embedding and the $i$-th document embedding in retrieval; the score is $\mathbf{q}^{\top}\mathbf{d}_i$ or $\cos(\mathbf{q}, \mathbf{d}_i)$ |
-| $\mathcal{G}$ | a grammar — the set of strings constrained decoding may produce |
-| $A_t \subseteq V$ | the allowed set at position $t$: the vocabulary entries $\mathcal{G}$ admits next, given the prefix |
+| $\mathcal{G}$ | a gramática: a set of texts, the ones a generación restringida may produce. A respuesta $y$ is in $\mathcal{G}$ when its text, as bytes, is one of them; several token sequences can spell one text (Block 3 lesson 3) |
+| $A_j \subseteq V$ | the allowed set for token $j$ of the respuesta: the entries whose bytes, after those of $y_{<j}$, are still the beginning of a text of $\mathcal{G}$. Indexed by $j$, like the $y_j$ it draws; the seed and the task md wrote $A_t$ (Block 3 lesson 3) |
+| $p_\theta(A_j \mid x, y_{<j})$ | the masa of the allowed set, $\sum_{v \in A_j} p_\theta(v \mid x, y_{<j})$: what the máscara keeps at that position (Block 3 lesson 3) |
+| $p_\theta(\mathcal{G} \mid x)$ · $p_\theta(\mathcal{G} \mid x, y_{\le j})$ | the masa of the respuestas in $\mathcal{G}$, the task md's $P(\text{válido})$ · the probability that the model, having written $y_{\le j}$, ends on a text of $\mathcal{G}$. Both without the mask, with the harness stopping at the first text of $\mathcal{G}$ or at the first token that leaves its beginnings (Block 3 lesson 3) |
+| $p_\theta(y \mid x, \mathcal{G})$ | the condicionada: $p_\theta(y \mid x) / p_\theta(\mathcal{G} \mid x)$ for $y \in \mathcal{G}$, $0$ elsewhere. What muestreo por rechazo draws from (Block 3 lesson 3) |
+| $\tilde{q}(v \mid x, y_{<j})$ · $\tilde{q}(y \mid x)$ | Block 1 lesson 9's rows read with the máscara as the corte: $p_\theta(v \mid x, y_{<j}) / p_\theta(A_j \mid x, y_{<j})$ on $A_j$, and their product over the respuesta (Block 3 lesson 3) |
+| $\text{intentos}$ | the number of whole respuestas muestreo por rechazo draws until one is in $\mathcal{G}$: geometric, with $\mathbb{E}[\text{intentos}] = 1/p_\theta(\mathcal{G} \mid x)$. Roman, a word, like $\text{margen}$; an English lesson writes $\text{tries}$ (Block 3 lesson 3) |
 | $\hat{s}$ | a score — what an evaluator assigns one response |
 | $\text{acierto}$ | accuracy on an evaluation set, $\text{acierto}(D)$, as the first course wrote it |
+| $s$ | the prompt de sistema, a token sequence: the contenido of the mensaje of rol `sistema`. With Block 1 lesson 8's $e_{1:K}$ and $x$, the three pieces of a prompt, $\pi_\theta(y \mid s, e_{1:K}, x)$; each ejemplo is two mensajes, its caso as the usuario's and its respuesta as the asistente's, and $x$ is the last usuario mensaje (Block 3 lesson 1) |
+| $\pi_\theta(\text{cumple} \mid s, e_{1:K}, x)$ | the masa on the respuestas that meet an especificación: the third event in words, after Block 2 lesson 1's $\text{obedece}$ and $\text{buena}$. A respuesta can obey and not meet it, which is the lesson's opening case (Block 3 lesson 1) |
+| $p_{\text{SFT}}(\omega)$, $p_{\text{SFT}}(s \mid \omega)$ | Block 2 lesson 3's $p_{\text{SFT}}$ read with Block 1 lesson 8's latent tarea: the conversations of the ajuste in the place of that lesson's documents, each following a tarea $\omega$ and most opening on a prompt de sistema that describes it (Block 3 lesson 1) |
+| $\omega_1$ | the tarea an especificación describes, against every other $\omega$: Block 1 lesson 8's $\omega_1$, the first of two tareas compared, given that role (Block 3 lesson 1) |
+| $\mathbf{h}^{(l)}_t$ | the row of position $t$ at the output of capa $l$; $\mathbf{h}^{(0)}_t$ is the input row, the embedding of $x_t$ plus its position's vector. The first course's $\mathbf{h}^{(l)}$ with the position as subscript (shared §2); $\mathbf{h}^{(L)}_t$ is Block 2's $\mathbf{h}$ before the final layer norm (Block 3 lesson 2) |
+| $R$ | the tokens of a cadena de pensamiento: how many the model writes between the question, of $T$ tokens, and the first token of its respuesta, which is drawn with $\mathbf{z}_{T+R}$ (Block 3 lesson 2) |
 
 **The $\mathbf{q}$ collision, resolved by context and said once.** $\mathbf{q}$ is the attention
 query throughout the first course. In Block 1 here it always carries its position, $\mathbf{q}_t$
@@ -395,6 +407,45 @@ makes for $t$ and $d$ in the first course.
 and $\text{acierto}(D)$ as its symbol (its Block 2 lesson 10), and the evals lesson here measures
 the same quantity — the fraction a model gets right on a held-out set. One concept, one symbol,
 across both courses; the English *accuracy* is given once per lesson, as the acronym rule asks.
+
+**$s$ is the prompt de sistema, and Block 1's step never meets it** (`COURSE-C2-P1-03`, Block 3
+lesson 1). The block task md writes $p_\theta(y \mid s, e_{1:k}, x)$, and every lowercase Latin
+letter is spent somewhere in the course, so the choice is which collision to tolerate. $s$ was Block 1
+lesson 3's training step ($\theta_s$, $S$), and from this block on $\theta$ does not move: no page
+of Blocks 3–5 counts a step, and the lesson says so in a clause. The examples are $e_{1:K}$, not the
+task md's $e_{1:k}$ (Block 1 lesson 8's row). The model is written with the policy, $\pi_\theta$,
+because the prompt is a conversation read through the plantilla (Block 2 lesson 2), and the
+decomposition over tareas with $p_{\text{SFT}}$, because a prompt de sistema exists only in the
+conversations of an ajuste: the lesson states that the model imitates it, $\pi_\theta = p_{\text{SFT}}$,
+and that the derivation holds as far as that does. **The seeded $\hat{s}$ row above** (an
+evaluator's score) now collides with this $s$ inside the block, and its hat already broke Block 1
+lesson 3's rule that a hat means «estimated from a batch»: the evals lesson re-letters it before
+writing. $\text{cumple}$ is the third event in words, under the device Block 2 lesson 1 limited to
+two; like those, it names a set of respuestas, never the string <W>cumple</W>.
+
+**A grammar is a set, and its masses take no letter** (`COURSE-C2-P1-03`, Block 3 lesson 3).
+The allowed set is indexed by the token it draws, $A_j$ beside $y_j$, not the seed's $A_t$: the
+respuesta's tokens have been $y_j$ since Block 1 lesson 8, and a $t$ would count the positions of the
+whole prompt. Its masa is written with the model, $p_\theta(A_j \mid x, y_{<j})$, as Block 2 lesson 1
+wrote $p_\theta(\text{obedece} \mid x)$: a set inside the distribution names the sum over it. That
+device, extended from words to two lettered sets, is why neither quantity gets a letter: $M_j$ is
+Block 1 lesson 4's masa of the $j$ most probable entries, and a bare $P$ for the task md's
+$P(\text{válido})$ would sit beside Block 2 lesson 4's $P(y_A \succ y_B \mid x)$. The máscara's
+distribution is Block 1 lesson 4's tilde, because it is that lesson's corte with $A_j$ in place of
+the núcleo, and the lesson says so; with $\tau = 1$ and no other corte, $\mathbf{q}$ is $p_\theta$
+itself, which is the case the lesson writes. The geometric sum of the expected $\text{intentos}$
+runs over a bare $i$, local to its display.
+
+**A count is a capital, and the cadena's is $R$** (`COURSE-C2-P1-03`, Block 3 lesson 2). Every
+lowercase Latin letter is spent (the $s$ note above), $K$ is lesson 1's ejemplos, and $n$ is Block
+1's bytes and, in the task md, the evals lesson's items. The course's counts are capitals ($B$, $K$,
+$L$, $N$, $S$, $T$), and $R$ is free in both courses: Block 2 gave Ziegler et al.'s $R(x, y)$ no
+letter on purpose, and the reward is lowercase $r$. Lesson 2 writes no reward. Its positions are
+those of Block 1: the question is $x_{1:T}$, the cadena takes positions $T + 1$ to $T + R$, and the
+respuesta is drawn from $\mathbf{z}_{T+R}$. $\mathbf{h}^{(l)}_t$ is built from the shared §2 rules
+(layer superscript, position subscript) and needs no new convention; the lesson that writes it never
+writes Block 2's bare $\mathbf{h}$. The indices of a camino, $i_0 \le \dots \le i_L$, live in one
+display and take no row.
 
 ### Block 4 — El puente: de texto a acciones
 

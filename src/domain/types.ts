@@ -538,6 +538,7 @@ export type BlogTopic =
   | "evaluacion"
   | "grafos"
   | "indices"
+  | "infraestructura"
   | "lenguajes"
   | "llm"
   | "nlp"

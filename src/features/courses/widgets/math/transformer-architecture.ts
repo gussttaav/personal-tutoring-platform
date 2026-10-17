@@ -130,7 +130,7 @@ export const TRANSFORMER_COMPONENTS: ArchComponent[] = [
     box: enc(232),
     mixesPositions: false,
     description:
-      "El perceptrón multicapa del bloque 2, de dos capas, aplicado a cada fila por separado y con los mismos pesos en todas.",
+      "El perceptrón multicapa del bloque 2, de dos capas, aplicado a cada fila por separado y con los mismos parámetros en todas.",
     lesson: RESIDUALES,
     alsoLessons: [],
   },
@@ -219,7 +219,7 @@ export const TRANSFORMER_COMPONENTS: ArchComponent[] = [
     box: dec(120),
     mixesPositions: false,
     description:
-      "El mismo perceptrón por posiciones que en la otra columna, con sus propios pesos.",
+      "El mismo perceptrón por posiciones que en la otra columna, con sus propios parámetros.",
     lesson: RESIDUALES,
     alsoLessons: [],
   },

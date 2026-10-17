@@ -11,6 +11,10 @@
  *      mass, nucleus size and the mass the nucleus leaves out at τ = 0.5, 1 and 2, from
  *      Pyodide. Those printed numbers are asserted here, so the widget and the cell cannot
  *      disagree; and every label is re-decoded from `bpe-merges.json`.
+ *
+ * COURSE-C2-P1-03 — and `restrict` as Block 3's logit mask (`logit-mask`): the softmax with
+ * −∞ outside the allowed set is the cut onto it, renormalised. Its presets have their own
+ * test, logit-mask.test.ts.
  */
 
 import fs from "node:fs";
@@ -214,5 +218,36 @@ describe("sampling — the frozen vectors are the checkpoint's", () => {
   it("in the decided context top-10 keeps nine entries holding under 2 % between them", () => {
     const q = temperedSoftmax(preset("peaked").logits, 1);
     expect(topMass(q, 10) - topMass(q, 1)).toBeCloseTo(0.015, 3);
+  });
+});
+
+describe("sampling — restrict as a logit mask (Block 3, `logit-mask`)", () => {
+  const z = [2.0, 1.0, 0.5, -1.0, -3.0];
+  const allowed = [false, true, false, true, true];
+
+  it("is the softmax with −∞ outside A, and the conditional on A", () => {
+    const masked = temperedSoftmax(
+      z.map((v, i) => (allowed[i] ? v : -Infinity)),
+      1,
+    );
+    const p = temperedSoftmax(z, 1);
+    const { dist, keptMass } = restrict(p, allowed);
+    const massA = sum(p.filter((_, i) => allowed[i]));
+    expect(keptMass).toBeCloseTo(massA, 12);
+    masked.forEach((v, i) => {
+      expect(v).toBeCloseTo(dist[i], 12);
+      expect(v).toBeCloseTo(allowed[i] ? p[i] / massA : 0, 12);
+    });
+  });
+
+  it("keeps the ratios between allowed entries", () => {
+    const { dist } = restrict(temperedSoftmax(z, 1), allowed);
+    expect(dist[1] / dist[3]).toBeCloseTo(Math.exp(z[1] - z[3]), 10);
+  });
+
+  it("gives a lone allowed entry all the mass, however improbable", () => {
+    const p = temperedSoftmax([10, 0, -12], 1);
+    expect(p[2]).toBeLessThan(1e-9);
+    expect(restrict(p, [false, false, true]).dist).toEqual([0, 0, 1]);
   });
 });

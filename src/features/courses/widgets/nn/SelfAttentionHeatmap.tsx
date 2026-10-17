@@ -4,7 +4,9 @@
  * difference from `attention-alignment`, whose grid had a source on one axis and a
  * target on the other — so cell (i, j) is how much of position j goes into what
  * position i reads. Type a sentence, pick a row (hover, tap, Tab or arrow keys), and the
- * line underneath says what that position leans on.
+ * line underneath says what that position leans on, with that cell outlined in the row. It opens on PRESETS[0], the sentence
+ * lesson 2's prose walks through; there are no preset buttons, because a second and third
+ * sentence only competed with the one the lesson is about.
  *
  * THE TOGGLE IS THE TEACHING MOVE, and it is why this is a widget and not a figure.
  * «Sin proyectar» sets Q = K = V = X: the three lists become the sentence itself, and
@@ -18,7 +20,10 @@
  * the one claim on the page a reader cannot check by eye. All the numbers come from
  * math/self-attention, which is unit-tested; this file only draws them. Local state only.
  *
- * THE SECOND TOGGLE IS LESSON 7's (encoder, decoder y máscaras). «Con máscara causal»
+ * THE SECOND TOGGLE IS LESSON 7's (encoder, decoder y máscaras), and only lesson 7 shows
+ * it, with the `mask` prop (`<Explorable id="self-attention-heatmap" mask />`): lesson 2
+ * has not introduced masking, so there it would be a control with no meaning yet.
+ * «Con máscara causal»
  * blanks every cell to the right of the diagonal — position i may look at 1..i and at
  * nothing after — and the rows that survive renormalise themselves, so the sum column
  * still reads 1.00 on every row. That is the claim a static picture cannot make: the
@@ -31,8 +36,8 @@
  * token outside the lexicon is marked with a dot and named in that same line: its vector
  * comes from a hash of its own letters, so its row means nothing.
  *
- * COURSE-P11-02 — the copy is `courses.widgets.self-attention-heatmap`. The PRESETS stay
- * Spanish in both locales, and that is a limit, not a decision: they are scored against
+ * COURSE-P11-02 — the copy is `courses.widgets.self-attention-heatmap`. The default
+ * sentence stays Spanish in both locales, and that is a limit, not a decision: they are scored against
  * the hand-built Spanish lexicon above, so an English sentence would fall outside it and
  * every row would come from a hash. See SPANISH_BOUND_CORPORA in ../corpora.ts — an
  * English preset needs an English lexicon first, which is a pedagogical decision for the
@@ -75,7 +80,10 @@ const BOLD_TOKEN = (chunks: ReactNode) => <strong style={{ color: "var(--text)" 
 /** Column headings are tokens, and a long one would push the grid wider than a phone. */
 const short = (token: string) => (token.length > 6 ? `${token.slice(0, 5)}·` : token);
 
-export default function SelfAttentionHeatmap() {
+export default function SelfAttentionHeatmap(props: Record<string, unknown>) {
+  // Forwarded untyped from MDX by `Explorable`, so validate here: only an explicit
+  // `mask` shows the causal-mask toggle.
+  const showMask = props.mask === true;
   // `t` is the token count in this file, so the translator is `tr`.
   const tr = useTranslations("courses.widgets.self-attention-heatmap");
   const tc = useTranslations("courses.widgets.common");
@@ -132,14 +140,6 @@ export default function SelfAttentionHeatmap() {
       </label>
 
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-        {PRESETS.map((preset) => (
-          <WidgetButton key={preset} active={text === preset} onClick={() => setText(preset)}>
-            {preset.split(" ").slice(0, 2).join(" ")}…
-          </WidgetButton>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
         <WidgetButton active={project} aria-pressed={project} onClick={() => setProject(true)}>
           {tr("withProjections")}
         </WidgetButton>
@@ -148,14 +148,16 @@ export default function SelfAttentionHeatmap() {
         </WidgetButton>
       </div>
 
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-        <WidgetButton active={!causal} aria-pressed={!causal} onClick={() => setCausal(false)}>
-          {tr("withoutMask")}
-        </WidgetButton>
-        <WidgetButton active={causal} aria-pressed={causal} onClick={() => setCausal(true)}>
-          {tr("withMask")}
-        </WidgetButton>
-      </div>
+      {showMask ? (
+        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+          <WidgetButton active={!causal} aria-pressed={!causal} onClick={() => setCausal(false)}>
+            {tr("withoutMask")}
+          </WidgetButton>
+          <WidgetButton active={causal} aria-pressed={causal} onClick={() => setCausal(true)}>
+            {tr("withMask")}
+          </WidgetButton>
+        </div>
+      ) : null}
 
       {t === 0 ? (
         <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0 }}>{tr("empty")}</p>
@@ -260,8 +262,12 @@ export default function SelfAttentionHeatmap() {
                             color: "#e6fff4",
                             fontSize: "0.64rem",
                             fontVariantNumeric: "tabular-nums",
+                            // The bright outline is the row's peak, the cell the line
+                            // underneath names first. Unprojected, that is the diagonal on
+                            // every row, which is the lesson's point; projected, «están»'s
+                            // moves to «llaves».
                             boxShadow:
-                              selected && i === j
+                              selected && j === peak?.index
                                 ? "inset 0 0 0 1.5px rgba(230,255,244,0.75)"
                                 : selected && !tachada
                                   ? "inset 0 0 0 1px rgba(78,222,163,0.55)"

@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" width="760" height="280" role="img"
+ aria-label="Tabla de cinco columnas, una por modelo: servidor propio, IaaS (EC2), PaaS (App Engine, Heroku), FaaS (Lambda) y BaaS (Firebase). Cinco filas, de arriba abajo: código de la aplicación, escalado, programa que atiende peticiones, sistema operativo y hardware. Con un servidor propio todo lo gestionas tú. En IaaS, el proveedor gestiona el hardware. En PaaS, también el sistema operativo y el programa, y el escalado a medias. En FaaS, todo salvo tu código. En BaaS, también el código del servidor: sólo configuras.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.06); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.h { stroke: #86948a; fill: rgba(134,148,138,0.18); stroke-dasharray: 3 3; }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .sb.n { font-size: 10px; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .mo.s { font-size: 10px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .x { fill: #ffb4ab; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+</style>
+<rect class="bx s" x="674.4" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="690.4" y="14.0">a medias</text>
+<rect class="bx m" x="493.6" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="509.6" y="14.0">lo gestiona el proveedor</text>
+<rect class="bx w" x="368.6" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="384.6" y="14.0">lo gestionas tú</text>
+<text class="lb" x="267.0" y="42.0" style="text-anchor:middle">Servidor propio</text>
+<text class="lb" x="373.0" y="42.0" style="text-anchor:middle">IaaS</text>
+<text class="sb" x="373.0" y="56.0" style="text-anchor:middle">EC2</text>
+<text class="lb" x="479.0" y="42.0" style="text-anchor:middle">PaaS</text>
+<text class="sb" x="479.0" y="56.0" style="text-anchor:middle">App Engine, Heroku</text>
+<text class="lb" x="585.0" y="42.0" style="text-anchor:middle">FaaS</text>
+<text class="sb" x="585.0" y="56.0" style="text-anchor:middle">Lambda</text>
+<text class="lb" x="691.0" y="42.0" style="text-anchor:middle">BaaS</text>
+<text class="sb" x="691.0" y="56.0" style="text-anchor:middle">Firebase</text>
+<text class="tx" x="16.0" y="86.0">Código de la aplicación</text>
+<rect class="bx w" x="218.0" y="64.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="267.0" y="86.0" style="text-anchor:middle">tú</text>
+<rect class="bx w" x="324.0" y="64.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="373.0" y="86.0" style="text-anchor:middle">tú</text>
+<rect class="bx w" x="430.0" y="64.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="479.0" y="86.0" style="text-anchor:middle">tú</text>
+<rect class="bx w" x="536.0" y="64.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="585.0" y="86.0" style="text-anchor:middle">tú</text>
+<rect class="bx m" x="642.0" y="64.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="691.0" y="86.0" style="text-anchor:middle">sólo configuras</text>
+<text class="tx" x="16.0" y="128.0">Escalado</text>
+<rect class="bx w" x="218.0" y="106.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="267.0" y="128.0" style="text-anchor:middle">tú</text>
+<rect class="bx w" x="324.0" y="106.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="373.0" y="128.0" style="text-anchor:middle">tú</text>
+<rect class="bx s" x="430.0" y="106.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="479.0" y="128.0" style="text-anchor:middle">a medias</text>
+<rect class="bx m" x="536.0" y="106.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="585.0" y="128.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="642.0" y="106.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="691.0" y="128.0" style="text-anchor:middle">el proveedor</text>
+<text class="tx" x="16.0" y="170.0">Programa que atiende peticiones</text>
+<rect class="bx w" x="218.0" y="148.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="267.0" y="170.0" style="text-anchor:middle">tú</text>
+<rect class="bx w" x="324.0" y="148.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="373.0" y="170.0" style="text-anchor:middle">tú</text>
+<rect class="bx m" x="430.0" y="148.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="479.0" y="170.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="536.0" y="148.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="585.0" y="170.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="642.0" y="148.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="691.0" y="170.0" style="text-anchor:middle">el proveedor</text>
+<text class="tx" x="16.0" y="212.0">Sistema operativo</text>
+<rect class="bx w" x="218.0" y="190.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="267.0" y="212.0" style="text-anchor:middle">tú</text>
+<rect class="bx w" x="324.0" y="190.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="373.0" y="212.0" style="text-anchor:middle">tú</text>
+<rect class="bx m" x="430.0" y="190.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="479.0" y="212.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="536.0" y="190.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="585.0" y="212.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="642.0" y="190.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="691.0" y="212.0" style="text-anchor:middle">el proveedor</text>
+<text class="tx" x="16.0" y="254.0">Hardware</text>
+<rect class="bx w" x="218.0" y="232.0" width="98.0" height="36.0" rx="3"/>
+<text class="tx" x="267.0" y="254.0" style="text-anchor:middle">tú</text>
+<rect class="bx m" x="324.0" y="232.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="373.0" y="254.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="430.0" y="232.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="479.0" y="254.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="536.0" y="232.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="585.0" y="254.0" style="text-anchor:middle">el proveedor</text>
+<rect class="bx m" x="642.0" y="232.0" width="98.0" height="36.0" rx="3"/>
+<text class="sb" x="691.0" y="254.0" style="text-anchor:middle">el proveedor</text>
+</svg>

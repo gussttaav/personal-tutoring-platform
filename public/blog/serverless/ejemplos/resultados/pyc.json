@@ -1,0 +1,442 @@
+[
+ {
+  "variante": "fecha",
+  "t": 1792149160.8725853,
+  "estado": 200,
+  "request_id": "57f0f890-510b-491d-93d6-c005dce9dab6",
+  "conexion": 0.102499,
+  "tls": 0.174441,
+  "primer_byte": 3.374913,
+  "total": 3.375288,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "5a14ff87",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.37,
+   "facturado_ms": 2720,
+   "memoria_mb": 128,
+   "usada_mb": 115,
+   "init_ms": 2717.09
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149169.067747,
+  "estado": 200,
+  "request_id": "201f4784-ce8e-4432-919d-ba331ab8020d",
+  "conexion": 0.092705,
+  "tls": 0.167235,
+  "primer_byte": 3.436983,
+  "total": 3.437456,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "b1219fcb",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.14,
+   "facturado_ms": 2789,
+   "memoria_mb": 128,
+   "usada_mb": 115,
+   "init_ms": 2786.77
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149177.2691615,
+  "estado": 200,
+  "request_id": "11d17c44-d1cc-4608-9492-1b5002b72cfb",
+  "conexion": 0.090597,
+  "tls": 0.16677,
+  "primer_byte": 3.377829,
+  "total": 3.378217,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "817452d2",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.25,
+   "facturado_ms": 2723,
+   "memoria_mb": 128,
+   "usada_mb": 118,
+   "init_ms": 2719.93
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149185.2639956,
+  "estado": 200,
+  "request_id": "c936b3fb-18a0-4357-bf6a-0e08959f9f89",
+  "conexion": 0.120301,
+  "tls": 0.196217,
+  "primer_byte": 3.077282,
+  "total": 3.077626,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "fcea85ef",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 16.71,
+   "facturado_ms": 2462,
+   "memoria_mb": 128,
+   "usada_mb": 113,
+   "init_ms": 2444.89
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149193.32764,
+  "estado": 200,
+  "request_id": "96506d42-a01c-4464-a675-1ea6641cae7a",
+  "conexion": 0.091789,
+  "tls": 0.161901,
+  "primer_byte": 3.315674,
+  "total": 3.315895,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "23c02529",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 1.92,
+   "facturado_ms": 2744,
+   "memoria_mb": 128,
+   "usada_mb": 115,
+   "init_ms": 2741.8
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149201.4230998,
+  "estado": 200,
+  "request_id": "22467751-f25a-4dcf-b93b-9faca9f23f89",
+  "conexion": 0.099649,
+  "tls": 0.172669,
+  "primer_byte": 3.402969,
+  "total": 3.403235,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "849e1329",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.42,
+   "facturado_ms": 2753,
+   "memoria_mb": 128,
+   "usada_mb": 115,
+   "init_ms": 2750.49
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149209.329382,
+  "estado": 200,
+  "request_id": "efdc2c83-3383-4d25-b45b-5a6bcda1d13a",
+  "conexion": 0.093728,
+  "tls": 0.165672,
+  "primer_byte": 3.281797,
+  "total": 3.28209,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "2f7f97e9",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.06,
+   "facturado_ms": 2706,
+   "memoria_mb": 128,
+   "usada_mb": 115,
+   "init_ms": 2703.02
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149217.4071999,
+  "estado": 200,
+  "request_id": "bc999332-094f-4807-93cf-88f353eaa9d6",
+  "conexion": 0.095666,
+  "tls": 0.172286,
+  "primer_byte": 3.274302,
+  "total": 3.274649,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "1ce4b8aa",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 1.98,
+   "facturado_ms": 2594,
+   "memoria_mb": 128,
+   "usada_mb": 114,
+   "init_ms": 2591.74
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149225.727302,
+  "estado": 200,
+  "request_id": "83021ec2-51a2-4fbc-bec8-c36a1cdbbc94",
+  "conexion": 0.09385,
+  "tls": 0.167681,
+  "primer_byte": 3.62259,
+  "total": 3.622916,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "ef86328a",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 1.96,
+   "facturado_ms": 2990,
+   "memoria_mb": 128,
+   "usada_mb": 114,
+   "init_ms": 2987.74
+  }
+ },
+ {
+  "variante": "fecha",
+  "t": 1792149234.3920698,
+  "estado": 200,
+  "request_id": "20db6a86-fb2b-41f1-86e5-fa8a21603359",
+  "conexion": 0.11084,
+  "tls": 0.182427,
+  "primer_byte": 3.306648,
+  "total": 3.306838,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "9bb98dae",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.03,
+   "facturado_ms": 2692,
+   "memoria_mb": 128,
+   "usada_mb": 114,
+   "init_ms": 2689.05
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149304.723798,
+  "estado": 200,
+  "request_id": "2a28bd1c-b2d8-4b7b-921b-5ecdbc38e580",
+  "conexion": 0.09182,
+  "tls": 0.164749,
+  "primer_byte": 1.755936,
+  "total": 1.756263,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "7113bd52",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 14.44,
+   "facturado_ms": 1058,
+   "memoria_mb": 128,
+   "usada_mb": 107,
+   "init_ms": 1043.24
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149311.2465692,
+  "estado": 200,
+  "request_id": "59d3c66d-6ec4-4240-be32-7ce44911c4f3",
+  "conexion": 0.098674,
+  "tls": 0.175399,
+  "primer_byte": 1.645607,
+  "total": 1.645954,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "dfc7a8b4",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.15,
+   "facturado_ms": 984,
+   "memoria_mb": 128,
+   "usada_mb": 105,
+   "init_ms": 981.4
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149317.84161,
+  "estado": 200,
+  "request_id": "ebfe45e3-0aa8-4718-a4f4-13a8c020b908",
+  "conexion": 0.087539,
+  "tls": 0.163724,
+  "primer_byte": 1.821872,
+  "total": 1.822054,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "3d5f767c",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.79,
+   "facturado_ms": 1242,
+   "memoria_mb": 128,
+   "usada_mb": 105,
+   "init_ms": 1238.66
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149324.5330827,
+  "estado": 200,
+  "request_id": "98a018aa-4f7f-4d5e-a1b6-d79204c0ccbe",
+  "conexion": 0.173631,
+  "tls": 0.245156,
+  "primer_byte": 1.754095,
+  "total": 1.754229,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "620aff27",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.08,
+   "facturado_ms": 1049,
+   "memoria_mb": 128,
+   "usada_mb": 106,
+   "init_ms": 1046.16
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149331.6874223,
+  "estado": 200,
+  "request_id": "78480493-5852-47a8-9b6e-32090372c3a3",
+  "conexion": 0.176911,
+  "tls": 0.252373,
+  "primer_byte": 1.559252,
+  "total": 1.559708,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "5a0be32a",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.04,
+   "facturado_ms": 942,
+   "memoria_mb": 128,
+   "usada_mb": 105,
+   "init_ms": 939.35
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149338.8633308,
+  "estado": 200,
+  "request_id": "ee20ead9-8ffb-44ef-9ff7-df03a24e5504",
+  "conexion": 0.115554,
+  "tls": 0.182564,
+  "primer_byte": 1.533561,
+  "total": 1.533823,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "3af62986",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 1.98,
+   "facturado_ms": 975,
+   "memoria_mb": 128,
+   "usada_mb": 107,
+   "init_ms": 972.02
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149346.280702,
+  "estado": 200,
+  "request_id": "ab1be24c-7ee7-4f74-96b7-a93f80cd3bf9",
+  "conexion": 0.100393,
+  "tls": 0.173984,
+  "primer_byte": 1.546609,
+  "total": 1.547475,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "2cee5c4d",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.05,
+   "facturado_ms": 981,
+   "memoria_mb": 128,
+   "usada_mb": 107,
+   "init_ms": 978.44
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149353.3907313,
+  "estado": 200,
+  "request_id": "83be079a-162f-4708-887e-ec879f42b161",
+  "conexion": 0.098136,
+  "tls": 0.165092,
+  "primer_byte": 1.731668,
+  "total": 1.731945,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "45ac5c3d",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.61,
+   "facturado_ms": 1007,
+   "memoria_mb": 128,
+   "usada_mb": 108,
+   "init_ms": 1003.95
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149360.3235745,
+  "estado": 200,
+  "request_id": "6fb963e0-042e-4951-9e33-1255eac32cbc",
+  "conexion": 0.094409,
+  "tls": 0.161517,
+  "primer_byte": 1.569335,
+  "total": 1.569635,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "2bc4ff2e",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.07,
+   "facturado_ms": 958,
+   "memoria_mb": 128,
+   "usada_mb": 107,
+   "init_ms": 955.45
+  }
+ },
+ {
+  "variante": "hash",
+  "t": 1792149367.4484725,
+  "estado": 200,
+  "request_id": "349e28f0-982e-4c79-be76-9c16d76475f2",
+  "conexion": 0.094441,
+  "tls": 0.162183,
+  "primer_byte": 1.70375,
+  "total": 1.704075,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "bf0fc7ca",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.18,
+   "facturado_ms": 1118,
+   "memoria_mb": 128,
+   "usada_mb": 106,
+   "init_ms": 1115.34
+  }
+ }
+]

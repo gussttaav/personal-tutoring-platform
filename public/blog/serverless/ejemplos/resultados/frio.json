@@ -1,0 +1,1762 @@
+[
+ {
+  "tipo": "frio",
+  "t": 1792147677.014796,
+  "estado": 200,
+  "request_id": "dddef408-2d16-4824-aa61-2d531b6bb42c",
+  "conexion": 0.113465,
+  "tls": 0.188971,
+  "primer_byte": 0.532758,
+  "total": 0.533016,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "e8671b03",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.31,
+   "facturado_ms": 124,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 120.96
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147677.2793355,
+  "estado": 200,
+  "request_id": "e21dcf3a-aafc-4b26-80ad-21016bc43c12",
+  "conexion": 0.091409,
+  "tls": 0.158066,
+  "primer_byte": 0.2421,
+  "total": 0.242281,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "e8671b03",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 2.95,
+   "facturado_ms": 3,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147677.5500562,
+  "estado": 200,
+  "request_id": "13184726-3206-41c6-85c3-86df0e873e20",
+  "conexion": 0.091067,
+  "tls": 0.166546,
+  "primer_byte": 0.243625,
+  "total": 0.243792,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "e8671b03",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.87,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147677.8016262,
+  "estado": 200,
+  "request_id": "9d5b061a-0071-4763-b644-d80f8690c97a",
+  "conexion": 0.093698,
+  "tls": 0.158713,
+  "primer_byte": 0.236143,
+  "total": 0.236205,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "e8671b03",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.65,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147683.3966525,
+  "estado": 200,
+  "request_id": "717f0cd5-e534-4caf-b390-88943cb40619",
+  "conexion": 0.094958,
+  "tls": 0.160142,
+  "primer_byte": 0.479771,
+  "total": 0.479906,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "8c9852b6",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.55,
+   "facturado_ms": 124,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 121.36
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147683.6833706,
+  "estado": 200,
+  "request_id": "743077b6-5ea2-4d87-89e8-f33b2e210f2a",
+  "conexion": 0.119783,
+  "tls": 0.183778,
+  "primer_byte": 0.272559,
+  "total": 0.272629,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "8c9852b6",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.62,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147683.9695344,
+  "estado": 200,
+  "request_id": "64729dc4-6644-4965-9e38-2d6d6cf62f90",
+  "conexion": 0.112495,
+  "tls": 0.179469,
+  "primer_byte": 0.270749,
+  "total": 0.270863,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "8c9852b6",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.52,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147684.2478192,
+  "estado": 200,
+  "request_id": "fa42e04a-943d-44bc-8f1d-70b0a27209f3",
+  "conexion": 0.098158,
+  "tls": 0.168682,
+  "primer_byte": 0.2457,
+  "total": 0.246009,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "8c9852b6",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.64,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147689.5106437,
+  "estado": 200,
+  "request_id": "3d369877-a8ee-467c-a25e-0f5c0900049a",
+  "conexion": 0.091412,
+  "tls": 0.156287,
+  "primer_byte": 0.451433,
+  "total": 0.451553,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "c01b0680",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.7,
+   "facturado_ms": 107,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 103.83
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147689.7813504,
+  "estado": 200,
+  "request_id": "af802af4-a098-4a1f-8d63-ac00bdeb83bc",
+  "conexion": 0.112637,
+  "tls": 0.178015,
+  "primer_byte": 0.258386,
+  "total": 0.258458,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "c01b0680",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.76,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147690.030837,
+  "estado": 200,
+  "request_id": "d679793c-bcef-47f1-80b3-bc5b9c9bc9b4",
+  "conexion": 0.091338,
+  "tls": 0.156799,
+  "primer_byte": 0.237619,
+  "total": 0.237706,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "c01b0680",
+   "edad_s": 0.5
+  },
+  "report": {
+   "duracion_ms": 1.64,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147690.2927568,
+  "estado": 200,
+  "request_id": "f1128c38-db4a-4749-9695-1e64699fa463",
+  "conexion": 0.086387,
+  "tls": 0.169451,
+  "primer_byte": 0.23991,
+  "total": 0.240181,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "c01b0680",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.51,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147695.5762877,
+  "estado": 200,
+  "request_id": "0570ee50-99e0-4af4-a74f-6285ce8ee898",
+  "conexion": 0.101277,
+  "tls": 0.174465,
+  "primer_byte": 0.497067,
+  "total": 0.497266,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "0520d1aa",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.26,
+   "facturado_ms": 107,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 104.18
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147695.8476632,
+  "estado": 200,
+  "request_id": "9a74610f-4e12-4f29-b8c5-f4cb6dbf32a1",
+  "conexion": 0.091095,
+  "tls": 0.164342,
+  "primer_byte": 0.237078,
+  "total": 0.23732,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "0520d1aa",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.67,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147696.1309512,
+  "estado": 200,
+  "request_id": "c196009b-8dcb-427f-bf01-d20c7d2e76a0",
+  "conexion": 0.099394,
+  "tls": 0.169144,
+  "primer_byte": 0.247679,
+  "total": 0.247904,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "0520d1aa",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 2.05,
+   "facturado_ms": 3,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147696.4198046,
+  "estado": 200,
+  "request_id": "0e9a1aa5-7f38-4327-9383-d5c8180d6d23",
+  "conexion": 0.093797,
+  "tls": 0.163788,
+  "primer_byte": 0.252681,
+  "total": 0.25295,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "0520d1aa",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.63,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147701.6483464,
+  "estado": 200,
+  "request_id": "0ec183cf-46d2-4a5e-aa04-dfb35020d52f",
+  "conexion": 0.088691,
+  "tls": 0.157628,
+  "primer_byte": 0.516408,
+  "total": 0.516741,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "3b38a4e7",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.39,
+   "facturado_ms": 111,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 107.65
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147701.9026966,
+  "estado": 200,
+  "request_id": "0616733a-29fc-4264-adce-801767644ad7",
+  "conexion": 0.089094,
+  "tls": 0.155286,
+  "primer_byte": 0.228582,
+  "total": 0.228693,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "3b38a4e7",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.8,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147702.1484315,
+  "estado": 200,
+  "request_id": "04268547-6229-43f8-b291-f566fc30277f",
+  "conexion": 0.094656,
+  "tls": 0.160269,
+  "primer_byte": 0.233721,
+  "total": 0.233819,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "3b38a4e7",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.76,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147702.3930285,
+  "estado": 200,
+  "request_id": "c9b860d6-e9f5-4e68-9410-caa34e5af779",
+  "conexion": 0.089745,
+  "tls": 0.156478,
+  "primer_byte": 0.230425,
+  "total": 0.230523,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "3b38a4e7",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 2.19,
+   "facturado_ms": 3,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147707.5631936,
+  "estado": 200,
+  "request_id": "663e911e-4b46-474c-af62-2f0793aa1fe6",
+  "conexion": 0.093266,
+  "tls": 0.164043,
+  "primer_byte": 0.46631,
+  "total": 0.466446,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "cd425113",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.23,
+   "facturado_ms": 107,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 104.33
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147707.8186948,
+  "estado": 200,
+  "request_id": "9b93bbe4-f238-42e1-b0c3-3484174caa9d",
+  "conexion": 0.095065,
+  "tls": 0.162278,
+  "primer_byte": 0.23733,
+  "total": 0.237432,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "cd425113",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.67,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147708.0741572,
+  "estado": 200,
+  "request_id": "aabf6109-9e0e-4517-8c25-524b2da2520c",
+  "conexion": 0.096779,
+  "tls": 0.16489,
+  "primer_byte": 0.242981,
+  "total": 0.243105,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "cd425113",
+   "edad_s": 0.5
+  },
+  "report": {
+   "duracion_ms": 1.56,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147708.3373692,
+  "estado": 200,
+  "request_id": "e08b64b5-87e0-4e49-a6a7-4f11b263138a",
+  "conexion": 0.106276,
+  "tls": 0.177283,
+  "primer_byte": 0.251365,
+  "total": 0.251435,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "cd425113",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.92,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147713.5211632,
+  "estado": 200,
+  "request_id": "67e55861-59e3-417f-bbc3-ee9e81e6c305",
+  "conexion": 0.096025,
+  "tls": 0.171925,
+  "primer_byte": 0.531854,
+  "total": 0.532069,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "abb9ee18",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.31,
+   "facturado_ms": 147,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 144.51
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147713.8861024,
+  "estado": 200,
+  "request_id": "a7b50588-6b23-490d-bf9c-930753d729a4",
+  "conexion": 0.173684,
+  "tls": 0.252106,
+  "primer_byte": 0.329117,
+  "total": 0.329434,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "abb9ee18",
+   "edad_s": 0.4
+  },
+  "report": {
+   "duracion_ms": 6.05,
+   "facturado_ms": 7,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147714.1903405,
+  "estado": 200,
+  "request_id": "0b413bac-10ab-48b9-84ef-af513529efd6",
+  "conexion": 0.124473,
+  "tls": 0.1945,
+  "primer_byte": 0.269307,
+  "total": 0.269521,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "abb9ee18",
+   "edad_s": 0.7
+  },
+  "report": {
+   "duracion_ms": 1.78,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147714.493056,
+  "estado": 200,
+  "request_id": "1c8a6552-0934-407d-b64a-28041cac3d06",
+  "conexion": 0.107616,
+  "tls": 0.179943,
+  "primer_byte": 0.266631,
+  "total": 0.266959,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "abb9ee18",
+   "edad_s": 1.0
+  },
+  "report": {
+   "duracion_ms": 1.63,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147720.3063712,
+  "estado": 200,
+  "request_id": "17aecddf-ca2a-4c74-98bf-6e490a20d7db",
+  "conexion": 0.53608,
+  "tls": 0.606647,
+  "primer_byte": 1.104859,
+  "total": 1.105141,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "924df8c2",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.25,
+   "facturado_ms": 125,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 122.53
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147720.6915326,
+  "estado": 200,
+  "request_id": "d9842ac5-777c-4e42-a810-8b8127996fa9",
+  "conexion": 0.216285,
+  "tls": 0.281458,
+  "primer_byte": 0.356874,
+  "total": 0.356955,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "924df8c2",
+   "edad_s": 0.4
+  },
+  "report": {
+   "duracion_ms": 1.64,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147720.9675038,
+  "estado": 200,
+  "request_id": "d3a229ef-e834-4a51-80fc-6d21a5566d21",
+  "conexion": 0.125916,
+  "tls": 0.19171,
+  "primer_byte": 0.263542,
+  "total": 0.263623,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "924df8c2",
+   "edad_s": 0.7
+  },
+  "report": {
+   "duracion_ms": 1.65,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147721.219427,
+  "estado": 200,
+  "request_id": "279c94df-9d09-4439-bd75-0483bac0c845",
+  "conexion": 0.097792,
+  "tls": 0.163532,
+  "primer_byte": 0.239647,
+  "total": 0.239725,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "924df8c2",
+   "edad_s": 0.9
+  },
+  "report": {
+   "duracion_ms": 1.59,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147726.4688935,
+  "estado": 200,
+  "request_id": "82f978e0-97a0-47a8-aaf4-eeb617e394b5",
+  "conexion": 0.099955,
+  "tls": 0.170569,
+  "primer_byte": 0.56159,
+  "total": 0.561692,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "691ceaf8",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.14,
+   "facturado_ms": 147,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 144.58
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147726.7258573,
+  "estado": 200,
+  "request_id": "4bb09814-4219-4a0b-948d-0b63977afba0",
+  "conexion": 0.086782,
+  "tls": 0.156363,
+  "primer_byte": 0.23453,
+  "total": 0.234788,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "691ceaf8",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.62,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147727.0161626,
+  "estado": 200,
+  "request_id": "e0318020-3003-4793-b68a-fe7135e1313f",
+  "conexion": 0.122962,
+  "tls": 0.190978,
+  "primer_byte": 0.265184,
+  "total": 0.265267,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "691ceaf8",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.7,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147727.2738132,
+  "estado": 200,
+  "request_id": "79727cef-3fea-4de7-9842-11b60da4b8b1",
+  "conexion": 0.098753,
+  "tls": 0.166593,
+  "primer_byte": 0.243166,
+  "total": 0.243332,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "691ceaf8",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.71,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147732.360748,
+  "estado": 200,
+  "request_id": "04bd59ae-297a-4408-b883-03caa57b1c8e",
+  "conexion": 0.123592,
+  "tls": 0.188722,
+  "primer_byte": 0.499729,
+  "total": 0.499827,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "e99ef156",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.06,
+   "facturado_ms": 122,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 119.47
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147732.651611,
+  "estado": 200,
+  "request_id": "a2711a91-4bea-472e-9a4c-a93bf046dafd",
+  "conexion": 0.133554,
+  "tls": 0.199483,
+  "primer_byte": 0.272305,
+  "total": 0.272408,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "e99ef156",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.65,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147732.902667,
+  "estado": 200,
+  "request_id": "4c44e414-05fd-4547-894c-33f1ba095c1f",
+  "conexion": 0.094582,
+  "tls": 0.156783,
+  "primer_byte": 0.230541,
+  "total": 0.230752,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "e99ef156",
+   "edad_s": 0.5
+  },
+  "report": {
+   "duracion_ms": 1.68,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147733.1651416,
+  "estado": 200,
+  "request_id": "2692c02e-78ff-4e28-adb6-83e374f9743b",
+  "conexion": 0.094539,
+  "tls": 0.169016,
+  "primer_byte": 0.240789,
+  "total": 0.240905,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "e99ef156",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.74,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147738.1932573,
+  "estado": 200,
+  "request_id": "bf52636f-892f-49bb-820a-693bfbf3d7e6",
+  "conexion": 0.095212,
+  "tls": 0.167678,
+  "primer_byte": 0.486171,
+  "total": 0.486507,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "3390c318",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.13,
+   "facturado_ms": 105,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 101.99
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147738.4684665,
+  "estado": 200,
+  "request_id": "1434989f-af86-416d-83b6-5d7a72328b77",
+  "conexion": 0.095152,
+  "tls": 0.171646,
+  "primer_byte": 0.247613,
+  "total": 0.247713,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "3390c318",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.65,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147738.752804,
+  "estado": 200,
+  "request_id": "ec335f57-1509-459a-80cd-daf44c299048",
+  "conexion": 0.107365,
+  "tls": 0.173592,
+  "primer_byte": 0.270159,
+  "total": 0.270277,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "3390c318",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.72,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147738.9990199,
+  "estado": 200,
+  "request_id": "54c7354b-8e9d-4df2-b578-05f30a95c037",
+  "conexion": 0.094574,
+  "tls": 0.16011,
+  "primer_byte": 0.233447,
+  "total": 0.233527,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "3390c318",
+   "edad_s": 0.9
+  },
+  "report": {
+   "duracion_ms": 1.67,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147744.2432435,
+  "estado": 200,
+  "request_id": "3d203ed3-83e8-40a2-84e0-c5919576990d",
+  "conexion": 0.114031,
+  "tls": 0.179331,
+  "primer_byte": 0.530492,
+  "total": 0.530567,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "15ac99b3",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.3,
+   "facturado_ms": 143,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 140.37
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147744.5104961,
+  "estado": 200,
+  "request_id": "92f29455-8911-41a5-8222-5b049f068826",
+  "conexion": 0.09469,
+  "tls": 0.176526,
+  "primer_byte": 0.250268,
+  "total": 0.250407,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "15ac99b3",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.77,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147744.7980494,
+  "estado": 200,
+  "request_id": "2d31e247-aeb5-4577-8e8c-63a3f6ca5e70",
+  "conexion": 0.122745,
+  "tls": 0.195646,
+  "primer_byte": 0.265853,
+  "total": 0.265968,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "15ac99b3",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.76,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147745.0642443,
+  "estado": 200,
+  "request_id": "b37c08a7-fc04-459e-924f-a56d5d594f71",
+  "conexion": 0.094325,
+  "tls": 0.173828,
+  "primer_byte": 0.248679,
+  "total": 0.248775,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "15ac99b3",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.95,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147750.1762035,
+  "estado": 200,
+  "request_id": "333b6de9-b709-4399-a3db-d3e408cd4ca3",
+  "conexion": 0.101381,
+  "tls": 0.166143,
+  "primer_byte": 0.547982,
+  "total": 0.548225,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "31386dc3",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.55,
+   "facturado_ms": 131,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 127.75
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147750.4607913,
+  "estado": 200,
+  "request_id": "1aa0b94c-b0d9-4634-85bb-d96e53517c0b",
+  "conexion": 0.096473,
+  "tls": 0.162349,
+  "primer_byte": 0.264117,
+  "total": 0.264378,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "31386dc3",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 2.59,
+   "facturado_ms": 3,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147750.8194444,
+  "estado": 200,
+  "request_id": "f0068f3a-9b73-433d-b41d-4c9df1da4899",
+  "conexion": 0.121773,
+  "tls": 0.246359,
+  "primer_byte": 0.320073,
+  "total": 0.320297,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "31386dc3",
+   "edad_s": 0.7
+  },
+  "report": {
+   "duracion_ms": 1.61,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147751.1057398,
+  "estado": 200,
+  "request_id": "c869f1bb-2377-42f8-8844-227603a9c5dd",
+  "conexion": 0.111868,
+  "tls": 0.177231,
+  "primer_byte": 0.260753,
+  "total": 0.260823,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "31386dc3",
+   "edad_s": 1.0
+  },
+  "report": {
+   "duracion_ms": 1.62,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147756.5279322,
+  "estado": 200,
+  "request_id": "f7b75dcb-c759-487b-b3ec-58dd956669d3",
+  "conexion": 0.125093,
+  "tls": 0.192639,
+  "primer_byte": 0.738136,
+  "total": 0.738505,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "9c6476ac",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.08,
+   "facturado_ms": 116,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 113.66
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147756.8088772,
+  "estado": 200,
+  "request_id": "641d651f-8a82-443c-bc82-ea5f61cc770e",
+  "conexion": 0.099824,
+  "tls": 0.17221,
+  "primer_byte": 0.258435,
+  "total": 0.258754,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "9c6476ac",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.68,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147757.0896904,
+  "estado": 200,
+  "request_id": "5b499cd7-e3c3-4709-a25a-f2ab98a9e519",
+  "conexion": 0.094894,
+  "tls": 0.169588,
+  "primer_byte": 0.240781,
+  "total": 0.24101,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "9c6476ac",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.93,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147757.3812258,
+  "estado": 200,
+  "request_id": "62bc5332-cb5c-4118-a1e9-a24880f8e215",
+  "conexion": 0.111186,
+  "tls": 0.183834,
+  "primer_byte": 0.25532,
+  "total": 0.255546,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "9c6476ac",
+   "edad_s": 0.9
+  },
+  "report": {
+   "duracion_ms": 1.52,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147762.529659,
+  "estado": 200,
+  "request_id": "a5b74a94-01ab-4149-97c9-9e97eb224430",
+  "conexion": 0.094232,
+  "tls": 0.161237,
+  "primer_byte": 0.470277,
+  "total": 0.470437,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "ff2a7f8b",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 1.97,
+   "facturado_ms": 114,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 111.53
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147762.782887,
+  "estado": 200,
+  "request_id": "c4dc17f3-d9cf-459c-badd-830b10dccacd",
+  "conexion": 0.095017,
+  "tls": 0.160924,
+  "primer_byte": 0.237767,
+  "total": 0.237866,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "ff2a7f8b",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.65,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147763.0381513,
+  "estado": 200,
+  "request_id": "7e05bba3-1228-4789-bb8e-047247cf47e5",
+  "conexion": 0.090185,
+  "tls": 0.167089,
+  "primer_byte": 0.24049,
+  "total": 0.240616,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "ff2a7f8b",
+   "edad_s": 0.5
+  },
+  "report": {
+   "duracion_ms": 1.58,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147763.2882838,
+  "estado": 200,
+  "request_id": "176f110e-5a0f-473f-be1c-86c1b4723669",
+  "conexion": 0.092107,
+  "tls": 0.157754,
+  "primer_byte": 0.233435,
+  "total": 0.233582,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "ff2a7f8b",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.52,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147768.5063367,
+  "estado": 200,
+  "request_id": "7a712651-8ff9-4672-9fc3-ef60a7b4f610",
+  "conexion": 0.096713,
+  "tls": 0.166539,
+  "primer_byte": 0.48428,
+  "total": 0.484519,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "933a2522",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.01,
+   "facturado_ms": 107,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 104.08
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147768.7470698,
+  "estado": 200,
+  "request_id": "59113229-b725-4a19-806e-893bf6c6464c",
+  "conexion": 0.088827,
+  "tls": 0.152874,
+  "primer_byte": 0.226486,
+  "total": 0.226587,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "933a2522",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.56,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147769.0088224,
+  "estado": 200,
+  "request_id": "9f5684d5-e374-4850-8f04-8d8679119c4a",
+  "conexion": 0.103463,
+  "tls": 0.169454,
+  "primer_byte": 0.246233,
+  "total": 0.246335,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "933a2522",
+   "edad_s": 0.5
+  },
+  "report": {
+   "duracion_ms": 1.71,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147769.2561057,
+  "estado": 200,
+  "request_id": "5484f11e-0810-42b1-8495-f797b837e06b",
+  "conexion": 0.093465,
+  "tls": 0.15966,
+  "primer_byte": 0.235013,
+  "total": 0.235111,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "933a2522",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.69,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147774.3688896,
+  "estado": 200,
+  "request_id": "dd1dc776-a0b4-48d3-a05c-6590257d330c",
+  "conexion": 0.098535,
+  "tls": 0.17077,
+  "primer_byte": 0.470814,
+  "total": 0.471033,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "1f0e2af2",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.0,
+   "facturado_ms": 112,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 109.55
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147774.6467757,
+  "estado": 200,
+  "request_id": "af34b350-69d7-473b-86a2-20040e9fd7b9",
+  "conexion": 0.09508,
+  "tls": 0.167494,
+  "primer_byte": 0.24394,
+  "total": 0.244275,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "1f0e2af2",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.79,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147774.932253,
+  "estado": 200,
+  "request_id": "bbb057b7-82ef-49e1-a09f-46bd48d38a3d",
+  "conexion": 0.097782,
+  "tls": 0.176733,
+  "primer_byte": 0.248578,
+  "total": 0.248868,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "1f0e2af2",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.56,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147775.2110655,
+  "estado": 200,
+  "request_id": "96b10310-1d1a-4c22-93b8-4f4e7a3c6826",
+  "conexion": 0.097825,
+  "tls": 0.168897,
+  "primer_byte": 0.242728,
+  "total": 0.242939,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "1f0e2af2",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.52,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147780.2504735,
+  "estado": 200,
+  "request_id": "38aa090c-2d55-4068-af47-1d26c62e3d2c",
+  "conexion": 0.118127,
+  "tls": 0.182256,
+  "primer_byte": 0.51163,
+  "total": 0.51174,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "1e19e0e0",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 16.71,
+   "facturado_ms": 151,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 133.74
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147780.5098672,
+  "estado": 200,
+  "request_id": "2a50d987-2959-455b-a4f8-2cff9bd9dc53",
+  "conexion": 0.091453,
+  "tls": 0.162308,
+  "primer_byte": 0.236624,
+  "total": 0.236955,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "1e19e0e0",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.72,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147780.809543,
+  "estado": 200,
+  "request_id": "02b691fd-a5e5-4cd3-950c-712834c8c762",
+  "conexion": 0.125262,
+  "tls": 0.193275,
+  "primer_byte": 0.272192,
+  "total": 0.272334,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "1e19e0e0",
+   "edad_s": 0.6
+  },
+  "report": {
+   "duracion_ms": 1.66,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147781.0523086,
+  "estado": 200,
+  "request_id": "00c1d106-e501-4a97-8076-a01792e4b2f8",
+  "conexion": 0.092984,
+  "tls": 0.156546,
+  "primer_byte": 0.230709,
+  "total": 0.230794,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "1e19e0e0",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.68,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147786.2777138,
+  "estado": 200,
+  "request_id": "90c5d662-093d-43d8-849b-1f4bebbd169a",
+  "conexion": 0.12309,
+  "tls": 0.188699,
+  "primer_byte": 0.497222,
+  "total": 0.497303,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "a57c9bdb",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.31,
+   "facturado_ms": 121,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 117.96
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147786.5518367,
+  "estado": 200,
+  "request_id": "a66b96f6-455d-4534-8d8f-3e70f0990ab7",
+  "conexion": 0.114147,
+  "tls": 0.18054,
+  "primer_byte": 0.262495,
+  "total": 0.262571,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "a57c9bdb",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.72,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147786.8173351,
+  "estado": 200,
+  "request_id": "556271f2-6aef-49a3-a00e-7916ce05950c",
+  "conexion": 0.091543,
+  "tls": 0.156148,
+  "primer_byte": 0.239273,
+  "total": 0.239501,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "a57c9bdb",
+   "edad_s": 0.5
+  },
+  "report": {
+   "duracion_ms": 19.65,
+   "facturado_ms": 20,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147787.0767891,
+  "estado": 200,
+  "request_id": "fce6e881-8813-4ce1-b138-6bed29182a2b",
+  "conexion": 0.09652,
+  "tls": 0.166625,
+  "primer_byte": 0.239654,
+  "total": 0.239746,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "a57c9bdb",
+   "edad_s": 0.8
+  },
+  "report": {
+   "duracion_ms": 1.72,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "frio",
+  "t": 1792147792.3975828,
+  "estado": 200,
+  "request_id": "b3ade4b4-bc80-45f5-8ce8-57a6ff8f9a75",
+  "conexion": 0.102653,
+  "tls": 0.168609,
+  "primer_byte": 0.526252,
+  "total": 0.526347,
+  "cuerpo": {
+   "llamadas": 1,
+   "instancia": "65a6d8b6",
+   "edad_s": 0.0
+  },
+  "report": {
+   "duracion_ms": 2.02,
+   "facturado_ms": 110,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": 107.71
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147792.6466823,
+  "estado": 200,
+  "request_id": "f20811c4-f1e6-4fcd-89d8-fb636e440041",
+  "conexion": 0.092199,
+  "tls": 0.157026,
+  "primer_byte": 0.235972,
+  "total": 0.236069,
+  "cuerpo": {
+   "llamadas": 2,
+   "instancia": "65a6d8b6",
+   "edad_s": 0.3
+  },
+  "report": {
+   "duracion_ms": 1.79,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147792.8968208,
+  "estado": 200,
+  "request_id": "18f2dc30-6988-4abe-8f75-3be0a0ff9b7a",
+  "conexion": 0.095051,
+  "tls": 0.161074,
+  "primer_byte": 0.23736,
+  "total": 0.237457,
+  "cuerpo": {
+   "llamadas": 3,
+   "instancia": "65a6d8b6",
+   "edad_s": 0.5
+  },
+  "report": {
+   "duracion_ms": 1.64,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ },
+ {
+  "tipo": "caliente",
+  "t": 1792147793.1497517,
+  "estado": 200,
+  "request_id": "fe8db4fe-5d28-4391-87b1-449fd659bb37",
+  "conexion": 0.092076,
+  "tls": 0.158404,
+  "primer_byte": 0.232164,
+  "total": 0.23253,
+  "cuerpo": {
+   "llamadas": 4,
+   "instancia": "65a6d8b6",
+   "edad_s": 0.7
+  },
+  "report": {
+   "duracion_ms": 1.54,
+   "facturado_ms": 2,
+   "memoria_mb": 128,
+   "usada_mb": 39,
+   "init_ms": null
+  }
+ }
+]

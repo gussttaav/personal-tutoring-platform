@@ -1,0 +1,62 @@
+[
+ {
+  "t0": 1792162342821,
+  "t1": 1792162343685,
+  "salida": [
+   "{\"llamadas\":1,\"instancia\":\"95b6c9bf\",\"edad_s\":0.0}  0.563144 s",
+   "{\"llamadas\":2,\"instancia\":\"95b6c9bf\",\"edad_s\":0.4}  0.243809 s"
+  ],
+  "report": [
+   "REPORT RequestId: e662a4c5-2fc5-44f1-9385-d52a4bd4aaac\tDuration: 2.11 ms\tBilled Duration: 108 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB\tInit Duration: 105.51 ms",
+   "REPORT RequestId: af76444e-163a-4676-a86c-17520df2f337\tDuration: 1.77 ms\tBilled Duration: 2 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB"
+  ]
+ },
+ {
+  "t0": 1792162352807,
+  "t1": 1792162353635,
+  "salida": [
+   "{\"llamadas\":1,\"instancia\":\"f6bbe1bf\",\"edad_s\":0.0}  0.508480 s",
+   "{\"llamadas\":2,\"instancia\":\"f6bbe1bf\",\"edad_s\":0.3}  0.254230 s"
+  ],
+  "report": [
+   "REPORT RequestId: c487b4aa-cd4b-4c79-b413-c095b0ba81b6\tDuration: 2.40 ms\tBilled Duration: 115 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB\tInit Duration: 111.69 ms",
+   "REPORT RequestId: 4d08d103-663c-4dc4-9e15-8ad7f0196071\tDuration: 1.55 ms\tBilled Duration: 2 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB"
+  ]
+ },
+ {
+  "t0": 1792162362675,
+  "t1": 1792162363583,
+  "salida": [
+   "{\"llamadas\":1,\"instancia\":\"3602a3f8\",\"edad_s\":0.0}  0.581479 s",
+   "{\"llamadas\":2,\"instancia\":\"3602a3f8\",\"edad_s\":0.3}  0.270936 s"
+  ],
+  "report": [
+   "REPORT RequestId: 67bf0e40-a901-467c-83eb-e295246930e0\tDuration: 2.07 ms\tBilled Duration: 112 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB\tInit Duration: 109.64 ms",
+   "REPORT RequestId: a9dce3e2-29d2-46a8-a7d2-b28a7bcfc027\tDuration: 1.79 ms\tBilled Duration: 2 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB"
+  ]
+ },
+ {
+  "t0": 1792162372682,
+  "t1": 1792162373614,
+  "salida": [
+   "{\"llamadas\":1,\"instancia\":\"5439bc77\",\"edad_s\":0.0}  0.614961 s",
+   "{\"llamadas\":2,\"instancia\":\"5439bc77\",\"edad_s\":0.4}  0.261619 s"
+  ],
+  "report": [
+   "REPORT RequestId: a089fafc-d57b-45da-b995-aec32691d4da\tDuration: 2.13 ms\tBilled Duration: 115 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB\tInit Duration: 112.49 ms",
+   "REPORT RequestId: 0d69d19a-5bed-4782-a9b3-0d5bd0e0e4b8\tDuration: 1.69 ms\tBilled Duration: 2 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB"
+  ]
+ },
+ {
+  "t0": 1792162382648,
+  "t1": 1792162383598,
+  "salida": [
+   "{\"llamadas\":1,\"instancia\":\"3160260f\",\"edad_s\":0.0}  0.505339 s",
+   "{\"llamadas\":2,\"instancia\":\"3160260f\",\"edad_s\":0.4}  0.379016 s"
+  ],
+  "report": [
+   "REPORT RequestId: 64bdb507-1cfa-4536-ad12-cadd62ced844\tDuration: 2.37 ms\tBilled Duration: 113 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB\tInit Duration: 110.50 ms",
+   "REPORT RequestId: 38b1b399-ce51-489b-8577-ccfdc5109d6e\tDuration: 1.80 ms\tBilled Duration: 2 ms\tMemory Size: 128 MB\tMax Memory Used: 39 MB"
+  ]
+ }
+]

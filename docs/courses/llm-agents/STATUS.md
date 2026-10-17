@@ -37,8 +37,8 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (7/8) | _tbd_ | |
-| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
+| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (3/7) | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
@@ -740,7 +740,7 @@ for the reviewer of the block:
   360 px (the trace
   table scrolls 36 px inside its own box at 360). The pane carried the English locale cookie again.
 
-**COURSE-C2-P1-02** — In progress (started 2026-10-01). Lesson 10 `predecir-no-es-obedecer` authored on
+**COURSE-C2-P1-02** — Closed (2026-10-13; started 2026-10-01). Lesson 10 `predecir-no-es-obedecer` authored on
 `staging`, the block's first. 2 000 words, 7 display equations, no widget (the block md assigns
 none), 1 cell (35 lines), 4 quiz, no challenge, 4 readings (Ouyang et al. 2022, Askell et al. 2021,
 Reynolds & McDonell 2021, Wei et al. 2022 / FLAN; titles and arXiv links checked). Runs on the
@@ -1066,3 +1066,183 @@ Gustavo at review:
   `pnpm start` (the numeric accepts 0.8448, refuses 0.849 and 0.84); no horizontal page scroll at
   360 px (the two displays, 406 and 483 px, scroll in their own boxes and fit the desktop column;
   tables 328 px). Not on a phone.
+
+Lesson 17 `proyecto-sft-colab` authored on `staging` (2026-10-13), the block's last: Block 2 is
+closed. 1 994 words (at the target's top), 5 display equations, no widget, **no cell** (hasCode:
+false, the `fine-tuning-colab` precedent), 3 quiz, no challenge, 3 readings (Qwen2.5 technical
+report, OpenAssistant Conversations, LoRA; arXiv pages checked, LoRA's 1.2 TB → 350 GB in its
+§4.2, OASST at NeurIPS 2023 Datasets and Benchmarks). `minutes: 20` (lint ≈20). Decisions,
+confirmed by Gustavo at review:
+- **The notebook:** `docs/courses/llm-agents/notebooks/ajuste-supervisado-qwen.ipynb`, pushed to
+  `gussttaav/ai-notebooks` (`ce958ea`, with its README entry) and linked at that commit. Full
+  fine-tuning in float32 of **Qwen2.5-0.5B** in its pretrained (*base*) version, Apache 2.0, at Hub
+  commit `060db649…`; data: the Spanish part of **OpenAssistant `oasst1`** (Apache 2.0, commit
+  `fdf72ae0…`), first message + the reply the volunteers ranked first, conversations over 512 tokens
+  dropped rather than cut (3 249 of 3 716 pairs, 788 511 tokens, 86 % counted; 169 held out from
+  the validation split). Pinned `transformers==5.17.0`, `tokenizers==0.23.3`,
+  `huggingface_hub==1.33.0`; `torch` is Colab's. The loop is lesson 3's by hand (AdamW, clip at 1,
+  warm-up + cosine to a tenth), one epoch of 203 steps of 16 conversations at η_max = 2e-5, one
+  conversation at a time with the gradient accumulated (no padding, no gradient checkpointing),
+  the loss divided by the batch's counted tokens. The template is ChatML written by hand and
+  checked against `apply_chat_template` (which adds an English system message when none is given).
+- **LoRA is the stated fallback and was not needed:** 16 bytes per parameter = 7.9 GB, plus
+  activations measured at ≈3.6 GB for a 512-token conversation (saved-tensor hooks, CPU, an upper
+  bound) fit the T4. Gustavo ran the notebook on Colab and it works.
+- **The finding the lesson is built on:** in the pretrained model the rows of `<|im_start|>`,
+  `<|im_end|>` and the 290 entries after them are, up to bf16 rounding, one vector (norms
+  0.3009–0.3010, cosine 1.0000), so with the tied table p(`<|im_end|>`) ≤ 1/292 at every position:
+  lesson 11's 1/516 bound with another cause. The base model never closes a response (greedy: four
+  of the five test instructions echo the instruction in a loop, the fifth circles a phrase).
+- **The «before» numbers, from the notebook's own code on CPU float32:** held-out responses 1.750
+  nats per counted token; mean p(`<|im_end|>`) where a held-out response ends 5.1e-08; the last
+  6 000 characters of *Marianela* 3.237 nats per Qwen token. No «after» number is quoted, as in
+  `fine-tuning-colab`.
+- **Why not in the browser, with the numbers:** 7.9 GB against Pyodide's 2³² bytes (wasm32);
+  lesson 3's «algo menos de un milisegundo por token» × 3 621 → ≈3.6 s per token, 2.8 × 10⁶ s for
+  the epoch; on the T4, C ≈ 6ND ≈ 2.3 × 10¹⁵ FLOPs, five minutes at its 8.1 TFLOPS. Pyodide 0.29.3
+  has no PyTorch, and the lesson (and a quiz) says that alone would not stop it.
+- **Terms and symbols added before writing:** `modelo preentrenado` (Qwen's *base* / *instruct*
+  named once as labels; «modelo base» refused, it is the `referencia` row's) and `cuaderno` in the
+  delta's §4; the two ChatML tokens in `NOTATION.md`. «revisión» is avoided for a pinned commit
+  (Constitutional AI's word since lesson 16).
+- **The delta's §2 table gains a fourth row** (applied after review): an open pretrained model
+  fine-tuned in a Colab notebook, named in prose before the `<ColabLink>`, with a note that it is
+  not an implementation of `modelo` (the project never calls it through the signature).
+- **Lesson 16's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names Block 3's first lesson (`el-prompt-es-una-especificacion`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors; all three quiz questions right and wrong in the Browser pane on `pnpm start`; no
+  horizontal page scroll at 360 px (displays up to 397 px and the 392 px table scroll in their own
+  boxes; all fit the 650 px desktop column). The notebook ran end to end on CPU with a tiny
+  stand-in model for the training cells, and through the «before» measurements with the real one;
+  the GPU run is Gustavo's. Not on a phone.
+
+**COURSE-C2-P1-03** — In progress (started 2026-10-13). Lesson 18 `el-prompt-es-una-especificacion`
+authored on `staging`, the block's first. 1 998 words, 6 display equations, no widget (the block md
+assigns none), **2 cells** (17 + 39 lines; the plan said 1, but as one cell it was 54 lines, and
+AUTHORING §3's fix is the split: the class with a pointer demo, then the specification and the
+comprobación), 4 quiz, no challenge, 3 readings (IFEval, Sclar et al. 2023, Wallace et al. 2024 /
+the instruction hierarchy; arXiv pages checked, the 76-point spread is LLaMA-2-13B's in their
+abstract). `minutes: 25` (lint ≈27). Runs on the **scripted model**, introduced in this lesson with
+the reason; the cells do not load the mini-GPT. Decisions, confirmed by Gustavo at review:
+- **The formal content:** the prompt as $\pi_\theta(y \mid s, e_{1:K}, x)$; the system prompt enters
+  lesson 8's Bayes rule as one more factor, $p_{\text{SFT}}(s \mid \omega)$ (describing and showing
+  move the same posterior; a description covers casos no ejemplo shows, an ejemplo fixes the
+  form); the masa on $\text{cumple}$ split over tareas, bounded below by the intended tarea's term
+  and equal to $p_{\text{SFT}}(\text{cumple} \mid x, \omega_1)$ once the prompt fixes it («el prompt
+  quita ambigüedad, no añade capacidad»); and $0.99^{100} \approx 0.37$ (AM–GM for unequal rates),
+  so the especificación is written twice, in the prompt and as a comprobación in the harness. The
+  reduced model is stated with $\pi_\theta = p_{\text{SFT}}$ and the lesson says it holds as far as that
+  does.
+- **Letters and terms added before writing:** $s$ for the system prompt (every lowercase Latin
+  letter is spent; Block 1's step never shares a page with it), the third event in words
+  $\text{cumple}$, $p_{\text{SFT}}$ with a latent tarea, $\omega_1$ as the tarea a specification
+  describes; the seeded $\hat{s}$ (an evaluator's score) is to be re-lettered by the evals lesson.
+  Terms: `especificación`, `cumplir` (set against `obedecer`: the opening case obeys and does not
+  meet the spec), `comprobación` (the format-only check; correctness is evaluation, lesson 23),
+  `guion` / `modelo guionizado` (the name STATUS asked to review, confirmed).
+- **`ModeloGuionizado`:** a guion of (the mensajes it expects, the respuesta it gives), a pointer,
+  `__call__(mensajes, herramientas=())` that returns the next respuesta, raises `ValueError` naming
+  the first mensaje that deviates and `RuntimeError` when the guion runs out. Mensajes are lesson
+  11's `(rol, contenido)` tuples; when Blocks 4–5 move to content blocks is still open. The class
+  lives in the cell, not frozen as a public asset like `modelo.py`; freeze it when a later lesson
+  first needs to load it.
+- **The delta §2 table** now says the first Block 3 lesson introduces the scripted model and says
+  why, and the first Block 4 lesson restates it in one clause.
+- **Lesson 17's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 19 (`cadena-de-pensamiento`) in prose with the usual comment, and promises only what
+  the gotcha allows: cost measured in the browser, benefit cited from large models.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors; both cells run in Pyodide in the Browser pane on `pnpm start`, output as the prose quotes;
+  all four quiz questions right and wrong (the numeric accepts 0.367, refuses 0.37); no horizontal
+  page scroll at 360 px (four displays, 403–601 px, scroll in their own boxes and fit the desktop
+  column). Not on a phone.
+
+Lesson 19 `cadena-de-pensamiento` authored on the block branch, merged into `staging`. 1 996 words,
+4 display equations (under the 5–12 target, accepted for a «medium» block), no widget, 1 cell (43
+lines), 4 quiz, no challenge, 5 readings (Wei et al. 2022, Kojima et al. 2022, Merrill & Sabharwal
+2023, Pfau et al. 2024, Turpin et al. 2023; numbers checked against the arXiv abstracts and Wei's
+tables). `minutes: 25` (lint ≈24). Decisions, confirmed by Gustavo at review:
+- **Runs on the mini-GPT, not the scripted model:** what the cell measures is the cost of a token,
+  and the scripted model has no network. The block md's `Runs on:` line now reads «(19, 20, 21)».
+- **The formal content:** a camino through the causal network climbs one capa per arrow, so the
+  logits of any position sit at profundidad $L$ however long the prompt (more anchura, no depth);
+  a written token re-enters at the bottom, so a cadena of $R$ tokens gives $(R + 1)L$, and only a
+  token goes back down ($\le \log_2 \lvert V \rvert$ bits, so constant dots add no depth: Pfau et
+  al.'s gains are anchura). The bill is lesson 5's $c(t)$ summed over the cadena,
+  $R\,c_{\text{fila}} + LR(2T + R + 1) \cdot d_{\text{model}}$, paid at the writing rate. That
+  depth matters is cited (Merrill & Sabharwal), and that it helps is cited (Wei, Kojima; only from
+  ~100 B parameters), never demonstrated: the lesson says which claim is which.
+- **The cell:** the mini-GPT writes $R \in \{0, 12, 24, 48\}$ tokens after <W>¿Dónde está la
+  bola?</W> (12 tokens), then reads the same tokens in the prompt. Same multiplications
+  (6 739 968 at $R = 48$), answer logits equal to 5e-15, writing ≈5× slower than reading (75 vs
+  14 ms in the browser), depth 98 vs 2. The cadena is novel-like noise: the bill does not read
+  what it pays for.
+- **Letters and terms added before writing:** $R$ (a count is a capital; $R(x, y)$ was never
+  given a letter, the reward is lowercase $r$) and $\mathbf{h}^{(l)}_t$ in `NOTATION.md`;
+  `pasada` (in use since lesson 5), `cadena de pensamiento`, `camino`, `profundidad` / `anchura` in
+  the delta's §4.
+- **The harness consequence:** a cadena breaks «responde sólo con la fecha», so the
+  especificación says where the answer goes and the comprobación reads it there; the bridge names
+  lesson 20 (`salida-estructurada`) in prose with the usual comment.
+- **Lesson 18's bridge now links this lesson** (placeholder comment removed).
+- Verified: `pnpm lint:content` (no warnings for lessons 18 and 19), `pnpm build` green with 0
+  KaTeX errors; the cell run in the Browser pane on `pnpm start` and in a Node Pyodide 0.29.3
+  harness, identical output; all four quiz questions right and wrong; no horizontal page scroll
+  at 360 px (two displays, 466 and 403 px, scroll in their own boxes). Not on a phone.
+
+Lesson 20 `salida-estructurada` authored on `staging`, with the `logit-mask` widget built first in
+the same change. 1 999 words, 7 display equations, 1 widget, 2 cells (34 and 23 lines), 4 quiz,
+1 challenge (`ch-permitidas`), 4 readings (Park et al. 2024 / Grammar-Aligned Decoding, Willard &
+Louf 2023, Beurer-Kellner et al. 2024, Tam et al. 2024; arXiv abstracts checked). `minutes: 35`
+(lint ≈35; the advisory reading-time warning, as lessons 12–15). Runs on the mini-GPT and says
+why before the first cell: the mask acts on logits, and the scripted model has none. Decisions,
+confirmed by Gustavo at review:
+- **Title «generación restringida», not the block md's «decodificación restringida»:** lesson 4
+  refuses «decodificación» for generation (`decodificar` is ids → text), the reason the course says
+  `generación voraz`. *Constrained decoding* is given once as the field's name; the block md's
+  lesson table now carries the new title.
+- **The formal content:** a gramática $\mathcal{G}$ is a set of texts; $A_j$ the entries whose
+  bytes, after those of $y_{<j}$, still begin one (bytes, because a token can be half an `í`); the
+  masked softmax is $p_\theta(v \mid x, y_{<j}) / p_\theta(A_j \mid x, y_{<j})$, lesson 4's corte
+  with $A_j$ for the núcleo; every masked respuesta is válida, by induction (the 256 bytes keep
+  $A_j$ non-empty; prefix-free texts and a maximum length are the two conditions). Then what the
+  mask gives up: the condicionada $p_\theta(y \mid x, \mathcal{G}) = p_\theta(y \mid x) /
+  p_\theta(\mathcal{G} \mid x)$, per token the model's factor times the look-ahead
+  $p_\theta(\mathcal{G} \mid x, y_{\le j}) / p_\theta(\mathcal{G} \mid x, y_{<j})$, which the mask
+  replaces by one constant per position, so $\tilde{q}(y \mid x) = p_\theta(y \mid x) / \prod_j
+  p_\theta(A_j \mid x, y_{<j})$; rejection sampling draws the condicionada exactly at
+  $\mathbb{E}[\text{intentos}] = 1/p_\theta(\mathcal{G} \mid x)$ (geometric).
+- **The grammar is five Marianela names** in `{"personaje": "…"}` after «¿Quién es la
+  protagonista? Responde en JSON.»: the mini-GPT has no preferences worth showing over dates. The
+  dates program gets its JSON grammar in the challenge and in `q-lo-que-queda` (`2026-19-45` has
+  the form). The corpus has no `{`, no `"` and ten digits; `{` gets $1.2 \times 10^{-7}$.
+- **The cells:** cell 1 generates five masked respuestas (seed 0: Choto, Pablo, Pablo, Teodoro,
+  Teodoro), all read by `json.loads`, the tokenisation visibly the mask's (`s·o·n`, not `s·on`).
+  Cell 2 walks the 132 token paths that end on a text of $\mathcal{G}$, exactly, no Monte Carlo:
+  $p_\theta(\mathcal{G} \mid x) = 8.1 \times 10^{-63}$, $1.2 \times 10^{62}$ expected tries, and the
+  condicionada against the mask: Nela 0.994 / 0.016, Pablo 0.005 / 0.616, Teodoro 0.000 / 0.150,
+  Celipín 0.000 / 0.187, Choto 0.000 / 0.032. The cause, readable in the widget: after `"`, `P`
+  gets 38× `N`'s probability (Por, Pero, Pues), and after `P` the two entries that continue Pablo
+  hold 4.6 % (the model wants `or`), which the mask renormalises to 100 %.
+- **`logit-mask`:** five frozen paths (`math/logit-mask-presets.ts`, generated by
+  `scripts/courses/llm-agents/logit-mask-presets.py`), one per name, 14 shared steps; per position
+  the full allowed set and the model's top 5, before and after the mask, with `restrict` from
+  `math/sampling.ts` doing the cut (`math/logit-mask.ts`). `logit-mask.test.ts` rebuilds every
+  allowed set from the grammar and `bpe-merges.json`, and asserts the numbers the intuition quotes;
+  `sampling.test.ts` gains the mask cases (the softmax with $-\infty$ is `restrict` onto $A_j$).
+  Spanish-bound, listed in `SPANISH_BOUND_CORPORA`.
+- **Letters and terms added before writing:** $A_j$ (re-indexed from the seed's $A_t$, like the
+  $y_j$ it draws), the masses $p_\theta(A_j \mid \cdot)$ and $p_\theta(\mathcal{G} \mid \cdot)$ with no
+  letter, the condicionada, $\tilde{q}$ as lesson 4's, $\text{intentos}$ in `NOTATION.md`;
+  `gramática` / `esquema` / `campo`, `texto`, `válida`, `permitidas`, `máscara` / `generación
+  restringida`, `condicionada`, `muestreo por rechazo` / `intento` in the delta's §4.
+- **Lesson 19's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 21 (`recuperacion`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for lessons 19 and 20 but the reading time), `pnpm
+  build` green with 0 KaTeX errors, 949 widget and course tests; both cells run in the Browser
+  pane on `pnpm start` with the CPython prototype's output (cell 2 in 1.3 s); all four quiz
+  questions right and wrong; the challenge's solution passes, the starter and an empty submission
+  fail, and the `isdigit()` attempt fails exactly the two trap tests with their messages; no
+  horizontal page scroll at 360 px (the widget fits at 320 px; seven displays, up to 678 px, scroll
+  in their own boxes). Not on a phone.

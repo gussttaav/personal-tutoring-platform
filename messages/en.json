@@ -998,6 +998,7 @@
       "evaluacion": "Evaluation",
       "grafos": "Graphs",
       "indices": "Indexes",
+      "infraestructura": "Infrastructure",
       "lenguajes": "Programming languages",
       "llm": "LLMs",
       "nlp": "NLP",
@@ -1791,6 +1792,28 @@
         "sliderL": "Log ratio of the rejected response",
         "sliderBeta": "β",
         "shiftNote": "Raise or lower both log ratios together and the point travels along a diagonal of one colour: the loss only sees their difference."
+      },
+      "logit-mask": {
+        "groupAria": "Constrained generation on the mini-GPT: at each position, what the grammar allows and the model's distribution before and after the mask",
+        "prompt": "Prompt:",
+        "pathLabel": "Path to",
+        "pathAria": "The path that writes «{name}»",
+        "tokenAria": "Position {n}: «{token}»",
+        "position": "Position {n} of {total}.",
+        "allowed": "{n, plural, =1 {A single allowed entry: it takes all the mass.} other {# allowed entries out of {size}.}}",
+        "kept": "Share of the model's mass the mask keeps: {kept}. The rest is thrown away.",
+        "headBefore": "no mask",
+        "headAfter": "with mask",
+        "rowAria": "«{token}»: {before} without the mask, {after} with it",
+        "rowCutAria": "«{token}»: {before} without the mask; the grammar does not allow it",
+        "percent": "{value} %",
+        "cut": "out",
+        "rest": "other {n}",
+        "restAria": "The other {n} entries: {before} without the mask; the grammar allows none of them",
+        "legendBefore": "no mask: what the model gives",
+        "legendAfter": "with mask: renormalised over the allowed ones",
+        "legendCut": "outside the grammar",
+        "totals": "This path, so far: {raw} without the mask, {masked} with it."
       }
     }
   },

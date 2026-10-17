@@ -1,10 +1,10 @@
 # P1-03 — Block 3: Hablar con el modelo es programar
 
-**Tag:** `COURSE-C2-P1-03` · **Effort:** L · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-C2-P1-03` · **Effort:** L · **Owner:** _tbd_ · **Status:** 🔄
 **Depends on:** P1-02 · Block 3 widgets (built in this task)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** derivation → systems
 **Runs on:** the **scripted model** from lesson 18; the mini-GPT where the mechanism is
-model-agnostic (20, 21) · **Publication:** lesson by lesson
+model-agnostic (19, 20, 21) · **Publication:** lesson by lesson
 
 ## TL;DR
 
@@ -35,7 +35,7 @@ Mathematics: **medium**, and the block says so at the top.
 |---|---|---|---|---|---|---|
 | 18 | `el-prompt-es-una-especificacion` | El prompt es una especificación | — | 1 | 4 | — |
 | 19 | `cadena-de-pensamiento` | Cadena de pensamiento: más tokens, más cómputo | — | 1 | 4 | — |
-| 20 | `salida-estructurada` | Salida estructurada: decodificación restringida | `logit-mask` | 2 | 4 | 1 |
+| 20 | `salida-estructurada` | Salida estructurada: generación restringida | `logit-mask` | 2 | 4 | 1 |
 | 21 | `recuperacion` | Embeddings y recuperación: darle al modelo lo que no sabe | — | 2 | 4 | 1 |
 | 22 | `ventana-de-contexto` | La ventana de contexto es un recurso escaso | `context-window` | 1 | 4 | — |
 | 23 | `evaluar` | Evaluar: pruebas exactas, jueces y sus trampas | — | 2 | 4 | 1 |
@@ -49,9 +49,9 @@ it. Nothing it outputs touches the world. That is the bridge block.
 
 ## Lesson progress
 
-- [ ] 18. `el-prompt-es-una-especificacion`
-- [ ] 19. `cadena-de-pensamiento`
-- [ ] 20. `salida-estructurada`
+- [x] 18. `el-prompt-es-una-especificacion`
+- [x] 19. `cadena-de-pensamiento`
+- [x] 20. `salida-estructurada`
 - [ ] 21. `recuperacion`
 - [ ] 22. `ventana-de-contexto`
 - [ ] 23. `evaluar`

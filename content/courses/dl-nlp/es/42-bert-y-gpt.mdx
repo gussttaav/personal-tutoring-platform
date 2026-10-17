@@ -32,7 +32,7 @@ quiz:
     options:
       - { id: a, text: 'Sólo $r(w_{1:T},\, t)$. A las otras dos les llega lo mismo en las dos frases: a la tabla porque la frase no le entra, y a la causal porque las dos frases comparten el prefijo <W>el banco</W>.' }
       - { id: b, text: 'Las dos contextuales, $r(w_{1:t})$ y $r(w_{1:T},\, t)$: en cuanto la frase es argumento, dos frases distintas dan dos vectores distintos.' }
-      - { id: c, text: 'Las tres, en cuanto los pesos estén entrenados: con $\mathbf{E}$ bien ajustada, <W>banco</W> acaba teniendo una fila por sentido.' }
+      - { id: c, text: 'Las tres, en cuanto los parámetros estén entrenados: con $\mathbf{E}$ bien ajustada, <W>banco</W> acaba teniendo una fila por sentido.' }
       - { id: d, text: 'Ninguna en esa posición, porque la codificación posicional es la misma en las dos frases y domina la suma.' }
     answer: a
     explanation: 'La (a), y la celda lo mide: los dos primeros cosenos valen $1$ y valen $1$ exacto. La (b) acierta el principio y falla el final: $r(w_{1:t})$ recibe el prefijo, no la frase, y estas dos frases tienen el mismo prefijo hasta la posición de <W>banco</W>, así que un modelo causal reparte un vector por prefijo y no uno por frase. En una posición posterior sí los separaría. La (c) confunde ajustar los números con cambiar el argumento —es el desenlace del bloque 1—, y la (d) se arregla sola mirando la primera línea que imprime la celda: a la entrada los dos vectores son el mismo array, $\text{PE}$ incluida, y aun así los de salida se separan.'
@@ -71,7 +71,7 @@ reading:
 {/* COURSE-P5-05 — Bloque 5, lección 10. */}
 
 El Transformer de la lección anterior —el proyecto, montado y ejecutado de principio a fin— sabe
-hacer una cosa y ninguna más: correr. Sus pesos siguen siendo los que devolvió el generador de
+hacer una cosa y ninguna más: correr. Sus parámetros siguen siendo los que devolvió el generador de
 números aleatorios, y corregirlos pide un conjunto de entrenamiento. El que esa arquitectura pide
 es de los caros: pares de frases, cada una con su traducción, escritos uno a uno por alguien que
 sabe los dos idiomas. Texto suelto, en cambio, sobra —hay muchísimo más del que
@@ -241,7 +241,7 @@ puntuaciones son idénticas y lo que sale también. El tercero baja a $0.550005$
 hacía falta: quitada la máscara, <W>cerró a las dos</W> y <W>estaba mojado</W> entran en la mezcla y el
 vector de <W>banco</W> deja de ser el mismo.
 
-Con pesos que nadie ha entrenado, *cuánto* se separan esos dos vectores no significa nada —lo
+Con parámetros que nadie ha entrenado, *cuánto* se separan esos dos vectores no significa nada —lo
 decidió el generador—. Lo que es de la arquitectura y no del generador es que *puedan* separarse:
 la firma admite la frase, así que la frase alcanza al resultado. Que los separe bien —el banco del
 dinero lejos del banco del parque— es lo que el preentrenamiento tiene que conseguir, y no hay
@@ -267,10 +267,10 @@ Ninguno de los dos sirve, recién preentrenado, para lo que tú quieras. Lo que 
 fase es una representación contextual buena y ninguna tarea: BERT no clasifica reseñas y GPT no
 contesta preguntas, porque nadie les ha dicho todavía qué es una reseña ni qué es una pregunta. Lo
 que falta es la segunda mitad de la receta, y es la mitad corta —unas pocas vueltas sobre unos
-pocos miles de ejemplos etiquetados, partiendo de los pesos del preentrenamiento en lugar del
+pocos miles de ejemplos etiquetados, partiendo de los parámetros del preentrenamiento en lugar del
 generador de números aleatorios.
 
 Eso es el *fine-tuning*, y es <Leccion slug="fine-tuning-colab">la lección siguiente, la última</Leccion>: hacerlo de verdad, sobre un
 modelo preentrenado de verdad. No corre en el navegador, y la lección empieza diciendo por qué —los
-pesos que hay que mover no caben donde han cabido las celdas de este curso—. Se hace en un cuaderno
-de Colab, con la máquina que hace falta al otro lado.
+parámetros que hay que mover no caben donde han cabido las celdas de este curso—. Se hace en un
+cuaderno de Colab, con la máquina que hace falta al otro lado.

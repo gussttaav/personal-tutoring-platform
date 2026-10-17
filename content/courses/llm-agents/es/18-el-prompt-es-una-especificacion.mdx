@@ -1,0 +1,356 @@
+---
+slug: el-prompt-es-una-especificacion
+title: "El prompt es una especificación"
+block: 3
+order: 1
+minutes: 25
+summary: "Con los pesos fijos, el prompt es el argumento de una función que no cambia: el prompt de sistema describe la tarea, los ejemplos la muestran y el caso es aquello a lo que se aplica. La lección deriva qué puede conseguir un prompt y qué no, por qué un programa que llama a un modelo comprueba cada respuesta, y presenta el modelo guionizado, sobre el que corre casi todo el bloque."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-describir-o-mostrar
+    type: multi
+    prompt: 'Quitas del prompt de sistema de las fechas la frase que dice qué responder cuando el mensaje no fija ningún día. Marca lo que, por sí solo, le devuelve al modelo esa información.'
+    options:
+      - { id: a, text: 'Un ejemplo más: un mensaje sin día y, como respuesta, <W>ninguna</W>.' }
+      - { id: b, text: 'La misma regla, dicha con otras palabras, en el prompt de sistema.' }
+      - { id: c, text: 'Cuatro ejemplos más, todos con día, mes y año.' }
+      - { id: d, text: 'Generar con la voraz en lugar de sortear.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). Una descripción y un ejemplo son dos factores de la misma regla de Bayes sobre las mismas tareas, y los dos pueden separar la tarea que contesta <W>ninguna</W> de la que se inventa una fecha. La (c) no: esas dos tareas responden igual a cualquier mensaje con fecha, así que sus términos se cancelan, porque lo que distingue dos tareas es lo que hacen distinto. La (d) cambia cómo se sortea, no qué tarea cree el modelo que tiene delante.'
+    hint: '¿En qué mensajes responden distinto la tarea que querías y la que no?'
+  - id: q-el-techo
+    type: single
+    prompt: 'Con tu prompt, el modelo pone $0.8$ de probabilidad en la tarea que describe la especificación y $0.2$ en otra cuyas respuestas no la cumplen nunca. Ejecutando la buena, cumple nueve veces de cada diez. ¿Cuánto vale $\pi_\theta(\text{cumple} \mid s, e_{1:K}, x)$, y hasta dónde puede llevarlo un prompt mejor?'
+    options:
+      - { id: a, text: '$0.72$, y hasta $0.9$.' }
+      - { id: b, text: '$0.72$, y hasta 1, con una descripción que no deje ninguna duda.' }
+      - { id: c, text: '$0.9$: la otra tarea no cuenta, porque no cumple nunca.' }
+      - { id: d, text: '$0.8$, y hasta 1.' }
+    answer: a
+    explanation: 'La (a). La suma sobre tareas da $0.8 \cdot 0.9 + 0.2 \cdot 0 = 0.72$. Un prompt mejor puede llevar a 1 el primer factor y dejar la masa en $0.9$, lo que la tarea buena sabe hacer, y ahí se para: la (b) confunde quitar ambigüedad con añadir capacidad. La (c) olvida que el $0.2$ de la otra tarea es masa que no cumple. La (d) toma el primer factor por el resultado.'
+    hint: 'Escribe la suma con sus dos términos y mira cuál de los números puede mover el prompt.'
+  - id: q-cumplir-todas
+    type: numeric
+    prompt: 'Un programa pasa 200 mensajes por el modelo, y cada respuesta cumple la especificación con probabilidad $0.995$, en sorteos independientes. ¿Con qué probabilidad cumplen las 200? Tres decimales.'
+    answer: 0.367
+    tolerance: 0.002
+    explanation: 'Unos $0.367$: $0.995^{200} = e^{200 \ln 0.995} \approx e^{-1.003}$. Con un modelo que cumple 199 veces de cada 200, el programa recibe al menos una respuesta que no sabe leer casi dos veces de cada tres. Por eso la especificación se escribe también en el harness, como una comprobación que mira cada respuesta antes de usarla.'
+    hint: 'Las 200 tienen que cumplir a la vez, y cada sorteo va por su cuenta.'
+  - id: q-que-demuestra
+    type: multi
+    prompt: 'La celda corre sobre el modelo guionizado. Marca lo que demuestra.'
+    options:
+      - { id: a, text: 'Que la comprobación para una respuesta sin la forma pedida, la haya escrito el modelo que sea.' }
+      - { id: b, text: 'Que un modelo de verdad, con esta especificación, se equivoca en una respuesta de cada cuatro.' }
+      - { id: c, text: 'Que una respuesta puede pasar la comprobación y estar mal.' }
+      - { id: d, text: 'Que cambiar el prompt de sistema cambia la respuesta del modelo.' }
+    answer: [a, c]
+    explanation: 'La (a) y la (c), porque son afirmaciones sobre la comprobación y no sobre el modelo: <W>La fecha es 2026-12-02.</W> no tiene la forma, la escriba quien la escriba, y <W>2026-10-23</W> la tiene aunque el jueves sea el 22. La (b) no se sigue de nada: las cuatro respuestas las escribí yo, dos mal a propósito. La (d) es lo contrario de lo que pasa: con otro prompt de sistema, el modelo guionizado no responde otra cosa, falla.'
+    hint: 'Separa lo que depende de quién escribió las respuestas de lo que no.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Instruction-Following Evaluation for Large Language Models'
+    authors: 'Zhou, Lu, Mishra, Brahma, Basu, Luan y otros'
+    year: '2023'
+    venue: 'arXiv:2311.07911'
+    lang: en
+    url: 'https://arxiv.org/abs/2311.07911'
+    note: 'Unos 500 prompts con instrucciones que un programa puede comprobar sin juez, de 25 tipos, como «escribe más de 400 palabras». Es la comprobación de esta lección convertida en una manera de medir modelos.'
+  - kind: paper
+    title: 'Quantifying Language Models'' Sensitivity to Spurious Features in Prompt Design or: How I learned to start worrying about prompt formatting'
+    authors: 'Sclar, Choi, Tsvetkov y Suhr'
+    year: '2023'
+    venue: 'ICLR 2024 · arXiv:2310.11324'
+    lang: en
+    url: 'https://arxiv.org/abs/2310.11324'
+    note: 'Quitar los dos puntos de un prompt con ejemplos, o cambiarle las mayúsculas, sin tocar lo que pide, mueve el acierto de un modelo abierto hasta 76 puntos. Lo que hace un prompt no se lee en su texto: se mide.'
+  - kind: paper
+    title: 'The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions'
+    authors: 'Wallace, Xiao, Leike, Weng, Heidecke y Beutel'
+    year: '2024'
+    venue: 'arXiv:2404.13208'
+    lang: en
+    url: 'https://arxiv.org/abs/2404.13208'
+    note: 'Un prompt de sistema no manda por ir primero: hay que entrenar al modelo para que lo anteponga a lo que escriben el usuario o un tercero. Proponen con qué datos hacerlo y miden cuánto resiste después a las inyecciones.'
+---
+
+{/* COURSE-C2-P1-03 — Bloque 3, lección 1. Presenta el modelo guionizado y corre sobre él: la celda
+    no carga el mini-GPT. */}
+
+Desde esta lección, los pesos no se mueven. El bloque anterior los movió para que un modelo
+obedeciera, y su proyecto, <Leccion slug="proyecto-sft-colab">el ajuste de Qwen en Colab</Leccion>,
+dejó a la vista lo que eso no arregla: un modelo ajustado responde con lo que recuerdan sus pesos, y
+nadie mira si es verdad. Este bloque toma un modelo así, el que sea, y trabaja con lo que le queda
+en la mano a quien lo usa: el texto que le da y lo que hace con lo que recibe.
+¿Qué es ese texto, con exactitud, para un modelo que no cambia?
+
+Un programa de agenda recibe el mensaje <W>La reunión se pasa al martes 20 de octubre.</W> y le
+pregunta a un modelo ajustado qué fecha dice. <W>El martes 20 de octubre.</W> es una respuesta que
+obedece, y también lo son <W>20/10</W> y <W>La reunión será el martes 20 de octubre.</W> A una
+persona le valen las tres. Al programa, que tiene que escribir <W>2026-10-20</W> en un campo de su
+calendario, no le vale ninguna tal como llega, y el modelo no se ha equivocado: nadie le dijo qué se
+esperaba de él. Obedecer no basta.
+
+Mira lo que le faltaba a esa pregunta. No decía la forma (año, mes y día, con guiones y nada más),
+ni qué contestar a un mensaje que no fija ningún día, ni de qué año es una fecha que no lo dice.
+Cada omisión deja abiertas varias lecturas, y el modelo no pregunta cuál querías: sortea una.
+
+Un *prompt* para un programa así tiene tres piezas, y cada una hace un trabajo distinto. El prompt de
+sistema describe la tarea. Los ejemplos la muestran, con un par de mensajes resueltos. Y el caso es el mensaje de hoy, al que se
+aplica. <Leccion slug="aprendizaje-en-contexto">La lección sobre el aprendizaje en contexto</Leccion>
+concluyó que, con $\theta$ fijo, el prompt decide qué función calcula el modelo. Repartido así, las
+dos primeras piezas son un programa y la tercera su entrada, y el modelo es el intérprete, el mismo
+para cualquier programa que le des. Escribir el prompt es programarlo.
+
+El parecido se rompe en dos sitios. El intérprete de Python no adivina: lo que no está escrito con
+exactitud es un error. El modelo no da errores, ejecuta una de las lecturas del programa, cada una
+con su probabilidad. Y un programa sin ninguna ambigüedad lo ejecuta bien con cierta probabilidad,
+no siempre. La primera diferencia la arregla el texto del prompt. La segunda, no, y obliga al
+programa a mirar lo que recibe.
+
+<Callout type="intuition" title="La idea en una frase">
+Con los pesos fijos, el prompt es un programa y el modelo su intérprete. Una especificación precisa
+quita las lecturas que no querías, pero no hace que el modelo ejecute mejor la que querías, y por
+eso se escribe dos veces: en el prompt, para el modelo, y en una comprobación, para el programa.
+</Callout>
+
+## El prompt, argumento de una función fija
+
+Llamemos $s$ al prompt de sistema, $e_{1:K}$ a los $K$ ejemplos y $x$ al caso, las tres secuencias
+de tokens, con los nombres de la lección sobre el aprendizaje en contexto. Esta $s$ no es el paso de
+entrenamiento del bloque 1: en este bloque $\theta$ no se mueve y no hay pasos que contar. En una
+conversación, $s$ es el contenido del mensaje de sistema, cada ejemplo son dos mensajes (su caso
+escrito por el usuario y su respuesta por el asistente, aunque los dos los escriba quien programa) y
+el caso es el último mensaje del usuario. La plantilla los pone en fila, y el modelo da a cada
+respuesta $y$ la probabilidad
+
+$$
+\pi_\theta(y \mid s, e_{1:K}, x),
+$$
+
+la política del bloque anterior con su prompt partido en tres piezas. Con $\theta$ fijo es una sola
+función, y todo lo que quien programa puede elegir está a la derecha de la barra.
+
+### Describir la tarea y mostrarla son la misma palanca
+
+Para ver qué hace cada pieza, recuperemos el modelo reducido de aquella lección con las
+conversaciones del ajuste supervisado (*supervised fine-tuning*, SFT) en el lugar de los
+documentos. Cada conversación sigue una tarea $\omega$, la mayoría empieza por un prompt de
+sistema que la describe, y un modelo en el mínimo de su ajuste da lo mismo que su texto,
+$\pi_\theta = p_{\text{SFT}}$. Lo que sigue vale en la medida en que eso se cumpla, como valía allí
+el modelo reducido. Si $s$ se escribe según la tarea, como los ejemplos, la regla de Bayes le da un factor
+más:
+
+$$
+p_{\text{SFT}}(\omega \mid s, e_{1:K}, x) \propto p_{\text{SFT}}(\omega)\; p_{\text{SFT}}(s \mid \omega) \prod_{i=1}^{K} p_{\text{SFT}}(e_i \mid \omega)\; p_{\text{SFT}}(x \mid \omega).
+$$
+
+Describir la tarea y mostrarla son, para el modelo, la misma clase de evidencia sobre la misma
+variable. Lo que cambia es cuánto pesa cada una y de qué habla. Una frase como <W>Responde sólo con
+la fecha.</W> es casi imposible en una conversación cuya tarea sea comentar la fecha, y por sí sola
+deja sin masa a esa tarea, algo para lo que harían falta varios ejemplos. Una descripción habla de
+todos los casos, también de los que ningún ejemplo enseña, como un mensaje sin fecha. Un ejemplo sólo
+habla del suyo, y por eso fija mejor lo que las palabras dicen mal: la forma exacta de <W>2026-11-07</W>,
+sin punto y sin nada delante. Y ninguna de las dos crea tareas: como allí, a una tarea con
+$p_{\text{SFT}}(\omega) = 0$ no la levanta ningún prompt.
+
+Nada en la red le da al prompt de sistema más autoridad que al caso:
+<Leccion slug="plantilla-de-chat">la lección sobre la plantilla</Leccion> ya advirtió que su token
+dice quién escribió cada mensaje, no a quién hacer caso. La prioridad que tenga la pone el ajuste, en
+el factor $p_{\text{SFT}}(s \mid \omega)$, aprendido como cualquier otro.
+
+### Lo que una especificación no puede subir
+
+Una **especificación** dice qué respuestas valen para cada caso: la tarea, la forma, lo que se hace
+en los casos raros. Un prompt es una manera de escribirla para el modelo, no la especificación
+misma. Escribamos $\text{cumple}$ para el conjunto de las respuestas que la cumplen, como el bloque
+anterior escribía $\text{obedece}$, y $\pi_\theta(\text{cumple} \mid s, e_{1:K}, x)$ para su masa.
+Con la suma sobre tareas de aquella lección,
+
+$$
+\pi_\theta(\text{cumple} \mid s, e_{1:K}, x) = \sum_{\omega} p_{\text{SFT}}(\omega \mid s, e_{1:K}, x)\; p_{\text{SFT}}(\text{cumple} \mid x, \omega),
+$$
+
+y los dos factores de cada término dependen de cosas distintas. El primero es el de arriba, lo que
+el prompt mueve. El segundo ya no ve ni $s$ ni los ejemplos, porque fijada la tarea no dicen nada
+más sobre la respuesta: es la frecuencia con que una conversación de esa tarea responde a ese caso
+como pide la especificación. Es lo que el modelo sabe hacer.
+
+Llamemos $\omega_1$ a la tarea que la especificación describe. Los demás términos de la suma no
+restan, así que el suyo, solo, es una cota por debajo:
+
+$$
+\pi_\theta(\text{cumple} \mid s, e_{1:K}, x) \ge p_{\text{SFT}}(\omega_1 \mid s, e_{1:K}, x)\; p_{\text{SFT}}(\text{cumple} \mid x, \omega_1).
+$$
+
+Un prompt que no deja ninguna duda lleva el primer factor a 1, los demás términos se anulan con él,
+y la cota se vuelve igualdad:
+
+$$
+\pi_\theta(\text{cumple} \mid s, e_{1:K}, x) = p_{\text{SFT}}(\text{cumple} \mid x, \omega_1).
+$$
+
+Ésa es la frontera de una especificación. Afinarla mueve el primer factor hacia 1, y llegado ahí,
+otra frase u otro ejemplo no cambian nada: la masa se queda en lo que el modelo sabe
+hacer con esa tarea y ese caso. El prompt quita ambigüedad. No añade capacidad.
+
+### Cumplir cien veces seguidas
+
+Un programa no llama al modelo una vez. Si cada respuesta cumple con probabilidad $0.99$ y cada llamada es un sorteo aparte, cien
+llamadas cumplen todas con probabilidad
+
+$$
+0.99^{100} = e^{100 \ln 0.99} \approx e^{-1.005} \approx 0.37.
+$$
+
+Casi dos veces de cada tres, el programa recibe al menos una respuesta que no sabe leer. Que unas
+llamadas cumplan más que otras no lo arregla: con la misma media, el producto de las probabilidades
+es como mucho la media elevada al número de llamadas, por la desigualdad entre las medias aritmética
+y geométrica.
+
+Así que una especificación se escribe dos veces. Una, en palabras y ejemplos, en el prompt, para
+subir la masa en $\text{cumple}$. Otra, en código, en lo que rodea al modelo, lo que el curso llama
+el *harness*: una **comprobación** que mira cada respuesta antes de usarla. No todo se puede
+comprobar así. La forma sí (año, mes y día, o <W>ninguna</W>), porque verla no pide saber la
+respuesta. Si la fecha es la buena, no, porque para eso hay que saber cuál es. Lo primero lo hace el
+harness en cada llamada; lo segundo es evaluar, y llega al final del bloque.
+
+## Un modelo que no improvisa
+
+Las celdas del bloque necesitan un modelo al que darle prompts como éste, y tu mini-GPT no sirve:
+<Leccion slug="predecir-no-es-obedecer">la lección sobre predecir y obedecer</Leccion> lo vio seguir
+escribiendo la novela tras una instrucción, y <Leccion slug="sft">el ajuste supervisado</Leccion> le
+enseñó la forma de diez respuestas y ningún contenido. Contar sus respuestas a esta especificación
+no diría nada de lo que hace una. Además, casi todo lo que el bloque
+enseña pasa alrededor del modelo: montar el prompt, comprobar lo que vuelve, decidir qué cabe en la
+ventana de contexto, medir. Para eso hace falta un modelo cuya respuesta se sepa de antemano, de modo
+que lo único que cambie sea tu código.
+
+Desde aquí, casi todas las celdas corren sobre el **modelo guionizado**, una clase de Python con un
+**guion** dentro: la lista, en orden, de las conversaciones que espera recibir y la respuesta que dará
+a cada una. Tiene la firma que el curso mantiene hasta el final, `modelo(mensajes, herramientas) ->
+respuesta`. Recibe mensajes `(rol, contenido)` como los de la plantilla, que queda dentro de `modelo`
+como en un modelo servido, y devuelve texto; las herramientas esperan al bloque 4. Cada llamada
+compara los mensajes con los que tocan en el guion. Si coinciden, devuelve la respuesta y pasa al
+turno siguiente; si no, falla y dice en qué mensaje se ha desviado la conversación. No entiende el
+prompt, no sortea y no decide nada. Sus respuestas las he escrito yo.
+
+<PyCell code={`
+class ModeloGuionizado:
+    """modelo(mensajes, herramientas) -> respuesta, sacada de un guion escrito de antemano."""
+    def __init__(self, guion):
+        self.guion = guion                  # [(mensajes que espera, respuesta que da), ...]
+        self.turno = 0                      # el puntero: la entrada del guion que toca
+
+    def __call__(self, mensajes, herramientas=()):    # herramientas: vacío hasta el bloque 4
+        if self.turno == len(self.guion):
+            raise RuntimeError("el guion se acabó en el turno %d" % self.turno)
+        espera, respuesta = self.guion[self.turno]
+        if mensajes != espera:
+            i = next(i for i in range(len(mensajes) + 1) if mensajes[i:i + 1] != espera[i:i + 1])
+            raise ValueError("turno %d: el mensaje %d no es el del guion" % (self.turno, i))
+        self.turno += 1
+        return respuesta
+
+hola = [("usuario", "Hola.")]
+saludo = ModeloGuionizado([(hola, "Hola. ¿Qué mensaje quieres que lea?")])
+print(saludo(hola))
+try:
+    saludo(hola)                                          # la misma llamada, otra vez
+except RuntimeError as error:
+    print(error)
+`} />
+
+La misma llamada, repetida, no da otra respuesta: la segunda encuentra el guion acabado. Lo que ganas
+con esa rigidez es que el modelo no cambia entre dos ejecuciones, y una celda o un desafío pueden
+comprobar tu código contra él. Lo que pierdes hay que decirlo igual de claro: el modelo guionizado no
+puede enseñarte que una especificación mejor saca respuestas mejores, porque las suyas no dependen de
+lo que escribas. Eso se mide en modelos de verdad, y sorprende: Sclar y sus coautores
+cambiaron sólo el formato de prompts con ejemplos (separadores, mayúsculas, espacios), sin tocar lo
+que pedían, y el acierto (*accuracy*) de un modelo abierto de 13 000 millones de parámetros se movió
+hasta 76 puntos.
+
+La segunda celda escribe la especificación de las fechas en sus tres piezas, le da al modelo
+guionizado cuatro mensajes y comprueba cada respuesta. Para que la comprobación tenga algo que
+atrapar, he escrito dos de las cuatro mal, de dos maneras distintas.
+
+<PyCell code={`
+# Necesita la celda anterior: ModeloGuionizado.
+import datetime
+
+SISTEMA = ("Extraes la fecha de una cita de un mensaje. Responde sólo con la fecha, en la forma "
+           "AAAA-MM-DD, sin ningún otro texto. Si el mensaje no dice el año, es 2026. "
+           "Si no fija ningún día, responde: ninguna")
+EJEMPLOS = [("Te espero el 7 de noviembre en la puerta del cine.", "2026-11-07"),
+            ("Ya quedaremos otro día con más calma.", "ninguna")]
+
+def prompt(s, ejemplos, x):
+    """Las tres piezas en mensajes: el sistema, cada ejemplo como dos, el caso al final."""
+    mensajes = [("sistema", s)]
+    for caso, respuesta in ejemplos:
+        mensajes += [("usuario", caso), ("asistente", respuesta)]
+    return mensajes + [("usuario", x)]
+
+def cumple(y):
+    """Lo que se comprueba sin saber la respuesta: una fecha AAAA-MM-DD que existe, o ninguna."""
+    try:
+        return y == "ninguna" or datetime.date.fromisoformat(y).isoformat() == y
+    except ValueError:
+        return False
+
+CASOS = ["La reunión se pasa al martes 20 de octubre.",
+         "El plazo para entregar acaba el 2 de diciembre de 2026.",
+         "Llámame cuando vuelvas de las vacaciones.",
+         "Nos vemos el jueves 22 de octubre en la biblioteca."]
+ESCRITAS = ["2026-10-20", "La fecha es 2026-12-02.", "ninguna", "2026-10-23"]   # las he escrito yo
+modelo = ModeloGuionizado([(prompt(SISTEMA, EJEMPLOS, x), y) for x, y in zip(CASOS, ESCRITAS)])
+
+for x in CASOS:
+    y = modelo(prompt(SISTEMA, EJEMPLOS, x))
+    print("%s\\n   -> %-24s cumple: %s" % (x, y, "sí" if cumple(y) else "no"))
+
+otro = ModeloGuionizado(modelo.guion)                     # el mismo guion, desde el principio
+try:
+    otro(prompt(SISTEMA.replace("AAAA-MM-DD", "DD/MM/AAAA"), EJEMPLOS, CASOS[0]))
+except ValueError as error:
+    print("\\ncon otra forma en el prompt de sistema:", error)
+`} />
+
+Tres respuestas pasan la comprobación y una no. La segunda, <W>La fecha es 2026-12-02.</W>, lleva
+delante cuatro palabras que un calendario no sabe leer, justo lo que la especificación prohibía. La cuarta pasa y está mal: el jueves es el 22 de octubre, no el 23. La comprobación mira
+la forma, y la forma está bien. Y la última línea es el modelo guionizado haciendo su trabajo: has
+cambiado la forma que pide el prompt de sistema y, en lugar de improvisar una respuesta, falla y dice
+en qué mensaje.
+
+Cámbialo tú: escribe en `ESCRITAS` otra respuesta mal formada, o añade justo antes del bucle la
+línea `EJEMPLOS = EJEMPLOS[:1]` y mira en qué mensaje se desvía la conversación.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: las piezas del prompt, el techo de una especificación, cumplir muchas veces y lo
+que demuestra la celda.
+
+<Quiz id="q-describir-o-mostrar" />
+
+<Quiz id="q-el-techo" />
+
+<Quiz id="q-cumplir-todas" />
+
+<Quiz id="q-que-demuestra" />
+
+---
+
+Una especificación sin ambigüedad deja al modelo frente a una sola tarea, y ahí la masa en lo que el
+programa pedía es la que el modelo sabe darle. La cuenta, sin embargo, suponía algo que nadie le ha
+pedido: que escribe la respuesta desde su primer token. Cada token sale de una pasada de la red, con
+el coste por token de <Leccion slug="kv-cache">la lección sobre la caché</Leccion>, así que una
+fecha escrita de entrada tiene, para decidirse, las pocas pasadas que tarda en escribirla.
+
+Pedirle que escriba antes otra cosa, los pasos que llevan a la respuesta, le da más pasadas, y cada
+una se paga. <Leccion slug="cadena-de-pensamiento">La lección siguiente, sobre la cadena de
+pensamiento</Leccion>, pone esa factura junto a la cuenta
+de la caché y separa lo que esos tokens cuestan, que se mide en el navegador, de lo que compran,
+que hay que ir a buscar a los modelos grandes.

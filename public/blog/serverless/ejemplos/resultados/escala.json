@@ -1,0 +1,1230 @@
+{
+ "limite": 10,
+ "fases": [
+  {
+   "fase": "10 seguidas, una detrás de otra",
+   "filas": [
+    {
+     "t": 1792147612.7676623,
+     "estado": 200,
+     "request_id": "0bdc2f8c-15a8-468d-904b-b4d6f98f76f2",
+     "conexion": 0.15084,
+     "tls": 0.235822,
+     "primer_byte": 0.604923,
+     "total": 0.605133,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "30744205",
+      "edad_s": 0.0
+     },
+     "report": {
+      "duracion_ms": 2.23,
+      "facturado_ms": 131,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 127.8
+     }
+    },
+    {
+     "t": 1792147613.0801196,
+     "estado": 200,
+     "request_id": "7ca25aab-3c75-4c23-9442-b948ac8ab5ac",
+     "conexion": 0.09897,
+     "tls": 0.171076,
+     "primer_byte": 0.273341,
+     "total": 0.273716,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "30744205",
+      "edad_s": 0.4
+     },
+     "report": {
+      "duracion_ms": 1.68,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147613.4745815,
+     "estado": 200,
+     "request_id": "9f1be7b7-d540-4a37-97b9-e64ec2640140",
+     "conexion": 0.17815,
+     "tls": 0.25513,
+     "primer_byte": 0.360411,
+     "total": 0.360659,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "30744205",
+      "edad_s": 0.7
+     },
+     "report": {
+      "duracion_ms": 1.97,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147613.7815235,
+     "estado": 200,
+     "request_id": "3c593c43-f2e3-4b7b-b132-c5aac66d8d7b",
+     "conexion": 0.098115,
+     "tls": 0.1938,
+     "primer_byte": 0.269636,
+     "total": 0.269851,
+     "cuerpo": {
+      "llamadas": 4,
+      "instancia": "30744205",
+      "edad_s": 1.1
+     },
+     "report": {
+      "duracion_ms": 1.59,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147614.0593007,
+     "estado": 200,
+     "request_id": "55d66a4c-4266-4fcc-b8ef-de668444458c",
+     "conexion": 0.098344,
+     "tls": 0.167511,
+     "primer_byte": 0.241835,
+     "total": 0.242047,
+     "cuerpo": {
+      "llamadas": 5,
+      "instancia": "30744205",
+      "edad_s": 1.3
+     },
+     "report": {
+      "duracion_ms": 1.6,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147614.4216802,
+     "estado": 200,
+     "request_id": "8de0cf17-205d-4f69-ae43-9deaa3cea803",
+     "conexion": 0.191168,
+     "tls": 0.262144,
+     "primer_byte": 0.335716,
+     "total": 0.335932,
+     "cuerpo": {
+      "llamadas": 6,
+      "instancia": "30744205",
+      "edad_s": 1.7
+     },
+     "report": {
+      "duracion_ms": 1.54,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147614.7115197,
+     "estado": 200,
+     "request_id": "7085b816-6d19-43f4-91e3-047f1a978dd6",
+     "conexion": 0.106013,
+     "tls": 0.178022,
+     "primer_byte": 0.252811,
+     "total": 0.25301,
+     "cuerpo": {
+      "llamadas": 7,
+      "instancia": "30744205",
+      "edad_s": 2.0
+     },
+     "report": {
+      "duracion_ms": 1.58,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147614.9936075,
+     "estado": 200,
+     "request_id": "30c78eab-cab0-45fe-9d75-69b2e524eec8",
+     "conexion": 0.092267,
+     "tls": 0.171117,
+     "primer_byte": 0.245156,
+     "total": 0.24548,
+     "cuerpo": {
+      "llamadas": 8,
+      "instancia": "30744205",
+      "edad_s": 2.3
+     },
+     "report": {
+      "duracion_ms": 1.46,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147615.2834632,
+     "estado": 200,
+     "request_id": "74dea756-cd8c-43cd-a41b-dd99cf837fcb",
+     "conexion": 0.104644,
+     "tls": 0.177656,
+     "primer_byte": 0.25345,
+     "total": 0.253689,
+     "cuerpo": {
+      "llamadas": 9,
+      "instancia": "30744205",
+      "edad_s": 2.6
+     },
+     "report": {
+      "duracion_ms": 1.57,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147615.565744,
+     "estado": 200,
+     "request_id": "c0a466a2-9503-4509-be87-25b443c90604",
+     "conexion": 0.09976,
+     "tls": 0.171759,
+     "primer_byte": 0.244309,
+     "total": 0.244616,
+     "cuerpo": {
+      "llamadas": 10,
+      "instancia": "30744205",
+      "edad_s": 2.8
+     },
+     "report": {
+      "duracion_ms": 1.6,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    }
+   ]
+  },
+  {
+   "fase": "10 a la vez (1 s cada una)",
+   "filas": [
+    {
+     "t": 1792147621.8251798,
+     "estado": 200,
+     "request_id": "5fe9fec0-0f6e-4fcf-a239-830a811006f8",
+     "conexion": 0.113633,
+     "tls": 0.22864,
+     "primer_byte": 1.632582,
+     "total": 1.632665,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "3cd8053d",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.47,
+      "facturado_ms": 1106,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 102.99
+     }
+    },
+    {
+     "t": 1792147621.8043919,
+     "estado": 200,
+     "request_id": "96a311b5-b8d0-4b8e-af60-6a1082d02b1c",
+     "conexion": 0.103602,
+     "tls": 0.195695,
+     "primer_byte": 1.57031,
+     "total": 1.576291,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "1aad7522",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1003.47,
+      "facturado_ms": 1158,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 153.9
+     }
+    },
+    {
+     "t": 1792147621.7860749,
+     "estado": 200,
+     "request_id": "7281851c-5cd8-447c-a3a5-92bf28325a01",
+     "conexion": 0.112019,
+     "tls": 0.215586,
+     "primer_byte": 1.579592,
+     "total": 1.580038,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "07e5df8b",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.54,
+      "facturado_ms": 1107,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 103.54
+     }
+    },
+    {
+     "t": 1792147621.8043087,
+     "estado": 200,
+     "request_id": "00945f2c-e5fb-4650-aa8f-c637485d0b3d",
+     "conexion": 0.101967,
+     "tls": 0.205502,
+     "primer_byte": 1.573322,
+     "total": 1.574553,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "9394bafb",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.93,
+      "facturado_ms": 1132,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 128.71
+     }
+    },
+    {
+     "t": 1792147621.8044515,
+     "estado": 200,
+     "request_id": "40e0769e-e3bb-4d7a-a6c5-ac1079ddb39f",
+     "conexion": 0.119407,
+     "tls": 0.207231,
+     "primer_byte": 1.584811,
+     "total": 1.585016,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "6b646c16",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.66,
+      "facturado_ms": 1121,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 117.35
+     }
+    },
+    {
+     "t": 1792147621.787524,
+     "estado": 200,
+     "request_id": "b02125dc-ecc9-4c1e-a91e-9280b8654851",
+     "conexion": 0.11451,
+     "tls": 0.215179,
+     "primer_byte": 1.579088,
+     "total": 1.579539,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "07fa16ce",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.33,
+      "facturado_ms": 1111,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 108.47
+     }
+    },
+    {
+     "t": 1792147621.7873628,
+     "estado": 200,
+     "request_id": "d4cafc5d-caba-4226-98a1-26d420cb55c5",
+     "conexion": 0.097264,
+     "tls": 0.175343,
+     "primer_byte": 1.564163,
+     "total": 1.564614,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "487efc33",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.66,
+      "facturado_ms": 1111,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 108.17
+     }
+    },
+    {
+     "t": 1792147621.798195,
+     "estado": 200,
+     "request_id": "27515ed6-43df-4bf9-8c59-591844a77b76",
+     "conexion": 0.097272,
+     "tls": 0.188109,
+     "primer_byte": 1.567988,
+     "total": 1.570269,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "58e247a0",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.54,
+      "facturado_ms": 1121,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 118.38
+     }
+    },
+    {
+     "t": 1792147621.7983663,
+     "estado": 200,
+     "request_id": "3ba97c55-5544-4de8-b2b7-c6e645a423bc",
+     "conexion": 0.100522,
+     "tls": 0.203833,
+     "primer_byte": 1.57017,
+     "total": 1.570356,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "1e782b38",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1002.56,
+      "facturado_ms": 1117,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 114.08
+     }
+    },
+    {
+     "t": 1792147621.796682,
+     "estado": 200,
+     "request_id": "3f5b8827-25d1-4210-a81d-5a94f5564d8a",
+     "conexion": 0.112282,
+     "tls": 0.219942,
+     "primer_byte": 1.577337,
+     "total": 1.57852,
+     "cuerpo": {
+      "llamadas": 1,
+      "instancia": "5c09224c",
+      "edad_s": 1.0
+     },
+     "report": {
+      "duracion_ms": 1003.74,
+      "facturado_ms": 1122,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": 117.62
+     }
+    }
+   ]
+  },
+  {
+   "fase": "otras 10 a la vez",
+   "filas": [
+    {
+     "t": 1792147623.1648788,
+     "estado": 200,
+     "request_id": "06892dc3-9c7b-456a-b52c-2c6027711d9e",
+     "conexion": 0.089016,
+     "tls": 0.219898,
+     "primer_byte": 1.288175,
+     "total": 1.288419,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "9394bafb",
+      "edad_s": 2.4
+     },
+     "report": {
+      "duracion_ms": 1002.01,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.2032769,
+     "estado": 200,
+     "request_id": "074839b2-5bcd-4416-ae8e-4ad6f2269aa3",
+     "conexion": 0.090841,
+     "tls": 0.237107,
+     "primer_byte": 1.313421,
+     "total": 1.313652,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "487efc33",
+      "edad_s": 2.5
+     },
+     "report": {
+      "duracion_ms": 1002.13,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.1487665,
+     "estado": 200,
+     "request_id": "17489a17-8797-41c2-bf1b-6d5a446f6aa7",
+     "conexion": 0.09706,
+     "tls": 0.206058,
+     "primer_byte": 1.283603,
+     "total": 1.283912,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "3cd8053d",
+      "edad_s": 2.3
+     },
+     "report": {
+      "duracion_ms": 1002.21,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.1997807,
+     "estado": 200,
+     "request_id": "c600091f-b988-4ca3-93ac-c7299ccb9e62",
+     "conexion": 0.088742,
+     "tls": 0.236641,
+     "primer_byte": 1.311149,
+     "total": 1.311376,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "07e5df8b",
+      "edad_s": 2.5
+     },
+     "report": {
+      "duracion_ms": 1002.17,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.1674986,
+     "estado": 200,
+     "request_id": "f6ac5409-9c90-4142-8dc4-726d1b52b1c7",
+     "conexion": 0.095852,
+     "tls": 0.214185,
+     "primer_byte": 1.293883,
+     "total": 1.294175,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "1aad7522",
+      "edad_s": 2.4
+     },
+     "report": {
+      "duracion_ms": 1002.86,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.1792264,
+     "estado": 200,
+     "request_id": "3a7e6faa-c24f-44d4-97ea-49b67355c2a4",
+     "conexion": 0.087096,
+     "tls": 0.227485,
+     "primer_byte": 1.298344,
+     "total": 1.298591,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "58e247a0",
+      "edad_s": 2.4
+     },
+     "report": {
+      "duracion_ms": 1002.27,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.2000065,
+     "estado": 200,
+     "request_id": "d2169f3c-4466-4c79-a951-924e93851e85",
+     "conexion": 0.099923,
+     "tls": 0.237019,
+     "primer_byte": 1.305775,
+     "total": 1.306408,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "1e782b38",
+      "edad_s": 2.5
+     },
+     "report": {
+      "duracion_ms": 1002.05,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.2039766,
+     "estado": 200,
+     "request_id": "3756b77c-181c-4c03-acdf-4894bba0a361",
+     "conexion": 0.093941,
+     "tls": 0.234216,
+     "primer_byte": 1.314659,
+     "total": 1.315166,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "6b646c16",
+      "edad_s": 2.5
+     },
+     "report": {
+      "duracion_ms": 1002.13,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.1893988,
+     "estado": 200,
+     "request_id": "5b22135c-2c37-44bf-9554-0bfc4fe0c4f3",
+     "conexion": 0.096545,
+     "tls": 0.244006,
+     "primer_byte": 1.316235,
+     "total": 1.316475,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "07fa16ce",
+      "edad_s": 2.5
+     },
+     "report": {
+      "duracion_ms": 1002.04,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.1871672,
+     "estado": 200,
+     "request_id": "03fc92db-007c-409b-b6b9-61f189b6a88a",
+     "conexion": 0.089416,
+     "tls": 0.214274,
+     "primer_byte": 1.286129,
+     "total": 1.286456,
+     "cuerpo": {
+      "llamadas": 2,
+      "instancia": "5c09224c",
+      "edad_s": 2.4
+     },
+     "report": {
+      "duracion_ms": 1001.86,
+      "facturado_ms": 1002,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    }
+   ]
+  },
+  {
+   "fase": "20 a la vez",
+   "filas": [
+    {
+     "t": 1792147623.6241603,
+     "estado": 429,
+     "request_id": "e2b52544-effe-4d69-9cb1-fc21672d069b",
+     "conexion": 0.080723,
+     "tls": 0.227807,
+     "primer_byte": 0.294931,
+     "total": 0.295017,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147624.601079,
+     "estado": 200,
+     "request_id": "76723f9d-6b37-4df3-8d09-d668f3d575af",
+     "conexion": 0.072119,
+     "tls": 0.199157,
+     "primer_byte": 1.274847,
+     "total": 1.275004,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "07fa16ce",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.08,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147624.6218183,
+     "estado": 200,
+     "request_id": "b2fa578b-f52c-4c7e-b8fe-37346806fe84",
+     "conexion": 0.079484,
+     "tls": 0.218221,
+     "primer_byte": 1.298188,
+     "total": 1.298311,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "1aad7522",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.0,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147624.6045036,
+     "estado": 200,
+     "request_id": "fab87f6c-3ad6-47ea-a5f4-1651a2b585e8",
+     "conexion": 0.076298,
+     "tls": 0.212541,
+     "primer_byte": 1.280138,
+     "total": 1.280332,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "6b646c16",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.2,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.6240575,
+     "estado": 429,
+     "request_id": "6633851d-c7bd-4549-a005-0897b4036bcc",
+     "conexion": 0.086059,
+     "tls": 0.225842,
+     "primer_byte": 0.294802,
+     "total": 0.294888,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147623.6243193,
+     "estado": 429,
+     "request_id": "a46120a8-a74b-4842-80db-6c622fe6ab74",
+     "conexion": 0.105268,
+     "tls": 0.250833,
+     "primer_byte": 0.314689,
+     "total": 0.314786,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147624.6214395,
+     "estado": 200,
+     "request_id": "0d28456e-14dd-4156-b0b9-d043e388e114",
+     "conexion": 0.077256,
+     "tls": 0.219983,
+     "primer_byte": 1.296277,
+     "total": 1.296403,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "9394bafb",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.18,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.6110647,
+     "estado": 429,
+     "request_id": "2fc176ab-f915-4306-9994-dc979648afdf",
+     "conexion": 0.082442,
+     "tls": 0.231637,
+     "primer_byte": 0.297431,
+     "total": 0.297522,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147623.6255555,
+     "estado": 429,
+     "request_id": "8cf75a13-9758-4033-b863-2aa4a4fabae7",
+     "conexion": 0.076546,
+     "tls": 0.223227,
+     "primer_byte": 0.293993,
+     "total": 0.294068,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147623.6156693,
+     "estado": 429,
+     "request_id": "9cdda105-08d4-44cf-aab6-7d471e3b0004",
+     "conexion": 0.077707,
+     "tls": 0.234207,
+     "primer_byte": 0.29511,
+     "total": 0.295173,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147623.6222022,
+     "estado": 429,
+     "request_id": "a10a5be8-3b36-4310-9e49-b38529e45372",
+     "conexion": 0.09601,
+     "tls": 0.238716,
+     "primer_byte": 0.307071,
+     "total": 0.30719,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147623.6013064,
+     "estado": 429,
+     "request_id": "367884c7-27c1-4dd5-bc62-e1bae6a1095f",
+     "conexion": 0.09092,
+     "tls": 0.234526,
+     "primer_byte": 0.300291,
+     "total": 0.300444,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147624.612804,
+     "estado": 200,
+     "request_id": "2a114c97-3190-48b8-b2b0-03578354bc5b",
+     "conexion": 0.080523,
+     "tls": 0.21855,
+     "primer_byte": 1.291029,
+     "total": 1.292687,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "58e247a0",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.02,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147624.6116774,
+     "estado": 200,
+     "request_id": "5edd9ca1-75ea-4c8f-b3d6-963841719726",
+     "conexion": 0.085767,
+     "tls": 0.224703,
+     "primer_byte": 1.297035,
+     "total": 1.297165,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "5c09224c",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1001.83,
+      "facturado_ms": 1002,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147624.6035676,
+     "estado": 200,
+     "request_id": "631a3e44-3944-468e-b5b0-c0cf75d8e82a",
+     "conexion": 0.110413,
+     "tls": 0.234603,
+     "primer_byte": 1.302949,
+     "total": 1.303078,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "487efc33",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.04,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147624.614844,
+     "estado": 200,
+     "request_id": "fbd9e41d-42de-4f1c-b368-2b6f6b27cb60",
+     "conexion": 0.080351,
+     "tls": 0.210578,
+     "primer_byte": 1.286242,
+     "total": 1.286397,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "1e782b38",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.44,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.6126418,
+     "estado": 429,
+     "request_id": "0a627372-3793-4c32-bfa6-63ed37f352d7",
+     "conexion": 0.073732,
+     "tls": 0.217033,
+     "primer_byte": 0.285631,
+     "total": 0.285723,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147624.6220696,
+     "estado": 200,
+     "request_id": "6ccb85db-7074-4f97-adb8-cc9504a8588e",
+     "conexion": 0.085875,
+     "tls": 0.228698,
+     "primer_byte": 1.299484,
+     "total": 1.299609,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "3cd8053d",
+      "edad_s": 3.8
+     },
+     "report": {
+      "duracion_ms": 1001.94,
+      "facturado_ms": 1002,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147623.614186,
+     "estado": 429,
+     "request_id": "3f87e2b3-6e6c-4235-9261-1fdc5b561573",
+     "conexion": 0.102932,
+     "tls": 0.233861,
+     "primer_byte": 0.299897,
+     "total": 0.299996,
+     "cuerpo": {
+      "Reason": "ConcurrentInvocationLimitExceeded",
+      "Type": "User",
+      "message": "Rate Exceeded."
+     },
+     "report": null
+    },
+    {
+     "t": 1792147624.6016123,
+     "estado": 200,
+     "request_id": "7fdf5406-c795-4d76-b9d4-fc080ce0ff1b",
+     "conexion": 0.076372,
+     "tls": 0.205838,
+     "primer_byte": 1.277889,
+     "total": 1.278045,
+     "cuerpo": {
+      "llamadas": 3,
+      "instancia": "07e5df8b",
+      "edad_s": 3.9
+     },
+     "report": {
+      "duracion_ms": 1002.15,
+      "facturado_ms": 1003,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    }
+   ]
+  },
+  {
+   "fase": "10 seguidas tras las ráfagas",
+   "filas": [
+    {
+     "t": 1792147624.8967788,
+     "estado": 200,
+     "request_id": "f57b5c53-440e-43ae-994b-f8f748d9ab6c",
+     "conexion": 0.094101,
+     "tls": 0.171975,
+     "primer_byte": 0.24487,
+     "total": 0.245098,
+     "cuerpo": {
+      "llamadas": 4,
+      "instancia": "9394bafb",
+      "edad_s": 4.1
+     },
+     "report": {
+      "duracion_ms": 1.68,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147625.2005658,
+     "estado": 200,
+     "request_id": "ba7f144b-617f-4db4-9171-585ca28b4f56",
+     "conexion": 0.120717,
+     "tls": 0.193602,
+     "primer_byte": 0.265775,
+     "total": 0.266032,
+     "cuerpo": {
+      "llamadas": 5,
+      "instancia": "9394bafb",
+      "edad_s": 4.4
+     },
+     "report": {
+      "duracion_ms": 1.63,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147625.4724848,
+     "estado": 200,
+     "request_id": "4301b7b4-185a-4d98-b260-677ff6ecf385",
+     "conexion": 0.094198,
+     "tls": 0.163359,
+     "primer_byte": 0.235,
+     "total": 0.235233,
+     "cuerpo": {
+      "llamadas": 6,
+      "instancia": "9394bafb",
+      "edad_s": 4.7
+     },
+     "report": {
+      "duracion_ms": 1.54,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147625.7569702,
+     "estado": 200,
+     "request_id": "6f67ada2-de9b-4878-8b4a-112c9b5ede44",
+     "conexion": 0.104849,
+     "tls": 0.173987,
+     "primer_byte": 0.248598,
+     "total": 0.248892,
+     "cuerpo": {
+      "llamadas": 7,
+      "instancia": "9394bafb",
+      "edad_s": 5.0
+     },
+     "report": {
+      "duracion_ms": 1.74,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147626.05123,
+     "estado": 200,
+     "request_id": "24567fd9-9ff0-4150-ad8f-5ef080437a87",
+     "conexion": 0.108474,
+     "tls": 0.189951,
+     "primer_byte": 0.258492,
+     "total": 0.258708,
+     "cuerpo": {
+      "llamadas": 8,
+      "instancia": "9394bafb",
+      "edad_s": 5.3
+     },
+     "report": {
+      "duracion_ms": 1.59,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147626.3545141,
+     "estado": 200,
+     "request_id": "84dc0442-32e8-4ef0-a350-9489750a72a0",
+     "conexion": 0.122661,
+     "tls": 0.194063,
+     "primer_byte": 0.266773,
+     "total": 0.26705,
+     "cuerpo": {
+      "llamadas": 9,
+      "instancia": "9394bafb",
+      "edad_s": 5.6
+     },
+     "report": {
+      "duracion_ms": 1.5,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147626.6265552,
+     "estado": 200,
+     "request_id": "b072d657-f033-4eaf-8ae2-78849da91cac",
+     "conexion": 0.09443,
+     "tls": 0.163795,
+     "primer_byte": 0.23639,
+     "total": 0.236647,
+     "cuerpo": {
+      "llamadas": 10,
+      "instancia": "9394bafb",
+      "edad_s": 5.9
+     },
+     "report": {
+      "duracion_ms": 1.63,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147626.8977056,
+     "estado": 200,
+     "request_id": "20b89b0b-ed51-45c7-a5cf-cc53d16ee6ec",
+     "conexion": 0.091731,
+     "tls": 0.161483,
+     "primer_byte": 0.236137,
+     "total": 0.236448,
+     "cuerpo": {
+      "llamadas": 11,
+      "instancia": "9394bafb",
+      "edad_s": 6.1
+     },
+     "report": {
+      "duracion_ms": 1.88,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147627.1745863,
+     "estado": 200,
+     "request_id": "4d07888d-887f-4b85-9164-1bed71437479",
+     "conexion": 0.094019,
+     "tls": 0.169024,
+     "primer_byte": 0.240579,
+     "total": 0.240962,
+     "cuerpo": {
+      "llamadas": 12,
+      "instancia": "9394bafb",
+      "edad_s": 6.4
+     },
+     "report": {
+      "duracion_ms": 1.49,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    },
+    {
+     "t": 1792147627.4825895,
+     "estado": 200,
+     "request_id": "4419d845-b3cd-4781-b89e-659a692d4ca2",
+     "conexion": 0.097753,
+     "tls": 0.183368,
+     "primer_byte": 0.270652,
+     "total": 0.270875,
+     "cuerpo": {
+      "llamadas": 13,
+      "instancia": "9394bafb",
+      "edad_s": 6.7
+     },
+     "report": {
+      "duracion_ms": 1.67,
+      "facturado_ms": 2,
+      "memoria_mb": 128,
+      "usada_mb": 39,
+      "init_ms": null
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,453 @@
+---
+slug: salida-estructurada
+title: "Salida estructurada: generación restringida"
+block: 3
+order: 3
+minutes: 35
+summary: "Un harness que sortea los tokens puede imponer la forma de la respuesta: en cada posición, pone a menos infinito los logits de lo que la rompería. La lección demuestra que eso garantiza un JSON válido incluso del mini-GPT, que nunca ha visto una llave, y mide lo que cuesta: lo que sortea la máscara no es lo que el modelo diría si sólo pudiera dar respuestas válidas."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-condicionada
+    type: numeric
+    prompt: 'Una gramática admite dos textos, <W>Pablo</W> y <W>Nela</W>, y al principio sólo permite dos entradas: <W>P</W>, a la que el modelo da $0.3$, y <W>Nela</W>, a la que da $0.1$. Tras <W>P</W> sólo permite <W>ablo</W>, y el modelo le da $0.1$. Con la máscara, la respuesta es <W>Pablo</W> con probabilidad $0.75$. ¿Con qué probabilidad lo es en la distribución condicionada a la gramática? Tres decimales.'
+    answer: 0.231
+    tolerance: 0.002
+    explanation: 'Unos $0.231$. Sin máscara, el modelo escribe <W>Pablo</W> con probabilidad $0.3 \cdot 0.1 = 0.03$ y <W>Nela</W> con $0.1$, así que $p_\theta(\mathcal{G} \mid x) = 0.13$ y la condicionada le da $0.03 / 0.13$ a <W>Pablo</W>. La máscara reparte la primera posición entre las dos permitidas, $0.3 / 0.4 = 0.75$, y después le da a <W>ablo</W> el 100 % aunque el modelo sólo le diera $0.1$: nunca pregunta cuánto cuesta lo que falta por escribir. Es lo que las celdas miden en el mini-GPT, en pequeño.'
+    hint: 'Calcula la probabilidad de cada texto entero sin máscara y reparte entre los dos.'
+  - id: q-lo-que-queda
+    type: single
+    prompt: 'El programa de las fechas genera ahora con la máscara de la gramática del desafío: <W>\{"fecha": "####-##-##"\}</W>, con una cifra en cada <W>#</W>, o <W>\{"fecha": null\}</W>. ¿Qué le queda por mirar a la comprobación de la lección sobre la especificación?'
+    options:
+      - { id: a, text: 'Nada: con la máscara, toda respuesta tiene la forma pedida.' }
+      - { id: b, text: 'Que la fecha existe: <W>2026-19-45</W> tiene la forma que describe la gramática.' }
+      - { id: c, text: 'Que la fecha es la que dice el mensaje.' }
+      - { id: d, text: 'Que la respuesta es JSON y se puede leer.' }
+    answer: b
+    explanation: 'La (b). La máscara garantiza lo que la gramática describe (cuatro cifras, un guion, dos cifras, otro guion y dos cifras) y nada más, así que una fecha imposible pasa. Una gramática más fina podría excluirla; mientras no lo haga, la comprobación es lo que la atrapa. La (a) confunde la forma de la gramática con la de la especificación, que pedía una fecha que exista. La (d) es justo lo que la máscara garantiza. La (c) no la ve ninguna comprobación: para saber si la fecha es la buena hay que saber cuál es, y eso es evaluar.'
+    hint: '¿Qué dice la gramática de las dos cifras del mes?'
+  - id: q-cuando-coinciden
+    type: multi
+    prompt: 'Marca los casos en que la máscara sortea exactamente, o casi, de la distribución condicionada a la gramática.'
+    options:
+      - { id: a, text: 'El modelo, sin máscara, ya pone casi toda su masa en las entradas permitidas, en cada posición.' }
+      - { id: b, text: 'La gramática tiene pocos textos.' }
+      - { id: c, text: 'Se genera con temperatura cero.' }
+      - { id: d, text: 'Cada texto de la gramática se escribe con un solo token.' }
+    answer: [a, d]
+    explanation: 'La (a) y la (d). Con la (a), cada $p_\theta(A_j \mid x, y_{<j})$ está cerca de 1, y su producto también, en cualquier camino: $\tilde{q}(y \mid x) \approx p_\theta(y \mid x)$, y con $p_\theta(\mathcal{G} \mid x) \approx 1$ la condicionada está igual de cerca. Con la (d) hay una sola decisión y nada detrás: tras el único token, $p_\theta(\mathcal{G} \mid x, y_{\le 1}) = 1$ para toda permitida, y el cociente que la máscara ignora vale lo mismo para todas. La (b) la desmiente la celda, con cinco textos. La (c) también: a temperatura cero la máscara toma <W>P</W>, la favorita de las permitidas, y escribe <W>Pablo</W>, mientras la condicionada prefiere <W>Nela</W>.'
+    hint: 'La máscara divide por la masa que conserva; la condicionada, por una sola constante. ¿Cuándo dan lo mismo?'
+  - id: q-que-demuestran
+    type: multi
+    prompt: 'Las celdas corren sobre el mini-GPT. Marca lo que demuestran.'
+    options:
+      - { id: a, text: 'Que la máscara saca JSON válido de un modelo que no había visto nunca una llave.' }
+      - { id: b, text: 'Que la máscara puede cambiar cuál de las respuestas válidas es la más probable.' }
+      - { id: c, text: 'Que el mini-GPT sabe quién es la protagonista de la novela.' }
+      - { id: d, text: 'Que la máscara deforma igual la distribución de un modelo grande.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). Cada respuesta de la primera celda pasa por `json.loads`, y la tabla de la segunda pone a <W>Nela</W> primera en la condicionada y última con la máscara. La (c) confunde frecuencia con comprensión: el mini-GPT no entiende la pregunta, y <W>Nela</W> gana porque es el nombre que mejor sabe terminar una vez escrita la <W>N</W>. La (d) no se ha medido, y no tiene por qué ser así: un modelo que ya escribe JSON pierde poca masa en cada posición, y eso es lo que separa a las dos distribuciones.'
+    hint: 'Separa lo que depende de la máscara de lo que depende de lo que el mini-GPT ha leído.'
+challenges:
+  - id: ch-permitidas
+    prompt: |
+      El programa de las fechas pide ahora un JSON: <W>\{"fecha": "2026-10-20"\}</W> o, si el mensaje no fija ningún día, <W>\{"fecha": null\}</W>. Su gramática son las dos plantillas de `PLANTILLAS`, donde cada <W>#</W> es una cifra del 0 al 9. Implementa `viable(texto)`, que dice si `texto` es el principio de alguno de los textos de la gramática, y `permitidas(texto, vocab)`, que devuelve, de menor a mayor, los ids de `vocab` (un diccionario de id a texto) que la máscara deja pasar después de `texto`. Aquí ningún carácter ocupa más de un byte, así que puedes comparar caracteres.
+    starter: |
+      PLANTILLAS = ['{"fecha": "####-##-##"}', '{"fecha": null}']   # '#': una cifra del 0 al 9
+
+      def viable(texto):
+          """¿Es texto el principio de alguno de los textos de la gramática?"""
+          # tu código aquí
+          pass
+
+      def permitidas(texto, vocab):
+          """Los ids de vocab, de menor a mayor, que tras texto dejan un texto viable."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "el texto vacío y los principios de las dos plantillas son viables"
+        code: |
+          assert viable(''), 'el texto vacío es el principio de cualquier texto: sin él, la máscara no deja empezar'
+          assert viable('{"fecha": "2026-1'), 'cuatro cifras, un guion y una cifra empiezan la primera plantilla'
+          assert viable('{"fecha": nu'), '«nu» empieza «null}», la segunda plantilla'
+      - name: "un texto entero también es viable"
+        code: |
+          assert viable('{"fecha": "2026-10-20"}'), 'un texto completo es principio de sí mismo: el harness para ahí, pero lo escrito es viable'
+          assert viable('{"fecha": null}'), 'un texto completo es principio de sí mismo'
+      - name: "rechaza lo que se sale de las dos"
+        code: |
+          assert not viable('{"fecha": "2026-1x'), 'una «x» donde va una cifra no empieza ningún texto'
+          assert not viable('{"fecha": "2026-10-20"} '), 'más largo que las dos plantillas no es el principio de ninguna'
+          assert not viable('{"fecha": nul '), 'un espacio donde va la segunda «l» no encaja'
+      - name: "una # es la marca de la plantilla, no un carácter"
+        code: |
+          assert not viable('{"fecha": "#'), 'la «#» de la plantilla marca dónde va una cifra; una «#» en el texto no es una cifra'
+      - name: "cifras del 0 al 9, y nada más"
+        code: |
+          assert not viable('{"fecha": "²'), "'²'.isdigit() es True, pero no es una cifra del 0 al 9: compara con '0123456789'"
+      - name: "permitidas, con entradas de varios caracteres"
+        code: |
+          V = {0: '{', 1: '{"', 2: '"', 3: 'fecha', 4: '": ', 5: '"2026', 6: 'null}', 7: '-', 8: '20', 9: '-1', 10: 'x', 11: '"}', 12: '}'}
+          r = permitidas('', V)
+          assert r == [0, 1], 'al principio sólo empiezan un texto «{» y «{\"»; sale %s' % r
+          r = permitidas('{"fecha', V)
+          assert r == [2, 4], 'tras la clave caben «\"» y «\": »; sale %s' % r
+          r = permitidas('{"fecha": ', V)
+          assert r == [2, 5, 6], 'antes del valor caben «\"», «\"2026» y «null}»; sale %s' % r
+          r = permitidas('{"fecha": "2026', V)
+          assert r == [7, 9], 'tras el año caben «-» y «-1», y «20» no; sale %s' % r
+          r = permitidas('{"fecha": "2026-10-20', V)
+          assert r == [2, 11], 'al final de la fecha caben «\"» y «\"}»; sale %s' % r
+      - name: "nada después de un texto completo"
+        code: |
+          V = {0: '{', 1: '"', 2: '}', 3: ' ', 4: 'null}'}
+          assert permitidas('{"fecha": null}', V) == [], 'tras un texto completo no cabe nada: ahí para el harness'
+    solution: |
+      PLANTILLAS = ['{"fecha": "####-##-##"}', '{"fecha": null}']   # '#': una cifra del 0 al 9
+
+      def encaja(c, q):
+          """Un carácter del texto frente al de su sitio en la plantilla."""
+          return c in "0123456789" if q == "#" else c == q
+
+      def viable(texto):
+          """¿Es texto el principio de alguno de los textos de la gramática?"""
+          return any(len(texto) <= len(p) and all(encaja(c, q) for c, q in zip(texto, p))
+                     for p in PLANTILLAS)
+
+      def permitidas(texto, vocab):
+          """Los ids de vocab, de menor a mayor, que tras texto dejan un texto viable."""
+          return [v for v in sorted(vocab) if viable(texto + vocab[v])]
+    explanation: 'Las plantillas hacen de gramática: un texto es viable cuando no es más largo que alguna de las dos y cada carácter encaja con el de su sitio, una cifra donde hay <W>#</W> y el mismo carácter en el resto. `permitidas` es la definición de $A_j$ tal cual. Las dos trampas están en `encaja`: una <W>#</W> del texto sería igual a la de la plantilla, y `isdigit()` acepta <W>²</W>. Fíjate en lo que esta gramática deja pasar: <W>2026-19-45</W>. La forma, y nada más.'
+reading:
+  - kind: paper
+    title: 'Grammar-Aligned Decoding'
+    authors: 'Park, Wang, Berg-Kirkpatrick, Polikarpova y D''Antoni'
+    year: '2024'
+    venue: 'NeurIPS 2024 · arXiv:2405.21047'
+    lang: en
+    url: 'https://arxiv.org/abs/2405.21047'
+    note: 'La deformación de esta lección, con nombre: la máscara da respuestas válidas con probabilidades que no son las del modelo. Proponen estimar, con los sorteos anteriores, el factor que la máscara ignora.'
+  - kind: paper
+    title: 'Efficient Guided Generation for Large Language Models'
+    authors: 'Willard y Louf'
+    year: '2023'
+    venue: 'arXiv:2307.09702'
+    lang: en
+    url: 'https://arxiv.org/abs/2307.09702'
+    note: 'Cómo calcular $A_j$ sin recorrer el vocabulario en cada posición: la gramática se convierte en un autómata y, antes de generar, se apunta qué entradas acepta cada estado.'
+  - kind: paper
+    title: 'Guiding LLMs The Right Way: Fast, Non-Invasive Constrained Generation'
+    authors: 'Beurer-Kellner, Fischer y Vechev'
+    year: '2024'
+    venue: 'arXiv:2403.06988'
+    lang: en
+    url: 'https://arxiv.org/abs/2403.06988'
+    note: 'La máscara obliga a cortar el texto en tokens que el modelo no usaría, como el <W>o</W> y la <W>n</W> sueltas de la celda, y eso le cuesta acierto. Proponen restringir sin desalinear la gramática de los tokens.'
+  - kind: paper
+    title: 'Let Me Speak Freely? A Study on the Impact of Format Restrictions on Performance of Large Language Models'
+    authors: 'Tam, Wu, Tsai, Lin, Lee y Chen'
+    year: '2024'
+    venue: 'arXiv:2408.02442'
+    lang: en
+    url: 'https://arxiv.org/abs/2408.02442'
+    note: 'Pedirle a un modelo la respuesta en JSON o XML le baja el acierto en tareas de razonamiento, y más cuanto más estricto es el formato. Una razón más para dejarle un campo donde pensar antes de la respuesta.'
+---
+
+{/* COURSE-C2-P1-03 — Bloque 3, lección 3. Las dos celdas corren sobre el mini-GPT y no sobre el
+    modelo guionizado: la máscara actúa sobre los logits, y el guionizado no tiene. */}
+
+Hasta aquí, el bloque ha pedido. <Leccion slug="el-prompt-es-una-especificacion">La
+especificación</Leccion> le dijo al modelo qué forma tiene la respuesta, y
+<Leccion slug="cadena-de-pensamiento">la lección sobre la cadena de pensamiento</Leccion>, además,
+dónde ponerla. Con un modelo de verdad, pedir funciona casi siempre, y para el resto el harness
+mira cada respuesta y repite la llamada que no sirve. Lo que el bloque no ha tocado todavía es el
+sorteo. El modelo da los logits, y quien sortea con ellos el token siguiente es el código que lo
+rodea; cuando el modelo corre en una máquina tuya, como el mini-GPT en este navegador, ese código
+es tuyo.
+
+Lo que un programa suele querer leer es JSON (*JavaScript Object Notation*), el formato en que se
+pasan datos casi todos los programas: un objeto entre llaves, con campos de nombre y valor y
+cada nombre entre comillas, como <W>\{"fecha": "2026-10-20"\}</W>. Un lector de JSON es más estricto
+que cualquier comprobación: con una comilla de menos, no lee nada. Y a tu mini-GPT ningún prompt le
+saca uno, porque en *Marianela* no hay ni una llave ni unas comillas rectas. Tras <W>¿Quién es la
+protagonista? Responde en JSON.</W>, le da a <W>\{</W> una probabilidad de $1.2 \times 10^{-7}$.
+¿Qué pasa si el harness, antes de cada sorteo, deja sin probabilidad a todo token que rompería el
+JSON? La forma queda garantizada. Falta saber qué más cambia.
+
+Sigue al mini-GPT desde el primer token: sus favoritas son un salto de línea ($0.34$) y palabras
+con su espacio delante, y <W>\{</W> está entre las últimas de 512. Pero un JSON sólo puede empezar
+por una llave, así que el harness tira todas las demás entradas y le da a <W>\{</W> el 100 %.
+Después sólo valen unas comillas, después cualquier entrada que siga escribiendo <W>personaje</W>,
+y así durante catorce posiciones en las que el texto ya está decidido, aunque no los tokens que lo
+escriben. En la decimoquinta hay, por primera vez, algo que elegir: la gramática de las celdas
+admite cinco nombres de la novela, y sus iniciales son cuatro entradas, <W>C</W>, <W>N</W>,
+<W>P</W> y <W>T</W>.
+
+<Explorable id="logit-mask" caption="La máscara no mira adelante: elige la inicial del nombre por lo que el modelo escribiría tras unas comillas, y lo termina aunque el modelo no quiera. Elige el camino y toca un token para ver la posición que lo sorteó." />
+
+En la posición del nombre, el modelo le da a <W>P</W> $2.5 \times 10^{-5}$ y a <W>N</W> casi cuarenta
+veces menos, y la máscara reparte el 100 % en esa misma proporción: un 61 % para <W>P</W>, un 1.6 %
+para <W>N</W>. Mira qué viene después en cada camino. Tras la <W>N</W>, el mini-GPT escribe
+<W>ela</W> con un 58 % sin máscara: ha leído <W>Nela</W> cientos de veces. Tras la
+<W>P</W> apuesta por <W>or</W>, la de <W>Por</W>, y a las dos entradas que siguen escribiendo
+<W>Pablo</W> les deja un 4.6 % entre las dos. La máscara se lo da todo a esas dos. Nunca preguntó si
+el modelo quería escribir <W>Pablo</W>: preguntó qué inicial le gustaba más, y la <W>P</W> es la de
+<W>Pero</W>, <W>Por</W> y <W>Pues</W>.
+
+<Callout type="intuition" title="La idea en una frase">
+La máscara pone a $-\infty$ los logits de los tokens que romperían la forma, y el sorteo reparte la
+probabilidad entre los demás en la proporción en que el modelo los tenía. Eso garantiza la forma en
+cada respuesta. A cambio, decide token a token sin mirar adelante, y lo que sortea no es lo que el
+modelo diría si sólo pudiera dar respuestas válidas.
+</Callout>
+
+## La máscara es el corte sobre lo que la gramática permite
+
+Llamemos **gramática** a un conjunto de textos, $\mathcal{G}$: los que el programa sabe leer. Un
+**esquema** de JSON es una manera habitual de escribirla (qué campos lleva el objeto y qué valores
+admite cada uno), y la de las celdas es pequeña: cinco textos, <W>\{"personaje": "Nela"\}</W> y el
+mismo con <W>Pablo</W>, <W>Teodoro</W>, <W>Celipín</W> o <W>Choto</W>. Una respuesta $y$ es
+**válida** cuando su texto está en $\mathcal{G}$, y como varias secuencias de tokens escriben el
+mismo texto, todas cuentan.
+
+Sea $x$ el prompt e $y_{<j}$ lo que la respuesta lleva escrito. Las entradas **permitidas** en la
+posición que sortea $y_j$ son
+
+$$
+A_j = \{\, v \in V : \text{los bytes de } y_{<j} \text{ seguidos de los de } v \text{ empiezan un texto de } \mathcal{G} \,\}.
+$$
+
+Bytes y no caracteres, porque un token puede ser medio carácter: el mini-GPT tiene entradas que son
+sólo el primer byte de una <W>í</W>, y tras <W>Celip</W> una de ellas está permitida.
+
+La **máscara** pone $z_v = -\infty$ en toda entrada fuera de $A_j$, donde $z_v$ es la entrada $v$
+de los logits $\mathbf{z}(x, y_{<j})$ de esa posición, y aplica la softmax. Como $e^{-\infty} = 0$,
+a cada $v \in A_j$ le queda
+
+$$
+\frac{e^{z_v}}{\sum_{u \in A_j} e^{z_u}} = \frac{e^{z_v} \big/ \sum_{u \in V} e^{z_u}}{\sum_{u \in A_j} e^{z_u} \big/ \sum_{u \in V} e^{z_u}} = \frac{p_\theta(v \mid x, y_{<j})}{p_\theta(A_j \mid x, y_{<j})},
+$$
+
+donde $p_\theta(A_j \mid x, y_{<j})$ es la masa de las permitidas, y fuera de $A_j$, cero. Dividir
+arriba y abajo por la misma suma no cambia el cociente, y convierte cada término en una probabilidad
+del modelo. Es el corte de <Leccion slug="muestreo">la lección sobre el muestreo</Leccion> con
+$A_j$ en el lugar del núcleo, y es también la probabilidad de $v$ sabiendo que el token sale de
+$A_j$. Escribamos $\tilde{q}(v \mid x, y_{<j})$ para ese cociente, como allí, y
+$\tilde{q}(y \mid x)$ para su producto a lo largo de la respuesta. (Con $\tau = 1$ y sin otro
+corte, para que lo recortado sea $p_\theta$; con temperatura, vale igual para $\mathbf{q}$.) No es
+la máscara causal de la atención ni la de la pérdida del ajuste: ésta actúa a la salida de la red,
+sobre los logits.
+
+Generar con la máscara en cada posición es la **generación restringida** (*constrained decoding*;
+no decimos decodificación porque `decodificar` es pasar de ids a texto).
+
+### Toda respuesta generada con la máscara es válida
+
+La demostración es una inducción sobre $j$. Al principio no hay nada escrito, y el texto vacío
+empieza cualquier texto de $\mathcal{G}$. Supongamos que lo escrito hasta $y_{<j}$ empieza algún
+texto $g \in \mathcal{G}$. Si ya es $g$ entero, el harness para. Si no, el byte siguiente de $g$ es
+una entrada de $V$, porque los 256 bytes lo son desde <Leccion slug="bpe-de-verdad">el BPE a nivel
+de byte</Leccion>; así que $A_j$ no está vacío y la softmax tiene algo que repartir. Y lo que se
+sortee está en $A_j$, así que lo escrito con $y_j$ vuelve a empezar un texto de $\mathcal{G}$. Como
+cada token añade al menos un byte y los textos de $\mathcal{G}$ tienen una longitud máxima, la
+generación acaba, y acaba en un texto de $\mathcal{G}$.
+
+La prueba se apoya en dos condiciones. Ningún texto de $\mathcal{G}$ puede ser el principio de
+otro, para que parar al completar uno no corte otro más largo: un objeto JSON se cierra con su
+llave, y nada lo continúa. (Un modelo con token de fin lo resuelve de otra manera: la gramática lo
+permite justo cuando el texto está completo.) Y los textos necesitan un largo máximo: el mini-GPT le
+da a cerrar unas comillas del orden de $10^{-6}$, y en un campo de texto libre tardaría un millón de
+tokens en hacerlo.
+
+## La máscara no sortea lo que el modelo diría
+
+Que la respuesta sea válida no dice cuál de las válidas sale, y ahí la máscara y el modelo dejan de
+estar de acuerdo. Lo que el modelo diría si sólo pudiera dar respuestas válidas es su propia
+distribución sobre respuestas enteras, recortada a $\mathcal{G}$ y renormalizada:
+
+$$
+p_\theta(y \mid x, \mathcal{G}) = \frac{p_\theta(y \mid x)}{p_\theta(\mathcal{G} \mid x)} \quad \text{para } y \in \mathcal{G},
+$$
+
+la **condicionada**, donde $p_\theta(\mathcal{G} \mid x)$ es la masa de las respuestas válidas, la
+probabilidad de que el modelo escriba un texto de $\mathcal{G}$ sin máscara, con el harness parando
+en cuanto lo complete o se salga. Para un solo token, la definición de probabilidad condicionada da
+$p_\theta(y_j, \mathcal{G} \mid x, y_{<j}) / p_\theta(\mathcal{G} \mid x, y_{<j})$, y el numerador
+es la probabilidad de escribir $y_j$ por la de acabar en $\mathcal{G}$ después:
+
+$$
+p_\theta(y_j \mid x, y_{<j}, \mathcal{G}) = p_\theta(y_j \mid x, y_{<j}) \, \frac{p_\theta(\mathcal{G} \mid x, y_{\le j})}{p_\theta(\mathcal{G} \mid x, y_{<j})},
+$$
+
+donde $p_\theta(\mathcal{G} \mid x, y_{\le j})$ es la probabilidad de acabar en un texto de
+$\mathcal{G}$ con $y_{\le j}$ ya escrito. Vale cero fuera de $A_j$, y dentro mide lo que le cuesta
+al modelo escribir lo que falta. (El producto de estos factores sobre $j$ se telescopa hasta
+$p_\theta(\mathcal{G} \mid x, y) / p_\theta(\mathcal{G} \mid x)$, y con $y$ válida y completa el
+numerador vale 1: la condicionada de arriba.)
+
+La máscara usa el mismo primer factor y, en el lugar del cociente, divide por
+$p_\theta(A_j \mid x, y_{<j})$, el mismo número para todas las permitidas. Trata a cada entrada de
+$A_j$ como si lo que falta por escribir estuviera asegurado. A lo largo de una respuesta entera,
+
+$$
+\tilde{q}(y \mid x) = \prod_{j} \frac{p_\theta(y_j \mid x, y_{<j})}{p_\theta(A_j \mid x, y_{<j})} = \frac{p_\theta(y \mid x)}{\prod_{j} p_\theta(A_j \mid x, y_{<j})}.
+$$
+
+Las dos distribuciones tienen el mismo numerador. La condicionada divide toda respuesta válida por
+el mismo número; la máscara divide cada una por el producto de las masas que conservó en su camino,
+y ese producto es pequeño justo en los caminos por los que el modelo quería salirse de la gramática.
+Ésos son los que la máscara infla. <W>Pablo</W> es uno: tras su <W>P</W>, la máscara conservó un
+4.6 % de la masa, y tras la <W>N</W> de <W>Nela</W>, un 59 %.
+
+### El rechazo sortea bien, a un precio imposible
+
+La condicionada se puede sortear sin calcular ningún cociente, con el **muestreo por rechazo**
+(*rejection sampling*): sortear respuestas enteras sin máscara y tirar cada una que no sea válida,
+hasta que salga una. Cada **intento** es independiente y sale válido con probabilidad
+$p_\theta(\mathcal{G} \mid x)$, así que $y$ sale en el intento $i$, tras $i - 1$
+tirados, con probabilidad $\bigl(1 - p_\theta(\mathcal{G} \mid x)\bigr)^{i-1} p_\theta(y \mid x)$.
+La suma sobre $i$ es una serie geométrica,
+
+$$
+\sum_{i=1}^{\infty} \bigl(1 - p_\theta(\mathcal{G} \mid x)\bigr)^{i-1} p_\theta(y \mid x) = \frac{p_\theta(y \mid x)}{p_\theta(\mathcal{G} \mid x)},
+$$
+
+y da la condicionada exacta. El precio es el número de intentos, cuya esperanza es
+
+$$
+\mathbb{E}[\text{intentos}] = \sum_{i=1}^{\infty} i \, \bigl(1 - p_\theta(\mathcal{G} \mid x)\bigr)^{i-1} p_\theta(\mathcal{G} \mid x) = \frac{1}{p_\theta(\mathcal{G} \mid x)},
+$$
+
+porque la serie con el factor $i$ es la derivada de la geométrica respecto de su razón, y vale el
+cuadrado de lo que valía aquélla, $1/p_\theta(\mathcal{G} \mid x)^{2}$. Un intento puede en cuanto su texto deja de empezar uno de $\mathcal{G}$, con la misma comprobación de prefijo que
+usa la máscara; eso ahorra pasadas, no intentos.
+
+## La máscara, sobre el mini-GPT
+
+Las dos celdas corren sobre tu mini-GPT del bloque 1 y no sobre el modelo guionizado: la máscara
+actúa sobre los logits, y el modelo guionizado devuelve texto sin pasar por ninguno. La primera
+escribe la gramática, `permitidas` y una generación que sortea de la softmax enmascarada, y le da el
+prompt al mini-GPT sin máscara y con ella. Mira tres cosas: lo que escribe sin ella, que
+`json.loads` lee cada respuesta con ella, y qué tokens eligió en cada una.
+
+<PyCell packages={["numpy"]} code={`
+import json
+import numpy as np
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())    # red, F, llenar, avanzar, softmax
+
+VOC = vocabulario(F)                                      # id -> sus bytes
+NOMBRES = ["Nela", "Pablo", "Teodoro", "Celipín", "Choto"]
+G = {('{"personaje": "%s"}' % n).encode() for n in NOMBRES}   # la gramática: cinco textos
+PRINCIPIOS = {g[:i] for g in G for i in range(len(g) + 1)}    # todo principio de uno de ellos
+
+def permitidas(texto):
+    """A_j: las entradas cuyos bytes, tras los de texto, empiezan algún texto de G."""
+    return [v for v in range(len(VOC)) if texto + VOC[v] in PRINCIPIOS]
+
+def con_mascara(prompt, rng):
+    """Una respuesta sorteada con la máscara: sus bytes y sus tokens."""
+    z, cache = llenar(red, codificar(prompt, F))
+    texto, tokens = b"", []
+    while texto not in G:                                 # ningún texto de G empieza otro
+        p = softmax(z)
+        A = permitidas(texto)
+        v = int(rng.choice(A, p=p[A] / p[A].sum()))       # la softmax con -inf fuera de A_j
+        texto += VOC[v]
+        tokens.append(VOC[v].decode("utf-8", "replace"))
+        z = avanzar(red, v, cache)
+    return texto, tokens
+
+prompt = "¿Quién es la protagonista? Responde en JSON."
+print("sin máscara:", repr(modelo(prompt, max_tokens=16, semilla=0)))
+rng = np.random.default_rng(0)
+for _ in range(5):
+    texto, tokens = con_mascara(prompt, rng)
+    personaje = json.loads(texto)["personaje"]            # si no fuera JSON, fallaría aquí
+    print("con máscara: %-8s %2d tokens  %s" % (personaje, len(tokens), "·".join(tokens)))
+`} />
+
+Sin máscara, el mini-GPT sigue escribiendo a la manera de Galdós. Con ella, cinco JSON que
+`json.loads` lee, de un modelo que nunca había visto una llave. El texto es uno de cinco; los
+tokens, no: tras <W>pers</W>, las respuestas escriben <W>o</W> y <W>n</W> sueltas donde el
+tokenizador habría puesto <W>on</W>, porque la máscara sortea entre todas las permitidas y el
+modelo, tras <W>pers</W>, apuesta por la <W>o</W>. Y entre los cinco nombres no sale <W>Nela</W>.
+
+¿Es eso lo que diría el mini-GPT si sólo pudiera dar respuestas válidas? La segunda celda no
+sortea: recorre todos los caminos de tokens que acaban en un texto de $\mathcal{G}$, una pasada por
+posición, y suma lo que vale cada uno sin máscara y con ella.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior.
+def recorrer(texto, z, cache, p_sin, p_con, hojas):
+    """Cada camino que acaba en un texto de G, con lo que vale sin máscara y con ella."""
+    if texto in G:
+        hojas.append((json.loads(texto)["personaje"], p_sin, p_con))
+        return
+    p = softmax(z)
+    A = permitidas(texto)
+    masa = p[A].sum()                                     # p(A_j | x, y_<j)
+    for v in A:
+        rama = list(cache)                                # cada rama, con su propia caché
+        recorrer(texto + VOC[v], avanzar(red, v, rama), rama,
+                 p_sin * p[v], p_con * p[v] / masa, hojas)
+
+hojas = []
+recorrer(b"", *llenar(red, codificar(prompt, F)), 1.0, 1.0, hojas)
+p_G = sum(p_sin for _, p_sin, _ in hojas)                 # p(G | x)
+print("%d caminos acaban en un texto de G" % len(hojas))
+print("p(G | x) = %.1e: el rechazo necesita, de media, %.1e intentos" % (p_G, 1 / p_G))
+print("\\n%-9s %12s %9s" % ("personaje", "condicionada", "máscara"))
+for n in NOMBRES:
+    condicionada = sum(p for m, p, _ in hojas if m == n) / p_G
+    mascara = sum(q for m, _, q in hojas if m == n)
+    print("%-9s %12.3f %9.3f" % (n, condicionada, mascara))
+`} />
+
+Son 132 caminos. Sin máscara, el mini-GPT escribe un JSON válido con probabilidad
+$8.1 \times 10^{-63}$, así que el rechazo necesitaría, de media, $1.2 \times 10^{62}$ intentos: a un
+nanosegundo cada uno, unos $4 \times 10^{45}$ años. La máscara saca uno con una pasada por token.
+
+La tabla es la otra mitad de la lección. Entre las respuestas válidas, el mini-GPT prefiere
+<W>Nela</W> casi siempre, un 99.4 %, y no porque entienda la pregunta: una vez escrita la <W>N</W>,
+sabe terminar ese nombre mucho mejor que cualquier otro. La máscara le da a <W>Nela</W> un 1.6 % y a
+<W>Pablo</W> un 62 %, y deja a <W>Choto</W> por delante de ella. Las dos columnas salen de las mismas
+probabilidades. Sólo cambia por qué se divide.
+
+Para el harness quedan tres consecuencias. La máscara garantiza lo que la gramática describe, y
+nada más. Deforma poco a un modelo que ya escribe la forma, porque si cada masa conservada está
+cerca de 1, su producto también, y $\tilde{q}$ se queda cerca de $p_\theta$; por eso el prompt sigue
+pidiendo el JSON que la máscara impone, y pedir y forzar se suman. Y escribe los campos en el orden
+del esquema, mientras que una cadena de pensamiento sólo sirve antes de la respuesta: un esquema con
+un campo para los pasos delante del de la fecha deja pensar al modelo sin salirse del JSON.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: la condicionada en pequeño, la comprobación, cuándo coinciden las dos
+distribuciones y las celdas. Después, la máscara del programa de las fechas.
+
+<Quiz id="q-condicionada" />
+
+<Quiz id="q-lo-que-queda" />
+
+<Quiz id="q-cuando-coinciden" />
+
+<Quiz id="q-que-demuestran" />
+
+<CodeChallenge id="ch-permitidas" />
+
+---
+
+La máscara le quita al modelo la libertad de equivocarse de forma, y ninguna otra. Lo que escribe
+dentro de la forma sale de sus pesos: el mini-GPT pone <W>Nela</W> porque la novela la repite, y si
+le preguntas por el personaje de otro libro te dará, igual de bien formado, uno de los cinco.
+Ninguna gramática le da un dato que no tiene.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug recuperacion), envolver «La lección siguiente, sobre la recuperación» en su Leccion
+    slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, sobre la recuperación, se ocupa de esa otra mitad: buscar en un corpus los
+pasajes que responden a la pregunta y ponerlos en el prompt, donde el modelo los puede leer. Para
+encontrarlos hace falta medir qué texto se parece a cuál, y para eso vuelven los *embeddings*.

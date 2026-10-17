@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 176" width="760" height="176" role="img"
+ aria-label="Línea de tiempo, no a escala, con doce hitos. Antes de Lambda: 1993, CGI, un proceso por petición; 2006, EC2 alquila máquinas virtuales por horas; 2008, Google App Engine, una plataforma como servicio; 2011, Parse y Firebase, servidores como servicio para aplicaciones móviles; 2012, Ken Fromm populariza la palabra serverless. 2014, AWS Lambda, una función por evento. Después: 2017, Cloudflare Workers, con isolates de V8; 2018, Firecracker y funciones de hasta 15 minutos; 2019, Cloud Run, contenedores serverless; 2020, facturación por milisegundo; 2025, Lambda Managed Instances y durable functions; 2026, Lambda Web Functions, y las funciones clásicas pasan a llamarse Event Functions.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.06); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.h { stroke: #86948a; fill: rgba(134,148,138,0.18); stroke-dasharray: 3 3; }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .sb.n { font-size: 10px; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .mo.s { font-size: 10px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .x { fill: #ffb4ab; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+</style>
+<line class="ed" x1="8.0" y1="102.0" x2="752.0" y2="102.0"/>
+<circle cx="72.0" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="72.0" y1="95.0" x2="72.0" y2="85.0"/>
+<text class="lb b" x="72.0" y="54.0" style="text-anchor:middle">1993</text>
+<text class="tx" x="72.0" y="68.0" style="text-anchor:middle">CGI</text>
+<text class="sb" x="72.0" y="81.0" style="text-anchor:middle">proceso por petición</text>
+<circle cx="128.9" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="128.9" y1="109.0" x2="128.9" y2="119.0"/>
+<text class="lb b" x="128.9" y="133.0" style="text-anchor:middle">2006</text>
+<text class="tx" x="128.9" y="147.0" style="text-anchor:middle">EC2</text>
+<text class="sb" x="128.9" y="160.0" style="text-anchor:middle">máquinas por horas</text>
+<circle cx="185.8" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="185.8" y1="95.0" x2="185.8" y2="85.0"/>
+<text class="lb b" x="185.8" y="54.0" style="text-anchor:middle">2008</text>
+<text class="tx" x="185.8" y="68.0" style="text-anchor:middle">App Engine</text>
+<text class="sb" x="185.8" y="81.0" style="text-anchor:middle">PaaS</text>
+<circle cx="242.7" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="242.7" y1="109.0" x2="242.7" y2="119.0"/>
+<text class="lb b" x="242.7" y="133.0" style="text-anchor:middle">2011</text>
+<text class="tx" x="242.7" y="147.0" style="text-anchor:middle">Parse, Firebase</text>
+<text class="sb" x="242.7" y="160.0" style="text-anchor:middle">BaaS</text>
+<circle cx="299.6" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="299.6" y1="95.0" x2="299.6" y2="85.0"/>
+<text class="lb b" x="299.6" y="54.0" style="text-anchor:middle">2012</text>
+<text class="tx" x="299.6" y="68.0" style="text-anchor:middle">«serverless»</text>
+<text class="sb" x="299.6" y="81.0" style="text-anchor:middle">Ken Fromm</text>
+<circle cx="356.5" cy="102" r="6" fill="#4edea3"/>
+<line class="ed" x1="356.5" y1="109.0" x2="356.5" y2="119.0"/>
+<text class="lb m" x="356.5" y="133.0" style="text-anchor:middle">2014</text>
+<text class="tx" x="356.5" y="147.0" style="text-anchor:middle">AWS Lambda</text>
+<text class="sb" x="356.5" y="160.0" style="text-anchor:middle">una función por evento</text>
+<circle cx="413.5" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="413.5" y1="95.0" x2="413.5" y2="85.0"/>
+<text class="lb w" x="413.5" y="54.0" style="text-anchor:middle">2017</text>
+<text class="tx" x="413.5" y="68.0" style="text-anchor:middle">Workers</text>
+<text class="sb" x="413.5" y="81.0" style="text-anchor:middle">isolates de V8</text>
+<circle cx="470.4" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="470.4" y1="109.0" x2="470.4" y2="119.0"/>
+<text class="lb w" x="470.4" y="133.0" style="text-anchor:middle">2018</text>
+<text class="tx" x="470.4" y="147.0" style="text-anchor:middle">Firecracker</text>
+<text class="sb" x="470.4" y="160.0" style="text-anchor:middle">y 15 minutos</text>
+<circle cx="527.3" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="527.3" y1="95.0" x2="527.3" y2="85.0"/>
+<text class="lb w" x="527.3" y="54.0" style="text-anchor:middle">2019</text>
+<text class="tx" x="527.3" y="68.0" style="text-anchor:middle">Cloud Run</text>
+<text class="sb" x="527.3" y="81.0" style="text-anchor:middle">contenedores</text>
+<circle cx="584.2" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="584.2" y1="109.0" x2="584.2" y2="119.0"/>
+<text class="lb w" x="584.2" y="133.0" style="text-anchor:middle">2020</text>
+<text class="tx" x="584.2" y="147.0" style="text-anchor:middle">1 ms</text>
+<text class="sb" x="584.2" y="160.0" style="text-anchor:middle">facturación</text>
+<circle cx="641.1" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="641.1" y1="95.0" x2="641.1" y2="85.0"/>
+<text class="lb w" x="641.1" y="54.0" style="text-anchor:middle">2025</text>
+<text class="tx" x="641.1" y="68.0" style="text-anchor:middle">Managed Instances</text>
+<text class="sb" x="641.1" y="81.0" style="text-anchor:middle">y durable functions</text>
+<circle cx="698.0" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="698.0" y1="109.0" x2="698.0" y2="119.0"/>
+<text class="lb w" x="698.0" y="133.0" style="text-anchor:middle">2026</text>
+<text class="tx" x="698.0" y="147.0" style="text-anchor:middle">Web Functions</text>
+<text class="sb" x="698.0" y="160.0" style="text-anchor:middle">y Event Functions</text>
+<circle cx="677" cy="12" r="4.5" fill="#e8a24c"/>
+<text class="sb" x="687.2" y="16.0">después</text>
+<circle cx="606" cy="12" r="4.5" fill="#4edea3"/>
+<text class="sb" x="616.8" y="16.0">Lambda</text>
+<circle cx="478" cy="12" r="4.5" fill="#6fb1e8"/>
+<text class="sb" x="488.8" y="16.0">antes de Lambda</text>
+</svg>

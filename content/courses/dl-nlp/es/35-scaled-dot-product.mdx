@@ -11,7 +11,7 @@ hasQuiz: true
 quiz:
   - id: q-tamano-tipico
     type: numeric
-    prompt: 'Las consultas y las claves de una capa tienen $d_k = 64$ coordenadas, centradas e independientes, de tamaño típico $1$. Sin dividir, ¿cuánto mide típicamente una puntuación $\mathbf{q}^{\top}\mathbf{k}$?'
+    prompt: 'Las filas de $\mathbf{Q}$ y de $\mathbf{K}$ de una capa tienen $d_k = 64$ coordenadas, centradas e independientes, de tamaño típico $1$. Sin dividir, ¿cuánto mide típicamente una puntuación $\mathbf{q}^{\top}\mathbf{k}$?'
     answer: 8
     tolerance: 0
     explanation: 'Ocho. El promedio del cuadrado es $\mathbb{E}\left[e^{2}\right] = d_k = 64$, y lo que mide el alejamiento típico del cero es su raíz, $\sqrt{64} = 8$. Los dos errores de bulto están en los dos extremos de esa línea: $64$ es el promedio del *cuadrado*, no un tamaño —tiene las unidades equivocadas—, y $1$ es lo que mide cada uno de los $64$ sumandos por separado. Lo que la cuenta dice es precisamente que sumar $64$ términos de tamaño $1$ que no se cancelan del todo deja un número ocho veces mayor que cada uno.'
@@ -53,7 +53,7 @@ quiz:
     type: boolean
     prompt: 'Dividir las puntuaciones de una fila entre $\sqrt{d_k}$ puede cambiar cuál de las posiciones se lleva el peso mayor.'
     answer: false
-    explanation: 'Falso. $\sqrt{d_k}$ es positivo y es el mismo número en toda la rejilla, así que dividir conserva el orden de las puntuaciones dentro de la fila, y el softmax es creciente: la posición que ganaba sigue ganando. Lo que cambia es por cuánto —las distancias entre las puntuaciones se encogen con el mismo factor, y con ellas lo cerrada que queda la fila—. Guarda de paso la otra cosa que no cambia: el divisor es una constante, no un peso, así que la cuenta de parámetros de la lección anterior, $d_{\text{model}}\left(2d_k + d_v\right)$, se queda exactamente igual.'
+    explanation: 'Falso. $\sqrt{d_k}$ es positivo y es el mismo número en toda la matriz de puntuaciones, así que dividir conserva el orden de las puntuaciones dentro de la fila, y el softmax es creciente: la posición que ganaba sigue ganando. Lo que cambia es por cuánto —las distancias entre las puntuaciones se encogen con el mismo factor, y con ellas lo cerrada que queda la fila—. Guarda de paso la otra cosa que no cambia: el divisor es una constante y no se aprende, así que la cuenta de parámetros de la lección anterior, $d_{\text{model}}\left(2d_k + d_v\right)$, se queda exactamente igual.'
     hint: '¿Qué le hace a un orden dividir todos sus números entre el mismo número positivo?'
 challenges:
   - id: ch-gradiente-softmax
@@ -157,19 +157,22 @@ reading:
 
 {/* COURSE-P5-05 — Bloque 5, lección 3. */}
 
-La auto-atención quedó montada del todo salvo por un símbolo. Las tres proyecciones tienen su
-argumento, la rejilla cuadrada tiene su forma y el *softmax* por filas reparte una unidad entre las
-posiciones; el $\sqrt{d_k}$ del denominador entró en la fórmula sin nada detrás y así sigue. Es el
-único préstamo que sigue abierto, y esta lección lo salda.
+La auto-atención quedó montada del todo salvo por un símbolo. Las tres proyecciones
+$\mathbf{Q}$, $\mathbf{K}$ y $\mathbf{V}$ tienen su argumento, la matriz de pesos $\mathbf{A}$ es
+cuadrada ($T \times T$) porque la frase se mira a sí misma, y el *softmax* por filas reparte una
+unidad entre las posiciones de cada fila. Pero el $\sqrt{d_k}$ del denominador se escribió en la
+fórmula sin explicar por qué está ahí, y sigue sin explicación. Es el único préstamo que sigue
+abierto, y esta lección lo salda.
 
 La pregunta tiene más filo del que parece. ¿Por qué una raíz, y no el propio $d_k$? ¿Y por qué
 de $d_k$, y no de $d_{\text{model}}$ o de la longitud de la frase? Las dos se contestan de una vez,
 porque las dos dependen de averiguar cuánto se aleja del cero una suma cuando se le van añadiendo
-sumandos. Nada de lo que viene necesita más
-probabilidad que un promedio, y el promedio se hace sobre una lista finita.
+sumandos. Para hacerlo no hace falta teoría de la probabilidad compleja, sólo promediar, y la cuenta
+empieza promediando sobre una lista finita que se puede recorrer entera.
 
-Toma la versión más cruda posible de una consulta (*query*) y una clave (*key*): todas sus
-coordenadas valen $+1$ o $-1$. La puntuación es entonces una cuenta de coincidencias, porque cada
+Toma la versión más cruda posible de una consulta (*query*) y una clave (*key*), es decir, de
+una fila de $\mathbf{Q}$ y una fila de $\mathbf{K}$: todas sus coordenadas valen $+1$ o $-1$.
+La puntuación es entonces una cuenta de coincidencias, porque cada
 término aporta $+1$ si las dos coordenadas comparten signo y $-1$ si no. Con cuatro coordenadas,
 tres coincidencias y una discrepancia dan $3 - 1 = 2$. Con cuatrocientas, la misma proporción
 —trescientas contra cien— da $200$.
@@ -192,8 +195,10 @@ coordenadas le había puesto, y deja la misma escala en un modelo estrecho y en 
 
 ## Una puntuación crece con la raíz de la anchura
 
-Las consultas y las claves de una capa viven en $\mathbb{R}^{d_k}$, y la puntuación de una pareja
-es su producto escalar:
+Cada casilla de $\mathbf{Q}\mathbf{K}^{\top}$ es el producto escalar de una fila de $\mathbf{Q}$
+(la consulta de una posición) con una fila de $\mathbf{K}$ (la clave de otra). Las dos viven en
+$\mathbb{R}^{d_k}$, y las escribo $\mathbf{q}$ y $\mathbf{k}$ sin índice de posición porque la
+cuenta es la misma para cualquier pareja. La puntuación es:
 
 $$
 e = \mathbf{q}^{\top}\mathbf{k} = \sum_{m=1}^{d_k} q_m k_m,
@@ -266,7 +271,7 @@ sobre implementar el MLP (*multilayer perceptron*)</Leccion>, entre ellas—, y 
 deja el mismo $\mathbb{E}\left[e^{2}\right] = d_k$. La primera celda lo mide.
 
 Conviene decir en voz alta de qué habla esa hipótesis, porque no habla del modelo que te
-encontrarás. Habla de pesos *recién inicializados*: nada garantiza que después de miles de pasos
+encontrarás. Habla de una red *recién inicializada*: nada garantiza que después de miles de pasos
 las coordenadas de $\mathbf{q}$ sigan siendo independientes ni midiendo $1$. Por eso el divisor se
 fija al diseñar la capa y no se mide sobre la marcha —arregla el arranque, que es donde el problema
 detiene el entrenamiento antes de que llegue a empezar—.
@@ -309,7 +314,7 @@ da $1$ por $0$; el cruzado, en cualquier casilla, arrastra al menos un factor ca
 derivadas se apagan a la vez, y con ellas la fila entera.
 
 Lo que eso cuesta se ve mirando qué hay antes de las puntuaciones. Sólo $\mathbf{W}^Q$ y
-$\mathbf{W}^K$: la rejilla sale de $\mathbf{Q}\mathbf{K}^{\top}$ y no entra nada más. Si el
+$\mathbf{W}^K$: las puntuaciones salen de $\mathbf{Q}\mathbf{K}^{\top}$ y no entra nada más. Si el
 gradiente no atraviesa el *softmax*, esas dos matrices no reciben nada por esa fila, y son
 precisamente las que tendrían que aprender a quién debe mirar cada posición. La capa sigue
 calculando —una salida saturada es una salida perfectamente definida—; lo que ha dejado de poder
@@ -319,7 +324,7 @@ Merece la pena pararse en por qué el bloque 2 no se topó con esto, porque la d
 línea. Allí el *softmax* iba seguido de la entropía cruzada, y el $-\log$ de la pérdida aporta el
 factor inverso exacto: las dos juntas dieron
 $\nabla_{\mathbf{z}}\,\ell = \hat{\mathbf{y}} - \mathbf{y}$, que vale $\hat{y}_c - 1$ en la clase correcta y no se anula por muy segura que esté la red. Aquí
-detrás del *softmax* no hay ningún logaritmo, sólo la multiplicación por $\mathbf{V}$, la lista de
+detrás del *softmax* no hay ningún logaritmo, sólo la multiplicación por $\mathbf{V}$, la matriz de
 valores (*values*). La jacobiana no se cancela contra nada: se queda entera, ceros incluidos.
 
 Y así reaparecen dos cosas que el curso dio por cerradas en bloques distintos. La curva

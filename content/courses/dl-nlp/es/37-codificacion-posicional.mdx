@@ -26,7 +26,7 @@ quiz:
     options:
       - { id: a, text: 'De $k$ y de las frecuencias $\omega_i$, es decir de $d_{\text{model}}$. De $\text{pos}$ no depende, y eso es exactamente lo que la hace útil: es la misma matriz al principio y al final de la frase.' }
       - { id: b, text: 'De $k$ y de $\text{pos}$, porque el ángulo que hay que girar es $\omega_i\left(\text{pos} + k\right)$ y ahí está la posición de partida.' }
-      - { id: c, text: 'De $k$ y de los pesos de la capa, porque el desplazamiento se aplica después de proyectar con $\mathbf{W}^Q$ y $\mathbf{W}^K$.' }
+      - { id: c, text: 'De $k$ y de los parámetros de la capa, porque el desplazamiento se aplica después de proyectar con $\mathbf{W}^Q$ y $\mathbf{W}^K$.' }
       - { id: d, text: 'De nada: se aprende durante el entrenamiento, como una proyección más.' }
     answer: a
     explanation: 'La (a). En el bloque de la pareja $i$ sólo aparecen $\cos(\omega_i k)$ y $\sin(\omega_i k)$, y $\text{pos}$ se ha ido en el desarrollo: las fórmulas de la suma de ángulos dejan la posición de partida dentro del vector al que se aplica la matriz, no dentro de la matriz. La (b) señala el sitio correcto —el ángulo final es $\omega_i(\text{pos}+k)$— y se queda a un paso: ese ángulo se parte en dos y sólo la mitad que vale $\omega_i k$ acaba en los coeficientes. La (c) mezcla dos cosas que no se tocan: $\mathbf{M}_k$ es una propiedad de la codificación y existe antes de que haya ninguna capa. La (d) confunde esta codificación con la alternativa que la lección descarta, la tabla de un vector aprendido por posición, donde efectivamente no hay ninguna $\mathbf{M}_k$ que valga.'

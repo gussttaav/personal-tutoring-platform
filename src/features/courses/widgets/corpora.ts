@@ -219,6 +219,15 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "generates after «La Nela», which the lesson's first cell prints. Only decoration: the " +
     "costs it draws are the model's shape, not its words. An English version needs the " +
     "English checkpoint, then re-running scripts/courses/llm-agents/kv-cache-presets.py.",
+  // COURSE-C2-P1-03 — llm-agents Block 3 lesson 3.
+  "logit-mask":
+    "Its five paths (math/logit-mask-presets.ts) are the mini-GPT checkpoint writing " +
+    "{\"personaje\": \"…\"} after the Spanish prompt «¿Quién es la protagonista? Responde en " +
+    "JSON.», with Marianela's names as the grammar's values, and the lesson quotes their " +
+    "numbers. An English version needs the English checkpoint, a grammar over names its " +
+    "corpus repeats, and a re-run of scripts/courses/llm-agents/logit-mask-presets.py, " +
+    "checked for the same property: the mask's favourite value is not the one the model " +
+    "itself prefers among the valid answers.",
   // COURSE-C2-P0-03 — the llm-agents mini-GPT is trained on this Spanish corpus, and
   // its checkpoint (minigpt.json) and merge table (bpe-merges.json) are functions of it.
   "courses/llm-agents/corpus.txt":
