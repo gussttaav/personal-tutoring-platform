@@ -209,6 +209,7 @@ que a sí misma.
 
 <Explorable
   id="self-attention-heatmap"
+  mask
   caption="La misma frase con la máscara puesta: se va media rejilla y ninguna fila deja de sumar 1. La posición 1 se queda con 1.00 sobre sí misma, porque detrás de ella no hay nada."
 />
 
@@ -301,8 +302,8 @@ después se tachan más de la mitad. La máscara es una prohibición, no una opt
 ## La subcapa que mira a la otra columna
 
 El decoder lleva tres subcapas donde el encoder lleva dos, y la de en medio es la única caja de todo
-el artículo que junta las dos columnas. Es la atención del bloque anterior, entera, con las tres
-listas leídas de dos sitios distintos:
+el artículo que junta las dos columnas. Es la atención del bloque anterior, entera, con las
+consultas leídas de un sitio y las claves y los valores de otro:
 
 $$
 \mathbf{Q} = \mathbf{X}^{\text{dec}}\mathbf{W}^Q, \qquad \mathbf{K} = \mathbf{X}^{\text{enc}}\mathbf{W}^K, \qquad \mathbf{V} = \mathbf{X}^{\text{enc}}\mathbf{W}^V,
@@ -466,7 +467,7 @@ qué no, qué se paraleliza de verdad, y qué sale en la primera fila.
 Ya no queda ninguna caja del dibujo sin una lección detrás, salvo la de arriba del todo, que
 convierte cada fila en una probabilidad por entrada del vocabulario. Lo que no ha aparecido nunca en
 estas siete lecciones son los *números*: cuántos bloques se apilan, cuánto miden, cuántas cabezas
-hay, qué tablas comparten pesos y cuántos parámetros suma todo junto. Cada pieza se ha construido
+hay, qué tablas se comparten y cuántos parámetros suma todo junto. Cada pieza se ha construido
 con las anchuras que le hacían falta al argumento, y el artículo eligió unas concretas.
 
 Ésa es <Leccion slug="arquitectura-completa">la lección siguiente, sobre la arquitectura completa del artículo</Leccion>: la figura 1 caja

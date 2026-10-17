@@ -4,7 +4,7 @@ title: "Fine-tuning en la práctica"
 block: 5
 order: 11
 minutes: 18
-summary: "La lección anterior afirmó que los pesos de un modelo preentrenado no caben en el navegador, y lo dejó sin número. Aquí está el número: doce bloques de 768, un vocabulario de 31 002 entradas y unos 110 millones de parámetros que, con sus gradientes y lo que el optimizador guarda al lado, pasan de 1.5 GB antes de la primera activación. De ahí sale que esta lección no tenga celdas, sino un cuaderno de Colab que se ejecuta fuera del navegador. Lo que corre allí es el bucle del bloque 2 sin una línea nueva: la misma actualización, la misma entropía cruzada y una capa de salida de 1 538 números; lo único que ha cambiado es de dónde parte theta y cuánto se le deja moverse."
+summary: "La lección anterior afirmó que los parámetros de un modelo preentrenado no caben en el navegador, y lo dejó sin número. Aquí está el número: doce bloques de 768, un vocabulario de 31 002 entradas y unos 110 millones de parámetros que, con sus gradientes y lo que el optimizador guarda al lado, pasan de 1.5 GB antes de la primera activación. De ahí sale que esta lección no tenga celdas, sino un cuaderno de Colab que se ejecuta fuera del navegador. Lo que corre allí es el bucle del bloque 2 sin una línea nueva: la misma actualización, la misma entropía cruzada y una capa de salida de 1 538 números; lo único que ha cambiado es de dónde parte theta y cuánto se le deja moverse."
 draft: false
 hasCode: false
 hasQuiz: true
@@ -13,8 +13,8 @@ quiz:
     type: multi
     prompt: 'Todas las celdas de este curso han corrido en el navegador y ésta no. Marca lo que de verdad lo impide.'
     options:
-      - { id: a, text: 'No hay PyTorch compilado para ese intérprete: al navegador llegan `numpy` y unas cuantas bibliotecas más, y sin la biblioteca no hay pesos preentrenados que cargar.' }
-      - { id: b, text: 'Los pesos, sus gradientes y lo que el optimizador guarda por parámetro pasan de $1.5$ GB, y eso es antes de guardar una sola activación.' }
+      - { id: a, text: 'No hay PyTorch compilado para ese intérprete: al navegador llegan `numpy` y unas cuantas bibliotecas más, y sin la biblioteca no hay parámetros preentrenados que cargar.' }
+      - { id: b, text: 'Los parámetros, sus gradientes y lo que el optimizador guarda por cada uno pasan de $1.5$ GB, y eso es antes de guardar una sola activación.' }
       - { id: c, text: 'Una pasada de entrenamiento son del orden de $10^{14}$ multiplicaciones, y la celda se corta a los diez segundos.' }
       - { id: d, text: 'La auto-atención de $T$ posiciones cuesta $T^{2}d_{\text{model}}$, y un coste cuadrático no se puede calcular sin GPU.' }
     answer: [a, b, c]
@@ -59,7 +59,7 @@ reading:
     venue: 'arXiv:1801.06146'
     lang: en
     url: 'https://arxiv.org/abs/1801.06146'
-    note: 'El porqué de la tasa minúscula del cuaderno: un paso grande sobre pesos preentrenados los borra. Trae recetas —descongelar por capas, una tasa por capa— que el cuaderno no usa; el principio de no perder lo que costó semanas, sí.'
+    note: 'El porqué de la tasa minúscula del cuaderno: un paso grande sobre parámetros preentrenados los borra. Trae recetas —descongelar por capas, una tasa por capa— que el cuaderno no usa; el principio de no perder lo que costó semanas, sí.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 11. */}
@@ -67,7 +67,7 @@ reading:
 La lección anterior, sobre BERT (*Bidirectional Encoder Representations from Transformers*) y
 GPT (*Generative Pre-trained Transformer*), dejó dos pilas entrenadas contra texto crudo y todavía
 sin oficio: representan bien el español y no sirven para nada concreto. Al despedirse hizo además
-una afirmación sin números —que mover esos pesos no cabe donde han cabido las celdas de este
+una afirmación sin números —que mover esos parámetros no cabe donde han cabido las celdas de este
 curso—. Una afirmación sin números es de las pocas cosas que este curso no se ha permitido.
 
 ¿Cuántos números hay que mover, entonces? La pregunta tiene respuesta exacta, y de ella salen las
@@ -113,7 +113,7 @@ $$
 \left(110 \times 10^{6}\right) \cdot 4 \approx 4.4 \times 10^{8} \quad \text{bytes},
 $$
 
-unos 440 MB sólo para los pesos. Entrenar pide dos cosas más al lado. Backpropagation —<Leccion slug="backpropagation">su lección</Leccion>—
+unos 440 MB sólo para los parámetros. Entrenar pide dos cosas más al lado. Backpropagation —<Leccion slug="backpropagation">su lección</Leccion>—
 produce un gradiente por parámetro, que es otra copia entera; y el optimizador que
 usan estas bibliotecas guarda además dos números por parámetro, un promedio del gradiente y otro de
 su cuadrado, que es una mejora del descenso de gradiente de <Leccion slug="descenso-gradiente">su lección</Leccion> y queda fuera de este curso.
@@ -121,11 +121,11 @@ Cuatro copias de $440$ MB pasan de $1.7$ GB, y todavía no se ha guardado ni una
 
 Son tres cosas las que dejan esto fuera del navegador, y cada una por su cuenta ya sobraría. La
 primera es la más seca: no existe PyTorch compilado para el intérprete que corre en la pestaña, así
-que no hay manera de cargar unos pesos preentrenados aunque cupieran. La segunda es ese $1.7$ GB
-dentro de una pestaña. Y la tercera es el reloj. Una reseña truncada a $T_{\max} = 128$ posiciones
-cuesta, sólo hacia delante, del orden de $2 \cdot \left(110 \times 10^{6}\right) \cdot 128 \approx
-2.8 \times 10^{10}$ multiplicaciones, y la pasada hacia atrás cuesta aproximadamente el doble, así
-que tres vueltas sobre $3\,000$ reseñas son
+que no hay manera de cargar unos parámetros preentrenados aunque cupieran. La segunda es ese $1.7$
+GB dentro de una pestaña. Y la tercera es el reloj. Una reseña truncada a $T_{\max} = 128$
+posiciones cuesta, sólo hacia delante, del orden de
+$2 \cdot \left(110 \times 10^{6}\right) \cdot 128 \approx 2.8 \times 10^{10}$ multiplicaciones, y la
+pasada hacia atrás cuesta aproximadamente el doble, así que tres vueltas sobre $3\,000$ reseñas son
 
 $$
 3 \cdot 3\,000 \cdot \left(8 \times 10^{10}\right) \approx 7 \times 10^{14}.
@@ -180,9 +180,9 @@ Abrir el cuaderno en Colab
 Lo primero, antes de ejecutar nada: en el menú de Colab, entorno de ejecución con GPU. La primera
 celda dice cuál te ha tocado, y si no hay ninguna lo dice también —el cuaderno corre igual sobre
 CPU, con la última cuenta de arriba de por medio—. Las versiones de las bibliotecas están fijadas a
-propósito: unos pesos preentrenados y una versión concreta de `transformers` son las dos mitades de
-un resultado reproducible, y dejar la segunda al aire es la manera más silenciosa de que el cuaderno
-deje de funcionar dentro de un año.
+propósito: unos parámetros preentrenados y una versión concreta de `transformers` son las dos
+mitades de un resultado reproducible, y dejar la segunda al aire es la manera más silenciosa de que
+el cuaderno deje de funcionar dentro de un año.
 
 Después, cinco cosas, en este orden. El tokenizador viene *con* el modelo y no lo eliges tú: es un
 tokenizador de subpalabras como los de <Leccion slug="tokenizacion">la lección sobre la tokenización</Leccion>, y sus entradas son exactamente las

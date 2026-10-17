@@ -4,22 +4,22 @@ title: "Proyecto: un Transformer desde cero"
 block: 5
 order: 9
 minutes: 30
-summary: "El artículo entero, montado y ejecutado: un vocabulario de doce entradas compartido por los dos idiomas, dos bloques por columna, dos cabezas y una frase de cinco tokens que sale por arriba convertida en seis distribuciones. Las seis funciones que hacen el trabajo son los desafíos de las lecciones anteriores sin tocar una letra, y lo que las une es que todo lo de en medio recibe T por d_model y devuelve T por d_model. Nadie ha entrenado estos pesos, así que la traducción que propone no significa nada; lo que sí se puede comprobar con pesos cualesquiera son tres cosas, y la segunda es la que este montaje añade: que ninguna posición del decoder ve lo que todavía no se ha escrito exige la máscara en cada uno de los bloques, no en el primero, y quitar una sola se mide."
+summary: "El artículo entero, montado y ejecutado: un vocabulario de doce entradas compartido por los dos idiomas, dos bloques por columna, dos cabezas y una frase de cinco tokens que sale por arriba convertida en seis distribuciones. Las seis funciones que hacen el trabajo son los desafíos de las lecciones anteriores sin tocar una letra, y lo que las une es que todo lo de en medio recibe T por d_model y devuelve T por d_model. Nadie ha entrenado estos parámetros, así que la traducción que propone no significa nada; lo que sí se puede comprobar con parámetros cualesquiera son tres cosas, y la segunda es la que este montaje añade: que ninguna posición del decoder ve lo que todavía no se ha escrito exige la máscara en cada uno de los bloques, no en el primero, y quitar una sola se mide."
 draft: false
 hasCode: true
 hasQuiz: true
 quiz:
   - id: q-que-demuestra
     type: multi
-    prompt: 'El modelo corre entero con pesos que nadie ha entrenado y devuelve su matriz de probabilidades. Marca lo que ese resultado demuestra.'
+    prompt: 'El modelo corre entero con parámetros que nadie ha entrenado y devuelve su matriz de probabilidades. Marca lo que ese resultado demuestra.'
     options:
       - { id: a, text: 'Que la cadena de formas encaja de un extremo al otro: cinco enteros por la fuente y seis por el decoder acaban en una matriz $6 \times 12$, una fila por posición escrita y una columna por entrada del vocabulario.' }
       - { id: b, text: 'Que lo que sale de cada posición es una distribución: las seis filas suman $1$.' }
       - { id: c, text: 'Que ninguna posición del decoder lee lo que va después: reescribir el final de lo que entra deja las filas anteriores exactamente donde estaban.' }
       - { id: d, text: 'Que las subcapas están en el orden del artículo: si el perceptrón por posiciones fuera antes de la atención, las formas ya no encajarían.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras, y son justo las que no dependen de que los pesos valgan algo. La (d) es la trampa, y falla por lo que esta lección tiene de tesis: las formas encajarían igual. Toda subcapa recibe $T \times d_{\text{model}}$ y devuelve $T \times d_{\text{model}}$, así que barajar el orden da un modelo distinto y perfectamente ejecutable —peor, pero ejecutable—, y ninguna forma se quejaría. Lo que las formas verifican es que el montaje es coherente, no que sea el del artículo; y desde luego no que la traducción sea buena, que con estos pesos es lo primero que salga.'
-    hint: 'Pregúntate cuáles de las cuatro seguirían siendo ciertas con otros pesos cualesquiera, y cuál habla de una decisión que las formas no ven.'
+    explanation: 'Las tres primeras, y son justo las que no dependen de que los parámetros valgan algo. La (d) es la trampa, y falla por lo que esta lección tiene de tesis: las formas encajarían igual. Toda subcapa recibe $T \times d_{\text{model}}$ y devuelve $T \times d_{\text{model}}$, así que barajar el orden da un modelo distinto y perfectamente ejecutable —peor, pero ejecutable—, y ninguna forma se quejaría. Lo que las formas verifican es que el montaje es coherente, no que sea el del artículo; y desde luego no que la traducción sea buena, que con estos parámetros es lo primero que salga.'
+    hint: 'Pregúntate cuáles de las cuatro seguirían siendo ciertas con otros parámetros cualesquiera, y cuál habla de una decisión que las formas no ven.'
   - id: q-mascara-por-bloque
     type: boolean
     prompt: 'El decoder de esta lección apila dos bloques. Con enmascarar la auto-atención del primero, el modelo entero ya es autorregresivo: lo que sale en la posición $3$ no puede depender de lo que entra en la $5$.'
@@ -142,9 +142,9 @@ challenges:
       Las dos condiciones de parada no son intercambiables. El `break` va *después* de apuntar
       el token, porque el `<EOS>` es una decisión del modelo y forma parte de lo que escribió; el
       tope de `max_pasos` está para que un modelo que nunca lo elija no deje el bucle corriendo,
-      que con pesos sin entrenar es el caso normal. Y `entrada + [siguiente]` construye una lista
-      nueva en vez de escribir en la que ya se pasó: así lo que `paso` recibió en una vuelta no
-      cambia por detrás en la siguiente.
+      que con parámetros sin entrenar es el caso normal. Y `entrada + [siguiente]` construye una
+      lista nueva en vez de escribir en la que ya se pasó: así lo que `paso` recibió en una vuelta
+      no cambia por detrás en la siguiente.
 reading:
   - kind: blog
     title: 'The Annotated Transformer'
@@ -165,12 +165,13 @@ como programa. La distancia entre las dos cosas es corta —unas sesenta líneas
 recorrerla una vez.
 
 Lo que salga por arriba no significará nada, y vale más decirlo antes de ejecutar que después: los
-pesos son los que devuelve el generador de números aleatorios y nadie los ha corregido jamás. Con
-<W>me gusta la casa roja</W> a la entrada, este modelo propondrá lo primero que le salga, y
+parámetros son los que devuelve el generador de números aleatorios y nadie los ha corregido jamás.
+Con <W>me gusta la casa roja</W> a la entrada, este modelo propondrá lo primero que le salga, y
 ajustarlo para que deje de hacerlo queda fuera de esta lección. Aun así hay tres cosas comprobables
-con pesos cualesquiera, y son exactamente las que dicen si la arquitectura está bien montada: que
-las formas encajan de un extremo al otro, que ninguna posición del decoder ve lo que todavía no se
-ha escrito, y que el recuento de parámetros es el de la lección anterior con otros números dentro.
+con parámetros cualesquiera, y son exactamente las que dicen si la arquitectura está bien montada:
+que las formas encajan de un extremo al otro, que ninguna posición del decoder ve lo que todavía no
+se ha escrito, y que el recuento de parámetros es el de la lección anterior con otros números
+dentro.
 
 Montar quince cajas suena peor de lo que es, y la razón cabe en una frase: salvo en los dos
 extremos, todo lo que hay dentro recibe una matriz de $T$ filas y $d_{\text{model}}$ columnas y
@@ -230,7 +231,7 @@ aplicada cinco veces con cinco cosas distintas en el hueco. Ésa es toda la arqu
 
 | Columna | Subcapa | Qué va en el hueco | Su mapa |
 |---|---|---|---|
-| encoder | 1 | $\text{MultiHead}$, con las tres listas leídas de $\mathbf{X}^{\text{enc}}$ | $5 \times 5$ |
+| encoder | 1 | $\text{MultiHead}$, con consultas, claves y valores de $\mathbf{X}^{\text{enc}}$ | $5 \times 5$ |
 | encoder | 2 | el perceptrón por posiciones | — |
 | decoder | 1 | $\text{MultiHead}$ sobre $\mathbf{X}^{\text{dec}}$, con $\mathbf{M}$ sumada a las puntuaciones | $6 \times 6$ |
 | decoder | 2 | consultas de $\mathbf{X}^{\text{dec}}$, claves y valores de $\mathbf{X}^{\text{enc}}$ | $6 \times 5$ |
@@ -259,10 +260,11 @@ Llamemos *respetar el pasado* a esto: la fila $t$ de lo que sale depende únicam
 a $t$ de lo que entró. Tres observaciones bastan.
 
 La primera es que las cajas que trabajan fila a fila lo respetan sin hacer nada. El perceptrón por
-posiciones aplica los mismos pesos a cada fila por separado, el *layer norm* normaliza cada fila con
-su propia media y su propia desviación típica, y la suma residual suma la fila $t$ con la fila $t$.
-Es la cuenta de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>: de las quince cajas
-del dibujo, sólo las tres de atención miran a otra posición.
+posiciones aplica los mismos parámetros a cada fila por separado, el *layer norm* normaliza cada
+fila con su propia media y su propia desviación típica, y la suma residual suma la fila $t$ con la
+fila $t$. Es la cuenta de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la
+recurrencia</Leccion>: de las quince cajas del dibujo, sólo las tres de atención miran a otra
+posición.
 
 La segunda es que la auto-atención enmascarada lo respeta por construcción, que es de lo que
 trataba $\mathbf{M}$: su fila $t$ de pesos vale cero de la columna $t+1$ en adelante, así que lo que
@@ -388,10 +390,10 @@ print("definidas:", [f.__name__ for f in (softmax_filas, atencion, multi_head,
                                           layer_norm, subcapa, ffn)])
 `} />
 
-La tercera saca los pesos del generador y encadena las subcapas en el orden de la tabla de arriba.
-`mascaras` es un interruptor por bloque y viene puesto en los dos; la última celda lo usará. De lo
-que imprime, mira la forma de la salida, que las seis filas suman $1$, y la pérdida por posición al
-lado de $\ln 12$.
+La tercera saca los parámetros del generador y encadena las subcapas en el orden de la tabla de
+arriba. `mascaras` es un interruptor por bloque y viene puesto en los dos; la última celda lo usará.
+De lo que imprime, mira la forma de la salida, que las seis filas suman $1$, y la pérdida por
+posición al lado de $\ln 12$.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -473,7 +475,7 @@ for etiqueta, m in (("los dos bloques", (True, True)), ("solo el primero", (True
     print("  %s     %s" % (etiqueta, round(float(np.abs(ahora[:4] - antes[:4]).max()), 4)))
 
 
-def arrays(p):                                  # todos los pesos de un bloque, uno a uno
+def arrays(p):                                  # todos los parametros de un bloque, uno a uno
     for v in p.values():
         if isinstance(v, dict):
             yield from v.values()
@@ -492,7 +494,7 @@ encoder, $6 \times 6$ los enmascarados y $6 \times 5$ los cruzados, el único re
 y lo es porque las dos frases no miden lo mismo. En las seis posiciones lo más probable es la misma
 entrada, <W>the</W>, con un $0.589$ en la primera: no es que sepa inglés, es la fila de $\mathbf{E}$
 que más apunta en la dirección que le sale al decoder, decidida por el mismo generador que puso los
-pesos.
+parámetros.
 
 La tabla de las máscaras es la afirmación de la sección anterior con números. Sólo la primera fila
 da $0$, y da $0$ exacto; enmascarar un bloque y no el otro deja $0.0768$ o $0.1651$ según cuál se
@@ -506,12 +508,13 @@ $$
 2 \cdot 12\,576 + 2 \cdot 16\,736 + 12 \cdot 32 = 59\,008.
 $$
 
-El modelo base del artículo tiene mil sesenta y ocho veces más pesos que éste y ni una caja más.
+El modelo base del artículo tiene mil sesenta y ocho veces más parámetros que éste y ni una caja
+más.
 
 ## Comprueba tu intuición
 
-Tres preguntas: qué demuestra un *forward pass* con pesos sin entrenar, si la máscara del primer
-bloque le alcanza al decoder entero, y cuántos parámetros guarda una capa de atención.
+Tres preguntas: qué demuestra un *forward pass* con parámetros sin entrenar, si la máscara del
+primer bloque le alcanza al decoder entero, y cuántos parámetros guarda una capa de atención.
 
 <Quiz id="q-que-demuestra" />
 

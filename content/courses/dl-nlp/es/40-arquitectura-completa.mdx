@@ -43,7 +43,7 @@ quiz:
     type: boolean
     prompt: 'Pasas de traducir frases de $50$ tokens a traducir textos de $1\,000$. El modelo base necesita más parámetros.'
     answer: false
-    explanation: 'Falso, y es la propiedad que separa esta arquitectura de la del bloque 3. En el recuento no aparece $T$ por ninguna parte: las proyecciones, el perceptrón por posiciones y los vectores de normalización son los mismos en la posición $3$ y en la $300$, y la codificación posicional es una fórmula y no una tabla —si el artículo hubiera aprendido un vector por posición, ahí sí habría un $T_{\max} \cdot d_{\text{model}}$ que crecería—. Lo que sí crece es el trabajo: la rejilla de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> cuesta $T^{2}$, y con mil tokens eso ya se nota. Más cuentas con los mismos pesos.'
+    explanation: 'Falso, y es la propiedad que separa esta arquitectura de la del bloque 3. En el recuento no aparece $T$ por ninguna parte: las proyecciones, el perceptrón por posiciones y los vectores de normalización son los mismos en la posición $3$ y en la $300$, y la codificación posicional es una fórmula y no una tabla —si el artículo hubiera aprendido un vector por posición, ahí sí habría un $T_{\max} \cdot d_{\text{model}}$ que crecería—. Lo que sí crece es el trabajo: la rejilla de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> cuesta $T^{2}$, y con mil tokens eso ya se nota. Más cuentas con los mismos parámetros.'
     hint: '¿Aparece $T$ en la forma de alguna de las matrices del modelo?'
   - id: q-salida-del-decoder
     type: predict-output

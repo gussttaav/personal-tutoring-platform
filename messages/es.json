@@ -1573,7 +1573,7 @@
           },
           "ffn-encoder": {
             "label": "Perceptrón\npor posiciones",
-            "description": "El perceptrón multicapa del bloque 2, de dos capas, aplicado a cada fila por separado y con los mismos pesos en todas."
+            "description": "El perceptrón multicapa del bloque 2, de dos capas, aplicado a cada fila por separado y con los mismos parámetros en todas."
           },
           "suma-norm-enc-2": {
             "label": "Suma y layer norm",
@@ -1605,7 +1605,7 @@
           },
           "ffn-decoder": {
             "label": "Perceptrón\npor posiciones",
-            "description": "El mismo perceptrón por posiciones que en la otra columna, con sus propios pesos."
+            "description": "El mismo perceptrón por posiciones que en la otra columna, con sus propios parámetros."
           },
           "suma-norm-dec-3": {
             "label": "Suma y layer norm",

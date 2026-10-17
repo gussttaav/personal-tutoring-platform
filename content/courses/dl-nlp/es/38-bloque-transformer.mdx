@@ -4,7 +4,7 @@ title: "Apilar sin perder lo de abajo"
 block: 5
 order: 6
 minutes: 28
-summary: "La capa de atención ya está completa, y el artículo pone seis una encima de otra. Componer seis funciones multiplica seis derivadas, que es exactamente la cuenta con la que se estrelló el bloque 3, así que apilar no es repetir: hace falta algo alrededor de cada subcapa. Son dos cosas y las dos caben en una línea. La suma —la subcapa devuelve lo que ha calculado más lo que le entró— abre un camino de la salida a la entrada que no atraviesa ningún peso, y de paso obliga a que d_model sea un solo número en todo el modelo, que es para lo que estaba la proyección de salida de multi-head. El layer norm centra cada fila con sus propias coordenadas, sin mirar a las demás posiciones ni a las demás frases del batch. Y entre las dos subcapas del bloque está el perceptrón por posiciones, que parece fontanería y lleva el doble de parámetros que la atención."
+summary: "La capa de atención ya está completa, y el artículo pone seis una encima de otra. Componer seis funciones multiplica seis derivadas, que es exactamente la cuenta con la que se estrelló el bloque 3, así que apilar no es repetir: hace falta algo alrededor de cada subcapa. Son dos cosas y las dos caben en una línea. La suma —la subcapa devuelve lo que ha calculado más lo que le entró— abre un camino de la salida a la entrada que no atraviesa ninguna matriz, y de paso obliga a que d_model sea un solo número en todo el modelo, que es para lo que estaba la proyección de salida de multi-head. El layer norm centra cada fila con sus propias coordenadas, sin mirar a las demás posiciones ni a las demás frases del batch. Y entre las dos subcapas del bloque está el perceptrón por posiciones, que parece fontanería y lleva el doble de parámetros que la atención."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -13,12 +13,12 @@ quiz:
     type: single
     prompt: 'Cada subcapa se envuelve en $\mathbf{x} + \text{Sublayer}(\mathbf{x})$. Al componer $N$ bloques y derivar, ¿qué aparece que en la cuenta del bloque 3 no había?'
     options:
-      - { id: a, text: 'Un sumando que vale $\mathbf{I}$: entre los caminos que unen la salida con la entrada hay uno que no atraviesa ninguna subcapa, y su factor no depende de ningún peso.' }
+      - { id: a, text: 'Un sumando que vale $\mathbf{I}$: entre los caminos que unen la salida con la entrada hay uno que no atraviesa ninguna subcapa, y su factor no depende de ningún parámetro.' }
       - { id: b, text: 'Un factor menos por bloque: la suma sustituye a una de las dos multiplicaciones de la subcapa, así que el producto tiene la mitad de factores y tarda la mitad en apagarse.' }
       - { id: c, text: 'Un jacobiano diagonal, porque sumar es una operación coordenada a coordenada y eso anula las derivadas cruzadas entre coordenadas distintas.' }
       - { id: d, text: 'Nada nuevo en la derivada. Lo que la suma arregla es la pasada hacia delante; el gradiente sigue siendo el producto de los $N$ jacobianos de las subcapas.' }
     answer: a
-    explanation: 'La (a). Derivar $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ da $\mathbf{I}$ más el jacobiano de la subcapa, y multiplicar $N$ paréntesis de esa forma reparte el producto en $2^{N}$ sumandos —uno por cada manera de elegir, en cada paréntesis, la identidad o la subcapa—. Uno de esos $2^{N}$ elige la identidad $N$ veces. La (b) se inventa una aritmética: la suma no quita ningún factor del producto, añade un sumando dentro de cada factor. La (c) confunde la operación con su jacobiano: la suma sí es coordenada a coordenada, y por eso su jacobiano es $\mathbf{I}$, pero el de la subcapa que la acompaña no tiene por qué ser diagonal y no lo es. La (d) parte en dos algo que es una sola cosa: el camino de vuelta es el de ida recorrido al revés, así que un sumando que no atraviesa pesos hacia arriba tampoco los atraviesa hacia abajo.'
+    explanation: 'La (a). Derivar $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ da $\mathbf{I}$ más el jacobiano de la subcapa, y multiplicar $N$ paréntesis de esa forma reparte el producto en $2^{N}$ sumandos —uno por cada manera de elegir, en cada paréntesis, la identidad o la subcapa—. Uno de esos $2^{N}$ elige la identidad $N$ veces. La (b) se inventa una aritmética: la suma no quita ningún factor del producto, añade un sumando dentro de cada factor. La (c) confunde la operación con su jacobiano: la suma sí es coordenada a coordenada, y por eso su jacobiano es $\mathbf{I}$, pero el de la subcapa que la acompaña no tiene por qué ser diagonal y no lo es. La (d) parte en dos algo que es una sola cosa: el camino de vuelta es el de ida recorrido al revés, así que un sumando que no atraviesa ninguna matriz hacia arriba tampoco la atraviesa hacia abajo.'
     hint: 'Deriva $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ respecto de $\mathbf{x}$ y mira los dos sumandos que salen.'
   - id: q-anchura-constante
     type: single
@@ -26,10 +26,10 @@ quiz:
     options:
       - { id: a, text: 'Que devuelva exactamente la forma que recibió, $T \times d_{\text{model}}$. Es para lo que estaba $\mathbf{W}^O$, y es lo que obliga a que $d_{\text{model}}$ sea un solo número de abajo arriba del modelo.' }
       - { id: b, text: 'Que sea lineal: sumarle a una función no lineal su propia entrada deja una expresión que ya no se puede derivar de un lado y del otro.' }
-      - { id: c, text: 'Que sus pesos midan lo mismo que los de la subcapa anterior, para que las dos sumas trabajen con escalas comparables.' }
+      - { id: c, text: 'Que sus parámetros midan lo mismo que los de la subcapa anterior, para que las dos sumas trabajen con escalas comparables.' }
       - { id: d, text: 'Que no cambie la escala de lo que recibe. De eso se encarga la subcapa misma, y por eso el layer norm va antes de la suma y no después.' }
     answer: a
-    explanation: 'La (a), y es una restricción de formas antes que de nada más: $\mathbf{X}$ y $\text{Sublayer}(\mathbf{X})$ se suman casilla a casilla, de modo que la subcapa tiene prohibido devolver otra anchura. Cada una hace su viaje de ida y vuelta —la atención baja a $d_v$ por cabeza y $\mathbf{W}^O$ la devuelve, el perceptrón sube a $d_{\text{ff}}$ y $\mathbf{W}_2$ la devuelve— y la anchura del modelo es la misma en la primera capa y en la sexta. La (b) es falsa de raíz: sumar es derivable y la subcapa sigue siendo lo que era. La (c) confunde la forma con la escala; nada obliga a que dos subcapas tengan pesos parecidos. La (d) le atribuye a la subcapa un trabajo que hace la caja de después, y además invierte el orden del artículo, que normaliza la suma ya hecha.'
+    explanation: 'La (a), y es una restricción de formas antes que de nada más: $\mathbf{X}$ y $\text{Sublayer}(\mathbf{X})$ se suman casilla a casilla, de modo que la subcapa tiene prohibido devolver otra anchura. Cada una hace su viaje de ida y vuelta —la atención baja a $d_v$ por cabeza y $\mathbf{W}^O$ la devuelve, el perceptrón sube a $d_{\text{ff}}$ y $\mathbf{W}_2$ la devuelve— y la anchura del modelo es la misma en la primera capa y en la sexta. La (b) es falsa de raíz: sumar es derivable y la subcapa sigue siendo lo que era. La (c) confunde la forma con la escala; nada obliga a que dos subcapas tengan parámetros parecidos. La (d) le atribuye a la subcapa un trabajo que hace la caja de después, y además invierte el orden del artículo, que normaliza la suma ya hecha.'
     hint: '¿Qué tienen que cumplir dos matrices para poder sumarse?'
   - id: q-que-eje-normaliza
     type: multi
@@ -44,11 +44,11 @@ quiz:
     hint: '¿Qué números entran en $\mu_t$ y en $s_t$, y cuáles no?'
   - id: q-donde-estan-los-parametros
     type: numeric
-    prompt: 'Con $d_{\text{model}} = 512$ y $d_{\text{ff}} = 2\,048$, ¿cuántos pesos tienen las dos matrices del perceptrón por posiciones, sin contar los sesgos?'
+    prompt: 'Con $d_{\text{model}} = 512$ y $d_{\text{ff}} = 2\,048$, ¿cuántos parámetros tienen las dos matrices del perceptrón por posiciones, sin contar los sesgos?'
     answer: 2097152
     tolerance: 0
-    unit: pesos
-    explanation: 'Dos millones noventa y siete mil ciento cincuenta y dos: $512 \cdot 2\,048$ de subida más $2\,048 \cdot 512$ de bajada, es decir $2 d_{\text{model}} d_{\text{ff}}$. Lo que hay que llevarse es la comparación. Las cuatro matrices de la atención multi-head suman $4 d_{\text{model}}^{2} = 1\,048\,576$, de modo que la caja que parece fontanería lleva el doble de pesos que la caja que le da nombre a la arquitectura. Y esos pesos son los mismos en todas las posiciones: alargar la frase no añade ni uno.'
+    unit: parámetros
+    explanation: 'Dos millones noventa y siete mil ciento cincuenta y dos: $512 \cdot 2\,048$ de subida más $2\,048 \cdot 512$ de bajada, es decir $2 d_{\text{model}} d_{\text{ff}}$. Lo que hay que llevarse es la comparación. Las cuatro matrices de la atención multi-head suman $4 d_{\text{model}}^{2} = 1\,048\,576$, de modo que la caja que parece fontanería lleva el doble de parámetros que la caja que le da nombre a la arquitectura. Y esos parámetros son los mismos en todas las posiciones: alargar la frase no añade ni uno.'
     hint: 'Son dos matrices, una de subida y otra de bajada, y las dos tienen las mismas dos anchuras.'
   - id: q-normalizar-antes-de-sumar
     type: boolean
@@ -274,8 +274,8 @@ $$
 \frac{\partial\left(\mathbf{x} + \text{Sublayer}(\mathbf{x})\right)}{\partial\mathbf{x}} = \mathbf{I} + \frac{\partial\,\text{Sublayer}(\mathbf{x})}{\partial\mathbf{x}}.
 $$
 
-Ahí está todo. El jacobiano de la subcapa depende de sus pesos y puede valer lo que sea, incluso
-cero; el otro sumando es la identidad y no depende de nada. Y como la regla de la cadena de
+Ahí está todo. El jacobiano de la subcapa depende de sus parámetros y puede valer lo que sea,
+incluso cero; el otro sumando es la identidad y no depende de nada. Y como la regla de la cadena de
 <Leccion slug="regla-de-la-cadena">su lección</Leccion> convierte una composición en un producto de jacobianos, apilar $N$ bloques
 multiplica $N$ paréntesis así, cada uno con su identidad dentro.
 
@@ -375,9 +375,9 @@ capas es. $\mathbf{1}_T$ es la columna de unos del bloque 2, que aquí repite el
 posición en lugar de una vez por ejemplo, y la ReLU es el $\max(0, \cdot)$ del artículo.
 
 Las dos matrices son *las mismas para todas las posiciones*: la fila $3$ y la fila $300$ pasan por
-los mismos pesos, así que la subcapa no puede enterarse de cuál está transformando. Eso es lo que
-significa «por posiciones» y lo que la deja fuera de las cajas que mezclan. Su papel sale de ahí por
-descarte: la atención no transforma, mezcla, y éste es el único sitio donde el contenido de una
+los mismos parámetros, así que la subcapa no puede enterarse de cuál está transformando. Eso es lo
+que significa «por posiciones» y lo que la deja fuera de las cajas que mezclan. Su papel sale de ahí
+por descarte: la atención no transforma, mezcla, y éste es el único sitio donde el contenido de una
 posición pasa por una no linealidad propia.
 
 El reparto no es el que sugiere el dibujo. Con $d_{\text{model}} = 512$ y
@@ -388,8 +388,8 @@ $$
 $$
 
 A la izquierda las dos matrices del perceptrón por posiciones, a la derecha las cuatro de la
-atención sumadas: la caja que parece fontanería lleva el doble de pesos que la que le da nombre a la
-arquitectura. Ninguno de los dos números menciona a $T$.
+atención sumadas: la caja que parece fontanería lleva el doble de parámetros que la que le da nombre
+a la arquitectura. Ninguno de los dos números menciona a $T$.
 
 ### El bloque completo, en dos líneas
 
@@ -460,8 +460,8 @@ tocar la fila $4$ mueve la fila $0$ en $0.0$ por filas y en $1.889$ por columnas
 
 La segunda mide lo que hace la suma, y para verla sola le quito al bloque el *layer norm* y la
 atención: quedan $12$ perceptrones por posiciones, uno encima de otro, con y sin la línea que los
-rodea. La escala de los pesos la he puesto baja a propósito, $0.15$: al arrancar, una subcapa es una
-corrección pequeña.
+rodea. La escala de las matrices la he puesto baja a propósito, $0.15$: al arrancar, una subcapa es
+una corrección pequeña.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -469,12 +469,12 @@ import numpy as np
 rng = np.random.default_rng(0)
 T, d_model, d_ff, N = 8, 16, 32, 12
 
-pesos = [(rng.normal(size=(d_model, d_ff)) * 0.15,
-          rng.normal(size=(d_ff, d_model)) * 0.15) for _ in range(N)]
+matrices = [(rng.normal(size=(d_model, d_ff)) * 0.15,
+             rng.normal(size=(d_ff, d_model)) * 0.15) for _ in range(N)]
 
 
 def apilar(X, n, con_suma):
-    for W1, W2 in pesos[:n]:
+    for W1, W2 in matrices[:n]:
         sub = np.maximum(0.0, X @ W1) @ W2        # el perceptron por posiciones
         X = X + sub if con_suma else sub
     return X
@@ -496,7 +496,7 @@ Cada número es una derivada medida por sondeo numérico: cuánto se mueve la sa
 una sola coordenada de la entrada. Sin la suma cae de $0.109$ con una capa a
 $5.182 \times 10^{-7}$ con doce —siete órdenes de magnitud, y con doce capas, no con doce mil—,
 porque es un producto de doce factores pequeños. Con la suma se queda entre $1.00$ y $1.80$ todo el
-camino: el sumando que no atraviesa ningún peso vale $1$, y los demás sólo lo corrigen.
+camino: el sumando que no atraviesa ninguna matriz vale $1$, y los demás sólo lo corrigen.
 
 ## Comprueba tu intuición
 
