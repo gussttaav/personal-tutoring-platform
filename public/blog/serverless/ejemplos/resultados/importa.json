@@ -1,0 +1,377 @@
+[
+ {
+  "ciclo": 0,
+  "llamada": 0,
+  "t": 1792148891.2503767,
+  "estado": 200,
+  "request_id": "672cad5a-0e8a-420d-ae6f-8d6b58d5f080",
+  "conexion": 0.148691,
+  "tls": 0.219974,
+  "primer_byte": 4.05569,
+  "total": 4.055933,
+  "cuerpo": {
+   "pandas_s": 2.987,
+   "vacio_s": 0.024
+  }
+ },
+ {
+  "ciclo": 0,
+  "llamada": 1,
+  "t": 1792148893.670441,
+  "estado": 200,
+  "request_id": "4b78a4fa-9c47-4e42-b4aa-185423a87b91",
+  "conexion": 0.100261,
+  "tls": 0.17476,
+  "primer_byte": 2.38191,
+  "total": 2.382231,
+  "cuerpo": {
+   "pandas_s": 2.102,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 0,
+  "llamada": 2,
+  "t": 1792148896.1632571,
+  "estado": 200,
+  "request_id": "bbc76e2c-ff63-4bc5-abb8-65c26301d6d9",
+  "conexion": 0.119645,
+  "tls": 0.192112,
+  "primer_byte": 2.455283,
+  "total": 2.455509,
+  "cuerpo": {
+   "pandas_s": 2.147,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 0,
+  "llamada": 3,
+  "t": 1792148898.6495473,
+  "estado": 200,
+  "request_id": "3a93f832-6210-44f3-8055-c73c7d16acb1",
+  "conexion": 0.093721,
+  "tls": 0.16475,
+  "primer_byte": 2.458679,
+  "total": 2.458792,
+  "cuerpo": {
+   "pandas_s": 2.197,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 0,
+  "llamada": 4,
+  "t": 1792148901.2478635,
+  "estado": 200,
+  "request_id": "2421eeb4-3792-464d-b4b6-7bbc0bdf0037",
+  "conexion": 0.09612,
+  "tls": 0.172676,
+  "primer_byte": 2.575837,
+  "total": 2.576116,
+  "cuerpo": {
+   "pandas_s": 2.306,
+   "vacio_s": 0.017
+  }
+ },
+ {
+  "ciclo": 1,
+  "llamada": 0,
+  "t": 1792148909.7724626,
+  "estado": 200,
+  "request_id": "f3d17c01-e193-4cb6-a086-cdea32d897bf",
+  "conexion": 0.107135,
+  "tls": 0.178227,
+  "primer_byte": 3.688849,
+  "total": 3.688959,
+  "cuerpo": {
+   "pandas_s": 2.771,
+   "vacio_s": 0.019
+  }
+ },
+ {
+  "ciclo": 1,
+  "llamada": 1,
+  "t": 1792148912.078601,
+  "estado": 200,
+  "request_id": "743cdc16-8d4f-47e0-9f1c-59011e6d4017",
+  "conexion": 0.096913,
+  "tls": 0.163125,
+  "primer_byte": 2.279146,
+  "total": 2.279373,
+  "cuerpo": {
+   "pandas_s": 2.025,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 1,
+  "llamada": 2,
+  "t": 1792148914.463222,
+  "estado": 200,
+  "request_id": "d21938f9-4ee9-4cc2-a22e-3c42a3d0ba89",
+  "conexion": 0.094606,
+  "tls": 0.164333,
+  "primer_byte": 2.349665,
+  "total": 2.349902,
+  "cuerpo": {
+   "pandas_s": 2.034,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 1,
+  "llamada": 3,
+  "t": 1792148916.8312125,
+  "estado": 200,
+  "request_id": "fa2d5f55-dda7-4206-b67f-eee3d3849d88",
+  "conexion": 0.094089,
+  "tls": 0.196336,
+  "primer_byte": 2.331231,
+  "total": 2.331477,
+  "cuerpo": {
+   "pandas_s": 2.045,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 1,
+  "llamada": 4,
+  "t": 1792148919.1805742,
+  "estado": 200,
+  "request_id": "8a3c1cac-12b8-4fe9-af03-f87c769645f8",
+  "conexion": 0.090031,
+  "tls": 0.159029,
+  "primer_byte": 2.324055,
+  "total": 2.324151,
+  "cuerpo": {
+   "pandas_s": 2.074,
+   "vacio_s": 0.017
+  }
+ },
+ {
+  "ciclo": 2,
+  "llamada": 0,
+  "t": 1792148927.6047354,
+  "estado": 200,
+  "request_id": "291dd052-d41a-43ff-a158-fc44e53ed948",
+  "conexion": 0.090329,
+  "tls": 0.157677,
+  "primer_byte": 3.326024,
+  "total": 3.326133,
+  "cuerpo": {
+   "pandas_s": 2.55,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 2,
+  "llamada": 1,
+  "t": 1792148929.9802022,
+  "estado": 200,
+  "request_id": "01509e2e-800c-4797-a83e-2fd77da9d4d1",
+  "conexion": 0.091837,
+  "tls": 0.162824,
+  "primer_byte": 2.341448,
+  "total": 2.341908,
+  "cuerpo": {
+   "pandas_s": 1.981,
+   "vacio_s": 0.014
+  }
+ },
+ {
+  "ciclo": 2,
+  "llamada": 2,
+  "t": 1792148932.358193,
+  "estado": 200,
+  "request_id": "4bcf763f-13c4-445c-abea-42beb9cc7d71",
+  "conexion": 0.109648,
+  "tls": 0.216386,
+  "primer_byte": 2.329945,
+  "total": 2.330057,
+  "cuerpo": {
+   "pandas_s": 2.028,
+   "vacio_s": 0.014
+  }
+ },
+ {
+  "ciclo": 2,
+  "llamada": 3,
+  "t": 1792148934.646867,
+  "estado": 200,
+  "request_id": "6f6c8225-6580-4ce1-9fff-17a6e4300f66",
+  "conexion": 0.095046,
+  "tls": 0.160739,
+  "primer_byte": 2.2756,
+  "total": 2.275693,
+  "cuerpo": {
+   "pandas_s": 2.024,
+   "vacio_s": 0.014
+  }
+ },
+ {
+  "ciclo": 2,
+  "llamada": 4,
+  "t": 1792148936.9370284,
+  "estado": 200,
+  "request_id": "dfe3fcde-91c3-4de6-8de0-1638fc3ffee9",
+  "conexion": 0.100462,
+  "tls": 0.169495,
+  "primer_byte": 2.26303,
+  "total": 2.26328,
+  "cuerpo": {
+   "pandas_s": 2.006,
+   "vacio_s": 0.014
+  }
+ },
+ {
+  "ciclo": 3,
+  "llamada": 0,
+  "t": 1792148946.0690947,
+  "estado": 200,
+  "request_id": "8a6092fb-ed3d-4ea9-bfc7-4d7490ad1500",
+  "conexion": 0.115417,
+  "tls": 0.188331,
+  "primer_byte": 3.792151,
+  "total": 3.792251,
+  "cuerpo": {
+   "pandas_s": 2.959,
+   "vacio_s": 0.019
+  }
+ },
+ {
+  "ciclo": 3,
+  "llamada": 1,
+  "t": 1792148948.4879084,
+  "estado": 200,
+  "request_id": "b6f94f31-42d8-43a6-8a1f-502d754ecb6d",
+  "conexion": 0.154913,
+  "tls": 0.234483,
+  "primer_byte": 2.398645,
+  "total": 2.39875,
+  "cuerpo": {
+   "pandas_s": 2.064,
+   "vacio_s": 0.017
+  }
+ },
+ {
+  "ciclo": 3,
+  "llamada": 2,
+  "t": 1792148950.8176403,
+  "estado": 200,
+  "request_id": "4dfb7ddc-3c50-4d16-a3ee-64eddb5e8f90",
+  "conexion": 0.096821,
+  "tls": 0.168348,
+  "primer_byte": 2.299153,
+  "total": 2.299416,
+  "cuerpo": {
+   "pandas_s": 2.039,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 3,
+  "llamada": 3,
+  "t": 1792148953.119997,
+  "estado": 200,
+  "request_id": "8fb5f38d-43b1-484d-91cd-23fddb25f4dd",
+  "conexion": 0.092756,
+  "tls": 0.165109,
+  "primer_byte": 2.268869,
+  "total": 2.26901,
+  "cuerpo": {
+   "pandas_s": 2.007,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 3,
+  "llamada": 4,
+  "t": 1792148955.42882,
+  "estado": 200,
+  "request_id": "fb9c0560-f8a4-45c0-a0ca-3e1f4b947562",
+  "conexion": 0.114803,
+  "tls": 0.180088,
+  "primer_byte": 2.29307,
+  "total": 2.293151,
+  "cuerpo": {
+   "pandas_s": 2.017,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 4,
+  "llamada": 0,
+  "t": 1792148964.4712694,
+  "estado": 200,
+  "request_id": "16bcaf40-898d-45f0-8480-a69ebe6c34a4",
+  "conexion": 0.093329,
+  "tls": 0.160118,
+  "primer_byte": 3.600293,
+  "total": 3.600395,
+  "cuerpo": {
+   "pandas_s": 2.807,
+   "vacio_s": 0.019
+  }
+ },
+ {
+  "ciclo": 4,
+  "llamada": 1,
+  "t": 1792148966.8609161,
+  "estado": 200,
+  "request_id": "c88d74ae-88b1-402a-a660-b57c2f325c48",
+  "conexion": 0.113588,
+  "tls": 0.186424,
+  "primer_byte": 2.376887,
+  "total": 2.376979,
+  "cuerpo": {
+   "pandas_s": 2.103,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 4,
+  "llamada": 2,
+  "t": 1792148969.2780066,
+  "estado": 200,
+  "request_id": "1590c959-0fba-4ca5-8b63-b5131fac292f",
+  "conexion": 0.093719,
+  "tls": 0.16926,
+  "primer_byte": 2.391601,
+  "total": 2.391698,
+  "cuerpo": {
+   "pandas_s": 2.069,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 4,
+  "llamada": 3,
+  "t": 1792148971.739708,
+  "estado": 200,
+  "request_id": "84dd4e0c-d3b2-42d5-abeb-fee25167bca7",
+  "conexion": 0.126987,
+  "tls": 0.199199,
+  "primer_byte": 2.423613,
+  "total": 2.423986,
+  "cuerpo": {
+   "pandas_s": 2.032,
+   "vacio_s": 0.016
+  }
+ },
+ {
+  "ciclo": 4,
+  "llamada": 4,
+  "t": 1792148974.1182363,
+  "estado": 200,
+  "request_id": "bcadac6d-d18b-41b4-ac89-53e4766c9d7b",
+  "conexion": 0.098613,
+  "tls": 0.172279,
+  "primer_byte": 2.345456,
+  "total": 2.345575,
+  "cuerpo": {
+   "pandas_s": 2.063,
+   "vacio_s": 0.017
+  }
+ }
+]
