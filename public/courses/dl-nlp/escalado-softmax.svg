@@ -1,84 +1,174 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 186" width="540" height="279" role="img"
-     aria-label="Arriba, seis puntuaciones con signo alrededor de un eje. Abajo, los cuatro repartos que el softmax hace de ellas: el de la izquierda tras dividir entre la raíz de d_k, y los otros tres sin dividir con d_k igual a 4, 16 y 64. El reparto se concentra en una sola barra a medida que crece d_k.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 266" width="540" height="399" role="img"
+     aria-label="Tres columnas, una por anchura: d_k igual a 4, 16 y 64. Arriba, la misma fila de seis puntuaciones sin dividir en cada columna, con barras que crecen con la anchura. Debajo, tres filas de repartos del softmax, cada uno con seis barras, según el divisor que se aplica antes. Sin dividir, el peso mayor sube de 0.68 a 0.92 y a 0.99 hasta ocupar toda la barra. Dividiendo entre la raíz de d_k, fila resaltada, el reparto es el mismo en las tres columnas, con el peso mayor en 0.43. Dividiendo entre d_k, el peso mayor baja de 0.29 a 0.23 y a 0.20, y las seis barras se van igualando.">
   <style>
     text { font-family: ui-sans-serif, system-ui, sans-serif; }
     .barra { fill: #4edea3; }
     .carril { fill: rgba(134,148,138,0.13); }
     .eje { stroke: rgba(134,148,138,0.55); stroke-width: 1; }
-    .llave { stroke: rgba(134,148,138,0.5); stroke-width: 1; fill: none; }
-    .flecha { stroke: rgba(134,148,138,0.7); stroke-width: 1.3; fill: none; }
+    .banda { fill: rgba(78,222,163,0.08); }
     .est { font-size: 10.5px; fill: #bbcabf; text-anchor: middle; }
-    .nota { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+    .rot { font-size: 11px; fill: #bbcabf; }
+    .rot-si { font-size: 11px; fill: #4edea3; }
+    .nota { font-size: 9.5px; fill: #86948a; }
+    .pico { font-size: 9px; fill: #bbcabf; text-anchor: middle; }
+    .pico-si { font-size: 9px; fill: #4edea3; text-anchor: middle; }
     .sub { font-size: 8px; }
   </style>
-  <defs>
-    <marker id="pf" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" markerUnits="userSpaceOnUse" orient="auto">
-      <path d="M0 0 L8 4 L0 8 z" fill="rgba(134,148,138,0.7)" />
-    </marker>
-  </defs>
 
-  <!-- Las seis puntuaciones de partida: el mismo patrón alimenta los cuatro repartos. -->
-  <text class="est" x="180" y="16">las mismas seis puntuaciones en los cuatro casos</text>
-  <rect class="barra" x="144.5" y="37.0" width="9.0" height="11.0" rx="1.5" />
-  <rect class="barra" x="156.9" y="48.0" width="9.0" height="4.9" rx="1.5" />
-  <rect class="barra" x="169.3" y="29.6" width="9.0" height="18.4" rx="1.5" />
-  <rect class="barra" x="181.7" y="45.5" width="9.0" height="2.5" rx="1.5" />
-  <rect class="barra" x="194.1" y="48.0" width="9.0" height="13.5" rx="1.5" />
-  <rect class="barra" x="206.5" y="40.6" width="9.0" height="7.4" rx="1.5" />
-  <line class="eje" x1="138.5" y1="48.0" x2="221.5" y2="48.0" />
+  <!-- Una columna por anchura. -->
+  <text class="est" x="121.5" y="14">d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"> = 4</tspan></text>
+  <text class="est" x="217.5" y="14">d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"> = 16</tspan></text>
+  <text class="est" x="313.5" y="14">d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"> = 64</tspan></text>
 
-  <!-- De las puntuaciones a los pesos: una sola operación, el softmax por filas. -->
-  <path class="flecha" d="M180 70 L180 90" marker-end="url(#pf)" />
-  <text class="nota" x="219.5" y="102">sin dividir</text>
-  <path class="llave" d="M97.0 112 L97.0 108 L342.0 108 L342.0 112" />
+  <!-- Arriba, lo que sale de QK^T: el mismo patrón en las tres anchuras, a su tamaño típico. -->
+  <text class="rot" x="4" y="53">puntuaciones</text>
+  <text class="nota" x="4" y="66">sin dividir</text>
+  <rect class="barra" x="86.0" y="51.4" width="9.0" height="4.6" rx="1.5" />
+  <rect class="barra" x="98.4" y="56.0" width="9.0" height="2.0" rx="1.5" />
+  <rect class="barra" x="110.8" y="48.4" width="9.0" height="7.6" rx="1.5" />
+  <rect class="barra" x="123.2" y="55.0" width="9.0" height="1.0" rx="1.5" />
+  <rect class="barra" x="135.6" y="56.0" width="9.0" height="5.6" rx="1.5" />
+  <rect class="barra" x="148.0" y="52.9" width="9.0" height="3.1" rx="1.5" />
+  <line class="eje" x1="83.0" y1="56.0" x2="160.0" y2="56.0" />
+  <rect class="barra" x="182.0" y="46.9" width="9.0" height="9.1" rx="1.5" />
+  <rect class="barra" x="194.4" y="56.0" width="9.0" height="4.1" rx="1.5" />
+  <rect class="barra" x="206.8" y="40.8" width="9.0" height="15.2" rx="1.5" />
+  <rect class="barra" x="219.2" y="53.9" width="9.0" height="2.1" rx="1.5" />
+  <rect class="barra" x="231.6" y="56.0" width="9.0" height="11.2" rx="1.5" />
+  <rect class="barra" x="244.0" y="49.9" width="9.0" height="6.1" rx="1.5" />
+  <line class="eje" x1="179.0" y1="56.0" x2="256.0" y2="56.0" />
+  <rect class="barra" x="278.0" y="37.8" width="9.0" height="18.2" rx="1.5" />
+  <rect class="barra" x="290.4" y="56.0" width="9.0" height="8.1" rx="1.5" />
+  <rect class="barra" x="302.8" y="25.5" width="9.0" height="30.5" rx="1.5" />
+  <rect class="barra" x="315.2" y="51.9" width="9.0" height="4.1" rx="1.5" />
+  <rect class="barra" x="327.6" y="56.0" width="9.0" height="22.4" rx="1.5" />
+  <rect class="barra" x="340.0" y="43.7" width="9.0" height="12.3" rx="1.5" />
+  <line class="eje" x1="275.0" y1="56.0" x2="352.0" y2="56.0" />
 
-  <!-- Un grupo por caso. El carril de fondo marca las seis posiciones aunque el peso sea cero. -->
-  <rect class="carril" x="16.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="16.0" y="150.1" width="9.0" height="9.9" rx="1.5" />
-  <rect class="carril" x="28.4" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="28.4" y="157.7" width="9.0" height="2.3" rx="1.5" />
-  <rect class="carril" x="40.8" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="40.8" y="140.8" width="9.0" height="19.2" rx="1.5" />
-  <rect class="carril" x="53.2" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="53.2" y="155.5" width="9.0" height="4.5" rx="1.5" />
-  <rect class="carril" x="65.6" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="65.6" y="158.9" width="9.0" height="1.1" rx="1.5" />
-  <rect class="carril" x="78.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="78.0" y="153.0" width="9.0" height="7.0" rx="1.5" />
-  <line class="eje" x1="13.0" y1="160.0" x2="90.0" y2="160.0" />
-  <text class="est" x="51.5" y="176">tras dividir</text>
-  <rect class="carril" x="100.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="100.0" y="152.1" width="9.0" height="7.9" rx="1.5" />
-  <rect class="carril" x="112.4" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="112.4" y="159.6" width="9.0" height="0.4" rx="1.5" />
-  <rect class="carril" x="124.8" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="124.8" y="130.1" width="9.0" height="29.9" rx="1.5" />
-  <rect class="carril" x="137.2" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="137.2" y="158.3" width="9.0" height="1.7" rx="1.5" />
-  <rect class="carril" x="149.6" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="carril" x="162.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="162.0" y="156.0" width="9.0" height="4.0" rx="1.5" />
-  <line class="eje" x1="97.0" y1="160.0" x2="174.0" y2="160.0" />
-  <text class="est" x="135.5" y="176">d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"> = 4</tspan></text>
-  <rect class="carril" x="184.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="184.0" y="157.2" width="9.0" height="2.8" rx="1.5" />
-  <rect class="carril" x="196.4" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="carril" x="208.8" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="208.8" y="119.7" width="9.0" height="40.3" rx="1.5" />
-  <rect class="carril" x="221.2" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="carril" x="233.6" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="carril" x="246.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="246.0" y="159.3" width="9.0" height="0.7" rx="1.5" />
-  <line class="eje" x1="181.0" y1="160.0" x2="258.0" y2="160.0" />
-  <text class="est" x="219.5" y="176">d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"> = 16</tspan></text>
-  <rect class="carril" x="268.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="268.0" y="159.8" width="9.0" height="0.2" rx="1.5" />
-  <rect class="carril" x="280.4" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="carril" x="292.8" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="barra" x="292.8" y="116.2" width="9.0" height="43.8" rx="1.5" />
-  <rect class="carril" x="305.2" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="carril" x="317.6" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <rect class="carril" x="330.0" y="116.0" width="9.0" height="44.0" rx="1.5" />
-  <line class="eje" x1="265.0" y1="160.0" x2="342.0" y2="160.0" />
-  <text class="est" x="303.5" y="176">d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"> = 64</tspan></text>
+  <!-- Debajo, el reparto del softmax con cada divisor. El carril marca las seis posiciones y el peso 1. -->
+  <text class="nota" x="4" y="99">reparto del <tspan font-style="italic">softmax</tspan> según el divisor que se aplica antes:</text>
+  <text class="rot" x="4" y="131.0">1</text>
+  <text class="nota" x="4" y="144.0">no dividir</text>
+  <rect class="carril" x="86.0" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="86.0" y="142.6" width="9.0" height="5.4" rx="1.5" />
+  <rect class="carril" x="98.4" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="98.4" y="147.7" width="9.0" height="0.3" rx="1.5" />
+  <rect class="carril" x="110.8" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="110.8" y="127.7" width="9.0" height="20.3" rx="1.5" />
+  <rect class="carril" x="123.2" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="123.2" y="146.8" width="9.0" height="1.2" rx="1.5" />
+  <rect class="carril" x="135.6" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="148.0" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="148.0" y="145.2" width="9.0" height="2.8" rx="1.5" />
+  <text class="pico" x="115.3" y="114.0">0.68</text>
+  <line class="eje" x1="83.0" y1="148.0" x2="160.0" y2="148.0" />
+  <rect class="carril" x="182.0" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="182.0" y="146.1" width="9.0" height="1.9" rx="1.5" />
+  <rect class="carril" x="194.4" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="206.8" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="206.8" y="120.5" width="9.0" height="27.5" rx="1.5" />
+  <rect class="carril" x="219.2" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="231.6" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="244.0" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="244.0" y="147.5" width="9.0" height="0.5" rx="1.5" />
+  <text class="pico" x="211.3" y="114.0">0.92</text>
+  <line class="eje" x1="179.0" y1="148.0" x2="256.0" y2="148.0" />
+  <rect class="carril" x="278.0" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="290.4" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="302.8" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="302.8" y="118.2" width="9.0" height="29.8" rx="1.5" />
+  <rect class="carril" x="315.2" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="327.6" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="carril" x="340.0" y="118.0" width="9.0" height="30.0" rx="1.5" />
+  <text class="pico" x="307.3" y="114.0">0.99</text>
+  <line class="eje" x1="275.0" y1="148.0" x2="352.0" y2="148.0" />
+  <rect class="banda" x="0" y="161.0" width="360" height="45.0" rx="4" />
+  <text class="rot-si" x="4" y="185.0">√d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"></tspan></text>
+  <text class="nota" x="4" y="198.0">la raíz</text>
+  <rect class="carril" x="86.0" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="86.0" y="195.3" width="9.0" height="6.7" rx="1.5" />
+  <rect class="carril" x="98.4" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="98.4" y="200.4" width="9.0" height="1.6" rx="1.5" />
+  <rect class="carril" x="110.8" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="110.8" y="189.0" width="9.0" height="13.0" rx="1.5" />
+  <rect class="carril" x="123.2" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="123.2" y="198.9" width="9.0" height="3.1" rx="1.5" />
+  <rect class="carril" x="135.6" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="135.6" y="201.3" width="9.0" height="0.7" rx="1.5" />
+  <rect class="carril" x="148.0" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="148.0" y="197.2" width="9.0" height="4.8" rx="1.5" />
+  <text class="pico-si" x="115.3" y="168.0">0.43</text>
+  <line class="eje" x1="83.0" y1="202.0" x2="160.0" y2="202.0" />
+  <rect class="carril" x="182.0" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="182.0" y="195.3" width="9.0" height="6.7" rx="1.5" />
+  <rect class="carril" x="194.4" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="194.4" y="200.4" width="9.0" height="1.6" rx="1.5" />
+  <rect class="carril" x="206.8" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="206.8" y="189.0" width="9.0" height="13.0" rx="1.5" />
+  <rect class="carril" x="219.2" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="219.2" y="198.9" width="9.0" height="3.1" rx="1.5" />
+  <rect class="carril" x="231.6" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="231.6" y="201.3" width="9.0" height="0.7" rx="1.5" />
+  <rect class="carril" x="244.0" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="244.0" y="197.2" width="9.0" height="4.8" rx="1.5" />
+  <text class="pico-si" x="211.3" y="168.0">0.43</text>
+  <line class="eje" x1="179.0" y1="202.0" x2="256.0" y2="202.0" />
+  <rect class="carril" x="278.0" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="278.0" y="195.3" width="9.0" height="6.7" rx="1.5" />
+  <rect class="carril" x="290.4" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="290.4" y="200.4" width="9.0" height="1.6" rx="1.5" />
+  <rect class="carril" x="302.8" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="302.8" y="189.0" width="9.0" height="13.0" rx="1.5" />
+  <rect class="carril" x="315.2" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="315.2" y="198.9" width="9.0" height="3.1" rx="1.5" />
+  <rect class="carril" x="327.6" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="327.6" y="201.3" width="9.0" height="0.7" rx="1.5" />
+  <rect class="carril" x="340.0" y="172.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="340.0" y="197.2" width="9.0" height="4.8" rx="1.5" />
+  <text class="pico-si" x="307.3" y="168.0">0.43</text>
+  <line class="eje" x1="275.0" y1="202.0" x2="352.0" y2="202.0" />
+  <text class="rot" x="4" y="239.0">d<tspan class="sub" dy="2">k</tspan><tspan dy="-2"></tspan></text>
+  <text class="nota" x="4" y="252.0">el propio d<tspan class="sub" dy="2">k</tspan></text>
+  <rect class="carril" x="86.0" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="86.0" y="249.7" width="9.0" height="6.3" rx="1.5" />
+  <rect class="carril" x="98.4" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="98.4" y="252.9" width="9.0" height="3.1" rx="1.5" />
+  <rect class="carril" x="110.8" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="110.8" y="247.2" width="9.0" height="8.8" rx="1.5" />
+  <rect class="carril" x="123.2" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="123.2" y="251.7" width="9.0" height="4.3" rx="1.5" />
+  <rect class="carril" x="135.6" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="135.6" y="253.9" width="9.0" height="2.1" rx="1.5" />
+  <rect class="carril" x="148.0" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="148.0" y="250.6" width="9.0" height="5.4" rx="1.5" />
+  <text class="pico" x="115.3" y="222.0">0.29</text>
+  <line class="eje" x1="83.0" y1="256.0" x2="160.0" y2="256.0" />
+  <rect class="carril" x="182.0" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="182.0" y="250.2" width="9.0" height="5.8" rx="1.5" />
+  <rect class="carril" x="194.4" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="194.4" y="252.0" width="9.0" height="4.0" rx="1.5" />
+  <rect class="carril" x="206.8" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="206.8" y="249.2" width="9.0" height="6.8" rx="1.5" />
+  <rect class="carril" x="219.2" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="219.2" y="251.2" width="9.0" height="4.8" rx="1.5" />
+  <rect class="carril" x="231.6" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="231.6" y="252.7" width="9.0" height="3.3" rx="1.5" />
+  <rect class="carril" x="244.0" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="244.0" y="250.7" width="9.0" height="5.3" rx="1.5" />
+  <text class="pico" x="211.3" y="222.0">0.23</text>
+  <line class="eje" x1="179.0" y1="256.0" x2="256.0" y2="256.0" />
+  <rect class="carril" x="278.0" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="278.0" y="250.6" width="9.0" height="5.4" rx="1.5" />
+  <rect class="carril" x="290.4" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="290.4" y="251.5" width="9.0" height="4.5" rx="1.5" />
+  <rect class="carril" x="302.8" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="302.8" y="250.1" width="9.0" height="5.9" rx="1.5" />
+  <rect class="carril" x="315.2" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="315.2" y="251.1" width="9.0" height="4.9" rx="1.5" />
+  <rect class="carril" x="327.6" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="327.6" y="251.9" width="9.0" height="4.1" rx="1.5" />
+  <rect class="carril" x="340.0" y="226.0" width="9.0" height="30.0" rx="1.5" />
+  <rect class="barra" x="340.0" y="250.8" width="9.0" height="5.2" rx="1.5" />
+  <text class="pico" x="307.3" y="222.0">0.20</text>
+  <line class="eje" x1="275.0" y1="256.0" x2="352.0" y2="256.0" />
 </svg>

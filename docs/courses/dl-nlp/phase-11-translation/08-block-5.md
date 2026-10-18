@@ -143,9 +143,11 @@ Line refs are into the `es/` file named in each heading.
 - **The closing bridge quotes 5.2's sentence** (431–433): `están` choosing between `llaves`, which
   it agrees with, and `del coche`, which separates them. **Free prose that follows 5.2's pick** —
   the same status as 4.5's one pair-dependent clause. 4 `<W>`, all here.
-- **`<Figure>`** (182–186) `escalado-softmax.svg`: Spanish `alt` and `caption`, **and Spanish set
-  into the SVG** — `las mismas seis puntuaciones en los cuatro casos`, `sin dividir`, `tras
-  dividir`. **New asset.** It is the block's only `<Figure>`.
+- **`<Figure>`** (192–196) `escalado-softmax.svg`: Spanish `alt` and `caption`, **and Spanish set
+  into the SVG** — `puntuaciones`, `sin dividir`, `reparto del softmax según el divisor que se
+  aplica antes:`, `no dividir`, `la raíz`, `el propio dk`, plus the Spanish `aria-label` (the
+  `dk = …` headers, `1`/`√dk`/`dk` and the peak weights stay). **New asset.** It is the block's
+  only `<Figure>`. The paragraph just above it (185–190) reads the figure for the student.
 - **`<CodeChallenge>` `ch-gradiente-softmax`** (58–146): Spanish `prompt` (60–71), 1
   `# tu código aquí` (78), 4 test `name`s, 7 Spanish assertion messages (90–125), Spanish `solution`
   comment (131) and `explanation` (133–146); identifier `gradiente_puntuaciones`.
