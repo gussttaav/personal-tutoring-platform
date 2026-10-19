@@ -1,0 +1,607 @@
+---
+slug: bancos-de-pruebas
+title: "Same exam, three scores: what a benchmark really measures"
+date: "2026-10-20"
+minutes: 22
+summary: "The same model, on the same 14,042 MMLU questions, scores 63.6% or 48.8% depending on how its answer is read. What's inside a fixed-answer benchmark, the three ways of reading what a model answers, what moves the score without touching the model (the order of the options, the format, having seen the exam, the number of questions) and what to ask before trusting the number on a model card."
+draft: false
+reading:
+  - kind: paper
+    title: "Measuring Massive Multitask Language Understanding"
+    authors: "Dan Hendrycks, Collin Burns, Steven Basart and others"
+    year: "2020"
+    venue: "ICLR 2021"
+    lang: en
+    url: "https://arxiv.org/abs/2009.03300"
+    note: "The paper that introduced MMLU: 57 subjects, four-option questions and the five-example evaluation still in use today, with the first results for GPT-3."
+  - kind: blog
+    title: "What's going on with the Open LLM Leaderboard?"
+    authors: "Clémentine Fourrier, Nathan Habib, Julien Launay and Thomas Wolf"
+    year: "2023"
+    venue: "Hugging Face"
+    lang: en
+    url: "https://huggingface.co/blog/open-llm-leaderboard-mmlu"
+    note: "The three implementations of MMLU, with each one's exact prompt, and the table of eight models in which both the scores and the ranking change."
+  - kind: paper
+    title: "Leveraging Large Language Models for Multiple Choice Question Answering"
+    authors: "Joshua Robinson, Christopher Michael Rytting and David Wingate"
+    year: "2022"
+    venue: "ICLR 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2210.12353"
+    note: "Why reading the letter only works if the model can tie each letter to its option, an ability that varies a lot between models, and how much it gains across 20 datasets when it can."
+  - kind: paper
+    title: "OLMES: A Standard for Language Model Evaluations"
+    authors: "Yuling Gu, Oyvind Tafjord, Bailey Kuehl and others"
+    year: "2024"
+    venue: "Findings of NAACL 2025"
+    lang: en
+    url: "https://arxiv.org/abs/2406.08446"
+    note: "An open standard so that two evaluations of the same model agree: it fixes each task's prompt, examples and normalisation, and scores every model both ways, with the options shown and without."
+  - kind: paper
+    title: "Large Language Models Are Not Robust Multiple Choice Selectors"
+    authors: "Chujie Zheng, Hao Zhou, Fandong Meng, Jie Zhou and Minlie Huang"
+    year: "2023"
+    venue: "ICLR 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2309.03882"
+    note: "Models' preference for certain letters: moving every correct answer to A or to D shifts LLaMA 30B's score by 27 points. It measures 20 models and proposes a cheap correction."
+  - kind: paper
+    title: "Quantifying Language Models' Sensitivity to Spurious Features in Prompt Design"
+    authors: "Melanie Sclar, Yejin Choi, Yulia Tsvetkov and Alane Suhr"
+    year: "2023"
+    venue: "ICLR 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2310.11324"
+    note: "Formatting changes that leave the meaning alone (separators, spacing, capitalisation) move a model's accuracy by up to 76 points. It suggests reporting the range across formats instead of a single figure."
+  - kind: paper
+    title: "Proving Test Set Contamination in Black Box Language Models"
+    authors: "Yonatan Oren, Nicole Meister, Niladri Chatterji, Faisal Ladhak and Tatsunori B. Hashimoto"
+    year: "2023"
+    venue: "arXiv:2310.17623"
+    lang: en
+    url: "https://arxiv.org/abs/2310.17623"
+    note: "How to show that a model has seen a benchmark without access to its training data: if it memorised the benchmark, it prefers the questions in the order they were published."
+  - kind: paper
+    title: "Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations"
+    authors: "Evan Miller"
+    year: "2024"
+    venue: "arXiv:2411.00640"
+    lang: en
+    url: "https://arxiv.org/abs/2411.00640"
+    note: "Statistics for evaluations: the margin on the difference between two models over the same questions, the margin when questions come in groups, and how many questions you need to see a given difference."
+  - kind: paper
+    title: "MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark"
+    authors: "Yubo Wang, Xueguang Ma, Ge Zhang and others"
+    year: "2024"
+    venue: "NeurIPS 2024 (Datasets and Benchmarks)"
+    lang: en
+    url: "https://arxiv.org/abs/2406.01574"
+    note: "MMLU's successor: ten options instead of four and questions that require reasoning. Models lose between 16 and 33 points, and the score depends less on the prompt."
+  - kind: paper
+    title: "LiveBench: A Challenging, Contamination-Limited LLM Benchmark"
+    authors: "Colin White, Samuel Dooley, Manley Roberts and others"
+    year: "2024"
+    venue: "ICLR 2025"
+    lang: en
+    url: "https://arxiv.org/abs/2406.19314"
+    note: "A benchmark refreshed every month with questions newer than the models' training data, whose answers are checked without judges. It's designed to resist contamination."
+areas: ["ia"]
+cover: "/blog/bancos-de-pruebas/tres-lecturas.en.svg"
+tags: ["llm", "evaluacion", "nlp"]
+aiImages: true
+---
+
+{/*
+  BLOG-18: Same exam, three scores: what a benchmark really measures. English translation of
+  content/blog/es/bancos-de-pruebas.mdx.
+
+  Same structure and same numbers as the Spanish file; see its header for where each one was
+  read, measured or computed. Terms: «banco de pruebas» → benchmark, «clasificación» →
+  leaderboard, «clave» → answer key, «regla de corrección» → scoring rule, «leer la respuesta» →
+  read the answer, «contaminación» → contamination, «cadena canaria» → canary string. The
+  measurement scripts keep their Spanish names (medir_mmlu.py, resultados/); their English
+  commented copy is in ejemplos/en/.
+
+  The MMLU question and its options are English in both versions: they are what the models
+  scored. British spelling, as in the other English posts.
+*/}
+
+In June 2023, Hugging Face's public leaderboard of open models gave LLaMA 65B a score of 48.8% on
+[MMLU](https://arxiv.org/abs/2009.03300) (*Massive Multitask Language Understanding*), a
+14,042-question multiple-choice exam covering 57 subjects. Hugging Face is the biggest platform for
+sharing language models, and LLaMA 65B was the large model Meta had released that February (the
+number is its size: 65 billion parameters). Meta's paper reported a good deal more, and the gap was
+too big to put down to chance. Hugging Face [looked into
+why](https://huggingface.co/blog/open-llm-leaderboard-mmlu) and found three programs that all
+claimed to grade the same exam. With the same model and the same questions, MMLU's original code
+gave 63.6%; Stanford's HELM benchmark (*Holistic Evaluation of Language Models*) gave 63.7%; and the
+*LM Evaluation Harness*, the language model (LM) evaluation tool from EleutherAI, an open research
+collective, which the leaderboard used, gave 48.8%.
+
+It wasn't only the score that changed. The ranking did too. Under the Harness, Falcon 40B, the model
+from the Technology Innovation Institute in Abu Dhabi, came out ahead of LLaMA 65B, at 52.7% against
+48.8%. Under the original code it came third, behind LLaMA 30B as well. And the weakest models,
+which barely cleared the 25% you get by answering at random under the original code, gained almost
+ten points under the Harness.
+
+<figure>
+  <img
+    src="/blog/bancos-de-pruebas/clasificacion-cambia.en.svg"
+    alt="Eight open models and their MMLU score under three different programs that grade the same exam, as reported by Hugging Face in June 2023, joined by lines. With the original code, which looks at the most likely letter, LLaMA 65B scores 63.6% and ranks first; Falcon 40B scores 55.8% and ranks third. With HELM, which looks at what the model writes, almost the same: 63.7% and 57.1%. With the LM Evaluation Harness, which looks at the probability of the whole option, LLaMA 65B drops to 48.8% and Falcon 40B, at 52.7%, takes first place. The weakest models, close to the 25% of chance with the original code, climb to 33 or 35% with the Harness."
+    width="740"
+    height="366"
+  />
+  <figcaption>
+    Eight models, the same exam and three programs that grade it, as reported by Hugging Face in June
+    2023. Every model's score changes, and so does who comes first.
+  </figcaption>
+</figure>
+
+A multiple-choice exam looks like the one case where evaluating a language model is a solved
+problem. The hard part of evaluating what a model writes is deciding whether an answer is right,
+because there's almost never a single correct answer, and that calls for other judges: a program
+that checks, a person, another model. In a multiple-choice exam, though, every question has a key, a
+letter, and grading means comparing letters. That's why fixed-answer **benchmarks** (fixed
+collections of questions used to compare models) are the most common way to compare models, and why
+their figures head the model card of every new release.
+
+Even so, the score depends on four decisions that aren't published alongside it: how the answer is
+read, how the question is asked, which questions are used (and whether the model had already seen
+them) and how many there are. Any one of them moves the result by more than the gap between the
+models being compared. This article goes through them one at a time, with real MMLU questions and
+two small models measured on a laptop, and ends with what to ask before trusting the number on a
+model card. It's the second in a series on how language models are evaluated; the
+[first](/blog/evaluar-texto-generado) introduces the different judges, but you don't need to have
+read it.
+
+## What's inside a benchmark
+
+A fixed-answer benchmark has four parts. The **questions**. The **answer key**, the correct answer
+to each one. A **scoring rule**, which says how the model's answer is extracted and when it matches
+the key. And an **averaging rule**, which turns thousands of hits and misses into one number. The
+first two are the exam, and they get published. The last two are the measuring instrument, and they
+almost never appear next to the score.
+
+[MMLU](https://arxiv.org/abs/2009.03300) is the textbook example. A group led by Dan Hendrycks at
+the University of California, Berkeley published it in 2020: 14,042 test questions with four options
+each, spread over 57 subjects ranging from abstract algebra to virology, with between 100 and 1,534
+questions per subject. Even the average comes in two versions: over all 14,042 questions, where
+professional law, with its 1,534, weighs fifteen times as much as abstract algebra, or over the 57
+subjects, where they all weigh the same. Each subject also comes with five solved questions that
+don't count towards the score and serve as examples. Here's how the model sees a question, with the
+five examples in front of it:
+
+```text
+The following are multiple choice questions (with answers) about high school geography.
+
+The rate of natural increase of a population is found by subtracting the
+A. crude death rate from the crude birth date.
+B. crude birth rate from the crude death rate.
+C. doubling time from the crude birth rate.
+D. fertility rate from the crude death rate.
+Answer: A
+
+[… four more solved questions in the same format …]
+
+What family do most European languages belong to?
+A. Ural-Altaic
+B. Basque
+C. Indo-European
+D. Phoenician
+Answer:
+```
+
+The five solved examples don't teach the subject; they teach the format. This is [in-context
+learning](/cursos/llm-agents/aprendizaje-en-contexto): the model sees the pattern of question,
+options, `Answer:` and a letter five times, and carries it on. That's why MMLU is said to be
+evaluated with five examples (*5-shot*); without them it would be *0-shot*.
+
+The text ends at `Answer:`, and that's where what the exam fixes comes to an end. The model hasn't
+answered anything yet, because a language model doesn't answer: it continues text. For the next
+position it gives a probability to every piece of its vocabulary, the **tokens** (words, pieces of
+words or single symbols). Reading the answer means deciding what to do with that list of
+probabilities, and there's more than one way to do it.
+
+To see this with numbers anyone can reproduce, I measured two small open models:
+[SmolLM2-360M](https://huggingface.co/HuggingFaceTB/SmolLM2-360M), from Hugging Face, with 360
+million parameters and a vocabulary of 49,152 tokens, and
+[Qwen2.5-0.5B](https://huggingface.co/Qwen/Qwen2.5-0.5B), from the Chinese company Alibaba, with 500
+million parameters and 151,665 tokens. They're base models, not tuned for chat, which is what MMLU
+had in mind. The measurements use 570 MMLU questions, ten from each subject picked at random with a
+fixed seed, always the same ones and always with the same five examples. [The
+program](/blog/bancos-de-pruebas/ejemplos/en/medir_mmlu.py) downloads the models and the questions,
+takes every measurement in the article and saves every probability, so anyone can repeat or check
+them.
+
+## Three ways to read the answer
+
+The three programs Hugging Face compared didn't differ in the exam but in what they did with the
+model's probabilities after `Answer:`. With the same model, the same prompt and the same question,
+the three readings can give three different answers, and the figure shows it with the geography
+question from the example and SmolLM2.
+
+<figure>
+  <img
+    src="/blog/bancos-de-pruebas/tres-lecturas.en.svg"
+    alt="An MMLU question from high school geography: what family do most European languages belong to? Options: A, Ural-Altaic; B, Basque; C, Indo-European, the key; D, Phoenician. Beside it, three ways of reading SmolLM2-360M's answer, with the probability of each option relative to the other three. Most likely letter: A 25.0%, B 27.4%, C 22.7%, D 24.9%; it picks B and is wrong. The whole option, with the options shown: A 12.2%, B 24.1%, C 23.2%, D 40.6%; it picks D and is wrong. Without showing the options: A < 0.1%, B 0.4%, C 99.6%, D < 0.1%; it picks C and is right. The model knows the answer but can't give it as a letter."
+    width="740"
+    height="334"
+  />
+  <figcaption>
+    One question, one model and three ways of reading its answer. With the options shown, SmolLM2
+    spreads its probability almost evenly over the four letters; without them, it gives
+    "Indo-European" 99.6%.
+  </figcaption>
+</figure>
+
+### The most likely letter
+
+MMLU's original code looks at just four of those probabilities, the ones for the letters A, B, C and
+D, and takes the highest. The model never writes anything: one pass through the model per question
+is enough, and you always get one of the four options.
+
+Both models put almost all of the next token's probability on those four letters, 99.4% on average
+for SmolLM2 and 99.8% for Qwen2.5: the five examples have taught them that a letter comes after
+`Answer:`. But saying a letter doesn't mean knowing which one. On the geography question, SmolLM2
+gives the four letters between 23% and 27% each, and over the whole exam it scores 24.7%, the same
+as answering at random: it picks A on 245 of the 570 questions and B on 216, whatever the question.
+Qwen2.5, on the other hand, scores 52.3%, its best score across all the readings in this article, and
+on the geography question it gives C 92%.
+
+Even this reading has a trap. A token includes the space in front of it, and in `Answer: A` the
+token after the colon isn't "A" but " A", with the space (how text is split into tokens is covered in
+the lesson on [BPE](/cursos/llm-agents/bpe-de-verdad), *byte pair encoding*, the algorithm that
+builds models' vocabularies). A program that compares the probabilities of "A", "B", "C" and "D"
+without the space is looking at tokens the text never puts there, and the score changes. Qwen2.5
+drops from the 52.3% it gets when the letter is read properly, with the space, to 48.9%: 19 fewer
+questions out of 570, a small difference but bigger than its margin. SmolLM2 goes from its 24.7% to
+27.2%, which is noise. The fact that the mistake costs so little is exactly what makes it dangerous:
+the figure looks reasonable, and nobody checks it.
+
+### The most likely whole option
+
+The 2023 Harness did something else: it worked out the probability of each complete option as a
+continuation of the text, " C. Indo-European" in full, and took the most likely one. The probability
+of a sequence is the product of its tokens' probabilities, each less than 1, so a long option starts
+at a disadvantage just for being long. That's why it's usually divided by the number of tokens, or
+of characters. Even so, that probability also measures how ordinary the phrase is, not just whether
+it's the right answer.
+
+There's a variant that doesn't show the options. The prompt is just the question and `Answer:`, and
+each option is scored as a possible continuation, like a fill-in-the-blank exercise. It's called the
+*cloze* formulation, after that kind of exercise, and it's the classic way to evaluate a model that
+can't answer with a letter.
+
+With the options shown, SmolLM2 stays at chance: 24.0%, or 24.9% when dividing by tokens. Without
+them, and dividing by characters, it climbs to 38.2%, and on the example question it gives
+"Indo-European" 99.6% of the probability shared by the four. The model knows more than the letter
+reading lets on; what it can't do is tie each answer to its letter. Qwen2.5 goes the opposite way:
+from 52.3% when the letter is read, it drops to 47.2% with the whole option, to 39.6% dividing by
+tokens and to 35.4% without the options.
+
+### What the model writes
+
+HELM let the model generate text and compared it with the correct letter. If the most likely token
+isn't a letter but a line break or a "The", the answer counts as wrong even if the correct letter
+had more probability than the other three. With base models and five examples in front of them this
+hardly happens: for both models the most likely token was a letter on all 570 questions, and this
+reading agrees exactly with the most likely letter.
+
+Even so, it's the most widely used reading today, for two reasons. Many models can only be used
+through an API (*application programming interface*, the interface one program uses to call
+another's service) that doesn't return probabilities, or only those of a few tokens. And chat and
+reasoning models don't answer with a letter: they explain, reason and finally give an answer that
+has to be found in the text, usually by asking for a fixed format such as "Answer: B" and searching
+for it with a pattern. An answer in any other format counts as wrong, so this reading also measures
+whether the model sticks to the format.
+
+### Which reading is fair
+
+<figure>
+  <img
+    src="/blog/bancos-de-pruebas/lecturas-por-modelo.en.svg"
+    alt="The accuracy of two small models on the same 570 MMLU questions, reading their answer in five ways, each with its margin of error. A dashed line marks the 25% of chance. SmolLM2-360M: most likely letter, 24.7%; what it writes, 24.7%; the whole option, 24.0%; the whole option per token, 24.9%; without showing the options and per character, 38.2%. Qwen2.5-0.5B: 52.3%, 52.3%, 47.2%, 39.6% and 35.4%."
+    width="740"
+    height="314"
+  />
+  <figcaption>
+    Both models, read in five ways on the same 570 questions. Reading the letter, Qwen2.5 beats
+    SmolLM2 by 27.5 points; without showing the options, you can't tell them apart.
+  </figcaption>
+</figure>
+
+The two models respond in opposite ways. Qwen2.5 does better the more the reading looks like a
+multiple-choice exam: 52.3% when the letter is read and 35.4% without the options, almost 17 points
+less. SmolLM2 only beats chance when it doesn't see the options. Reading the letter, Qwen2.5 is 27.5
+points ahead on the same questions; without the options, SmolLM2 even comes out ahead, by 2.8, a
+difference that fits inside its ±3.4 margin. Depending on how the answer is read, Qwen2.5 is either
+far better than SmolLM2 or indistinguishable from it. That's what happened to LLaMA 65B and Falcon
+40B in Hugging Face's table, on a small scale and with two models anyone can run.
+
+Joshua Robinson and colleagues gave it a name in 2022: reading the letter only works if the model
+can tie each option to its symbol, what they call [*multiple choice symbol
+binding*](https://arxiv.org/abs/2210.12353), and that ability varies a lot from one model to
+another. Models that have it do much better when the letter is read, because they see the four
+options at once and can compare them. Models that don't only give a signal without the options.
+[OLMES](https://arxiv.org/abs/2406.08446) (*Open Language Model Evaluation Standard*), the
+evaluation standard proposed in 2024 by the Allen Institute for AI (AI2), a non-profit research
+institute in Seattle, settles the dilemma by evaluating every model both ways and keeping the better
+score. The differences aren't small. Llama 3 70B, Meta's 2024 model, gets 93.7% on ARC-Challenge
+(*AI2 Reasoning Challenge*), the institute's own benchmark of school science questions, when the
+letter is read, and 69.0% without the options. And OLMo 7B (*Open Language Model*), one of the
+institute's open models, answered at random with letters during the first part of its training: the
+ability appeared at around 400 billion tokens.
+
+That explains the Hugging Face table from the beginning. The 2023 Harness read the whole option,
+which gives some signal to models that can't tie answers to letters, and that's why the weakest ones
+rose from 25% to over 33%. LLaMA 65B, which can, was judged on how likely each full phrase was, and
+lost fifteen points. No reading is correct in the abstract: each measures a slightly different
+ability, and the minimum requirement is that it's the same for every model being compared.
+
+## How the question is asked
+
+Reading the answer is half the instrument. The other half is the text put in front of the model,
+which moves the score even though nothing about what's being asked changes.
+
+The simplest example is the order of the options. The same four options can be presented in any
+order, and the correct answer should stay the same. To check, I ran the 570 questions four more
+times, rotating the options so that the correct answer always sat at A, then always at B, and so on
+to D, and read the most likely letter.
+
+<figure>
+  <img
+    src="/blog/bancos-de-pruebas/posicion-de-la-clave.en.svg"
+    alt="The same 570 questions, with the options rotated so that the correct answer always sits at the same letter, reading the most likely letter. SmolLM2-360M scores 44.2% with the correct answer at A, 36.1% at B, 8.4% at C and 13.0% at D, and 24.7% with the options in their original order; Qwen2.5-0.5B scores 46.0% with the correct answer at A, 50.2% at B, 54.6% at C and 46.3% at D, and 52.3% with the options in their original order."
+    width="740"
+    height="286"
+  />
+  <figcaption>
+    The same 570 questions, with the correct answer moved to each of the four letters. SmolLM2 gets
+    it right when the key lands on the letter it was going to say anyway; Qwen2.5 moves by 8.6 points.
+  </figcaption>
+</figure>
+
+SmolLM2 scores 44.2% when the correct answer is at A and 8.4% when it's at C. It doesn't know more
+with A: it says A or B on four questions out of five, and gets them right when the key happens to
+land where it was going to answer anyway. Qwen2.5, which does tie letters to options, depends much
+less on the order: it scores between 46.0% and 54.6% depending on where the key is, with a slight
+preference for C, which it picks in 29.6% of its answers. Even so, 8.6 points between its best
+letter and its worst is more than the margin. [Chujie Zheng and
+colleagues](https://arxiv.org/abs/2309.03882) measured this bias across 20 models in 2023. With
+every correct answer at A, LLaMA 30B scored 68.2% on MMLU; with every one at D, 41.2%: a 27-point
+gap on the same questions. The main cause, by their analysis, is that the model gives certain
+letters more probability from the start, whatever the options say. The fix is cheap: shuffle the
+options several times and average, or estimate that preference and subtract it.
+
+Formatting matters even more. [Melanie Sclar and colleagues](https://arxiv.org/abs/2310.11324)
+(2023) changed details that leave the prompt's meaning alone, such as the separator between question
+and answer, spacing or capitalisation, and the accuracy of LLaMA-2-13B, a Meta model, on a single
+task varied by as much as 76 points from one format to another. Another study, by [Moran Mizrahi and
+colleagues](https://arxiv.org/abs/2401.00595) (2024), evaluated 20 models on 39 tasks with hundreds
+of different wordings of the same instructions, and the ranking of the models changed with the
+wording: on one task, the same model came first with one wording and ninth with another. That's why
+a standard like OLMES fixes each task's exact prompt and examples, and why it's worth reporting the
+score across several prompts, or at the very least with the same one for every model.
+
+## If the model has already seen the exam
+
+Benchmarks are public and live on the web, and models are trained on the web. MMLU's questions sit
+in the paper's repository, and in copies, translations and forums where someone asks about one of
+them. If the test questions, or their answers, made it into the training data, part of the score
+measures memory, and that's **contamination**.
+
+Whoever has the training data can look for it. In 2020, the authors of GPT-3, OpenAI's language
+model from that year, searched for runs of thirteen consecutive words that appeared both in the
+benchmarks and in the data they were about to train on, and removed the matches. A programming bug
+left some of them in, and [they explained in their paper](https://arxiv.org/abs/2005.14165) that
+retraining the model was too expensive, so they also scored each benchmark without the suspect
+questions. Searching for exact runs has a further limit: a 2023 study on [rephrased
+questions](https://arxiv.org/abs/2311.04850) trained a 13-billion-parameter model on rewritten or
+translated versions of the questions from MMLU and other exams, and the model matched GPT-4 without
+the match search catching anything.
+
+Whoever doesn't have the data, which is nearly everyone, can only question the model. There are two
+ideas. The first looks at **order**. A benchmark's questions are published in a particular order,
+but any other order would be just as valid, so a model that hasn't seen them has no reason to prefer
+one. A model that memorised them does: it gives more probability to the published order than to
+shuffled ones. [The test by Oren and colleagues](https://arxiv.org/abs/2310.17623) (2023) compares
+the two probabilities, and it works on models from 1.4 billion parameters up with around a thousand
+examples. Applied to five public models, it found little evidence of widespread contamination. The
+second idea looks at **unlikely words**: text the model hasn't seen tends to contain a few words it
+gives very low probability to, and text it saw in training hardly has any. [Min-K%
+Prob](https://arxiv.org/abs/2310.16789) (2023) scores a text by the average probability of its
+lowest-probability tokens. Neither is conclusive for a single question; across hundreds, they give a
+signal.
+
+The most direct check is to write new questions. GSM8K (*Grade School Math 8K*) is a widely used
+benchmark of about 8,500 primary-school maths problems. In 2024 the data company Scale AI wrote
+[GSM1k](https://arxiv.org/abs/2405.00332), 1,205 new problems in its style and at its difficulty,
+and didn't publish them. Some model families lost up to 8 points going from one to the other.
+
+There are three habits for preventing it. The first is to mark the files:
+[BIG-bench](https://github.com/google/BIG-bench) (*Beyond the Imitation Game*), a collaborative 2022
+benchmark with more than two hundred tasks, puts a **canary string** in every file, a unique
+identifier that anyone preparing training data can search for to remove it. The second is to keep
+the test questions unpublished and grade on a server. The third is to use questions newer than the
+models' training data: [LiveBench](https://arxiv.org/abs/2406.19314) (2024) is refreshed every month
+with problems from recent maths competitions, papers and news, and all of its answers are checked
+without judges. An evaluation of your own, built from questions that have never been published, is
+safe by construction, until the day someone pushes it to a public repository.
+
+## How many questions you need
+
+A score over $n$ questions is an estimate: the share of correct answers the model would get on all
+questions like these, measured with a sample. If it gets a share $p$ right, the 95% margin of error
+is roughly
+
+$$
+\pm 1.96 \sqrt{\frac{p\,(1 - p)}{n}}.
+$$
+
+With the 570 questions in these measurements, every score has a margin of about ±4 points: ±3.5 for
+25% and ±4.0 for 40%. The 13.5 points SmolLM2 gains when it doesn't see the options are a real
+difference; the 0.7 separating the letter reading from the whole-option reading aren't. Comparing
+the two models on the same questions, the 27.5 points Qwen2.5 gains over SmolLM2 when the letter is
+read have a margin of ±5.5, and the 2.8 SmolLM2 gains without the options, a margin of ±3.4.
+
+### Comparing on the same questions
+
+What usually matters isn't one score but the difference between two, and there the margin depends on
+how the comparison is made. A small example shows it. A company that makes invoicing software, which
+we'll call Albarán, has an assistant that answers its support team, and it tests two new versions on
+200 real closed questions: each is answered with a yes or a no and a date, and a program checks them
+against the key. Version 1 gets 70% right, 140 questions, and version 2 gets 74%, 148.
+
+If the two versions had each answered 200 different questions, the margin on the difference would be
+about ±8.8 points, and a 4-point lead would tell you nothing. But they answered the same ones, and
+then what counts is how many questions they disagree on. For each question, write down $+1$ if only
+version 2 gets it right, $-1$ if only version 1 does, and $0$ if both get it right or both get it
+wrong. The lead is the average of those numbers, and its margin comes from the same idea as before,
+applied to those 200 numbers. The questions where the two agree contribute zeros and add no noise:
+each question's difficulty affects both versions equally and cancels out.
+
+<figure>
+  <img
+    src="/blog/bancos-de-pruebas/comparacion-pareada.en.svg"
+    alt="A rising curve. Horizontally, on how many of the 200 questions two versions of the assistant disagree, from 8 to 112. Vertically, the 95% margin of error of the difference between them, in points. Version 1 gets 70% right and version 2, 74%. If they disagree on 12 questions, the margin is ±3.3 points; on 20, ±4.3. Up to 16 disagreements the margin stays below the 4-point lead and the difference is real. At 81 disagreements, what you'd expect if the two versions failed independently, the margin is ±8.8, the same as if they had answered different questions."
+    width="700"
+    height="294"
+  />
+  <figcaption>
+    The margin on a 4-point lead over the same 200 questions, depending on how many the two versions
+    disagree on. If version 2 changes only a few answers, the lead is real; if it changes many, it's
+    noise.
+  </figcaption>
+</figure>
+
+If version 2 fixes 10 answers and breaks 2, the two versions disagree on 12 questions and the margin
+is ±3.4 points: the lead is real. If it fixes 14 and breaks 6, the lead is still 8 questions, but
+they disagree on 20 and the margin rises to ±4.4: you can no longer tell. Up to 16 disagreements,
+the 4 points beat their margin. If the two versions failed independently, without sharing which
+questions they find hard, they'd disagree on about 81 and the margin would be back to ±8.8. Evan
+Miller works this out, along with the rest of this section, in [*Adding Error Bars to
+Evals*](https://arxiv.org/abs/2411.00640) (2024), and recommends always comparing on the same
+questions when you can.
+
+### Questions that come in groups
+
+The formula assumes every question is independent of the others, and that isn't always true. In a
+reading-comprehension benchmark several questions share the same passage, and a model that
+understands the passage tends to get all of them right, while one that doesn't tends to get all of
+them wrong. In practice there's less information than it seems, and the margin has to be worked out
+by group. Miller finds that the grouped margin can be more than three times the naive one: 3.05
+times on DROP (*Discrete Reasoning Over Paragraphs*), a benchmark of questions about Wikipedia
+paragraphs.
+
+### Answers that change from one run to the next
+
+If the model generates its answer by sampling among the most likely tokens, the same question can
+get a different answer in two runs, and the score moves for that reason too. There are two remedies:
+answer each question several times and average, or, when you have them, use the probabilities
+instead of sampling, which removes that part of the noise. What Miller advises against is lowering
+the sampling temperature just so the score moves less, because then you're measuring a different
+model, one nobody uses that way.
+
+### How many questions
+
+All of this can be turned around for planning: decide what difference you want to be able to see and
+work out how many questions it takes. Under the assumptions of a typical example of Miller's, seeing
+a 3-point difference between two models with a reasonable probability (80%) takes about a thousand
+questions, hence his recommendation that a new benchmark should have at least that many.
+
+## When the exam runs out of road
+
+A score has a floor and a ceiling, and both sit further from 0 and 100 than they seem.
+
+The floor is chance. With four options, answering at random gets you 25%, and always answering D
+gets you 26.9% on MMLU, because D is the key for 26.9% of its questions. A score of 30% isn't "30%
+knowledge": it's barely more than nothing. That's why the 2024 version of Hugging Face's
+leaderboard, when it changed exams, [rescales the
+scores](https://huggingface.co/docs/leaderboards/en/open_llm_leaderboard/normalization) so that
+chance is worth 0 and a perfect score 100: on a four-option exam, a raw 60% becomes 46.7.
+
+The ceiling is the exam's own mistakes. A 2024 review, [*Are We Done with
+MMLU?*](https://arxiv.org/abs/2406.04127), estimated that 6.5% of MMLU's questions have some error
+(a wrong key, an ambiguous question, more than one correct option), and that in virology the figure
+is 57%. Not even the solved examples are spared: the first one in the geography prompt above says
+"crude birth date" where it should say "crude birth rate". A perfect model wouldn't reach 100%, and
+near the ceiling part of what separates two models is which one agrees more with the key's mistakes.
+In June 2024, Anthropic and OpenAI published the same 88.7% for their flagship models, Claude 3.5
+Sonnet and GPT-4o.
+
+When a benchmark saturates, a harder one replaces it. [MMLU-Pro](https://arxiv.org/abs/2406.01574)
+(2024) goes from four options to ten, which brings chance down to 10%, and swaps recall questions
+for questions that require reasoning: models lose between 16 and 33 points going from MMLU to
+MMLU-Pro. Along the way, the score depends less on the prompt: across 24 different prompt styles,
+the variation drops from 4 or 5 points to 2. Hugging Face's leaderboard made that switch in 2024,
+when it replaced its six exams, MMLU among them, with six harder ones, MMLU-Pro among them, and it
+explained why: the best models were close to human level, some had probably been trained on the
+questions, and some exams contained errors.
+
+## How to read the number on a model card
+
+In December 2023 Google launched Gemini Ultra, its most capable model, with 90.0% on MMLU, above the
+89.8% estimated for a human expert. The table in the [technical
+report](https://arxiv.org/abs/2312.11805) put it next to GPT-4's 86.4%. The two figures came from
+different procedures. GPT-4's 86.4% was the one OpenAI had published, with five examples and a
+single answer. Gemini's 90.0% used what the report calls CoT@32: the model reasons before answering
+(*chain of thought*), does so 32 times and, if enough of the answers agree, takes the majority one;
+if not, it answers directly without reasoning. In the appendix, the same report compares the two
+models under the same procedure, measuring GPT-4 through OpenAI's API. With a single answer, picking
+the most likely token at every step, Gemini Ultra scored 84.0% and GPT-4 84.2%. With the 32-answer
+procedure for both, 90.0% and 87.3%. Same exam, same two models, and who wins depends on how the
+question is asked.
+
+Nothing in the table is false, and the procedure is written into it. But the figure that travels is
+the headline one, and what you have to do with any benchmark score is ask how it was obtained. The
+questions are always the same.
+
+- **Which program, and which version?** The 2023 LM Evaluation Harness and today's don't give the
+same results.
+- **How was the answer read?** The most likely letter, the whole option or the generated text.
+- **With how many examples, which prompt, and with or without reasoning?**
+- **One answer or several?** And if several, how they're combined.
+- **On which questions?** The whole exam or part of it, and how it was averaged.
+- **With what margin?** And if it's compared with another model, whether it was on the same
+questions.
+- **Could the model have seen the exam?** If nobody checked, nobody knows.
+
+Two figures can only be compared if they come from the same program with the same configuration. The
+ones on a model card were measured by whoever built the model, with their program and their
+configuration, and the ones on another card by another team with theirs.
+
+## Takeaways
+
+If you take away one thing, make it this: **a benchmark score is a measurement, and a measurement
+depends on the instrument.** The exam fixes the questions and the key, but not how the question is
+asked, how the answer is read, which questions count or how many there are, and any of those four
+decisions moves the score by more than the gap between two models.
+
+| before trusting the score, ask… | why |
+|---|---|
+| how the answer was read | LLaMA 65B scores 63.6% or 48.8% on MMLU; Qwen2.5 beats SmolLM2 by 27.5 points reading the letter, and by nothing without the options |
+| which prompt, how many examples and in what order | moving the correct answer from A to D shifts LLaMA 30B's score by 27 points; a change of format, by up to 76 |
+| whether the model could have seen the questions | some families lose up to 8 points on new problems (GSM1k) |
+| on how many questions, and whether the comparison used the same ones | on 200 questions, 4 points can be noise or a real difference |
+| where the floor and the ceiling are | with four options, chance gives 25%; 6.5% of MMLU's questions have errors |
+
+And if you take away anything more, make it practical.
+
+**Fix the instrument before comparing.** The same program, the same version, the same prompt, the
+same examples and the same way of reading the answer for every model, and write it down next to the
+score.
+
+**Read the answer in a way the model can give.** A model that can't tie answers to letters scores
+the same as chance if you read the letter, and one that can loses points if you read the whole
+phrase. If you're comparing very different models, measure both ways, as OLMES does, and say which
+one you used.
+
+**Shuffle the options.** If the score changes when you move the correct answer, you're measuring the
+model's taste for a letter.
+
+**Compare on the same questions and put a margin on the difference.** What matters is how many
+questions the two models disagree on.
+
+**Be wary of an exam everyone passes.** Near the ceiling, the score measures the key's mistakes;
+near the floor, little more than chance.
