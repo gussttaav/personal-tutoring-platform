@@ -1468,12 +1468,12 @@
         "mapAria": "Self-attention map: pick a position to see which others it pulls from",
         "empty": "Type something and the grid appears.",
         "causalFirst": "With the mask, position 1 has nothing behind it: <tok>{token}</tok> takes {self} on itself and {blanked} {blanked, plural, one {cell is blanked out} other {cells are blanked out}} to its right. The row sums to {sum} like all the others: what is blanked out is shared among what is left, because the mask goes in before the softmax.",
-        "causalOther": "With the mask, position {pos}, <tok>{token}</tok>, can only look from 1 to {pos}. Its highest weight —{peak}— goes to <tgt>{target}</tgt>, and the row still sums to {sum} with {blanked} {blanked, plural, one {cell blanked out} other {cells blanked out}}.",
-        "projected": "Position {pos}, <tok>{token}</tok>, gives its highest weight —{peak}— to <tgt>{target}</tgt>, and {self} to itself. The whole row sums to {sum}.",
+        "causalOther": "With the mask, position {pos}, <tok>{token}</tok>, can only look from 1 to {pos}. What it reads comes mostly from <tgt>{target}</tgt>, which contributes {peak}, and the row still sums to {sum} with {blanked} {blanked, plural, one {cell blanked out} other {cells blanked out}}.",
+        "projected": "What position {pos}, <tok>{token}</tok>, reads comes mostly from <tgt>{target}</tgt>, which contributes {peak}; the position itself contributes {self}. The whole row sums to {sum}.",
         "unprojected": "Unprojected, position {pos}, <tok>{token}</tok>, keeps its own highest weight: {self} on itself, against {best} from the best of the rest. And it happens in all {rows} rows at once: the diagonal always wins. A layer like that hands back what came in with a tint of everything else, and has not one parameter with which to decide otherwise.",
-        "footnote": "The vectors ({dModel} coordinates, {lexicon} words in the lexicon) and the projections —{dk} coordinates to compare with, {dv} to mix with— I set by hand for the course; there is no trained model in here.",
+        "footnote": "The vectors ({dModel} coordinates, {lexicon} words in the lexicon) and the projections, with {dk} coordinates to compare and {dv} to mix, I set by hand for the course; there is no trained model in here.",
         "footnoteMask": " The dashed cells are the ones the mask blanks out.",
-        "footnoteUnknown": " Outside the lexicon: {words} — its vector comes from a hash of its own letters, so that row says nothing.",
+        "footnoteUnknown": " Outside the lexicon: {words}. Its vector comes from a hash of its own letters, so that row says nothing.",
         "footnoteTruncated": " The sentence was cut at {max} tokens."
       },
       "multi-head-view": {
