@@ -59,11 +59,12 @@ const SHORT = [
 ] as const;
 
 /**
- * Lesson 2's three sentences plus this lesson's own, which is the one its motivation
- * argues from: two verbs whose subjects sit on opposite sides of a relative clause, so
- * «duerme» has to reach «ratón» and «persiguen» has to reach «gatos». No single rule
- * separates them — the verb→noun head ties the two nouns exactly, and the agreement head
- * gives both verbs' rows nearly the same shape — which is what the panel shows.
+ * Lesson 2's three sentences plus this lesson's own, the widget's default and the one its
+ * motivation argues from. «duerme» needs a word that is a noun AND singular: the verb→noun
+ * head ties «ratón» with «gatos», the agreement head prefers three singulars that are not
+ * the subject, and only the single head (the rules summed) answers «ratón». «persiguen»
+ * needs two words that differ in number, its subject «gatos» and its object «ratón»: the
+ * single head keeps «gatos» and nearly drops «ratón», which the verb→noun head still reads.
  */
 export const MH_PRESETS = [...PRESETS, "el ratón pequeño que persiguen los gatos duerme"] as const;
 

@@ -1502,12 +1502,12 @@
         "singleHeadNote": "Las cuatro reglas sumadas antes de un único softmax: una fila por posición y nada más.",
         "headNote": "Cabeza {n} de {total}: {name}.",
         "empty": "Escribe algo y aparecerán las rejillas.",
-        "verdictFlat": "reparte por igual entre todas — esta regla no dice nada de esta posición",
+        "verdictFlat": "reparte por igual entre todas: esta regla no dice nada de esta posición",
         "verdictTie": "empate entre {names}, a {weight} cada una",
         "verdictPeak": "{names}, con {weight}",
         "panelIntro": "A qué tira la posición {pos}, <tok>{token}</tok>, en cada mapa:",
-        "footnote": "Las {h} cabezas son las {h} reglas del léxico ({lexicon} palabras) de la lección anterior, una por cabeza, y las he escrito yo a mano para el curso. Por eso aquí cada cabeza compara en {dk} coordenada: es lo que hace legible una regla, no lo que usa una capa de verdad, que reparte entre sus cabezas la anchura del modelo.",
-        "footnoteUnknown": " Fuera del léxico: {words} — su vector sale de un hash de sus letras, así que esa fila no dice nada.",
+        "footnote": "Las {h} cabezas son las {h} reglas del léxico ({lexicon} palabras) de la lección sobre la auto-atención, una por cabeza, y las he escrito yo a mano para el curso. Por eso aquí cada cabeza compara en {dk} coordenada: es lo que hace legible una regla, no lo que usa una capa de verdad, que reparte entre sus cabezas la anchura del modelo.",
+        "footnoteUnknown": " Fuera del léxico: {words}. Su vector sale de un hash de sus letras, así que esa fila no dice nada.",
         "footnoteTruncated": " La frase se ha cortado en {max} tokens."
       },
       "positional-encoding": {

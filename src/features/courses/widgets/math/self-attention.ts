@@ -125,7 +125,7 @@ export const LEXICON_WORDS: string[] = Object.keys(LEXICON).sort((a, b) =>
 );
 
 /** Sentences that stay inside the lexicon. The first is the heatmap's default; the
- *  multi-head view offers all of them as buttons (MH_PRESETS), and the tests sweep them. */
+ *  multi-head view's tests sweep all of them (MH_PRESETS). */
 export const PRESETS = [
   "las llaves del coche están ahí",
   "el gato duerme y los perros comen",

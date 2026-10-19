@@ -1502,12 +1502,12 @@
         "singleHeadNote": "The four rules added together before one softmax: one row per position and nothing more.",
         "headNote": "Head {n} of {total}: {name}.",
         "empty": "Type something and the grids appear.",
-        "verdictFlat": "shares evenly among them all — this rule says nothing about this position",
+        "verdictFlat": "shares evenly among them all: this rule says nothing about this position",
         "verdictTie": "a tie between {names}, at {weight} each",
         "verdictPeak": "{names}, with {weight}",
         "panelIntro": "What position {pos}, <tok>{token}</tok>, pulls towards in each map:",
-        "footnote": "The {h} heads are the {h} rules of the lexicon ({lexicon} words) from the previous lesson, one per head, and I wrote them by hand for the course. That is why each head here compares on {dk} coordinate: it is what makes a rule readable, not what a real layer uses, which splits the model's width among its heads.",
-        "footnoteUnknown": " Outside the lexicon: {words} — its vector comes from a hash of its own letters, so that row says nothing.",
+        "footnote": "The {h} heads are the {h} rules of the lexicon ({lexicon} words) from the lesson on self-attention, one per head, and I wrote them by hand for the course. That is why each head here compares on {dk} coordinate: it is what makes a rule readable, not what a real layer uses, which splits the model's width among its heads.",
+        "footnoteUnknown": " Outside the lexicon: {words}. Its vector comes from a hash of its own letters, so that row says nothing.",
         "footnoteTruncated": " The sentence was cut at {max} tokens."
       },
       "positional-encoding": {
