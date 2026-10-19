@@ -25,7 +25,7 @@ lesson file.
 | 5.1 | `adios-recurrencia` | **transpose** | None. The one example is the permutation pair `el perro muerde al cartero` / `al cartero muerde el perro` (195), whose whole point is that the two are the same multiset — a property `the dog bites the postman` / `the postman bites the dog` has exactly. All four quiz items are arithmetic or architecture |
 | 5.2 | `self-attention` | **adapt** | The demonstration sentence, in **five places** (51, 193–195, 202, 206, 290–291) and in the widget's own lexicon. Prose quotes the token count — "las seis filas" (201) — which moves with the replacement |
 | 5.3 | `scaled-dot-product` | **transpose** | Its closing bridge (431–433) names 5.2's sentence and three of its tokens, as free prose that follows whatever 5.2 picked. Carries the block's **only** `<Figure>`, and it has Spanish set into the SVG |
-| 5.4 | `multi-head` | **adapt** | **Two** corpora, not one: its own `el ratón pequeño que persiguen los gatos duerme` (201–217) **and** 5.2's sentence re-read (275–279). Six weights quoted off the widget. The four head names are Spanish grammar |
+| 5.4 | `multi-head` | **adapt** | Its own `el ratón pequeño que persiguen los gatos duerme` (197–237); the re-read of 5.2's sentence was removed in the block 5 review. Six weights quoted off the widget. The four head names are Spanish grammar |
 | 5.5 | `codificacion-posicional` | **transpose** | Confirmed: `positional-encoding` is numeric and carries **no corpus**. One two-word example, `la` in `la casa amarilla` (366), and it needs a one-clause rephrase — see below |
 | 5.6 | `bloque-transformer` | **transpose** | **Zero `<W>`, no corpus, no example.** Quotes the `transformer-architecture` widget's box labels by name (244, 250, 358, 522), so its prose must match what P11-02 renames them to |
 | 5.7 | `encoder-decoder-masking` | **transpose** | Its own example, `el gato bebe leche` (195–198), translates one-for-one at the same length. The widget is **not** numeric — it is 5.2's heatmap with the mask on, inheriting 5.2's corpus |
@@ -163,27 +163,31 @@ Line refs are into the `es/` file named in each heading.
   `q-cuenta-parametros` `numeric` **1048576** (23–30), $4d_{\text{model}}^{2}$;
   `q-de-donde-sale-dk` `single` a (31–41); `q-cabezas-iguales` `multi` [a,b,c] (42–52);
   `q-promediar` `boolean` false (53–58). **All five are shape-counting or symmetry.**
-- **Corpus 1 — its own sentence** (201–217): `el ratón pequeño que persiguen los gatos duerme`. A
-  centre-embedded relative clause, chosen so **two verbs need two subjects in opposite directions**
-  and neither the noun feature nor the number feature separates them alone. The prose then walks two
-  rows of the widget by name and by number: head 1 ties `ratón` with `gatos` at **`0.30`**, head 2
-  drops `gatos` to **`0.01`**, and the single-head layer answers `ratón` on one row and `gatos` on
-  the other. A replacement must reproduce **all four** properties, not just the sentence.
-- **Corpus 2 — 5.2's sentence re-read** (275–279), on the row of `llaves`, with four more quoted
-  weights: the modifier rule alone puts **`0.40`** on `ahí` and **`0.23`** on `las`; adding
-  agreement flips the row to **`0.37`** / **`0.17`**. These come out of the widget's rule vectors.
-- **`<Explorable>` `multi-head-view`** (219–222), Spanish caption **naming two of the four rules**
-  («la cabeza del verbo», «la de concordancia») and quoting `ratón` and `gatos`.
+- **The corpus — its own sentence** (197–237): `el ratón pequeño que persiguen los gatos duerme`, a
+  centre-embedded relative clause. The intro defines a «regla» as a criterion like «¿es un
+  sustantivo?» / «¿concuerda conmigo en número?» and argues from two rows. `duerme` needs a word
+  that meets **both** rules at once (noun **and** singular), which neither rule singles out alone.
+  `persiguen` needs **two different words**, its subject `gatos` and its object `ratón`, which
+  **differ in number**. After the explorable the prose walks both rows by number: on `duerme`,
+  head 1 ties `ratón` with `gatos` at **`0.30`**, head 2 puts **`0.26`** on three singulars that
+  are not the subject, and the single-head layer answers `ratón` with **`0.31`**; on `persiguen`,
+  the single-head layer keeps `gatos` at **`0.36`** and leaves `ratón` **`0.07`**, while head 1
+  still gives `ratón` **`0.30`**. A replacement must reproduce **all** of these properties, not
+  just the sentence.
+- **No second corpus since the block 5 review (2026-10-19).** The re-read of 5.2's sentence on the
+  row of `llaves` (four weights) was removed, together with the widget's preset buttons: the
+  explorable only shows the default sentence, or whatever the reader types.
+- **`<Explorable>` `multi-head-view`** (221–224), Spanish caption quoting `duerme`, `persiguen` and
+  `ratón`.
 - **`<CodeChallenge>` `ch-multi-head`** (59–179): Spanish `prompt` (61–75), 1 `# tu código aquí`
   (82), 5 test `name`s, 12 Spanish assertion messages (92–150), Spanish `solution` comments
   (156–158) and `explanation` (167–179); identifier `multi_head`. Language-free.
-- **`<PyCell>` ×2** (369–410, 422–459). No corpus. Spanish identifiers `salidas`, `mapas`, `col`,
+- **`<PyCell>` ×2** (379–420, 432–469). No corpus. Spanish identifiers `salidas`, `mapas`, `col`,
   `proy`, `sal`, `iguales`, `distintas`, `bloque`. Quoted output: `0.591`, `0.531`, `0.005`
-  (413–414); the invariant table `786 432` / `262 144` / `1 048 576` (416); `0.458` (463).
+  (423–424); the invariant table `786 432` / `262 144` / `1 048 576` (426); `0.458` (473).
 - **`<Leccion ancla="">`: 0** (8 slug-only refs). **`reading`:** 1 (180–188), `lang: en`.
-- **`<W>`: 22 — the most of any lesson in the block.** `gatos` ×5, `ratón` ×4, `las` ×3,
-  `persiguen` ×2, `duerme` ×2, `ahí` ×2, `llaves`, `están`, and the two full sentences. **All 22
-  move.**
+- **`<W>`: 20.** `ratón` ×9, `gatos` ×5, `duerme` ×3, `persiguen` ×2, and the full sentence.
+  **All 20 move.**
 
 #### 5.5 `codificacion-posicional` — `es/37-codificacion-posicional.mdx` — transpose
 
@@ -385,7 +389,7 @@ and all three spend it on a corpus that lives outside the lesson file:
 | Lesson | What must be replaced | Who owns it |
 |---|---|---|
 | 5.2 | The demonstration sentence + the token count quoted off it | **P11-02** (the widget lexicon) |
-| 5.4 | A centre-embedded clause with two verbs pulling opposite ways, plus six quoted weights | **P11-02** (lexicon + rules + `MH_PRESETS`) |
+| 5.4 | A centre-embedded clause: one verb whose subject needs two rules at once, one whose subject and object differ in number, plus six quoted weights | **P11-02** (lexicon + rules + `MH_PRESETS`) |
 | 5.8 | The label-correspondence table and its premise sentence | This lesson, downstream of P11-02's 15 box labels |
 | 5.10 | The polysemous word and its shared-prefix pair | **Block 1's 1.8** — inherit, do not redecide |
 | 5.9 | The toy pair and five numbers — **only under Option B** | **Block 4's direction decision** |

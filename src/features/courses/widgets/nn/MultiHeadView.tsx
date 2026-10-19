@@ -26,6 +26,10 @@
  * `HEADS`, which is what keeps the two from drifting apart. The presets stay Spanish for
  * the same reason `self-attention-heatmap`'s do — see SPANISH_BOUND_CORPORA in
  * ../corpora.ts.
+ *
+ * Block 5 review — no preset buttons: the input already takes any sentence, and the
+ * lesson reads only the default one («el ratón…», MH_PRESETS[3]), so a row of other
+ * sentences was a detour away from the rows the lesson walks through.
  */
 
 "use client";
@@ -70,8 +74,8 @@ export default function MultiHeadView() {
   const tr = useTranslations("courses.widgets.multi-head-view");
   const tc = useTranslations("courses.widgets.common");
   const [text, setText] = useState<string>(MH_PRESETS[3]);
-  // «concordancia de número», the head whose map has something to say in most rows.
-  const [view, setView] = useState(1);
+  // «un verbo busca sustantivos»: head 1, the first one the lesson reads in «duerme»'s row.
+  const [view, setView] = useState(0);
   // «duerme» in that sentence: the row the lesson's motivation argues from.
   const [row, setRow] = useState(7);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -130,14 +134,6 @@ export default function MultiHeadView() {
           }}
         />
       </label>
-
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-        {MH_PRESETS.map((preset) => (
-          <WidgetButton key={preset} active={text === preset} onClick={() => setText(preset)}>
-            {preset.split(" ").slice(0, 2).join(" ")}…
-          </WidgetButton>
-        ))}
-      </div>
 
       <div
         role="group"
