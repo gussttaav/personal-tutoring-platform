@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 314" width="740" height="314" role="img"
+ aria-label="Los aciertos de dos modelos pequeños en las mismas 570 preguntas de MMLU, leyendo su respuesta de cinco formas, cada uno con su margen de error. Una línea discontinua marca el 25 % del azar. SmolLM2-360M: la letra más probable, 24,7 %; lo que escribe, 24,7 %; la opción entera, 24,0 %; la opción entera por token, 24,9 %; sin mostrar las opciones y por carácter, 38,2 %. Qwen2.5-0.5B: 52,3 %, 52,3 %, 47,2 %, 39,6 % y 35,4 %.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); }
+  .lb { font-size: 12px; font-weight: 600; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .big { font-size: 13px; font-weight: 600; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ch { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<line class="gr" x1="250.0" y1="32.0" x2="250.0" y2="270.0"/>
+<text class="tk" x="250.0" y="286.0" style="text-anchor:middle">15 %</text>
+<line class="gr" x1="296.7" y1="32.0" x2="296.7" y2="270.0"/>
+<text class="tk" x="296.7" y="286.0" style="text-anchor:middle">20 %</text>
+<line class="gr" x1="343.3" y1="32.0" x2="343.3" y2="270.0"/>
+<text class="tk" x="343.3" y="286.0" style="text-anchor:middle">25 %</text>
+<line class="gr" x1="390.0" y1="32.0" x2="390.0" y2="270.0"/>
+<text class="tk" x="390.0" y="286.0" style="text-anchor:middle">30 %</text>
+<line class="gr" x1="436.7" y1="32.0" x2="436.7" y2="270.0"/>
+<text class="tk" x="436.7" y="286.0" style="text-anchor:middle">35 %</text>
+<line class="gr" x1="483.3" y1="32.0" x2="483.3" y2="270.0"/>
+<text class="tk" x="483.3" y="286.0" style="text-anchor:middle">40 %</text>
+<line class="gr" x1="530.0" y1="32.0" x2="530.0" y2="270.0"/>
+<text class="tk" x="530.0" y="286.0" style="text-anchor:middle">45 %</text>
+<line class="gr" x1="576.7" y1="32.0" x2="576.7" y2="270.0"/>
+<text class="tk" x="576.7" y="286.0" style="text-anchor:middle">50 %</text>
+<line class="gr" x1="623.3" y1="32.0" x2="623.3" y2="270.0"/>
+<text class="tk" x="623.3" y="286.0" style="text-anchor:middle">55 %</text>
+<line class="gr" x1="670.0" y1="32.0" x2="670.0" y2="270.0"/>
+<text class="tk" x="670.0" y="286.0" style="text-anchor:middle">60 %</text>
+<line class="ch" x1="343.3" y1="32.0" x2="343.3" y2="270.0"/>
+<text class="tk" x="343.3" y="26.0" style="text-anchor:middle">azar</text>
+<circle cx="250.0" cy="14" r="4.5" fill="#e8a24c"/>
+<text class="tx" x="259.0" y="18.0" style="fill:#e8a24c;font-weight:600">SmolLM2-360M</text>
+<circle cx="380.0" cy="14" r="4.5" fill="#4edea3"/>
+<text class="tx" x="389.0" y="18.0" style="fill:#4edea3;font-weight:600">Qwen2.5-0.5B</text>
+<text class="tx" x="234.0" y="67.0" style="text-anchor:end">la letra más probable</text>
+<line class="gr" x1="307.8" y1="57.0" x2="373.9" y2="57.0" style="stroke:#e8a24c;stroke-width:1.4"/>
+<circle cx="340.9" cy="57.0" r="4.5" fill="#e8a24c"/>
+<text class="tk" x="379.9" y="61.0" style="fill:#e8a24c">24,7 %</text>
+<line class="gr" x1="559.7" y1="69.0" x2="636.2" y2="69.0" style="stroke:#4edea3;stroke-width:1.4"/>
+<circle cx="598.0" cy="69.0" r="4.5" fill="#4edea3"/>
+<text class="tk" x="642.2" y="73.0" style="fill:#4edea3">52,3 %</text>
+<text class="tx" x="234.0" y="113.0" style="text-anchor:end">lo que escribe</text>
+<line class="gr" x1="307.8" y1="103.0" x2="373.9" y2="103.0" style="stroke:#e8a24c;stroke-width:1.4"/>
+<circle cx="340.9" cy="103.0" r="4.5" fill="#e8a24c"/>
+<text class="tk" x="379.9" y="107.0" style="fill:#e8a24c">24,7 %</text>
+<line class="gr" x1="559.7" y1="115.0" x2="636.2" y2="115.0" style="stroke:#4edea3;stroke-width:1.4"/>
+<circle cx="598.0" cy="115.0" r="4.5" fill="#4edea3"/>
+<text class="tk" x="642.2" y="119.0" style="fill:#4edea3">52,3 %</text>
+<text class="tx" x="234.0" y="159.0" style="text-anchor:end">la opción entera</text>
+<line class="gr" x1="301.6" y1="149.0" x2="367.1" y2="149.0" style="stroke:#e8a24c;stroke-width:1.4"/>
+<circle cx="334.3" cy="149.0" r="4.5" fill="#e8a24c"/>
+<text class="tk" x="373.1" y="153.0" style="fill:#e8a24c">24,0 %</text>
+<line class="gr" x1="512.2" y1="161.0" x2="588.7" y2="161.0" style="stroke:#4edea3;stroke-width:1.4"/>
+<circle cx="550.5" cy="161.0" r="4.5" fill="#4edea3"/>
+<text class="tk" x="594.7" y="165.0" style="fill:#4edea3">47,2 %</text>
+<text class="tx" x="234.0" y="205.0" style="text-anchor:end">la opción entera, por token</text>
+<line class="gr" x1="309.4" y1="195.0" x2="375.7" y2="195.0" style="stroke:#e8a24c;stroke-width:1.4"/>
+<circle cx="342.5" cy="195.0" r="4.5" fill="#e8a24c"/>
+<text class="tk" x="381.7" y="199.0" style="fill:#e8a24c">24,9 %</text>
+<line class="gr" x1="442.6" y1="207.0" x2="517.5" y2="207.0" style="stroke:#4edea3;stroke-width:1.4"/>
+<circle cx="480.1" cy="207.0" r="4.5" fill="#4edea3"/>
+<text class="tk" x="523.5" y="211.0" style="fill:#4edea3">39,6 %</text>
+<text class="tx" x="234.0" y="251.0" style="text-anchor:end">sin opciones, por carácter</text>
+<line class="gr" x1="429.7" y1="241.0" x2="504.2" y2="241.0" style="stroke:#e8a24c;stroke-width:1.4"/>
+<circle cx="467.0" cy="241.0" r="4.5" fill="#e8a24c"/>
+<text class="tk" x="510.2" y="245.0" style="fill:#e8a24c">38,2 %</text>
+<line class="gr" x1="404.1" y1="253.0" x2="477.4" y2="253.0" style="stroke:#4edea3;stroke-width:1.4"/>
+<circle cx="440.8" cy="253.0" r="4.5" fill="#4edea3"/>
+<text class="tk" x="483.4" y="257.0" style="fill:#4edea3">35,4 %</text>
+<text class="tk" x="460.0" y="304.0" style="text-anchor:middle">aciertos en 570 preguntas de MMLU, con su margen al 95 %</text>
+</svg>

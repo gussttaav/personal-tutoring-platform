@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 366" width="740" height="366" role="img"
+ aria-label="Ocho modelos abiertos y su nota en MMLU con tres programas distintos que corrigen el mismo examen, según Hugging Face en junio de 2023, unidos por líneas. Con el código original, que mira la letra más probable, LLaMA 65B saca un 63,6 % y es el primero; Falcon 40B, un 55,8 %, el tercero. Con HELM, que mira lo que escribe el modelo, casi lo mismo: 63,7 % y 57,1 %. Con el LM Evaluation Harness, que mira la probabilidad de la opción entera, LLaMA 65B baja al 48,8 % y Falcon 40B, con un 52,7 %, pasa a ser el primero. Los modelos más débiles, que con el código original están cerca del 25 % que da el azar, suben hasta el 33 o el 35 % con el Harness.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); }
+  .lb { font-size: 12px; font-weight: 600; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .big { font-size: 13px; font-weight: 600; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ch { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<line class="gr" x1="140.0" y1="346.0" x2="600.0" y2="346.0"/>
+<line class="gr" x1="140.0" y1="286.0" x2="600.0" y2="286.0"/>
+<line class="gr" x1="140.0" y1="226.0" x2="600.0" y2="226.0"/>
+<line class="gr" x1="140.0" y1="166.0" x2="600.0" y2="166.0"/>
+<line class="gr" x1="140.0" y1="106.0" x2="600.0" y2="106.0"/>
+<line class="gr" x1="140.0" y1="46.0" x2="600.0" y2="46.0"/>
+<line class="ch" x1="140.0" y1="316.0" x2="600.0" y2="316.0"/>
+<text class="tk" x="604.0" y="320.0">azar: 25 %</text>
+<text class="lb" x="150.0" y="16.0" style="text-anchor:middle">código original</text>
+<text class="tk" x="150.0" y="31.0" style="text-anchor:middle">la letra más probable</text>
+<line class="ax" x1="150.0" y1="40.0" x2="150.0" y2="352.0"/>
+<text class="lb" x="370.0" y="16.0" style="text-anchor:middle">HELM</text>
+<text class="tk" x="370.0" y="31.0" style="text-anchor:middle">lo que escribe</text>
+<line class="ax" x1="370.0" y1="40.0" x2="370.0" y2="352.0"/>
+<text class="lb" x="590.0" y="16.0" style="text-anchor:middle">LM Evaluation Harness</text>
+<text class="tk" x="590.0" y="31.0" style="text-anchor:middle">la opción entera</text>
+<line class="ax" x1="590.0" y1="40.0" x2="590.0" y2="352.0"/>
+<polyline class="cv" stroke="#86948a" stroke-width="1.2" points="150.0,115.6 370.0,116.2 590.0,191.8"/>
+<circle cx="150.0" cy="115.6" r="2.4" fill="#86948a"/>
+<circle cx="370.0" cy="116.2" r="2.4" fill="#86948a"/>
+<circle cx="590.0" cy="191.8" r="2.4" fill="#86948a"/>
+<polyline class="cv" stroke="#86948a" stroke-width="1.2" points="150.0,308.8 370.0,312.4 590.0,266.2"/>
+<circle cx="150.0" cy="308.8" r="2.4" fill="#86948a"/>
+<circle cx="370.0" cy="312.4" r="2.4" fill="#86948a"/>
+<circle cx="590.0" cy="266.2" r="2.4" fill="#86948a"/>
+<polyline class="cv" stroke="#86948a" stroke-width="1.2" points="150.0,184.0 370.0,183.4 590.0,239.8"/>
+<circle cx="150.0" cy="184.0" r="2.4" fill="#86948a"/>
+<circle cx="370.0" cy="183.4" r="2.4" fill="#86948a"/>
+<circle cx="590.0" cy="239.8" r="2.4" fill="#86948a"/>
+<polyline class="cv" stroke="#86948a" stroke-width="1.2" points="150.0,255.4 370.0,262.6 590.0,260.8"/>
+<circle cx="150.0" cy="255.4" r="2.4" fill="#86948a"/>
+<circle cx="370.0" cy="262.6" r="2.4" fill="#86948a"/>
+<circle cx="590.0" cy="260.8" r="2.4" fill="#86948a"/>
+<polyline class="cv" stroke="#86948a" stroke-width="1.2" points="150.0,313.6 370.0,299.2 590.0,256.0"/>
+<circle cx="150.0" cy="313.6" r="2.4" fill="#86948a"/>
+<circle cx="370.0" cy="299.2" r="2.4" fill="#86948a"/>
+<circle cx="590.0" cy="256.0" r="2.4" fill="#86948a"/>
+<polyline class="cv" stroke="#86948a" stroke-width="1.2" points="150.0,304.6 370.0,301.0 590.0,262.0"/>
+<circle cx="150.0" cy="304.6" r="2.4" fill="#86948a"/>
+<circle cx="370.0" cy="301.0" r="2.4" fill="#86948a"/>
+<circle cx="590.0" cy="262.0" r="2.4" fill="#86948a"/>
+<polyline class="cv" stroke="#4edea3" stroke-width="2.4" points="150.0,84.4 370.0,83.8 590.0,173.2"/>
+<circle cx="150.0" cy="84.4" r="3.4" fill="#4edea3"/>
+<circle cx="370.0" cy="83.8" r="3.4" fill="#4edea3"/>
+<circle cx="590.0" cy="173.2" r="3.4" fill="#4edea3"/>
+<polyline class="cv" stroke="#e8a24c" stroke-width="2.4" points="150.0,131.2 370.0,123.4 590.0,149.8"/>
+<circle cx="150.0" cy="131.2" r="3.4" fill="#e8a24c"/>
+<circle cx="370.0" cy="123.4" r="3.4" fill="#e8a24c"/>
+<circle cx="590.0" cy="149.8" r="3.4" fill="#e8a24c"/>
+<text class="tx" x="140.0" y="88.4" style="text-anchor:end;fill:#4edea3;font-weight:600">LLaMA 65B  63,6 %</text>
+<text class="tx" x="140.0" y="119.6" style="text-anchor:end;fill:#bbcabf">LLaMA 30B  58,4 %</text>
+<text class="tx" x="140.0" y="135.2" style="text-anchor:end;fill:#e8a24c;font-weight:600">Falcon 40B  55,8 %</text>
+<text class="tx" x="140.0" y="188.0" style="text-anchor:end;fill:#bbcabf">LLaMA 13B  47,0 %</text>
+<text class="tx" x="140.0" y="259.4" style="text-anchor:end;fill:#bbcabf">LLaMA 7B  35,1 %</text>
+<text class="tx" x="140.0" y="308.6" style="text-anchor:end;fill:#bbcabf">RedPajama 7B  26,9 %</text>
+<text class="tx" x="140.0" y="321.1" style="text-anchor:end;fill:#bbcabf">GPT-NeoX 20B  26,2 %</text>
+<text class="tx" x="140.0" y="333.6" style="text-anchor:end;fill:#bbcabf">Falcon 7B  25,4 %</text>
+<text class="tx" x="600.0" y="153.8" style="text-anchor:start;fill:#e8a24c;font-weight:600">52,7 %  Falcon 40B</text>
+<text class="tx" x="600.0" y="177.2" style="text-anchor:start;fill:#4edea3;font-weight:600">48,8 %  LLaMA 65B</text>
+<text class="tx" x="600.0" y="195.8" style="text-anchor:start;fill:#bbcabf">45,7 %  LLaMA 30B</text>
+<text class="tx" x="600.0" y="243.8" style="text-anchor:start;fill:#bbcabf">37,7 %  LLaMA 13B</text>
+<text class="tx" x="600.0" y="260.0" style="text-anchor:start;fill:#bbcabf">35,0 %  Falcon 7B</text>
+<text class="tx" x="600.0" y="272.5" style="text-anchor:start;fill:#bbcabf">34,2 %  LLaMA 7B</text>
+<text class="tx" x="600.0" y="285.0" style="text-anchor:start;fill:#bbcabf">34,0 %  RedPajama 7B</text>
+<text class="tx" x="600.0" y="297.5" style="text-anchor:start;fill:#bbcabf">33,3 %  GPT-NeoX 20B</text>
+</svg>
