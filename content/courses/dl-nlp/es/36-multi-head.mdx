@@ -3,7 +3,7 @@ slug: multi-head
 title: "Varias cabezas, varios repartos"
 block: 5
 order: 4
-minutes: 29
+minutes: 35
 summary: "Una posición tiene una fila y en esa fila cabe una sola manera de mirar la frase. La atención multi-head monta h atenciones en paralelo sobre la misma X, cada una con sus tres proyecciones y su propio mapa, y las junta concatenando y proyectando. Lo que cambia no son las puntuaciones sino dónde se normaliza: cada grupo de coordenadas con su propio softmax, en vez de todas sumadas antes de uno solo, que es lo que deja a una regla tapar a otra sin dejar rastro. Y de repartir la anchura, d_k = d_model/h, sale que el coste no depende de h: los mismos parámetros y las mismas multiplicaciones con una cabeza que con dieciséis."
 draft: false
 hasCode: true
@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'En nada observable: el *softmax* es creciente y respeta el orden de las puntuaciones, así que las dos reparten igual y sólo cambia cómo está escrito el cálculo.' }
       - { id: d, text: 'En el número de parámetros: cuatro cabezas llevan cuatro veces más matrices que una.' }
     answer: a
-    explanation: 'La (a). Las dos capas guardan los mismos números en las mismas columnas —de ahí que la (d) sea falsa: son las mismas matrices, partidas de otra forma—, y todo lo que cambia es que la suma sobre $m$ ocurre dentro del *softmax* en un caso y fuera en el otro. La (b) confunde tener cuatro puntuaciones con comparar mejor: cada una de esas cuatro mira una sola coordenada, que es menos resolución por comparación, no más. La (c) usa un hecho cierto en el sitio equivocado: el *softmax* conserva el orden *dentro de la fila que recibe*, y aquí la discusión es sobre qué fila recibe —una suma de cuatro términos, o cuatro filas por separado—.'
+    explanation: 'La (a). Las dos capas guardan los mismos números en las mismas columnas, y todo lo que cambia es que la suma sobre $m$ ocurre dentro del *softmax* en un caso y fuera en el otro. La (b) confunde tener cuatro puntuaciones con comparar mejor: cada una de esas cuatro mira una sola coordenada, que es menos resolución por comparación, no más. La (c) usa un hecho cierto en el sitio equivocado: el *softmax* conserva el orden *dentro de la fila que recibe*, y aquí la discusión es sobre qué fila recibe: una suma de cuatro términos, o cuatro filas por separado. La (d) es falsa por lo mismo que la (a) es cierta: son las mismas matrices, partidas de otra forma.'
     hint: '¿Dónde cae la suma sobre las coordenadas en cada una de las dos, antes o después de normalizar?'
   - id: q-cuenta-parametros
     type: numeric
@@ -37,7 +37,7 @@ quiz:
       - { id: c, text: 'Porque el divisor $\sqrt{d_k}$ de la lección anterior sólo compensa bien cuando $d_k$ divide a $d_{\text{model}}$; con otras anchuras las puntuaciones se quedan descompensadas.' }
       - { id: d, text: 'Porque cada cabeza tiene que quedarse con una parte distinta de las coordenadas de $\mathbf{x}_t$, y hay $d_{\text{model}}$ para repartir entre $h$.' }
     answer: a
-    explanation: 'La (a), y sale de una cancelación, no de una preferencia: $h$ cabezas de $d_{\text{model}}/h$ cuestan $h \cdot d_{\text{model}} \cdot 3d_{\text{model}}/h$, donde la $h$ de arriba y la de abajo se van. La (b) es la trampa buena, porque describe algo real —la salida vuelve a $d_{\text{model}}$— pero se lo atribuye a la concatenación: quien devuelve la anchura es $\mathbf{W}^O$, que es $\left(h \cdot d_v\right) \times d_{\text{model}}$ y funciona con cualquier $d_v$. La (c) inventa una condición: la cuenta del divisor sólo usa cuántas coordenadas se suman, y no sabe nada de $d_{\text{model}}$. La (d) describe una capa que no es ésta: las $h$ cabezas leen *la misma* $\mathbf{X}$ entera; lo que se reparte es la anchura de salida de cada proyección, no las coordenadas de entrada.'
+    explanation: 'La (a), y sale de una cancelación, no de una preferencia: $h$ cabezas de $d_{\text{model}}/h$ cuestan $h \cdot d_{\text{model}} \cdot 3d_{\text{model}}/h$, donde la $h$ de arriba y la de abajo se van. La (b) es la trampa buena, porque describe algo real (la salida vuelve a $d_{\text{model}}$), pero se lo atribuye a la concatenación: quien devuelve la anchura es $\mathbf{W}^O$, que es $\left(h \cdot d_v\right) \times d_{\text{model}}$ y funciona con cualquier $d_v$. La (c) inventa una condición: la cuenta del divisor sólo usa cuántas coordenadas se suman, y no sabe nada de $d_{\text{model}}$. La (d) describe una capa que no es ésta: las $h$ cabezas leen *la misma* $\mathbf{X}$ entera; lo que se reparte es la anchura de salida de cada proyección, no las coordenadas de entrada.'
     hint: 'Escribe el total con $d_k = d_v = d_{\text{model}}/h$ y busca dónde se va la $h$.'
   - id: q-cabezas-iguales
     type: multi
@@ -48,13 +48,13 @@ quiz:
       - { id: c, text: 'Lo que separa a unas cabezas de otras tiene que venir de la inicialización: ningún término de la pérdida le asigna un papel a ninguna.' }
       - { id: d, text: 'Las filas dejan de sumar $1$, porque $h$ mapas repartiendo una unidad cada uno reparten $h$ en total.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras. La (a) y la (b) son la misma observación en dos sitios: la cabeza es una función de $\mathbf{X}$ y de sus tres matrices, así que con las matrices iguales las salidas son iguales, y concatenar copias no añade información que $\mathbf{W}^O$ pueda aprovechar. La (c) es la concesión que conviene llevarse: las cabezas se especializan porque empiezan distintas, no porque nada se lo pida —y si además los $h$ bloques de filas de $\mathbf{W}^O$ empezasen iguales, la simetría se mantendría paso a paso y las $h$ cabezas serían una para siempre—. La (d) confunde dos cosas: cada mapa normaliza sus propias filas y sigue sumando $1$; lo que hay son $h$ repartos, no un reparto de $h$.'
+    explanation: 'Las tres primeras. La (a) y la (b) son la misma observación en dos sitios: la cabeza es una función de $\mathbf{X}$ y de sus tres matrices, así que con las matrices iguales las salidas son iguales, y concatenar copias no añade información que $\mathbf{W}^O$ pueda aprovechar. La (c) es la concesión que conviene llevarse: las cabezas se especializan porque empiezan distintas, no porque nada se lo pida. Y si además los $h$ bloques de filas de $\mathbf{W}^O$ empezasen iguales, la simetría se mantendría paso a paso y las $h$ cabezas serían una para siempre. La (d) confunde dos cosas: cada mapa normaliza sus propias filas y sigue sumando $1$; lo que hay son $h$ repartos, no un reparto de $h$.'
     hint: 'Una cabeza es una función de $\mathbf{X}$ y de sus tres matrices. ¿Qué devuelve esa función con los mismos argumentos?'
   - id: q-promediar
     type: boolean
     prompt: 'Promediar las $h$ cabezas es algo que la concatenación seguida de $\mathbf{W}^O$ no puede hacer.'
     answer: false
-    explanation: 'Falso, y por eso se concatena. Con $d_v = d_{\text{model}}$, la $\mathbf{W}^O$ que apila $h$ copias de $\frac{1}{h}\mathbf{I}$ da exactamente $\frac{1}{h}\sum_i \text{head}_i$: el promedio es un valor concreto de una matriz que la capa aprende, así que concatenar puede hacer eso y todo lo demás. Lo que se gana no es poder, entonces, sino no tener que fijarlo de antemano —y una cosa más, que es la razón práctica: promediando, las $h$ cabezas escriben en las mismas coordenadas y dos de ellas pueden cancelarse antes de que nada las lea; concatenadas, cada una tiene las suyas y $\mathbf{W}^O$ decide después a cuál hacer caso—.'
+    explanation: 'Falso, y por eso se concatena. Con $d_v = d_{\text{model}}$, la $\mathbf{W}^O$ que apila $h$ copias de $\frac{1}{h}\mathbf{I}$ da exactamente $\frac{1}{h}\sum_i \text{head}_i$: el promedio es un valor concreto de una matriz que la capa aprende, así que concatenar puede hacer eso y todo lo demás. Lo que se gana no es poder, entonces, sino no tener que fijarlo de antemano. Y se gana una cosa más, que es la razón práctica: promediando, las $h$ cabezas escriben en las mismas coordenadas y dos de ellas pueden cancelarse antes de que nada las lea; concatenadas, cada una tiene las suyas y $\mathbf{W}^O$ decide después a cuál hacer caso.'
     hint: '¿Qué tiene que valer $\mathbf{W}^O$ para que el producto salga la media?'
 challenges:
   - id: ch-multi-head
@@ -64,8 +64,8 @@ challenges:
       forma $(d_{\text{model}}, d_{\text{model}})$; la proyección de salida `Wo`, de la misma
       forma; y el número de cabezas `h`, que divide a $d_{\text{model}}$.
 
-      La cabeza $i$ se queda con el bloque de columnas $i$-ésimo de cada proyección —de
-      `i * d_k` a `(i + 1) * d_k`, con `d_k = d_v = d_model // h`— y hace con él la atención de
+      La cabeza $i$ se queda con el bloque de columnas $i$-ésimo de cada proyección (de
+      `i * d_k` a `(i + 1) * d_k`, con `d_k = d_v = d_model // h`) y hace con él la atención de
       siempre, dividiendo entre $\sqrt{d_k}$.
 
       Devuelve *la pareja* `(salida, A)`, en ese orden: la salida de forma
@@ -174,8 +174,8 @@ challenges:
       con un eje más delante: `Q @ K.transpose(0, 2, 1)` hace los $h$ productos de una vez, y el
       `keepdims` del *softmax* pasa a mirar el eje $2$, que es el de las columnas de cada mapa.
       Dos errores valen lo mismo aquí y son los que comprueban los tests: dividir entre
-      $\sqrt{d_{\text{model}}}$ en vez de entre $\sqrt{d_k}$ —el divisor cuenta las coordenadas
-      que se suman, y ahora se suman $d_k$—, y proyectar por `Wo` cada cabeza antes de
+      $\sqrt{d_{\text{model}}}$ en vez de entre $\sqrt{d_k}$ (el divisor cuenta las coordenadas
+      que se suman, y ahora se suman $d_k$), y proyectar por `Wo` cada cabeza antes de
       concatenarlas, que da la suma de $h$ proyecciones y no la proyección de la concatenación.
 reading:
   - kind: paper
@@ -190,40 +190,56 @@ reading:
 
 {/* COURSE-P5-05 — Bloque 5, lección 4. */}
 
-La lección anterior justificó el $\sqrt{d_k}$ de la fórmula de la atención contando cuánto crece un
-producto escalar cuando se le añaden coordenadas, y al cerrar esa cuenta dejó dos cosas señaladas.
-La primera es de forma: una capa de auto-atención no le da a cada posición más que una fila de
-$\mathbf{A}$, fabricada por un único par de matrices, $\mathbf{W}^Q$ y $\mathbf{W}^K$ —una manera de
-mirar la frase, la misma para todas las posiciones y para todas las relaciones que haya que
-encontrar entre ellas—. La segunda es más pequeña y sale del mismo sitio: $d_k$ entra en la fórmula
-sin que nada diga cuánto debería valer.
+La lección anterior dejó dos cosas abiertas. Una capa de auto-atención le da a cada posición una
+sola fila de $\mathbf{A}$, fabricada por un único par de matrices, $\mathbf{W}^Q$ y $\mathbf{W}^K$;
+y $d_k$ entra en la fórmula sin que nada diga cuánto debería valer.
 
-Mira lo que esa única fila le pide a una frase como <W>el ratón pequeño que persiguen los gatos duerme</W>.
-<W>duerme</W> tiene que encontrar a <W>ratón</W> por encima de la subordinada entera, y
-<W>persiguen</W>, tres posiciones antes, tiene que encontrar a <W>gatos</W>, que le queda detrás:
-dos verbos, dos sujetos, en direcciones opuestas. Ninguna relación sola los resuelve —quién es
-sustantivo no distingue <W>ratón</W> de <W>gatos</W>, y quién concuerda en número no distingue un
-sujeto de un determinante—, así que la única fila que hay tiene que llevar las dos a la vez. Y
-puede: las puntuaciones se suman antes del *softmax*, y la suma decide. Esta lección trata de lo
-que esa suma cuesta, y de la alternativa, que consiste en no hacerla.
+Mira la frase <W>el ratón pequeño que persiguen los gatos duerme</W>. <W>duerme</W> tiene que
+encontrar a su sujeto, <W>ratón</W>, y no le basta un criterio: «¿es un sustantivo?» no distingue
+<W>ratón</W> de <W>gatos</W>, y «¿concuerda conmigo en número?» no distingue un sujeto de un
+determinante. Llamaré regla a cada criterio de ésos. La fila de <W>duerme</W> necesita las dos a la
+vez, y las combina sumándolas: cada regla le da a cada palabra una puntuación, el producto escalar
+las suma y el *softmax* reparte la fila según el total. Gana la palabra que cumple las dos.
 
-Las rejillas de abajo son esa misma frase vista por cuatro reglas distintas, una por cabeza, y en
-el quinto botón por la capa de la lección anterior, que lleva las cuatro sumadas en una sola fila.
-Ponte en la fila de <W>duerme</W> y lee el panel de abajo entero antes de tocar nada: la primera
-cabeza empata <W>ratón</W> con <W>gatos</W> a $0.30$; la segunda descarta <W>gatos</W> —le deja
-$0.01$— pero reparte su peso mayor entre tres singulares y ninguno de los tres es el sujeto; dos no
-dicen nada de esa fila; y la capa de una sola cabeza contesta <W>ratón</W>. Pásate luego a la fila de <W>persiguen</W>: la primera cabeza repite su fila anterior
-número a número, porque no sabe distinguir un verbo de otro; la segunda se da la vuelta entera; y
-la respuesta de la capa de una cabeza cambia a <W>gatos</W>.
+Sumar sirve cuando se busca una sola palabra que cumpla todas las reglas, pero una posición puede
+necesitar dos palabras distintas. <W>persiguen</W> necesita a quien persigue, <W>gatos</W>, y a
+quien es perseguido, <W>ratón</W>, y su fila es un único reparto que suma $1$: o se queda con una y
+pierde la otra, o mezcla las dos. Además, una vez sumadas, las reglas ya no se pueden separar: la
+fila no dice cuánto puso cada una.
+
+La alternativa es no sumar antes de repartir: separar las reglas en grupos, cada uno con su propia
+atención y su propio *softmax*, y juntar después lo que lee cada uno. Cada una de esas atenciones
+es una cabeza, y la capa que monta varias es la atención *multi-head*, de la que trata esta
+lección.
+
+El explorable de abajo pone una sola regla en cada cabeza: la 1 es la del sustantivo, la 2 la
+concordancia, y la 3 y la 4 relacionan sustantivos con sus determinantes y modificadores. El quinto
+botón no junta las cabezas: es la capa de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>,
+con las cuatro reglas sumadas antes de un único *softmax*. La fila es quien pregunta y la columna
+quien contesta, y el panel de debajo resume, para la fila que elijas, a qué palabra tira cada mapa.
 
 <Explorable
   id="multi-head-view"
-  caption="Cuatro reglas, cuatro repartos, y un quinto botón con las cuatro sumadas en una sola fila. La cabeza del verbo empata «ratón» con «gatos» en las dos filas de verbo; la de concordancia sí los separa, pero se queda con tres palabras que no son el sujeto. Sólo juntas contestan, y juntarlas de esa manera no sale gratis."
+  caption="Cuatro reglas, una por cabeza, y un quinto botón con las cuatro sumadas en una sola fila. Ninguna cabeza encuentra sola el sujeto de «duerme», y la suma, que sí lo encuentra, en la fila de «persiguen» casi borra a «ratón»."
 />
+
+En la fila de <W>duerme</W>, la cabeza 1 empata <W>ratón</W> con <W>gatos</W>, a $0.30$ cada uno;
+la 2 prefiere tres singulares que no son el sujeto, a $0.26$; y la 3 y la 4 no dicen nada. Ninguna
+cabeza encuentra el sujeto, porque las dos reglas que hacían falta han ido a cabezas distintas. La
+suma sí lo encuentra, <W>ratón</W> con $0.31$, pero a cambio borra lo que dijo cada regla.
+
+En la fila de <W>persiguen</W>, que necesitaba a <W>gatos</W> y a <W>ratón</W>, la suma se queda con
+<W>gatos</W>, con $0.36$, y a <W>ratón</W> le deja $0.07$. La cabeza 1, en cambio, le sigue dando
+$0.30$, así que con varias cabezas lo que se lee de <W>ratón</W> llega a la salida. Esa cabeza no
+sabe que <W>ratón</W> es el perseguido, porque ninguna de estas reglas busca objetos y ella lee los
+dos sustantivos por igual; lo que la separación evita es que la suma lo borre. Por eso una cabeza de
+verdad lleva varias reglas: dentro de ella se suman las que tienen que cumplirse a la vez, y en
+cabezas distintas pueden acabar las que buscan cosas distintas.
 
 <Callout type="intuition" title="La idea en una frase">
 Multi-head no cambia lo que se compara: cambia dónde se normaliza. En vez de sumar todas las
-coordenadas de la comparación y repartir una vez, reparte por grupos y suma después.
+reglas y repartir una sola vez, reparte cada grupo de reglas por separado y junta después lo que ha
+leído cada uno.
 </Callout>
 
 ## La misma matriz leída por varias atenciones a la vez
@@ -250,8 +266,8 @@ $$
 \text{MultiHead}(\mathbf{X}) = \text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O \in \mathbb{R}^{T \times d_{\text{model}}},
 $$
 
-donde $\text{Concat}$ pega las $h$ matrices *por columnas* —una fila por posición, con los $h$
-trozos seguidos dentro de ella, de modo que el resultado es $T \times \left(h \cdot d_v\right)$— y
+donde $\text{Concat}$ pega las $h$ matrices *por columnas* (una fila por posición, con los $h$
+trozos seguidos dentro de ella, de modo que el resultado es $T \times \left(h \cdot d_v\right)$), y
 $\mathbf{W}^O \in \mathbb{R}^{\left(h \cdot d_v\right) \times d_{\text{model}}}$ es la única matriz
 de la capa que no pertenece a ninguna cabeza. Su superíndice es una etiqueta de papel, como los de
 las otras tres.
@@ -266,19 +282,13 @@ e_{ij} = \frac{1}{\sqrt{d_k}}\sum_{m=1}^{d_k} q_{im}k_{jm},
 $$
 
 donde $q_{im}$ es la coordenada $m$ de la consulta de la posición $i$. Cada coordenada de la
-comparación aporta su término, y el *softmax* no ve los términos: ve el total. Dos coordenadas que
-midan dos cosas distintas llegan sumadas a la normalización, y lo que salga de esa suma es lo único
-que la fila tiene para repartir. Un término grande se lleva la fila; lo que otra coordenada tenía
-que decir de esa misma pareja desaparece, y no queda dónde ir a buscarlo.
+comparación aporta su término, y el *softmax* no ve los términos: ve el total.
 
-El explorable de arriba es ese caso con $d_k = 4$ y una regla por coordenada, así que la cuenta se
-puede seguir número a número. Vuelve a <W>las llaves del coche están ahí</W>, la frase de
-<Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>, y a su fila de <W>llaves</W>. La regla que lleva un sustantivo hacia su determinante y
-sus modificadores, ella sola, pone en esa fila su peso mayor sobre <W>ahí</W>, con $0.40$, y deja
-<W>las</W> en $0.23$. Añádele la de concordancia, que carga sobre <W>las</W> y <W>están</W> por ser
-los plurales de la frase, y la misma fila cambia de ganador: <W>las</W> sube a $0.37$ y <W>ahí</W>
-baja a $0.17$. Ninguna de las dos reglas ha cambiado un solo número. Lo que ha pasado es que se
-sumaron antes de normalizar.
+Las reglas de la introducción son esos términos. Las del explorable de arriba ocupan una
+coordenada cada una, así que la capa de una sola cabeza, que las lleva todas, compara en
+$d_k = 4$ coordenadas, y cada una de las cuatro cabezas en una sola, $d_k = 1$. En una capa
+entrenada nadie escribe las reglas y una coordenada no tiene por qué significar nada por sí sola,
+pero la cuenta es la misma: términos que llegan sumados al *softmax*.
 
 Ahí está la operación entera. Separar las coordenadas en $h$ grupos y darle a cada grupo su propio
 *softmax* es *normalizar antes de combinar*, en vez de combinar antes de normalizar. Salen $h$
@@ -303,8 +313,8 @@ $$
 h \cdot d_{\text{model}}\left(2d_k + d_v\right) + h \cdot d_v \cdot d_{\text{model}}.
 $$
 
-Asigna ahora a $d_k$ y a $d_v$ el valor $d_{\text{model}}/h$ —repartir la anchura del modelo entre
-las cabezas, en vez de darle a cada una la anchura entera— y mira lo que ocurre:
+Asigna ahora a $d_k$ y a $d_v$ el valor $d_{\text{model}}/h$ (repartir la anchura del modelo entre
+las cabezas, en vez de darle a cada una la anchura entera) y mira lo que ocurre:
 
 $$
 h \cdot d_{\text{model}} \cdot \frac{3d_{\text{model}}}{h} + h \cdot \frac{d_{\text{model}}}{h} \cdot d_{\text{model}} = 3d_{\text{model}}^{2} + d_{\text{model}}^{2} = 4d_{\text{model}}^{2}.
@@ -318,13 +328,13 @@ una sola de anchura $d_{\text{model}}$.
 
 De modo que $h$ se elige por lo que hace y no por lo que cuesta, y $d_k$ deja de ser un número
 suelto: es lo que queda de $d_{\text{model}}$ al partirlo. Con las cifras del artículo,
-$d_{\text{model}} = 512$ y $h = 8$, sale $d_k = 64$ —el número con el que la lección anterior hizo
-sus cuentas— y la capa entera pesa $4 \cdot 512^{2} = 1\,048\,576$ parámetros.
+$d_{\text{model}} = 512$ y $h = 8$, sale $d_k = 64$ (el número con el que la lección anterior hizo
+sus cuentas) y la capa entera pesa $4 \cdot 512^{2} = 1\,048\,576$ parámetros.
 
 Lo que se paga conviene decirlo, porque no es cero. Cada cabeza compara en $64$ coordenadas donde
 una sola habría comparado en $512$: no son ocho comparaciones tan finas como la que había, son ocho
-comparaciones ocho veces más estrechas. El trato es ése, y es una apuesta sobre el lenguaje —que
-compensan varias relaciones gruesas frente a una sola muy fina— y no un teorema.
+comparaciones ocho veces más estrechas. El trato es ése, y es una apuesta sobre el lenguaje (que
+compensan varias relaciones gruesas frente a una sola muy fina) y no un teorema.
 
 ### Concatenar y proyectar, no promediar
 
@@ -460,8 +470,8 @@ print("fila 0, cabeza 2:", np.round(B[1][0], 3))
 
 Con los cuatro bloques de columnas iguales las cuatro distancias salen exactamente $0$: los cuatro
 mapas son el mismo, y $\mathbf{W}^O$ recibe cuatro copias de un mismo vector por posición. Mover un
-solo bloque separa a esa cabeza de las otras tres —$0.458$ en las tres casillas de la primera
-línea— y deja a esas tres idénticas entre ellas, que es lo que dicen los tres ceros de la segunda.
+solo bloque separa a esa cabeza de las otras tres ($0.458$ en las tres casillas de la primera
+línea) y deja a esas tres idénticas entre ellas, que es lo que dicen los tres ceros de la segunda.
 La asimetría no aparece sola: entra por la inicialización, y en un entrenamiento se mantiene porque
 las cabezas y los bloques de filas de $\mathbf{W}^O$ empiezan todos distintos. Con todo simétrico,
 el gradiente no tendría por dónde romperlo.
@@ -495,7 +505,7 @@ hay izquierda.
 La pieza que falta no está en la capa: está en la entrada, y consiste en que dos posiciones
 distintas le lleguen a $\mathbf{X}$ como dos filas distintas aunque el token sea el mismo. Eso es
 <Leccion slug="codificacion-posicional">la lección siguiente, sobre la codificación posicional</Leccion>, y lo que la hace interesante no es
-que haga falta —eso ya se sabía desde la primera lección de este bloque— sino la forma concreta que
+que haga falta (eso ya se sabía desde la primera lección de este bloque), sino la forma concreta que
 elige el artículo: unos senos y unos cosenos con los que la distancia entre dos posiciones se puede
 escribir como una operación lineal sobre lo que se ha añadido. Esa propiedad se enseña, no se
 afirma, y ocupa la lección entera.
