@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 334" width="740" height="334" role="img"
+ aria-label="An MMLU question from high school geography: what family do most European languages belong to? Options: A, Ural-Altaic; B, Basque; C, Indo-European, the key; D, Phoenician. Beside it, three ways of reading SmolLM2-360M's answer, with the probability of each option relative to the other three. Most likely letter: A 25.0%, B 27.4%, C 22.7%, D 24.9%; it picks B and is wrong. The whole option, with the options shown: A 12.2%, B 24.1%, C 23.2%, D 40.6%; it picks D and is wrong. Without showing the options: A &lt; 0.1%, B 0.4%, C 99.6%, D &lt; 0.1%; it picks C and is right. The model knows the answer but can't give it as a letter.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); }
+  .lb { font-size: 12px; font-weight: 600; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .big { font-size: 13px; font-weight: 600; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ch { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<text class="hd" x="24.0" y="24.0">MMLU · HIGH SCHOOL GEOGRAPHY</text>
+<text class="big" x="24.0" y="50.0">What family do most European</text>
+<text class="big" x="24.0" y="68.0">languages belong to?</text>
+<text class="tx" x="24.0" y="96.0" style="fill:#bbcabf">A. Ural-Altaic</text>
+<text class="tx" x="24.0" y="116.0" style="fill:#bbcabf">B. Basque</text>
+<text class="tx" x="24.0" y="136.0" style="fill:#4edea3;font-weight:600">C. Indo-European</text>
+<text class="tk" x="174.0" y="136.0" style="fill:#4edea3">✓ the key</text>
+<text class="tx" x="24.0" y="156.0" style="fill:#bbcabf">D. Phoenician</text>
+<text class="lb" x="24.0" y="190.0" style="fill:#e8a24c">SmolLM2-360M</text>
+<text class="tk" x="24.0" y="206.0">base model, five examples first</text>
+<text class="lb" x="330.0" y="26.0">most likely letter</text>
+<text class="tx" x="716.0" y="26.0" style="text-anchor:end;fill:#ffb4ab;font-weight:600">picks B: wrong</text>
+<text class="tk" x="330.0" y="40.0">" A" … " D" after "Answer:"</text>
+<text class="tk" x="338.0" y="58.0" style="text-anchor:middle">A</text>
+<rect x="350.0" y="50.0" width="62.5" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="418.5" y="58.0">25.0%</text>
+<text class="tk" x="338.0" y="72.0" style="text-anchor:middle">B</text>
+<rect x="350.0" y="64.0" width="68.5" height="9" rx="2" fill="#ffb4ab"/>
+<text class="tk" x="424.5" y="72.0">27.4%</text>
+<text class="tk" x="338.0" y="86.0" style="text-anchor:middle">C</text>
+<rect x="350.0" y="78.0" width="56.6" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="412.6" y="86.0">22.7%</text>
+<text class="tk" x="338.0" y="100.0" style="text-anchor:middle">D</text>
+<rect x="350.0" y="92.0" width="62.3" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="418.3" y="100.0">24.9%</text>
+<text class="lb" x="330.0" y="128.0">the whole option</text>
+<text class="tx" x="716.0" y="128.0" style="text-anchor:end;fill:#ffb4ab;font-weight:600">picks D: wrong</text>
+<text class="tk" x="330.0" y="142.0">"A. Ural-Altaic" … "D. Phoenician", options shown</text>
+<text class="tk" x="338.0" y="160.0" style="text-anchor:middle">A</text>
+<rect x="350.0" y="152.0" width="30.5" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="386.5" y="160.0">12.2%</text>
+<text class="tk" x="338.0" y="174.0" style="text-anchor:middle">B</text>
+<rect x="350.0" y="166.0" width="60.2" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="416.2" y="174.0">24.1%</text>
+<text class="tk" x="338.0" y="188.0" style="text-anchor:middle">C</text>
+<rect x="350.0" y="180.0" width="57.9" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="413.9" y="188.0">23.2%</text>
+<text class="tk" x="338.0" y="202.0" style="text-anchor:middle">D</text>
+<rect x="350.0" y="194.0" width="101.4" height="9" rx="2" fill="#ffb4ab"/>
+<text class="tk" x="457.4" y="202.0">40.6%</text>
+<text class="lb" x="330.0" y="230.0">without showing the options</text>
+<text class="tx" x="716.0" y="230.0" style="text-anchor:end;fill:#4edea3;font-weight:600">picks C: right</text>
+<text class="tk" x="330.0" y="244.0">"Ural-Altaic" … "Phoenician" as a continuation</text>
+<text class="tk" x="338.0" y="262.0" style="text-anchor:middle">A</text>
+<rect x="350.0" y="254.0" width="1.5" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="357.5" y="262.0">&lt; 0.1%</text>
+<text class="tk" x="338.0" y="276.0" style="text-anchor:middle">B</text>
+<rect x="350.0" y="268.0" width="1.5" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="357.5" y="276.0">0.4%</text>
+<text class="tk" x="338.0" y="290.0" style="text-anchor:middle">C</text>
+<rect x="350.0" y="282.0" width="248.9" height="9" rx="2" fill="#4edea3"/>
+<text class="tk" x="604.9" y="290.0">99.6%</text>
+<text class="tk" x="338.0" y="304.0" style="text-anchor:middle">D</text>
+<rect x="350.0" y="296.0" width="1.5" height="9" rx="2" fill="#3b3b3e"/>
+<text class="tk" x="357.5" y="304.0">&lt; 0.1%</text>
+<text class="tk" x="716.0" y="324.0" style="text-anchor:end">probability of each option relative to the other three</text>
+</svg>

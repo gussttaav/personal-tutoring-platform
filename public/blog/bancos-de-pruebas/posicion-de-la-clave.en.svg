@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 770 298" width="770" height="298" role="img"
+ aria-label="The same 570 questions, with the options rotated so that the correct answer always sits at the same letter, reading the most likely letter. SmolLM2-360M scores 44.2% with the correct answer at A, 36.1% at B, 8.4% at C and 13.0% at D, and 24.7% with the options in their original order; Qwen2.5-0.5B scores 46.0% with the correct answer at A, 50.2% at B, 54.6% at C and 46.3% at D, and 52.3% with the options in their original order.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); }
+  .lb { font-size: 12px; font-weight: 600; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .big { font-size: 13px; font-weight: 600; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ch { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<text class="lb" x="205.0" y="18.0" style="text-anchor:middle;fill:#e8a24c">SmolLM2-360M</text>
+<line class="gr" x1="40.0" y1="252.0" x2="370.0" y2="252.0"/>
+<text class="tk" x="34.0" y="256.0" style="text-anchor:end">0%</text>
+<line class="gr" x1="40.0" y1="202.0" x2="370.0" y2="202.0"/>
+<text class="tk" x="34.0" y="206.0" style="text-anchor:end">20%</text>
+<line class="gr" x1="40.0" y1="152.0" x2="370.0" y2="152.0"/>
+<text class="tk" x="34.0" y="156.0" style="text-anchor:end">40%</text>
+<line class="gr" x1="40.0" y1="102.0" x2="370.0" y2="102.0"/>
+<text class="tk" x="34.0" y="106.0" style="text-anchor:end">60%</text>
+<line class="gr" x1="40.0" y1="52.0" x2="370.0" y2="52.0"/>
+<text class="tk" x="34.0" y="56.0" style="text-anchor:end">80%</text>
+<line class="ch" x1="40.0" y1="190.2" x2="370.0" y2="190.2"/>
+<rect x="58.1" y="141.5" width="46.2" height="110.5" fill="#e8a24c" opacity="0.85" rx="2"/>
+<text class="tx" x="81.2" y="157.5" style="text-anchor:middle;fill:#131315;font-weight:600">44.2%</text>
+<text class="lb" x="81.2" y="268.0" style="text-anchor:middle">A</text>
+<rect x="140.7" y="161.6" width="46.2" height="90.4" fill="#e8a24c" opacity="0.85" rx="2"/>
+<text class="tx" x="163.8" y="177.6" style="text-anchor:middle;fill:#131315;font-weight:600">36.1%</text>
+<text class="lb" x="163.8" y="268.0" style="text-anchor:middle">B</text>
+<rect x="223.2" y="230.9" width="46.2" height="21.1" fill="#e8a24c" opacity="0.85" rx="2"/>
+<text class="tk" x="246.2" y="224.9" style="text-anchor:middle;fill:#bbcabf">8.4%</text>
+<text class="lb" x="246.2" y="268.0" style="text-anchor:middle">C</text>
+<rect x="305.6" y="219.5" width="46.2" height="32.5" fill="#e8a24c" opacity="0.85" rx="2"/>
+<text class="tx" x="328.8" y="235.5" style="text-anchor:middle;fill:#131315;font-weight:600">13.0%</text>
+<text class="lb" x="328.8" y="268.0" style="text-anchor:middle">D</text>
+<text class="tk" x="205.0" y="33.0" style="text-anchor:middle">dashed: options in their original order, 24.7%</text>
+<text class="lb" x="585.0" y="18.0" style="text-anchor:middle;fill:#4edea3">Qwen2.5-0.5B</text>
+<line class="gr" x1="420.0" y1="252.0" x2="750.0" y2="252.0"/>
+<text class="tk" x="414.0" y="256.0" style="text-anchor:end">0%</text>
+<line class="gr" x1="420.0" y1="202.0" x2="750.0" y2="202.0"/>
+<text class="tk" x="414.0" y="206.0" style="text-anchor:end">20%</text>
+<line class="gr" x1="420.0" y1="152.0" x2="750.0" y2="152.0"/>
+<text class="tk" x="414.0" y="156.0" style="text-anchor:end">40%</text>
+<line class="gr" x1="420.0" y1="102.0" x2="750.0" y2="102.0"/>
+<text class="tk" x="414.0" y="106.0" style="text-anchor:end">60%</text>
+<line class="gr" x1="420.0" y1="52.0" x2="750.0" y2="52.0"/>
+<text class="tk" x="414.0" y="56.0" style="text-anchor:end">80%</text>
+<line class="ch" x1="420.0" y1="121.3" x2="750.0" y2="121.3"/>
+<rect x="438.1" y="137.1" width="46.2" height="114.9" fill="#4edea3" opacity="0.85" rx="2"/>
+<text class="tx" x="461.2" y="153.1" style="text-anchor:middle;fill:#131315;font-weight:600">46.0%</text>
+<text class="lb" x="461.2" y="268.0" style="text-anchor:middle">A</text>
+<rect x="520.6" y="126.6" width="46.2" height="125.4" fill="#4edea3" opacity="0.85" rx="2"/>
+<text class="tx" x="543.8" y="142.6" style="text-anchor:middle;fill:#131315;font-weight:600">50.2%</text>
+<text class="lb" x="543.8" y="268.0" style="text-anchor:middle">B</text>
+<rect x="603.1" y="115.6" width="46.2" height="136.4" fill="#4edea3" opacity="0.85" rx="2"/>
+<text class="tx" x="626.2" y="131.6" style="text-anchor:middle;fill:#131315;font-weight:600">54.6%</text>
+<text class="lb" x="626.2" y="268.0" style="text-anchor:middle">C</text>
+<rect x="685.6" y="136.2" width="46.2" height="115.8" fill="#4edea3" opacity="0.85" rx="2"/>
+<text class="tx" x="708.8" y="152.2" style="text-anchor:middle;fill:#131315;font-weight:600">46.3%</text>
+<text class="lb" x="708.8" y="268.0" style="text-anchor:middle">D</text>
+<text class="tk" x="585.0" y="33.0" style="text-anchor:middle">dashed: options in their original order, 52.3%</text>
+<text class="tk" x="370.0" y="288.0" style="text-anchor:middle">letter the correct answer is moved to</text>
+</svg>
