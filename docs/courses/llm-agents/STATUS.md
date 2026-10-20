@@ -38,7 +38,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
-| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (3/7) | _tbd_ | |
+| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (4/7) | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
@@ -1246,3 +1246,45 @@ confirmed by Gustavo at review:
   fail, and the `isdigit()` attempt fails exactly the two trap tests with their messages; no
   horizontal page scroll at 360 px (the widget fits at 320 px; seven displays, up to 678 px, scroll
   in their own boxes). Not on a phone.
+
+Lesson 21 `recuperacion` authored on its own branch. 2 000 words, 4 display equations (under the
+5–12 target, as lesson 19), no widget (the block md assigns none), 2 cells (44 and 35 lines), 4
+quiz, 1 challenge (`ch-recuperar`), 4 readings (Lewis et al. 2020 / RAG, Karpukhin et al. 2020 /
+DPR, Reimers & Gurevych 2019 / Sentence-BERT, Muennighoff 2022 / SGPT; checked against the arXiv
+pages and, for the two claims quoted from the bodies, the PDFs). `minutes: 33` (lint ≈33; the
+advisory reading-time warning, as lessons 12–15 and 20). Decisions, confirmed by Gustavo at review:
+- **The gotcha, decided with the checkpoint in hand: TF-IDF is the honest retriever.** The
+  mini-GPT's mean-pooled last-layer vectors retrieve by form, not content. On 288 passages (the
+  sentences of chapters 1–3 with ≥ 6 words that fit in 64 tokens) and twelve questions the author
+  wrote, TF-IDF puts the answering passage first for 6 and in the top 3 for 9; the mini-GPT for 0,
+  its best rank 23, and the passage about the Nela's age ranks 285th and 288th. The lesson says
+  which retriever it uses and that the production version is a model trained for it.
+- **Why the mini-GPT fails is derived, then measured.** Under the causal mask, token $x_j$ enters
+  $T - j + 1$ of the $T$ terms of the mean, so the first token is heard $T$ times. Spanish's opening
+  `¿` makes it visible: 100 of the 120 top-10 neighbours of the twelve questions are questions (20 of
+  288 passages are); without the closing `?`, 97; without the opening `¿`, 10, the random rate.
+  Position-weighted pooling (SGPT) was tried while designing and still gives 82: it is in `reading`,
+  not in the lesson.
+- **The formal content:** cosine (by reference) and top-$k$; the recuperador's contract (it always
+  returns $k$, which the challenge's `minimo` fixes); the mean of $\mathbf{h}(x_{\le t})$ and its
+  asymmetry against a bidirectional encoder (the first course's BERT lesson); the contrastive loss
+  stated in one display (cross-entropy over the batch's passages, cosines as logits, $\tau$ as the
+  temperature; the lesson says DPR used the dot product); and retrieved vs. known as the law of
+  total probability over $P(\text{recuperada})$.
+- **Letters and terms added before writing:** the $\mathbf{q}$, $\mathbf{d}_i$ row completed; $k$
+  reusing top-k's letter; the mini-GPT's *embedding* as a sum of $\mathbf{h}(x_{\le t})$; a bare
+  $P(\cdot)$ over the questions a harness receives (lesson 20 had avoided a bare $P$; here whether a
+  passage is recuperado is fixed per question, so the event is the question's), in `NOTATION.md`;
+  `pasaje`, *embedding* (de un texto), `recuperación` / `recuperar` / `recuperador` in the delta's
+  §4. `pregunta` is used for the caso, since every caso here is literally a question (lesson 19
+  precedent). BERT is expanded once; GPT is not, as in every earlier lesson.
+- **Lesson 20's bridge now links this lesson** (placeholder comment removed). This lesson names
+  lesson 22 (`ventana-de-contexto`) in its bridge and lesson 23 (`evaluar`) in its body, both in
+  prose with the usual comment.
+- Verified: `pnpm lint:content` (only the reading-time warning), `pnpm build` green with 0 KaTeX
+  errors; both cells run in the Browser pane on `pnpm start` with the CPython prototype's output
+  (cell 1 in 3.2 s warm, desktop; at a phone's 2–3× that is near the 10 s cap, not measured); all
+  four quiz questions right and wrong (the numeric at its tolerance edge); the challenge's solution
+  passes, while the starter, an empty submission, a dot-product version and a non-stable sort each
+  fail with their own message; no horizontal page scroll at 360 px (the widest display, 576 px,
+  scrolls in its own box; all four fit the desktop column). Not on a phone.
