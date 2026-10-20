@@ -1468,12 +1468,12 @@
         "mapAria": "Mapa de auto-atención: elige una posición para ver de qué otras tira",
         "empty": "Escribe algo y aparecerá la rejilla.",
         "causalFirst": "Con la máscara, la posición 1 no tiene nada detrás: <tok>{token}</tok> se lleva {self} sobre sí misma y {blanked} {blanked, plural, one {casilla queda tachada} other {casillas quedan tachadas}} a su derecha. La fila suma {sum} igual que las demás: lo que se tacha se reparte entre lo que queda, porque la máscara entra antes del softmax.",
-        "causalOther": "Con la máscara, la posición {pos}, <tok>{token}</tok>, sólo puede mirar de la 1 a la {pos}. Su peso más alto —{peak}— va a <tgt>{target}</tgt>, y la fila sigue sumando {sum} con {blanked} {blanked, plural, one {casilla tachada} other {casillas tachadas}}.",
-        "projected": "La posición {pos}, <tok>{token}</tok>, le da su peso más alto —{peak}— a <tgt>{target}</tgt>, y {self} a sí misma. La fila entera suma {sum}.",
+        "causalOther": "Con la máscara, la posición {pos}, <tok>{token}</tok>, sólo puede mirar de la 1 a la {pos}. Lo que lee viene sobre todo de <tgt>{target}</tgt>, que aporta {peak}, y la fila sigue sumando {sum} con {blanked} {blanked, plural, one {casilla tachada} other {casillas tachadas}}.",
+        "projected": "Lo que lee la posición {pos}, <tok>{token}</tok>, viene sobre todo de <tgt>{target}</tgt>, que aporta {peak}; ella misma aporta {self}. La fila entera suma {sum}.",
         "unprojected": "Sin proyectar, la posición {pos}, <tok>{token}</tok>, se queda con su propio peso más alto: {self} sobre sí misma, contra {best} del mejor de los demás. Y pasa en las {rows} filas a la vez: la diagonal gana siempre. Una capa así devuelve lo que le entró con un tinte de lo demás, y no tiene un solo parámetro con el que decidir otra cosa.",
-        "footnote": "Los vectores ({dModel} coordenadas, {lexicon} palabras en el léxico) y las proyecciones —{dk} coordenadas para comparar, {dv} para mezclar— los he puesto yo a mano para el curso; ningún modelo entrenado hay aquí dentro.",
+        "footnote": "Los vectores ({dModel} coordenadas, {lexicon} palabras en el léxico) y las proyecciones, con {dk} coordenadas para comparar y {dv} para mezclar, los he puesto yo a mano para el curso; ningún modelo entrenado hay aquí dentro.",
         "footnoteMask": " Las casillas de trazo discontinuo son las que la máscara tacha.",
-        "footnoteUnknown": " Fuera del léxico: {words} — su vector sale de un hash de sus letras, así que esa fila no dice nada.",
+        "footnoteUnknown": " Fuera del léxico: {words}. Su vector sale de un hash de sus letras, así que esa fila no dice nada.",
         "footnoteTruncated": " La frase se ha cortado en {max} tokens."
       },
       "multi-head-view": {
@@ -1502,12 +1502,12 @@
         "singleHeadNote": "Las cuatro reglas sumadas antes de un único softmax: una fila por posición y nada más.",
         "headNote": "Cabeza {n} de {total}: {name}.",
         "empty": "Escribe algo y aparecerán las rejillas.",
-        "verdictFlat": "reparte por igual entre todas — esta regla no dice nada de esta posición",
+        "verdictFlat": "reparte por igual entre todas: esta regla no dice nada de esta posición",
         "verdictTie": "empate entre {names}, a {weight} cada una",
         "verdictPeak": "{names}, con {weight}",
         "panelIntro": "A qué tira la posición {pos}, <tok>{token}</tok>, en cada mapa:",
-        "footnote": "Las {h} cabezas son las {h} reglas del léxico ({lexicon} palabras) de la lección anterior, una por cabeza, y las he escrito yo a mano para el curso. Por eso aquí cada cabeza compara en {dk} coordenada: es lo que hace legible una regla, no lo que usa una capa de verdad, que reparte entre sus cabezas la anchura del modelo.",
-        "footnoteUnknown": " Fuera del léxico: {words} — su vector sale de un hash de sus letras, así que esa fila no dice nada.",
+        "footnote": "Las {h} cabezas son las {h} reglas del léxico ({lexicon} palabras) de la lección sobre la auto-atención, una por cabeza, y las he escrito yo a mano para el curso. Por eso aquí cada cabeza compara en {dk} coordenada: es lo que hace legible una regla, no lo que usa una capa de verdad, que reparte entre sus cabezas la anchura del modelo.",
+        "footnoteUnknown": " Fuera del léxico: {words}. Su vector sale de un hash de sus letras, así que esa fila no dice nada.",
         "footnoteTruncated": " La frase se ha cortado en {max} tokens."
       },
       "positional-encoding": {
