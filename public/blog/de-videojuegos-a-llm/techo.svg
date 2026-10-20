@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330" role="img"
+ aria-label="Gráfico en escala logarítmica en los dos ejes. Horizontal: intensidad aritmética, operaciones por byte leído, de 0,1 a 10 000. Vertical: billones de operaciones por segundo (TFLOPS), de 0,1 a 2 000. Dos curvas con forma de tejado: suben en diagonal mientras manda la memoria y se aplanan en el máximo de cálculo. H100: sube con sus 3,35 TB/s y se aplana en 989 TFLOPS hacia las 295 operaciones por byte. Xeon 6980P: sube con sus 845 GB/s y se aplana en unos 262 TFLOPS hacia las 310. Tres marcas verticales: decodificar para una persona, 1 operación por byte, donde la H100 da 3,35 TFLOPS; decodificar para 64 a la vez, 64 operaciones por byte, 214 TFLOPS; y entrenar o prefill, unas 5 000 operaciones por byte, en el máximo de los dos chips.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.f { stroke: #4edea3; fill: rgba(78,222,163,0.45); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .ar { stroke: #86948a; stroke-width: 1.2; fill: none; marker-end: url(#ah); }
+</style>
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7"
+  orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="#86948a"/></marker></defs>
+<text class="sb" x="16.0" y="16.0">billones de operaciones por segundo (TFLOPS, BF16)</text>
+<line class="ed" x1="64.0" y1="262.0" x2="736.0" y2="262.0"/>
+<text class="sb" x="56.0" y="266.0" style="text-anchor:end">0,1</text>
+<line class="gl" x1="64.0" y1="208.1" x2="736.0" y2="208.1"/>
+<text class="sb" x="56.0" y="212.1" style="text-anchor:end">1</text>
+<line class="gl" x1="64.0" y1="154.1" x2="736.0" y2="154.1"/>
+<text class="sb" x="56.0" y="158.1" style="text-anchor:end">10</text>
+<line class="gl" x1="64.0" y1="100.2" x2="736.0" y2="100.2"/>
+<text class="sb" x="56.0" y="104.2" style="text-anchor:end">100</text>
+<line class="gl" x1="64.0" y1="46.2" x2="736.0" y2="46.2"/>
+<text class="sb" x="56.0" y="50.2" style="text-anchor:end">1000</text>
+<line class="ed" x1="64.0" y1="262.0" x2="64.0" y2="266.0"/>
+<text class="tx" x="64.0" y="279.0" style="text-anchor:middle">0,1</text>
+<line class="ed" x1="198.4" y1="262.0" x2="198.4" y2="266.0"/>
+<text class="tx" x="198.4" y="279.0" style="text-anchor:middle">1</text>
+<line class="ed" x1="332.8" y1="262.0" x2="332.8" y2="266.0"/>
+<text class="tx" x="332.8" y="279.0" style="text-anchor:middle">10</text>
+<line class="ed" x1="467.2" y1="262.0" x2="467.2" y2="266.0"/>
+<text class="tx" x="467.2" y="279.0" style="text-anchor:middle">100</text>
+<line class="ed" x1="601.6" y1="262.0" x2="601.6" y2="266.0"/>
+<text class="tx" x="601.6" y="279.0" style="text-anchor:middle">1000</text>
+<line class="ed" x1="736.0" y1="262.0" x2="736.0" y2="266.0"/>
+<text class="tx" x="736.0" y="279.0" style="text-anchor:middle">10 000</text>
+<text class="sb" x="400.0" y="300.0" style="text-anchor:middle">intensidad aritmética: operaciones por byte leído de memoria</text>
+<polyline points="64.0,233.7 530.4,46.5 736.0,46.5" fill="none" stroke="#4edea3" stroke-width="2.2"/>
+<circle cx="530.4" cy="46.5" r="3.5" fill="#4edea3"/>
+<text class="tx m" x="518.4" y="50.5" style="text-anchor:end">H100: 989 TFLOPS, 3,35 TB/s</text>
+<polyline points="73.8,262.0 533.3,77.6 736.0,77.6" fill="none" stroke="#6fb1e8" stroke-width="2.2"/>
+<circle cx="533.3" cy="77.6" r="3.5" fill="#6fb1e8"/>
+<text class="tx b" x="543.3" y="93.6">Xeon 6980P: ≈ 262 TFLOPS, 845 GB/s</text>
+<line class="rf" x1="198.4" y1="34.0" x2="198.4" y2="262.0"/>
+<circle cx="198.4" cy="179.7" r="4" fill="#bbcabf"/>
+<text class="sb" x="204.4" y="254.0">decodificar, 1 persona</text>
+<line class="rf" x1="441.2" y1="34.0" x2="441.2" y2="262.0"/>
+<circle cx="441.2" cy="82.3" r="4" fill="#bbcabf"/>
+<text class="sb" x="447.2" y="254.0">decodificar, 64 a la vez</text>
+<line class="rf" x1="700.7" y1="34.0" x2="700.7" y2="262.0"/>
+<circle cx="700.7" cy="46.5" r="4" fill="#bbcabf"/>
+<text class="sb" x="694.7" y="254.0" style="text-anchor:end">entrenar o prefill</text>
+<text class="sb" x="74.6" y="182.3">manda la memoria</text>
+<text class="sb" x="642.1" y="36.5" style="text-anchor:middle">manda la aritmética</text>
+</svg>

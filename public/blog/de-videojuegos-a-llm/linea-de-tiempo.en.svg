@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 176" width="760" height="176" role="img"
+ aria-label="Timeline, not to scale, with twelve milestones. In blue, video games: 1996, Voodoo Graphics, rasterises and applies textures; 1997, GLQuake, Quake with an accelerator; 1999, GeForce 256, the first GPU, transforms the vertices; 2001, GeForce 3, programmable shaders. In green, the GPU for computing: 2007, CUDA; 2009, networks on GPUs, up to 70 times faster; 2012, AlexNet, on two GTX 580s. In orange, AI chips: 2015, TPU, Google's systolic array; 2017, tensor cores in the V100, the same year as the transformer; 2022, H100, FP8; 2024, B200, FP4; 2025, Ironwood, an inference TPU.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.f { stroke: #4edea3; fill: rgba(78,222,163,0.45); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .ar { stroke: #86948a; stroke-width: 1.2; fill: none; marker-end: url(#ah); }
+</style>
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7"
+  orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="#86948a"/></marker></defs>
+<line class="ed" x1="8.0" y1="102.0" x2="752.0" y2="102.0"/>
+<circle cx="72.0" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="72.0" y1="95.0" x2="72.0" y2="85.0"/>
+<text class="lb b" x="72.0" y="54.0" style="text-anchor:middle">1996</text>
+<text class="tx" x="72.0" y="68.0" style="text-anchor:middle">Voodoo Graphics</text>
+<text class="sb" x="72.0" y="81.0" style="text-anchor:middle">textures</text>
+<circle cx="128.9" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="128.9" y1="109.0" x2="128.9" y2="119.0"/>
+<text class="lb b" x="128.9" y="133.0" style="text-anchor:middle">1997</text>
+<text class="tx" x="128.9" y="147.0" style="text-anchor:middle">GLQuake</text>
+<text class="sb" x="128.9" y="160.0" style="text-anchor:middle">with an accelerator</text>
+<circle cx="185.8" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="185.8" y1="95.0" x2="185.8" y2="85.0"/>
+<text class="lb b" x="185.8" y="54.0" style="text-anchor:middle">1999</text>
+<text class="tx" x="185.8" y="68.0" style="text-anchor:middle">GeForce 256</text>
+<text class="sb" x="185.8" y="81.0" style="text-anchor:middle">the first GPU</text>
+<circle cx="242.7" cy="102" r="4.5" fill="#6fb1e8"/>
+<line class="ed" x1="242.7" y1="109.0" x2="242.7" y2="119.0"/>
+<text class="lb b" x="242.7" y="133.0" style="text-anchor:middle">2001</text>
+<text class="tx" x="242.7" y="147.0" style="text-anchor:middle">GeForce 3</text>
+<text class="sb" x="242.7" y="160.0" style="text-anchor:middle">programmable</text>
+<circle cx="299.6" cy="102" r="4.5" fill="#4edea3"/>
+<line class="ed" x1="299.6" y1="95.0" x2="299.6" y2="85.0"/>
+<text class="lb m" x="299.6" y="54.0" style="text-anchor:middle">2007</text>
+<text class="tx" x="299.6" y="68.0" style="text-anchor:middle">CUDA</text>
+<text class="sb" x="299.6" y="81.0" style="text-anchor:middle">programming the GPU</text>
+<circle cx="356.5" cy="102" r="4.5" fill="#4edea3"/>
+<line class="ed" x1="356.5" y1="109.0" x2="356.5" y2="119.0"/>
+<text class="lb m" x="356.5" y="133.0" style="text-anchor:middle">2009</text>
+<text class="tx" x="356.5" y="147.0" style="text-anchor:middle">Nets on GPUs</text>
+<text class="sb" x="356.5" y="160.0" style="text-anchor:middle">up to 70× faster</text>
+<circle cx="413.5" cy="102" r="4.5" fill="#4edea3"/>
+<line class="ed" x1="413.5" y1="95.0" x2="413.5" y2="85.0"/>
+<text class="lb m" x="413.5" y="54.0" style="text-anchor:middle">2012</text>
+<text class="tx" x="413.5" y="68.0" style="text-anchor:middle">AlexNet</text>
+<text class="sb" x="413.5" y="81.0" style="text-anchor:middle">two GTX 580s</text>
+<circle cx="470.4" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="470.4" y1="109.0" x2="470.4" y2="119.0"/>
+<text class="lb w" x="470.4" y="133.0" style="text-anchor:middle">2015</text>
+<text class="tx" x="470.4" y="147.0" style="text-anchor:middle">TPU</text>
+<text class="sb" x="470.4" y="160.0" style="text-anchor:middle">systolic array</text>
+<circle cx="527.3" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="527.3" y1="95.0" x2="527.3" y2="85.0"/>
+<text class="lb w" x="527.3" y="54.0" style="text-anchor:middle">2017</text>
+<text class="tx" x="527.3" y="68.0" style="text-anchor:middle">Tensor cores</text>
+<text class="sb" x="527.3" y="81.0" style="text-anchor:middle">and the transformer</text>
+<circle cx="584.2" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="584.2" y1="109.0" x2="584.2" y2="119.0"/>
+<text class="lb w" x="584.2" y="133.0" style="text-anchor:middle">2022</text>
+<text class="tx" x="584.2" y="147.0" style="text-anchor:middle">H100</text>
+<text class="sb" x="584.2" y="160.0" style="text-anchor:middle">FP8</text>
+<circle cx="641.1" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="641.1" y1="95.0" x2="641.1" y2="85.0"/>
+<text class="lb w" x="641.1" y="54.0" style="text-anchor:middle">2024</text>
+<text class="tx" x="641.1" y="68.0" style="text-anchor:middle">B200</text>
+<text class="sb" x="641.1" y="81.0" style="text-anchor:middle">FP4</text>
+<circle cx="698.0" cy="102" r="4.5" fill="#e8a24c"/>
+<line class="ed" x1="698.0" y1="109.0" x2="698.0" y2="119.0"/>
+<text class="lb w" x="698.0" y="133.0" style="text-anchor:middle">2025</text>
+<text class="tx" x="698.0" y="147.0" style="text-anchor:middle">Ironwood</text>
+<text class="sb" x="698.0" y="160.0" style="text-anchor:middle">an inference TPU</text>
+<circle cx="670" cy="12" r="4.5" fill="#e8a24c"/>
+<text class="sb" x="680.8" y="16.0">AI chips</text>
+<circle cx="504" cy="12" r="4.5" fill="#4edea3"/>
+<text class="sb" x="514.4" y="16.0">the GPU for computing</text>
+<circle cx="402" cy="12" r="4.5" fill="#6fb1e8"/>
+<text class="sb" x="412.0" y="16.0">video games</text>
+</svg>
