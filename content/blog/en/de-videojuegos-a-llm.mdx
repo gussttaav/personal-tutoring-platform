@@ -1,0 +1,781 @@
+---
+slug: de-videojuegos-a-llm
+title: "Why a chip designed for video games trains language models"
+date: "2026-10-24"
+minutes: 28
+summary: "In 1999 the GPU was born to multiply every vertex in a video game by a 4×4 matrix; today it trains language models with 405 billion parameters. Why video games needed a chip of their own, why a language model does essentially the same operation, why the CPU isn't enough for either, how training a model differs from using it, and why history is repeating itself with chips built only for AI."
+draft: false
+reading:
+  - kind: paper
+    title: "Fast Matrix Multiplies using Graphics Hardware"
+    authors: "E. Scott Larsen and David McAllister"
+    year: "2001"
+    venue: "SC 2001 (ACM/IEEE Supercomputing)"
+    lang: en
+    url: "https://dl.acm.org/doi/10.1145/582034.582089"
+    note: "One of the first papers to use a graphics card for computing: it multiplies matrices by storing them as textures and letting the drawing hardware do the arithmetic, six years before CUDA."
+  - kind: paper
+    title: "Large-scale Deep Unsupervised Learning using Graphics Processors"
+    authors: "Rajat Raina, Anand Madhavan and Andrew Y. Ng"
+    year: "2009"
+    venue: "ICML 2009"
+    lang: en
+    url: "https://dl.acm.org/doi/10.1145/1553374.1553486"
+    note: "The case for training neural networks on GPUs, with numbers: up to 70 times faster than a dual-core processor, and from weeks to a day for a model with 100 million parameters."
+  - kind: paper
+    title: "ImageNet Classification with Deep Convolutional Neural Networks"
+    authors: "Alex Krizhevsky, Ilya Sutskever and Geoffrey E. Hinton"
+    year: "2012"
+    venue: "NeurIPS 2012"
+    lang: en
+    url: "https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html"
+    note: "AlexNet. Section 3.2 explains how they split the network across two 3 GB GTX 580s because it didn't fit on one, and how long training took."
+  - kind: paper
+    title: "In-Datacenter Performance Analysis of a Tensor Processing Unit"
+    authors: "Norman P. Jouppi and others"
+    year: "2017"
+    venue: "ISCA 2017"
+    lang: en
+    url: "https://arxiv.org/abs/1704.04760"
+    note: "The first TPU from the inside: why Google decided in 2013 to build its own chip, how its 256 × 256 systolic array works and how much it gained over the CPU and GPU of its day."
+  - kind: paper
+    title: "Roofline: An Insightful Visual Performance Model for Multicore Architectures"
+    authors: "Samuel Williams, Andrew Waterman and David Patterson"
+    year: "2009"
+    venue: "Communications of the ACM"
+    lang: en
+    url: "https://people.eecs.berkeley.edu/~kubitron/cs252/handouts/papers/RooflineVyNoYellow.pdf"
+    note: "The paper that proposed the roofline chart: two numbers from a chip and one from a program tell you whether the program is waiting on memory or on arithmetic. Ten pages that read in one sitting."
+  - kind: paper
+    title: "The Llama 3 Herd of Models"
+    authors: "Llama Team, AI @ Meta"
+    year: "2024"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2407.21783"
+    note: "Section 3.3 is a guided tour of a 16,384-GPU training run: how the model was split up, how much of the theoretical peak was actually used and what broke over 54 days."
+  - kind: blog
+    title: "Making Deep Learning Go Brrrr From First Principles"
+    authors: "Horace He"
+    year: "2022"
+    venue: "horace.io"
+    lang: en
+    url: "https://horace.io/brrr_intro.html"
+    note: "Why a model is slow, broken down into three causes: compute, memory and overhead. It's the way of thinking behind the section on training and inference, applied to real programs."
+  - kind: blog
+    title: "Transformer Inference Arithmetic"
+    authors: "Carol Chen (kipply)"
+    year: "2022"
+    venue: "kipp.ly"
+    lang: en
+    url: "https://kipp.ly/transformer-inference-arithmetic/"
+    note: "The arithmetic of inference done by hand: how many bytes and operations each token costs, how much room the KV cache takes and at how many users memory stops being the limit."
+  - kind: blog
+    title: "How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance: a Worklog"
+    authors: "Simon Boehm"
+    year: "2022"
+    venue: "siboehm.com"
+    lang: en
+    url: "https://siboehm.com/articles/22/CUDA-MMM"
+    note: "Ten versions of a CUDA matrix multiplication, from a naive one to one almost as fast as NVIDIA's. You see, step by step, what \"reusing every number\" means in practice."
+  - kind: libro
+    title: "How to Scale Your Model"
+    authors: "Jacob Austin, Sholto Douglas and others (Google DeepMind)"
+    year: "2025"
+    venue: "jax-ml.github.io"
+    lang: en
+    url: "https://jax-ml.github.io/scaling-book/"
+    note: "A free book on training and serving large models on TPUs and GPUs, from the roofline of a single chip to splitting a model across thousands. The first few chapters are enough to take this post further."
+areas: ["ia", "programacion"]
+cover: "/blog/de-videojuegos-a-llm/cpu-y-gpu.en.svg"
+tags: ["llm", "deep-learning", "rendimiento"]
+aiImages: false
+---
+
+{/*
+  BLOG-19: Why a chip designed for video games trains language models. English translation of
+  content/blog/es/de-videojuegos-a-llm.mdx.
+
+  Thesis: a video game and a language model do the same kind of work: the same small operation
+  (multiply and add) on millions of independent pieces of data, with no decisions and with every
+  number reused many times. The CPU is built for the opposite (one fast thread full of
+  decisions), so video games invented the GPU and AI inherited it. Then history repeats itself:
+  the GPU specialises (tensor cores, FP8/FP4, HBM, NVLink, almost no graphics left) and chips
+  built only for AI appear (the TPU and the rest), many of them starting with inference, which is
+  a different problem from training (bandwidth rather than compute).
+
+  No measurements: every number is a published spec or comes from a sum shown next to it. The
+  sources of every figure, checked on 2026-10-20, and the arithmetic behind the derived ones are
+  listed in the header of the Spanish post. Spanish "billón" is 10^12, so it reads "trillion"
+  here, and "mil millones" reads "billion". Money is written with a backslash before the dollar
+  sign, because a bare dollar starts KaTeX maths. Figures: the *.en.svg siblings, written by the
+  same run of scripts/figures/de-videojuegos-a-llm/make_svgs.py; each alt text is the SVG's own
+  aria-label.
+*/}
+
+On 11 October 1999, NVIDIA, a graphics card maker, put the GeForce 256 on sale and billed it as
+"the world's first GPU". A **GPU** (*graphics processing unit*) was, by the definition NVIDIA
+wrote for the occasion, a chip that draws 3D scenes on its own. What was new about the GeForce
+256 was that it took over a calculation the computer's processor had always done until then:
+multiplying every vertex in the scene by a 4×4 matrix to put it in front of the camera.
+
+Twenty-five years later, Meta, the company behind Facebook, trained Llama 3, a language model
+with 405 billion parameters, on 16,384 NVIDIA H100 GPUs. The H100 is a direct descendant of that
+card, but it can barely draw any more: it has no video output, and of its 132 compute blocks only
+4 can run the programs a video game uses to paint the screen.
+
+How does a gaming chip end up training language models? Why not use the processor that every
+computer already has? And if artificial intelligence (AI) is worth so much money, why hasn't
+anyone invented a chip just for it?
+
+**At heart, a video game and a language model do the same job: they multiply matrices, millions
+of times, against a time limit. The processor is designed for almost the opposite job, which is
+why video games had to invent a chip of their own. Language models inherited that chip and, just
+as video games did before them, are now building their own.**
+
+The story gets told twice, first with video games and then with language models, and both
+tellings follow the same steps: what is computed, why it has to be fast, why the processor isn't
+enough and which chip was built for it. First, though, three properties of the operation that
+ties the two stories together, matrix multiplication. Every figure comes from specs published by
+the manufacturers or from the papers linked, and any figure derived from them comes with the
+working alongside.
+
+## The operation this is all about
+
+Multiplying an $m \times k$ matrix by a $k \times n$ one costs about $2mnk$ operations, half of
+them multiplications and half additions. They are **floating-point** operations, floating point
+being the format computers use to store numbers with decimals, which is why a chip's power is
+measured in **FLOPS** (*floating-point operations per second*). A TFLOPS is a trillion
+($10^{12}$) operations per second, and a PFLOPS a thousand trillion.
+
+Three properties of this operation explain almost everything that follows.
+
+**Every number in the result is independent of the others.** Each dot product can be computed at
+the same time as the rest, somewhere else and in any order.
+
+**There are no decisions.** The recipe is always the same, multiply and add, and there's no "if
+this happens, do that" that depends on the data.
+
+**Every number is used many times.** In the product of two $n \times n$ matrices, each number in
+the first is multiplied by $n$ numbers from the second. That's $2n^3$ operations on $2n^2$ input
+numbers, or $n$ operations per number: with thousand-by-thousand matrices, every number read from
+memory can feed a thousand operations, as long as it can be kept close at hand in the meantime.
+
+All three hold for a video game just as much as for a language model. What changes is the size
+of the matrices.
+
+## Video games
+
+### What a video game computes
+
+To a computer, a 3D world is a collection of triangles. A character, a wall or a tree is a mesh
+of thousands of triangles, and each triangle is defined by its three **vertices**, each with three
+coordinates: $x$, $y$ and $z$. To draw a **frame**, one of the still images that make up the
+animation when shown one after another, the game does two big jobs.
+
+**First, it places every vertex.** A character's coordinates are stored relative to its own
+centre. To draw it, the game has to move it to its place in the world, rotate it, look at it from
+where the camera is and project it onto the screen, which is flat. Each of those steps is a
+multiplication by a matrix, and since multiplying by several matrices in a row is the same as
+multiplying by their product, the game combines them into one and applies it to every vertex of
+the object:
+
+$$
+\begin{pmatrix} x' \\ y' \\ z' \\ w' \end{pmatrix}
+=
+\begin{pmatrix}
+m_{11} & m_{12} & m_{13} & m_{14} \\
+m_{21} & m_{22} & m_{23} & m_{24} \\
+m_{31} & m_{32} & m_{33} & m_{34} \\
+m_{41} & m_{42} & m_{43} & m_{44}
+\end{pmatrix}
+\begin{pmatrix} x \\ y \\ z \\ 1 \end{pmatrix}
+$$
+
+The matrix is 4×4 rather than 3×3 because of a trick. Add a fourth number to each vertex, always
+a 1, and moving an object becomes a multiplication too: the matrix's fourth column adds a fixed
+amount to each coordinate. Perspective, which makes distant things look smaller, works the same
+way: the fourth coordinate of the result, $w'$, grows with distance, and dividing $x'$ and $y'$
+by it shrinks whatever is far away. That's 16 multiplications and 12 additions per vertex, with
+the same matrix for every vertex of the object.
+
+**Then, it colours every pixel.** Once projected, each triangle covers a handful of **pixels**,
+the dots of colour that make up the image, and working out which ones it covers is called
+**rasterisation**. Then each of those pixels needs a colour, and that's algebra too. The
+brightness of a matte surface, for example, depends on the angle between the direction it faces
+(its **normal**, a vector perpendicular to it) and the direction the light comes from, and that
+angle comes from a dot product. Textures (images stuck onto the triangles), shadows and
+reflections go on top, but the pattern doesn't change: the same calculation, with different data,
+for every pixel.
+
+<figure>
+  <img
+    src="/blog/de-videojuegos-a-llm/vertice-a-pixel.en.svg"
+    alt="Four stages from left to right. One, vertices: three points with x, y, z coordinates. Two, place: each vertex is multiplied by the same 4×4 matrix, 16 multiplications and 12 additions per vertex. Three, rasterise: the triangle, now on the screen, over a grid of pixels, with the ones it covers marked. Four, shade: each covered pixel gets its colour from a dot product between the normal and the direction of the light. Below, a note: the same operation for millions of vertices and pixels, none waits for another."
+    width="760"
+    height="210"
+  />
+  <figcaption>
+    One frame, simplified. The two big loops, one per vertex and one per pixel, repeat the same
+    small piece of algebra on data where nothing depends on anything else.
+  </figcaption>
+</figure>
+
+Both jobs have the shape of matrix multiplication: a small calculation, always the same, repeated
+over millions of elements that don't depend on each other. A pixel's colour doesn't wait for its
+neighbour's.
+
+### Why it has to be fast
+
+A game doesn't draw one image: it draws sixty a second, or more. At 60 frames per second each
+frame has 16.7 milliseconds to be ready, and if it's late the player sees a stutter. A Full HD
+screen (1920 × 1080) has 2,073,600 pixels, and a 4K one (3840 × 2160) has 8,294,400. At 4K and
+60 frames per second that's almost 500 million pixels a second, each with its own colour
+calculation, not counting the ones that get drawn and then hidden behind something closer.
+
+Nor can any of the work be done in advance, because nobody knows what the next frame will hold
+until the player moves the camera. Animated films can afford to wait: each frame of *Toy Story*
+(1995) took Pixar [between 45 minutes and 30
+hours](https://www.techradar.com/news/25-years-of-magic-a-look-at-how-the-vfx-industry-has-evolved-since-toy-story-debuted)
+of computing on a cluster of 117 Sun workstations. A game has to do something similar in 16
+milliseconds, and keep on doing it.
+
+Notice what actually has the time limit. No pixel is in a hurry on its own: the limit applies to
+the frame as a whole, and it doesn't matter if one pixel takes a long time as long as all two
+million finish in time. What a game needs is **throughput**, how much work gets finished per
+second, not low **latency**, how long each individual task takes. That distinction decides which
+chip is up to the job.
+
+### Why the CPU couldn't keep up
+
+The **CPU** (*central processing unit*) is the computer's general-purpose processor: it runs the
+operating system, the browser and the game's logic. It's designed to run a single **thread** of
+instructions, a sequence in which each step usually depends on the one before, as fast as
+possible, and to do that it spends a good part of the chip on avoiding waits.
+
+**Caches.** Reading a piece of data from main memory takes on the order of a hundred
+nanoseconds, time in which a core could have done hundreds of operations. Caches are small, fast
+memories on the chip that keep recently used data in case it's needed again.
+
+**Branch prediction.** An ordinary program is full of decisions: if the player presses the
+button, the character jumps. The CPU bets on which way each decision will go and keeps working
+before it knows. If it guessed wrong, it throws that work away.
+
+**Out-of-order execution.** If an instruction is waiting for data, the CPU looks further ahead
+for others that don't depend on it and runs them first.
+
+All of this makes a program full of decisions and unpredictable data run fast, and that describes
+nearly all software. None of it helps paint pixels: there are no decisions to guess, the data
+needed is known in advance, and there are millions of independent calculations waiting their
+turn. A **core** is the part of the CPU that runs one thread, and the CPU of 1996 had just one,
+which spent most of its area on making that thread fast, not on adding and multiplying.
+
+Games really were drawn by the CPU, for years. Quake, id Software's shooter from June 1996, did
+everything on it. The box asked for a Pentium, Intel's processor of the day, running at 75 MHz or
+more, and a 120 MHz Pentium managed somewhere around [30 frames per
+second](https://fabiensanglard.net/quake_pc/). Every extra frame, or every extra pixel, had to be
+paid for with a more expensive processor.
+
+Intel's response, in 1997, was MMX, its first set of **SIMD** instructions (*single instruction,
+multiple data*), aimed at multimedia and games: a single instruction works on several numbers at
+once, four additions in one go, for example. SSE (*Streaming SIMD Extensions*) followed in 1999
+and did the same with numbers with decimals, four at a time. It helped, but a core with SIMD
+still did a handful of operations per clock cycle, and the pixels ran into the millions. And the
+CPU had other things to do as well: physics, sound, the enemies' behaviour.
+
+What was needed was a chip that made the opposite bet: give up on making any single task fast in
+exchange for doing a huge number of them at once.
+
+### A chip of its own: the GPU
+
+The first answer was the **3D accelerator card**, a board added to the computer just to draw.
+Voodoo Graphics, from a company called 3dfx, arrived at the end of 1996 and did half the job: it
+rasterised the triangles and applied their textures, but the CPU still placed the vertices. In
+January 1997 id Software released GLQuake, a version of Quake that drew with these cards, and
+the difference was obvious at a glance: higher resolution and smoothed textures.
+
+In 1999, the GeForce 256 took over the other half as well. NVIDIA defined it as a single chip
+with "integrated transform, lighting, triangle setup/clipping, and rendering engines", able to
+process at least 10 million polygons a second. *Transform* means the multiplication by the 4×4
+matrix: in 1999, the operation this post is about left the CPU for a chip of its own.
+
+Those chips were **fixed-function**: each stage did one thing, whatever its designers had decided.
+In 2001 the GeForce 3 brought in **programmable shaders**, small programs written by the game
+itself that the GPU runs once for every vertex or every pixel. From then on the GPU would run any
+calculation it was given, on one condition: that it be the same for millions of elements. In 2006
+the GeForce 8800 merged the two kinds of shader into a single kind of core, and it had 128 of
+them, serving vertices and pixels alike.
+
+That's where the design GPUs still have comes from, and it's the opposite of a CPU's.
+
+**Many simple cores.** A desktop CPU has one or two dozen big cores, and the largest server CPUs
+a few hundred. The [GeForce RTX
+5090](https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/), NVIDIA's most
+powerful gaming card, from 2025, has 21,760 small ones, which together do 104.8 TFLOPS. At 4K
+and 60 frames per second, that's about 210,000 operations per pixel per frame.
+
+**One instruction for many threads.** The cores are grouped into **multiprocessors** (the compute
+blocks from the opening), and on NVIDIA GPUs every group of 32 threads, a ***warp***, runs the
+same instruction at the same moment, each thread on its own data. NVIDIA calls this **SIMT**
+(*single instruction, multiple threads*). Fetching an instruction and deciding what to do with it
+costs the same for one thread as for 32, so almost the whole chip can be given over to
+calculation.
+
+**Waiting without stalling.** A GPU doesn't try to avoid memory waits with huge caches and
+predictions. It keeps thousands of threads in flight, and when a warp is waiting for data the
+scheduler switches to another that already has its own, at no cost. This works because graphics
+always has millions of threads to offer.
+
+**Very wide memory.** The RTX 5090 reads 1,792 GB per second from its memory. A desktop computer
+with two modules of DDR5-5600, the usual kind of memory in a computer today, reads 89.6 at most.
+
+<figure>
+  <img
+    src="/blog/de-videojuegos-a-llm/cpu-y-gpu.en.svg"
+    alt="Schematic of two chips, not to scale. On the left, a CPU: four big cores, each with a control part (branch prediction, out-of-order execution), its own cache and a small arithmetic unit, and below them a large shared cache; the memory, on the right, joined by a narrow channel. On the right, a GPU: a grid of multiprocessors, each with a thin strip of control and cache and many small arithmetic cells, and a memory joined by a wide channel. Legend: control, cache and arithmetic."
+    width="760"
+    height="270"
+  />
+  <figcaption>
+    Schematic, not to scale. The CPU spends its chip on keeping one thread from waiting; the GPU
+    spends it on arithmetic for thousands of threads and on a memory that can keep it fed.
+  </figcaption>
+</figure>
+
+The price is that a GPU is bad at what a CPU does well. A single thread crawls along, and if the
+threads in a warp go different ways at a decision, the warp runs both paths one after the other.
+That's why a computer has both: the CPU for the program, the GPU for the millions of identical
+calculations.
+
+### From drawing to computing
+
+As soon as shaders became programmable, some researchers realised that a GPU was, underneath, a
+machine for doing the same operation on millions of numbers, faster than any CPU. All they had to
+do was dress the problem up as drawing. In 2001, E. Scott Larsen and David McAllister, at the
+University of North Carolina, published [*Fast matrix multiplies using graphics
+hardware*](https://dl.acm.org/doi/10.1145/582034.582089): they stored the matrices as textures
+and let the stage that combines textures do the multiplications and additions. As their abstract
+says, the result came from literally visualising the computation.
+
+It worked, but every calculation had to be framed as if it were a picture. In 2007 NVIDIA
+released [CUDA](https://developer.nvidia.com/cuda-toolkit) (*Compute Unified Device
+Architecture*), a way to program its GPUs in a variant of the C language, with no textures or
+pixels: the programmer writes a function and asks for it to run on a million threads at once. The
+first GPU to support it was the GeForce 8800, a card for gaming.
+
+**Neural networks**, programs that learn from examples by adjusting millions of numbers called
+**parameters**, were among the first to take advantage, because inside they are mostly matrix
+multiplications. In 2009, Rajat Raina, Anand Madhavan and Andrew Ng, at Stanford, trained
+networks on GPUs [up to 70 times faster](https://dl.acm.org/doi/10.1145/1553374.1553486) than
+on a dual-core processor: a model with 100 million parameters went from several weeks of training
+to a day. And in 2012
+[AlexNet](https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html),
+the network built by Alex Krizhevsky, Ilya Sutskever and Geoffrey Hinton, won ImageNet, an image
+recognition competition, by a wide margin. They trained it for five or six days on two GeForce
+GTX 580s, gaming cards with 3 GB of memory each, and had to split the network between them
+because it didn't fit on one. That's where modern **deep learning**, the kind with many-layered
+networks, took off, and it took off on hardware from a video game shop.
+
+## Language models
+
+### What a language model computes
+
+A **language model** is a neural network that, given a piece of text, works out what is likely to
+come next. An **LLM** (*large language model*) is one with billions of parameters, trained on a
+huge share of the public text on the internet. The text goes in split into **tokens**, pieces of
+words (a short word is usually one token, a long one several), and the answer comes out token by
+token: the model computes the next one, appends it to the text and starts again.
+
+Inside the model, each token is a vector: in Llama 3 405B, the model from the opening, a vector
+of 16,384 numbers. Almost everything the model does with those vectors is multiply them by
+matrices. Nearly every LLM today is a **transformer**, the architecture [published in
+2017](https://arxiv.org/abs/1706.03762), and a transformer is a stack of identical layers, 126 in
+Llama 3 405B, each with two parts.
+
+**Attention** lets each token look at the ones before it. Each token's vector is multiplied by
+three matrices to get three others: a *query* (what it's looking for), a *key* (what it offers)
+and a *value* (what it contributes if picked). Comparing each token's query with the keys of all
+the earlier tokens is another matrix multiplication; mixing their values according to that
+comparison is one more; and a fourth matrix brings the result back to 16,384 numbers. In Llama 3
+the key and value matrices are narrower, with 1,024 columns, thanks to an optimisation that saves
+memory.
+
+**The feed-forward network** handles each token on its own: it multiplies its vector by a matrix
+that widens it from 16,384 to 53,248 numbers, applies a simple function to each number and
+multiplies the result by another matrix that brings it back to 16,384. Llama 3 uses a variant
+with three matrices instead of two.
+
+At the top of the stack, one last matrix turns the vector into a score for each of the 128,000
+tokens in the vocabulary, and the next token is chosen from those scores.
+
+<figure>
+  <img
+    src="/blog/de-videojuegos-a-llm/capa-de-un-transformer.en.svg"
+    alt="One layer of Llama 3 405B as a row of matrix multiplications, with their sizes. In comes the vector of one token, 16,384 numbers. Attention: query, a 16,384 × 16,384 matrix; key and value, two of 16,384 × 1,024; comparing queries with keys and mixing values, two more multiplications; output, 16,384 × 16,384. Feed-forward network: two 16,384 × 53,248 matrices and one of 53,248 × 16,384. Out comes another vector of 16,384 numbers. Below: about 3.2 billion parameters per layer, times 126 layers, plus the 128,000-token vocabulary, about 405 billion."
+    width="760"
+    height="250"
+  />
+  <figcaption>
+    One layer of Llama 3 405B. Whatever isn't matrix multiplication (normalising, turning the
+    comparisons into weights, the simple function) comes to only a few operations per number.
+  </figcaption>
+</figure>
+
+The matrices are the parameters. Those in one layer of Llama 3 405B add up to about 3.2 billion
+numbers, and the 126 layers, plus the vocabulary matrices, make the 405 billion in the name.
+Every parameter takes part in one multiplication and one addition for each token that goes
+through the model, so processing a token costs about $2N$ operations, where $N$ is the number of
+parameters: about 810 billion for Llama 3 405B.
+
+Training costs three times as much per token. During **training**, the model reads a text,
+predicts each token from the ones before it, measures how wrong it was and adjusts the parameters
+to be less wrong next time. On top of the forward pass, which makes the prediction, there's a
+backward pass, which works out which way to move each parameter and costs twice as much as the
+first. That comes to about $6N$ operations per token. Llama 3 405B was trained on 15.6 trillion
+tokens:
+
+$$
+6 \times 405 \cdot 10^{9} \times 15.6 \cdot 10^{12} \approx 3.8 \cdot 10^{25}
+$$
+
+A 38 followed by 24 zeros, [the same figure Meta publishes](https://arxiv.org/abs/2407.21783).
+
+It's the same operation as in a video game, with two differences of scale. The matrices aren't
+4×4 but thousands by thousands. And they aren't multiplied by one vector at a time but by many:
+when Llama 3 was trained, each step processed 16 million tokens at once, so the tokens' vectors
+are stacked into a matrix and every multiplication is matrix by matrix.
+
+### Why it has to be fast
+
+Meta trained Llama 3 405B on 16,384 H100 GPUs, and each one sustained about 400 TFLOPS, 41% of
+its theoretical peak. At that rate, a single H100 would have needed about 3,000 years to do the
+$3.8 \cdot 10^{25}$ operations. All 16,384 together needed about 67 days.
+
+With that many parts, something is always breaking. Meta reports that in a 54-day stretch of
+training there were 466 interruptions, 419 of them unplanned, and that more than half of the
+unplanned ones were failures of the GPUs themselves: one interruption every three hours, on
+average. Each one means going back to the last saved checkpoint.
+
+And a model is trained once but used millions of times. Using it is called **inference**: the
+trained model, generating answers. Every generated token costs $2N$ operations, and it has a time
+limit too, just like the frame: a chat that writes at 20 tokens per second has 50 milliseconds for
+each token. And it isn't doing that for one person, but for everyone using it at the same time.
+
+The parallel with video games is exact: the same calculation over millions of pieces of data,
+with a time limit that comes round every few milliseconds.
+
+### Why the GPU fits, and the CPU doesn't
+
+The three properties from the start explain why the GPU fits.
+
+**The results are independent**, like pixels, so thousands of cores can each work out their own
+piece at the same time.
+
+**There are no decisions**, again like pixels, so a CPU's branch prediction and out-of-order
+execution have nothing to guess and nothing to reorder.
+
+**Every number is reused many times.** When a 16,384 × 16,384 matrix is multiplied by another of
+the same size, every number read from memory feeds 16,384 operations. If the chip manages to keep
+the numbers close to the arithmetic while it uses them, speed depends on how much it can compute,
+not on how much it can read. That property has a name: the **arithmetic intensity** of a
+calculation is how many operations it does for each byte it reads from memory. It will come up
+again shortly.
+
+And the CPU? Today's isn't the one from 1996. Just as Intel added MMX for games, since 2023 its
+Xeon server processors have come with **AMX** (*Advanced Matrix Extensions*), a matrix
+multiplication unit inside every core. Intel [credits
+it](https://www.intel.com/content/dam/www/central-libraries/us/en/documents/2025-02/xeon-6-granite-rapids-product-brief.pdf)
+with a peak of 1,024 operations per cycle per core on 16-bit numbers. The [Xeon
+6980P](https://www.intel.com/content/www/us/en/products/sku/240777/intel-xeon-6980p-processor-504m-cache-2-00-ghz/specifications.html),
+from 2024, has 128 cores at 2 GHz, so on paper it reaches about 262 TFLOPS.
+
+Comparing it with GPUs takes one more ingredient: precision. **BF16** is a 16-bit format for
+numbers with decimals, half the usual 32 bits; **FP8** and **FP4** use 8 and 4 bits, and **INT8**
+is 8-bit integers, whose speed is measured in **TOPS**, trillions of integer operations per
+second. Fewer bits means less precision, but more operations per second and fewer bytes to move.
+Neural networks tolerate that loss well, which is why AI chips compete at these precisions. Here
+is the Xeon next to NVIDIA's data-centre GPUs, the
+[H100](https://www.nvidia.com/en-us/data-center/h100/) and the
+[B200](https://www.nvidia.com/en-us/data-center/hgx/):
+
+| | Xeon 6980P (CPU, 2024) | H100 (GPU, 2022) | B200 (GPU, 2024) |
+| --- | --- | --- | --- |
+| Matrices in BF16 | ≈ 262 TFLOPS | 989 TFLOPS | 2,250 TFLOPS |
+| At its lowest precision | INT8: ≈ 524 TOPS | FP8: 1,979 TFLOPS | FP4: 9,000 TFLOPS |
+| Memory bandwidth | 845 GB/s | 3,350 GB/s | 8,000 GB/s |
+| Memory | up to 3 TB | 80 GB | 180 GB |
+| Power | 500 W | 700 W | ≈ 1,000 W |
+
+All three columns are theoretical peaks that nobody reaches in practice, but they're good enough
+for a comparison.
+
+The table says three things. First, the gap is no longer a hundred to one. In 2009, Raina and his
+co-authors measured up to 70 times between a GPU and a dual-core CPU; today, on paper, an H100
+multiplies matrices in BF16 about four times as fast as a 128-core Xeon, and a B200 about nine
+times as fast. At each chip's lowest precision the gap widens again: a B200 in FP4 does 17 times
+as many operations as the Xeon in INT8.
+
+Second, memory is just as far behind, with four to ten times less bandwidth. And per watt, the
+H100 computes almost three times as much as the Xeon.
+
+The third isn't in the table: how many of them you can put together. A server board takes two
+Xeon 6980Ps at most. The servers Meta trained Llama 3 on had eight GPUs and two CPUs each, and the
+eight GPUs talked to each other over **NVLink**, a direct link between NVIDIA GPUs that moves 900
+GB/s on the H100. The CPUs are still there, but for something else: they prepare the data,
+coordinate and hand out the work to the GPUs.
+
+There's a fourth reason, a less technical one. AI software, from the libraries that multiply
+matrices to PyTorch, the Python library almost every model is trained with, has been written for
+NVIDIA GPUs first for more than a decade. By the time the CPU added AMX, the rest of the
+ecosystem had moved elsewhere.
+
+And there's one thing the CPU wins at: capacity. A Xeon can take up to 3 TB of memory, nearly
+forty times as much as an H100. That matters more than it seems, because training a model and
+using it aren't the same problem.
+
+### Training is not the same as inference
+
+Training asks for three things at once.
+
+**Compute.** With batches of millions of tokens, every multiplication is matrix by matrix and the
+arithmetic intensity is very high: the chip spends nearly all its time computing. It's the case
+GPUs are designed for.
+
+**Memory.** Training needs more than the parameters. It also needs each one's **gradient**, which
+way to move it, and the state of the **optimiser**, the algorithm that decides how far to move it;
+the most widely used one, Adam, keeps two averages per parameter. With the usual recipe, which
+computes in 16 bits but keeps a copy of the parameters in 32, that's [16 bytes per
+parameter](https://arxiv.org/abs/1910.02054): 6.5 TB for Llama 3 405B, enough to fill 81 H100s on
+its own, before counting each layer's intermediate results.
+
+**Network.** Meta split the model three ways at once: each matrix sliced across the 8 GPUs in a
+server, the layers divided into 16 groups that pass the work along like an assembly line, and 128
+copies of all that processing different data ($8 \times 16 \times 128 = 16{,}384$). At every step
+the GPUs exchange results, over NVLink inside a server and over the network between servers. A
+large training run is as much a communications problem as a computing one, and Meta writes that
+its complexity exceeds that of much larger CPU clusters it had already run.
+
+**Inference** has two phases, and they behave very differently.
+
+**Prefill** reads the question. All its tokens are known from the start, so the model processes
+them together, matrix by matrix, just as in training, and it's limited by compute.
+
+**Decoding** writes the answer, and here everything changes. Each new token depends on the
+previous one, so tokens are generated one at a time, and each one has to go through every matrix
+in the model. It's matrix by vector: each parameter is read from memory for a single
+multiplication and a single addition. With 16-bit parameters that's two operations for every two
+bytes, one operation per byte.
+
+An H100 does 989 trillion operations per second and reads 3.35 trillion bytes. To keep its
+arithmetic busy it needs about 295 operations for every byte it reads. Decoding for a single
+person does one, and uses 0.3% of the chip's compute. What sets its speed is memory: Llama 3 8B,
+the small version, takes up 16 GB in 16 bits, and an H100 can only read that about 200 times a
+second, so it won't generate more than about 200 tokens per second for one person, whatever else
+it does. Llama 3 405B, at 810 GB in 16 bits, doesn't even fit in a server with eight H100s: Meta
+spreads it over the 16 GPUs of two servers.
+
+<figure>
+  <img
+    src="/blog/de-videojuegos-a-llm/techo.en.svg"
+    alt="Chart with logarithmic scales on both axes. Horizontal: arithmetic intensity, operations per byte read, from 0.1 to 10,000. Vertical: trillions of operations per second (TFLOPS), from 0.1 to 2,000. Two roof-shaped curves: they rise diagonally while memory is the limit and flatten at the compute peak. H100: rises with its 3.35 TB/s and flattens at 989 TFLOPS at about 295 operations per byte. Xeon 6980P: rises with its 845 GB/s and flattens at about 262 TFLOPS at about 310. Three vertical marks: decoding for one person, 1 operation per byte, where the H100 gives 3.35 TFLOPS; decoding for 64 at once, 64 operations per byte, 214 TFLOPS; and training or prefill, about 5,000 operations per byte, at the peak of both chips."
+    width="760"
+    height="330"
+  />
+  <figcaption>
+    BF16, from published specs. Left of the knee, memory sets the speed; right of it, arithmetic
+    does. Decoding for one person sits far to the left.
+  </figcaption>
+</figure>
+
+That chart is the [roofline
+model](https://people.eecs.berkeley.edu/~kubitron/cs252/handouts/papers/RooflineVyNoYellow.pdf),
+named after its shape, and it's the most useful tool there is for reasoning about a chip's speed:
+a calculation to the left of the knee is limited by memory, and one to the right, by arithmetic.
+The fixes everyone uses for decoding come down to moving to the right or reading less.
+
+**Serving many users at once** (*batching*). If the server generates the next token for 64
+conversations together, every parameter it reads serves 64 multiplications, and the intensity
+rises to 64. It takes about 300 to fill an H100.
+
+**The KV cache.** So as not to recompute the keys and values of all the previous tokens at every
+step, they're kept in memory (KV stands for *key* and *value*). It saves compute, but it takes up
+memory for every conversation, and it's what limits how many fit at once.
+
+**Quantisation**: storing the parameters in 8 or 4 bits instead of 16. There are half or a
+quarter as many bytes to read, and decoding runs nearly twice or four times as fast, at the cost
+of some precision.
+
+And this is where the CPU comes back in. Since decoding depends on memory rather than compute, a
+machine with fast memory does it reasonably well. The Xeon 6980P, with its 845 GB/s, can read
+Llama 3 8B in 16 bits about 50 times a second. A laptop with two DDR5-5600 modules, running the
+model quantised to 4 bits (about 4 GB), reaches about 20 tokens per second on paper. That's why
+programs like [llama.cpp](https://github.com/ggml-org/llama.cpp), which runs language models on
+any computer, work on laptops without a GPU. Training a model that way is another story.
+
+Training and inference ask for different things: training wants compute, memory for all its state
+and a network between thousands of chips; inference wants, above all, bandwidth and a low cost
+per token. That difference explains much of what has been built since.
+
+### A chip of its own, again
+
+Video games had to invent a chip because the CPU wouldn't do. Language models found one ready-made,
+and since then the story has repeated itself twice over: the GPU has gradually turned into an AI
+chip, and chips designed only for AI have appeared.
+
+**The GPU specialises.** In 2017, NVIDIA's V100 introduced **Tensor Cores**, units that multiply
+not two numbers but two small matrices: each one [computes $D = A \times B + C$ on 4×4
+matrices](https://developer.nvidia.com/blog/programming-tensor-cores-cuda-9/) in a single step,
+64 multiply-adds per cycle. The V100's 640 of them delivered 125 TFLOPS, eight times what the same
+card's ordinary cores could do. It's the third property of matrix multiplication built into the
+circuit: if every number is going to be used many times, let the hardware reuse it without
+reading it again.
+
+The low precisions followed, FP8 on the H100 (2022) and FP4 on the B200 (2024), each with twice
+the operations of the one before; then **HBM** (*high bandwidth memory*), stacked next to the
+chip to read faster; and NVLink, so that many GPUs behave a little more like one. Along the way,
+the data-centre GPU left graphics behind: according to the [H100
+whitepaper](https://resources.nvidia.com/en-us-tensor-core/gtc22-whitepaper-hopper), only 4 of
+its 132 multiprocessors can run the shaders that draw a video game. It's a matrix multiplication
+chip that kept the name.
+
+**Chips of their own.** The first to reach production was Google's. In 2013, an internal forecast
+worked out that if every user spoke to voice search, which ran on neural networks, for three
+minutes a day, Google would have to double its data centres. Google set about designing a chip of
+its own for inference (for training, it bought GPUs) and had it running within 15 months. The
+[TPU](https://cloud.google.com/tpu) (*tensor processing unit*) is an **ASIC**
+(*application-specific integrated circuit*), a chip designed for a single task, and it has been in
+Google's data centres since 2015.
+
+At its heart is a
+[**systolic array**](https://www.eecs.harvard.edu/~htk/publication/1982-kung-why-systolic-architecture.pdf),
+an idea from the late 1970s: a grid of 256 × 256 cells that multiply and add, 65,536 in all,
+through which the data moves from cell to cell. The parameters are loaded into the cells and the
+inputs come in from the left. Each cell multiplies the input reaching it by its parameter, adds
+the product to the partial result handed down by the cell above and passes the sum to the cell
+below, while the input carries on to the right. A number read from memory is used 256 times
+without going back to memory. According to the [paper in which Google described
+it](https://arxiv.org/abs/1704.04760), it was on average 15 to 30 times faster than the CPU and
+GPU of its day, and did 30 to 80 times as many operations per watt.
+
+<figure>
+  <img
+    src="/blog/de-videojuegos-a-llm/tres-formas.en.svg"
+    alt="Three schematics, side by side, of how a chip multiplies matrices. One, GPU cores: the 32 threads of a warp in a row, each with its own multiply and add per cycle, the same instruction for all. Two, tensor core: two 4×4 matrices, A and B, go in together and D equals A times B plus C comes out, 64 multiply-adds in one step. Three, the TPU's systolic array: a grid of cells; the parameters are loaded into the cells, the inputs come in from the left and the partial sums move down from cell to cell until they leave at the bottom, so each number read is used along a whole row."
+    width="760"
+    height="250"
+  />
+  <figcaption>
+    Three ways to do the same operation. From left to right, each number read from memory is
+    reused more times inside the circuit.
+  </figcaption>
+</figure>
+
+Today Google trains its Gemini models on TPUs, and the seventh generation,
+[Ironwood](https://cloud.google.com/tpu/docs/tpu7x) (2025), does 4,614 TFLOPS in FP8 with 192 GB
+of HBM at 7.4 TB/s, in groups of up to 9,216 chips. Google presented it as the first of its TPUs
+designed mainly for inference. Nor is Google the only one using them: in October 2025 Anthropic,
+the company that makes the Claude models,
+[announced](https://www.anthropic.com/news/expanding-our-use-of-google-cloud-tpus-and-services)
+that it would use up to a million.
+
+The big clouds have their own: Amazon has
+[Trainium](https://aws.amazon.com/ai/machine-learning/trainium/) for training and
+[Inferentia](https://aws.amazon.com/ai/machine-learning/inferentia/) for inference; Meta has
+[MTIA](https://ai.meta.com/blog/next-generation-meta-training-inference-accelerator-AI-MTIA/)
+(*Meta Training and Inference Accelerator*); Microsoft has
+[Maia](https://azure.microsoft.com/en-us/blog/azure-maia-for-the-era-of-ai-from-silicon-to-software-to-systems/).
+And several young companies have placed riskier bets.
+
+- [Cerebras](https://www.cerebras.ai/chip) makes a chip the size of an entire silicon wafer, with
+  900,000 cores and 44 GB of **SRAM**, the fast memory caches are made of, on the chip itself.
+- [Groq](https://groq.com/) designed an inference chip that keeps the parameters in SRAM instead
+  of HBM, so that decoding doesn't have to wait for memory. In December 2025, NVIDIA [bought a
+  non-exclusive
+  licence](https://groq.com/newsroom/groq-and-nvidia-enter-non-exclusive-inference-technology-licensing-agreement-to-accelerate-ai-inference-at-global-scale)
+  to its technology and hired its founder, for a sum the press put at around \$20 billion.
+- [Etched](https://www.etched.com/) announced a chip in 2024 that [can only run
+  transformers](https://techcrunch.com/2024/06/25/etched-is-building-an-ai-chip-that-only-runs-transformer-models/):
+  it gives up everything else in exchange for doing that one thing faster.
+
+In phones and laptops, **NPUs** (*neural processing units*), small matrix units inside the
+processor, run models without spending the battery on the GPU. Many of these chips started with
+inference, and not by chance: it's the problem from the previous section, the one that depends
+on bandwidth and on what each token costs, and where a general-purpose GPU leaves the most room.
+
+**Why the GPU is still in charge.** For all these specialised chips, NVIDIA's still make up [more
+than 60% of all the AI computing capacity sold since 2022](https://epoch.ai/data-insights/ai-chip-production),
+according to estimates by Epoch AI, an independent research group that tracks trends in the
+field, with Google and Amazon accounting for much of the rest. There are three reasons.
+
+Software. CUDA has been around since 2007, and everything written on top of it (matrix libraries,
+PyTorch, each lab's own tricks) works there first. A new chip needs its own compiler, its own
+libraries and programmers who know how to use it, and Google had to build its own for the TPU.
+
+Time. Designing a chip and getting it into production takes years, and models change faster than
+that. The first TPU was designed for the networks Google was running then, three kinds that made
+up 95% of its inference, and none of them was a transformer, which arrived two years later. It
+survived the change because it had bet on matrix multiplication rather than on any particular
+network. A chip that only runs transformers, like Etched's, is the opposite bet: if the
+architecture changes, the chip gets left behind. The GPU, being programmable, adapts to whatever
+comes next.
+
+Scale. For twenty years video games paid for the GPU's development; now data centres pay for it.
+And whatever sells by the million gets cheaper and better faster than whatever sells by the
+thousand.
+
+That's the big difference from 1999. Back then the CPU couldn't do the job, whereas today the GPU
+does it well. A new chip isn't competing with a processor that can't cope, but with one that
+improves every two years and soaks up its rivals' ideas as well: tensor cores are, in miniature,
+the same idea as the TPU's systolic array, and NVIDIA already holds a licence to Groq's
+technology.
+
+<figure>
+  <img
+    src="/blog/de-videojuegos-a-llm/linea-de-tiempo.en.svg"
+    alt="Timeline, not to scale, with twelve milestones. In blue, video games: 1996, Voodoo Graphics, rasterises and applies textures; 1997, GLQuake, Quake with an accelerator; 1999, GeForce 256, the first GPU, transforms the vertices; 2001, GeForce 3, programmable shaders. In green, the GPU for computing: 2007, CUDA; 2009, networks on GPUs, up to 70 times faster; 2012, AlexNet, on two GTX 580s. In orange, AI chips: 2015, TPU, Google's systolic array; 2017, tensor cores in the V100, the same year as the transformer; 2022, H100, FP8; 2024, B200, FP4; 2025, Ironwood, an inference TPU."
+    width="760"
+    height="176"
+  />
+  <figcaption>
+    Not to scale. The same operation moves from the CPU to a gaming chip and, from there, to chips
+    that do nothing else.
+  </figcaption>
+</figure>
+
+## What to take away
+
+If you take away only one thing, make it this: **the GPU didn't end up in AI by accident. A video
+game and a language model do the same kind of work, the same small operation on millions of
+independent pieces of data, with no decisions and with every number reused many times, and the
+CPU is designed for the opposite: a single thread of instructions, fast and full of decisions.**
+Video games had to invent the GPU, and AI inherited it.
+
+The same steps, side by side:
+
+| | Video games | Language models |
+| --- | --- | --- |
+| What is computed | Every vertex times a 4×4 matrix, and the colour of every pixel | Every token times matrices thousands of rows by thousands of columns, layer after layer |
+| How much | Almost 500 million pixels a second, at 4K and 60 frames per second | $3.8 \cdot 10^{25}$ operations to train Llama 3 405B; $2N$ per generated token |
+| Time limit | 16.7 ms per frame | Tens of milliseconds per token |
+| Why not the CPU | One core, built for a thread full of decisions | Four to ten times less compute and bandwidth, and few per server |
+| A chip of its own | The GPU (1999) | Tensor cores, the TPU and the rest (from 2015) |
+
+And if you can take away three more things, make them practical ones.
+
+**Always ask what's holding you back, compute or memory.** Count how many operations a
+calculation does for each byte it reads, and compare that with how much the chip computes for
+each byte its memory delivers. If the calculation falls short, buying more arithmetic won't make
+it any faster.
+
+**When generating text, count bytes, not operations.** Decoding speed for one person is at most
+the memory bandwidth divided by the size of the model. That's why quantisation speeds things up,
+and why a laptop with good memory can run small models.
+
+**The name "GPU" is history.** What matters in an AI chip is how many matrix multiplications it
+does per second, at what precision, how many bytes per second reach it and how many more like it
+it can be connected to. And, behind all that, the software that knows how to use it.
+
+In 1999, a card for playing games took a multiplication by a 4×4 matrix off the CPU's hands.
+Twenty-five years later, that same operation, with matrices thousands of rows tall, is what
+trains language models. The chips have changed size, name and even maker; the operation is still
+the same.
