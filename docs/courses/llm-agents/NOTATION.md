@@ -377,7 +377,10 @@ in `dl-nlp`'s table, and the two never share a page.
 
 | Symbol | Meaning |
 |---|---|
-| $\mathbf{q}$, $\mathbf{d}_i$ | the query embedding and the $i$-th document embedding in retrieval; the score is $\mathbf{q}^{\top}\mathbf{d}_i$ or $\cos(\mathbf{q}, \mathbf{d}_i)$ |
+| $\mathbf{q}$, $\mathbf{d}_i$ | the *embedding* of the question and of pasaje $i$ in retrieval; the score is $\cos(\mathbf{q}, \mathbf{d}_i)$, the first course's. In the contrastive loss, $\mathbf{d}_1$ is the pasaje that answers $\mathbf{q}$ and $\mathbf{d}_2, \dots, \mathbf{d}_B$ the batch's others (Block 3 lesson 4) |
+| $k$ | how many pasajes the recuperador keeps: top-k's letter (Block 1 lesson 4), because it is the same corte on another list, pasajes ranked by cosine where there were entries ranked by probability (Block 3 lesson 4) |
+| $\mathbf{h}(x_{\le t})$ · $\mathbf{d} = \frac{1}{T}\sum_{t=1}^{T}\mathbf{h}(x_{\le t})$ | Block 2's $\mathbf{h}$ at the position that has read the first $t$ tokens of a text $x_{1:T}$ · its mean over the $T$ positions, the mini-GPT's *embedding* of the text: Block 2 lesson 4's $\bar{\mathbf{h}}(x, y)$ with no prompt in front (Block 3 lesson 4) |
+| $P(\text{recuperada})$ · $P(\text{acierta} \mid \cdot)$ | over the questions a harness receives (and the model's sorteo): the share whose answering pasaje is among the $k$ recuperados · the share answered well, given that or its contrary (Block 3 lesson 4) |
 | $\mathcal{G}$ | a gramática: a set of texts, the ones a generación restringida may produce. A respuesta $y$ is in $\mathcal{G}$ when its text, as bytes, is one of them; several token sequences can spell one text (Block 3 lesson 3) |
 | $A_j \subseteq V$ | the allowed set for token $j$ of the respuesta: the entries whose bytes, after those of $y_{<j}$, are still the beginning of a text of $\mathcal{G}$. Indexed by $j$, like the $y_j$ it draws; the seed and the task md wrote $A_t$ (Block 3 lesson 3) |
 | $p_\theta(A_j \mid x, y_{<j})$ | the masa of the allowed set, $\sum_{v \in A_j} p_\theta(v \mid x, y_{<j})$: what the máscara keeps at that position (Block 3 lesson 3) |
@@ -446,6 +449,23 @@ respuesta is drawn from $\mathbf{z}_{T+R}$. $\mathbf{h}^{(l)}_t$ is built from t
 (layer superscript, position subscript) and needs no new convention; the lesson that writes it never
 writes Block 2's bare $\mathbf{h}$. The indices of a camino, $i_0 \le \dots \le i_L$, live in one
 display and take no row.
+
+**Retrieval keeps the seeded letters and adds one bare $P$** (`COURSE-C2-P1-03`, Block 3 lesson 4).
+$\mathbf{q}$ is the question's *embedding*, and the lesson says in a clause that it is neither an
+attention head's query nor Block 1 lesson 4's sampler (neither appears on its page). The question
+itself gets **no letter**: $x$ without a subscript is the caso (Block 1 lesson 8), and the lesson
+needs $x_{1:T}$ for the tokens of a pasaje, so it writes only the question's vector. The mini-GPT's
+*embedding* is a sum, not Block 2 lesson 4's $\mathbb{E}_j$, because the lesson counts the terms each
+token enters ($x_j$ enters $T - j + 1$ of them, under the causal mask); it is unlettered,
+$\mathbf{d}$ or $\mathbf{d}_i$ for pasaje $i$. The contrastive loss divides cosines by
+$\tau$, Block 1 lesson 4's temperature in the same job (it divides logits before a softmax), and
+counts the batch with $B$ (shared §4); it gets no $\mathcal{L}$ subscript because it is written once,
+as one question's term. **$P(\cdot)$ is a share of questions**, not a masa of the model: whether a
+pasaje is recuperado is decided by the recuperador, deterministically, per question, so the event
+is about the question and the probability is over the questions the harness receives. That is why
+it is not written $p_\theta$, and it extends Block 2 lesson 1's device (roman words name a set) from
+respuestas to preguntas. Block 2 lesson 4's $P(y_A \succ y_B \mid x)$ is the course's other bare
+$P$; the two never share a page.
 
 ### Block 4 — El puente: de texto a acciones
 
