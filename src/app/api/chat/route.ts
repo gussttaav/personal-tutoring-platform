@@ -11,12 +11,15 @@
  *           the global request ceiling is breached.
  *   CHAT-CLAUDE-01: the assistant runs on the Claude API (was Gemini). The
  *           kill-switch counter moved to `chat:requests:<date>`.
+ *   CHAT-CONTENT-01: the prompt also carries the published courses and blog posts,
+ *           read from the content registries (no DB call, no network).
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { buildChatSystemPrompt } from "@/constants/chat-prompt";
 import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
 import { getScheduleConfig } from "@/lib/schedule-config";
+import { getChatPromptContent } from "@/lib/chat-content";
 import { chatRatelimit, chatRatelimitAnon, chatRatelimitAnonDaily } from "@/lib/ratelimit";
 import { chatService, pricingService, userService } from "@/services";
 import { getClientIp } from "@/lib/ip-utils";
@@ -145,11 +148,14 @@ async function postHandler(req: NextRequest) {
       }
     }
 
-    const systemPrompt = buildChatSystemPrompt({
-      ...priceCents,
-      packValidityDays,
-      cancelHours: schedule.cancelMinNoticeHours,
-    });
+    const systemPrompt = buildChatSystemPrompt(
+      {
+        ...priceCents,
+        packValidityDays,
+        cancelHours: schedule.cancelMinNoticeHours,
+      },
+      getChatPromptContent(),
+    );
 
     const { reply, sessionId: newSessionId } = await chatService.ask({
       message: message.trim(),
