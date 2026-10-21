@@ -68,6 +68,13 @@ foreign, a reason that disappears in English). Set it plain, introduced by a col
 full stop, with the attribution in the lead-in: `it is almost always cited in Firth's line: you shall
 know a word by the company it keeps.` *Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04).*
 
+A cited work's title (a paper, a book) is a fourth thing: it is italicised, as the work itself
+prints it, capitals included: *Attention Is All You Need*. That is a typographic convention standing
+outside the five marks, not a third job for italics, because a title is neither a term of art nor
+the word that flips a sentence; and it never takes quotation marks. The spelling to copy is the one
+the lesson's own `reading` entry gives in `title`. *Settled by `en/33-adios-recurrencia.mdx`
+(COURSE-P11-08).*
+
 The `<W>` boundary is [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)'s,
 unchanged. Its plain-text prop exception carries over: `caption`, `alt` and `summary` are strings, so
 a string the lesson talks about is written `"tokenisation"` there.
@@ -328,9 +335,10 @@ both, so the table above says which is which rather than banning the word. The c
 on (the chain rule, backpropagation, BPTT) — the thing worth keeping to hand when a derivative
 written out by hand does not add up. *Settled by `en/15-regla-de-la-cadena.mdx` (COURSE-P11-05).*
 
-**Acronyms** are unchanged: expand every one on **first use, in every lesson**, then use it bare —
-*out-of-vocabulary (OOV)*, *masked language modelling (MLM)*. Per lesson, not per course: lessons
-are entered from search results and from the sidebar, and it costs four words.
+**Acronyms** follow `AUTHORING.md` §5 unchanged: expand one the first time the course uses it, and
+in a lesson that introduces it, then use it bare: *out-of-vocabulary (OOV)*, *masked language
+modelling (MLM)*. Acronyms that recur throughout the course (RNN, LSTM, GRU, MLP, …) are written bare
+elsewhere.
 
 ## 7. en-GB, stated once
 

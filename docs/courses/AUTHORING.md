@@ -648,14 +648,15 @@ Three rules travel with every table, whichever course:
 
 #### Acronyms
 
-**Expand every acronym on first use, in every lesson**, then use it bare: *palabras fuera de
-vocabulario (out-of-vocabulary, OOV)*, then *OOV* thereafter. Give the English expansion even when
-the surrounding term is Spanish — the acronym comes from the English, and a reader who only ever
-sees `OOV` cannot look it up.
+**Expand an acronym the first time the course uses it, and in a lesson that introduces it**, then
+use it bare: *palabras fuera de vocabulario (out-of-vocabulary, OOV)*, then *OOV* thereafter. Give
+the English expansion even when the surrounding term is Spanish — the acronym comes from the
+English, and a reader who only ever sees `OOV` cannot look it up.
 
-Per **lesson**, not per course, and this is the part that is easy to get wrong. Lessons are entered
-from search results, from the sidebar and from a link in another lesson, so "I defined it in lesson
-3" is not a defence for lesson 8. It costs four words.
+**Acronyms that recur throughout the course (RNN, LSTM, GRU, MLP, …) are written bare elsewhere.**
+The student meets them lesson after lesson, so spelling them out again in every lesson that mentions
+one is noise, not help. The lesson that introduces one is where a reader arriving from a search
+result goes to find out what it is, and that lesson keeps the expansion.
 
 This is §2 in miniature: an unexpanded acronym is a thing the student has not been given, dressed
 up as a thing they should already know. That is precisely the move that makes a reader feel stupid
@@ -1117,8 +1118,8 @@ Copy this into the PR description.
 - [ ] **`entrada` for a member of $V$, never `palabra`** — every claim that would still have to hold
       under a subword tokeniser says `entrada`, `token` or `tipo`; `palabra` only inside examples
       that are literally words
-- [ ] **Every acronym expanded on first use in *this* lesson** — OOV, BPE, BPTT, TF-IDF, MLP, RNN —
-      even if an earlier lesson already expanded it
+- [ ] **Every acronym expanded where the course first uses it and in a lesson that introduces it**;
+      the ones that recur throughout the course (RNN, LSTM, GRU, MLP, …) are bare elsewhere
 - [ ] Every derivation shown, not asserted
 - [ ] **No paragraph asks the reader to picture a shape or a position that a figure could just
       show** (§7); where there is a figure it *replaced* that prose rather than joining it, its

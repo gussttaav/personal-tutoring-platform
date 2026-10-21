@@ -400,7 +400,7 @@ which quotes five of its figures. Block 4's direction decision fixes 5.9's class
 
 ## Lesson progress
 
-- [ ] 5.1 `adios-recurrencia`
+- [x] 5.1 `adios-recurrencia`
 - [ ] 5.2 `self-attention`
 - [ ] 5.3 `scaled-dot-product`
 - [ ] 5.4 `multi-head`

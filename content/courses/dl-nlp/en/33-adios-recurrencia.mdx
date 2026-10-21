@@ -1,0 +1,275 @@
+---
+slug: adios-recurrencia
+title: "Goodbye to recurrence"
+block: 5
+order: 1
+minutes: 22
+summary: "Attention no longer needs recurrence, but the machine around it is still recurrent, and that fixes two things no computer can repair: a sentence of T tokens forces T steps that cannot overlap, and whatever position 1 contributes to position T goes through T minus 1 products by the same matrix. Removing the recurrence brings both down to a number that does not grow with the sentence, in exchange for a grid of T by T scores that comes out cheaper than the recurrence as long as the sentence is shorter than the model is wide. And in exchange for something else that is not paid in multiplications: order."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-cadena-de-esperas
+    type: single
+    prompt: 'You have a computer with as many processors as you like and a sentence of $T$ tokens, already fully tokenised. What still costs $T$ steps that cannot overlap?'
+    options:
+      - { id: a, text: 'The states. Each $\mathbf{h}_t$ is computed from $\mathbf{h}_{t-1}$, so step $t$ cannot start until step $t-1$ has finished, and adding processors does not change that.' }
+      - { id: b, text: 'The tokens. Tokenising is a left-to-right pass, and until it ends there is nothing to feed the network.' }
+      - { id: c, text: 'The output softmax, which normalises over the $T$ positions and needs every score before it can start.' }
+      - { id: d, text: 'Nothing: with the whole input available, the $T$ products $\mathbf{W}_{xh}\mathbf{x}_t$ are done at once and the recurrence parallelises.' }
+    answer: a
+    explanation: '(a), and it is worth putting precisely: what prevents overlap is not the size of the computation but its shape. (d) is half right, which is why it is the trap: the products $\mathbf{W}_{xh}\mathbf{x}_t$ really are all computed at once, because each one only looks at its own token; what cannot be brought forward is $\mathbf{W}_{hh}\mathbf{h}_{t-1}$, and with it the $\tanh$ that produces the state. One of the recurrence''s two halves can be shared out and the other cannot, and the one that cannot is the one that decides. (b) confuses preprocessing with the model: tokenising happens once and never comes back. (c) gives the softmax a wait it does not have: it normalises one row, and the rows are independent of each other.'
+    hint: 'What does step $t$ need that only exists once step $t-1$ has finished?'
+  - id: q-donde-se-cruzan
+    type: numeric
+    prompt: 'With $d_h = d_{\text{model}} = d_k = d_v = 512$, from what length $T$ does the attention grid cost more multiplications than the recurrence?'
+    answer: 512
+    tolerance: 0
+    unit: tokens
+    explanation: 'From $T = 512$, which is $d$. The recurrence costs $2Td^{2}$ and the grid $2T^{2}d$, so their ratio is $T/d$, and the two cross when the sentence is as long as the model is wide. Below that length the grid is the cheaper of the two (at $T = 50$, ten times cheaper) and above it, it grows faster. Keep both halves of the result: the crossing is where it is because $T$ is squared in one place and $d$ is squared in the other, and in texts of ordinary length the one being squared is the small one.'
+    hint: 'Set $2Td^{2}$ equal to $2T^{2}d$ and solve.'
+  - id: q-ciega-al-orden
+    type: single
+    prompt: 'You pass the attention call the same rows in a different order (the same tokens, shuffled). What comes out?'
+    options:
+      - { id: a, text: 'The same output rows, shuffled the same way. Not one number changes: $e_{ij}$ is computed from the pair''s two vectors and does not look at where either of them is.' }
+      - { id: b, text: 'Something different, because the softmax normalises by rows and shuffling changes the order of the terms in the denominator.' }
+      - { id: c, text: 'A shape error: the operation is defined on a sequence, so it requires the rows to arrive in the order they were read.' }
+      - { id: d, text: 'The same rows in the same order as before, because the mixture sums over every position and a sum does not depend on order.' }
+    answer: a
+    explanation: '(a), and that is the gap this lesson leaves open: the operation cannot tell a sentence from its own words shuffled. (b) leans on something true to conclude something false: the sum in the denominator does not depend on the order of its terms, which is precisely why the weight of a pair never notices the shuffle. (c) invents a restriction: all the operation requires is that the keys and the values come paired. (d) is right that the sum does not depend on order and then overshoots: the output for query $i$ does not change, but the queries have been shuffled too, so the rows of the result come out in the new order. Beware the easy reading: it is not that attention ignores order, it is that it has no way of finding out.'
+    hint: 'Look at the indices in $e_{ij} = a(\mathbf{q}_i, \mathbf{k}_j)$: do $i$ and $j$ appear inside the computation, or do they only point at which vectors go in?'
+  - id: q-camino-mas-largo
+    type: multi
+    prompt: 'About the path that links position $1$ to position $T$, mark what is true.'
+    options:
+      - { id: a, text: 'In the recurrence that path goes through $T-1$ products by $\mathbf{W}_{hh}$, one per intermediate step.' }
+      - { id: b, text: 'In attention the path is a single weight, $\alpha_{T1}$, whatever $T$ is.' }
+      - { id: c, text: 'With the path shortened, the repeated product from <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion> disappears, and that product was what made the signal fade with distance.' }
+      - { id: d, text: 'Attention shortens the path on the forward pass, but on the backward pass it still measures $T-1$: the gradient has to travel through the intermediate positions even if the output did not use them.' }
+    answer: [a, b, c]
+    explanation: 'The first three. The length of the path is the count <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion> already worked out: multiplying $T-1$ times by the same matrix kills or blows up the signal depending on its spectral radius, and the LSTM and the GRU answered by opening an additive path beside it rather than shortening it. Attention shortens it: between any two positions there is one weight and one sum, and neither the forward pass nor the backward pass has anything in between to travel through. That is why (d) is false: the gradient''s path is the same path, travelled in reverse. What does not disappear is the underlying problem: there is still depth, only now it is the depth of the stacked layers and not of the sentence, and that does not grow when the text gets longer.'
+    hint: 'Count how many matrices lie between the two positions in each of the two architectures.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar and others'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Its §4 and Table 1 gather this lesson''s three counts: operations that cannot overlap, the path between two positions and the cost per layer, O(T²d) against O(Td²). The table drops the constants; the crossing at T = d is yours.'
+---
+
+{/* COURSE-P5-05: Block 5, Lesson 1. COURSE-P11-08: English translation. */}
+
+The previous block stripped attention to the bone: three roles (query, key and value), a function
+that compares and a weighted sum, with not a single recurrence inside. What it left alone was the
+machine attention sits in, and that machine is still recurrent from top to bottom: the keys and the
+values are states of a recurrent encoder, and the queries come from a recurrent decoder. Inside,
+attention no longer waits for anything. Outside, every call still waits for the decoder to finish
+its previous step and hand over the next query.
+
+This lesson builds no new piece, and it's worth saying from the start what it removes and what it
+keeps. It removes the recurrence, not the encoder or the decoder. The encoder still reads the source
+sentence and the decoder still writes the target one, but neither of them keeps a state that passes
+from one position to the next any more: each layer handles every position at once, and the only
+thing that puts each token in contact with all the others is attention. Building that version takes
+the rest of the block; this lesson first counts what is gained and what is lost. And it isn't a
+matter of taste, because recurrence charges a price that can be counted. Take a news story of $800$
+tokens and any recurrent network: reading it is $800$ steps that happen one after another, and
+buying a machine with $800$ processors changes nothing, because step $401$ needs a number that step
+$400$ hasn't finished computing yet. That's the first bill. The second one took the whole of Block 3
+to pay: whatever position $1$ has to tell position $800$ travels through $799$ multiplications by
+the same matrix, and by the time it arrives there's almost nothing left of it. The two bills have
+the same source, and removing it clears both.
+
+The diagram below is where all of this ends up: the complete architecture the block builds, Figure 1
+of the paper *Attention Is All You Need*, box by box. At this point half the names mean nothing to
+you, and that's fine: each box says which lesson builds it. What you can read today is the one
+thing this lesson claims: turn on the marker and, of the fifteen boxes, three light up. The other
+twelve work on one row at a time and have no way of knowing what's in the next one.
+
+<Explorable
+  id="transformer-architecture"
+  caption="Fifteen boxes and not one arrow running from one position to the next. The three that mix positions are the three attention boxes; the rest handle each position on its own."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+If attention already puts each token in contact with all the others, the recurrence is surplus.
+Removing it swaps a chain of $T$ waits for a grid computed in one go and brings the path between any
+two tokens down to a single weight, in exchange for more work on long texts and the loss of order.
+</Callout>
+
+## The chain of waits no computer can shorten
+
+The recurrence from the previous block fits on one line, and that line says it all:
+
+$$
+\mathbf{h}_t = \tanh\left(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h\right),
+$$
+
+with $\mathbf{h}_t \in \mathbb{R}^{d_h}$ and $\mathbf{h}_0 = \mathbf{0}$. Of the two terms, the
+second waits for nobody: $\mathbf{W}_{xh}\mathbf{x}_t$ only looks at the token in its own position,
+so all $T$ products can be computed at once as soon as the text is tokenised. The first one does
+wait. $\mathbf{h}_{t-1}$ is the result of the previous step, and there's no way to bring it forward
+without computing it. One of the two halves can be shared out between processors and the other
+can't, and the one that can't is the one that fixes the result: the depth of the chain (how many
+operations have to happen in a row, one after the other) is $T$.
+
+Set that against the attention call as it was left written. The score of the pair $(i,j)$ is
+
+$$
+e_{ij} = a\left(\mathbf{q}_i, \mathbf{k}_j\right),
+$$
+
+and no $e$ from any other pair appears in it. The wait the previous block ended on, each row of
+$\mathbf{Q}$ waiting for the one before, isn't in this formula: it's in the decoder that makes the
+queries, which needs the context from call $i$ to produce query $i+1$. That's why the call there was
+made once per step, row by row. Take that decoder away and suppose, for now, that $\mathbf{Q}$,
+$\mathbf{K}$ and $\mathbf{V}$ arrive whole, one row per position of the sentence; who makes them
+without a recurrence is the question this lesson ends on. With all three in hand, each of the
+$T^{2}$ scores comes from two vectors that are already there, and all $T^{2}$ can be computed at
+once: that's what it means for them to fit in a single matrix product, $\mathbf{Q}\mathbf{K}^{\top}$.
+The softmax normalises each row with its own entries and no row looks at another; the mixture is a
+second product. Three operations in a row, and that three doesn't move when the text gets longer.
+
+One caveat, so as not to read more into this than it says. When generating text, the decoder still
+writes one token per step, because it can't look at a token it hasn't written yet. What disappears
+is the wait when processing a sentence that is already complete: the source sentence always, and the
+target sentence during training, when the correct translation is already known. The recurrence
+couldn't take advantage of that even in training: with the translation right there, the state at
+step $t$ still needed the one at $t-1$. How the decoder is trained in a single pass without being
+allowed to see the answer is <Leccion slug="encoder-decoder-masking">the lesson on masks</Leccion>.
+
+### The other distance, the one Block 3 couldn't shorten
+
+The depth of the chain decides how long it takes. There's a second distance, and it decides
+something worse.
+
+Ask yourself which route whatever position $1$ contributes to position $T$ travels by. In the
+recurrence it travels inside the state, and the state is rewritten at every step, so that
+contribution goes through $T-1$ products by $\mathbf{W}_{hh}$ before it arrives. It's exactly the
+count from <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>:
+multiplying $T-1$ times by the same matrix switches the signal off if its spectral radius is below
+$1$ and blows it up if it's above, and the LSTM and the GRU didn't shorten that path; they opened an
+additive path beside it so the trip could be survived.
+
+In attention the path between those two positions is one weight:
+
+$$
+\mathbf{c}_T = \alpha_{T1}\,\mathbf{v}_1 + \alpha_{T2}\,\mathbf{v}_2 + \dots + \alpha_{TT}\,\mathbf{v}_T.
+$$
+
+What position $1$ contributes is its term, and in front of it stands a single factor: $\alpha_{T1}$.
+One, not $T-1$. And since the backward pass is the forward pass travelled in reverse, the gradient
+that reaches position $1$ from the loss at step $T$ doesn't go through anything in between either.
+The distance between any two positions stops depending on how many lie between them, which is more
+than Block 3 managed: the gate made the trip survivable, not short.
+
+## What it costs to swap the steps for a grid
+
+None of this is free, and the price is counted in multiplications. Start with the recurrence. A
+step multiplies $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ by one vector and
+$\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$ by another, and multiplying a matrix
+by a vector costs one multiplication per entry, so the step costs one product for each entry of its
+matrices. That's the count from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla
+RNN</Leccion>, read as a cost instead of as memory. Over the whole sentence:
+
+$$
+T \cdot \left(d_h \cdot d_h + d_h \cdot d_{\text{model}}\right) \quad \text{multiplications}.
+$$
+
+Now the grid. $\mathbf{Q}\mathbf{K}^{\top}$ multiplies a $T \times d_k$ matrix by a $d_k \times T$
+one: each of the $T^{2}$ entries of the result is a dot product of $d_k$ terms, which makes
+$T^{2} \cdot d_k$ multiplications. The mixture $\mathbf{A}\mathbf{V}$ has $T \cdot d_v$ entries and
+each one sums $T$ terms, another $T^{2} \cdot d_v$. In total:
+
+$$
+T^{2} \cdot \left(d_k + d_v\right) \quad \text{multiplications}.
+$$
+
+Put pair by pair: each entry $(i,j)$ of the grid costs $d_k$ multiplications to be scored and $d_v$
+to add its share to the mixture, $\alpha_{ij}\mathbf{v}_j$, and the grid has $T^{2}$ entries.
+
+The two counts compare best with all four widths equal. Suppose they are, and call them $d$: that
+leaves $2Td^{2}$ against $2T^{2}d$, and the ratio between them is $T/d$. The grid costs less than
+the recurrence as long as the sentence is shorter than the model is wide, and more once it's longer;
+they cross at $T = d$, and not before. In the paper these two counts are written
+$O(T^{2}d)$ against $O(Td^{2})$, which is the same comparison with the constants dropped; that's how
+you'll find it in its Table 1.
+
+What this buys is worth stating in full, because it isn't "faster". It's a change of axis: the total
+work grows (with $T$ squared, on long texts), and in exchange that work can be shared out, whereas
+the recurrence's $T$ steps can't be shared out in any way at all. A large computation that fits in a
+single matrix product finishes before a small one broken into $T$ waits.
+
+### The price that isn't paid in multiplications
+
+Look at the score again, and this time look closely at the indices. In $e_{ij} = a(\mathbf{q}_i,
+\mathbf{k}_j)$ the subscripts only point at which two vectors go in; neither $i$ nor $j$ appears
+inside the computation. The same goes for the mixture, which is a sum, and a sum doesn't distinguish
+the order of its terms. The consequence is awkward: if you shuffle the rows of $\mathbf{K}$ and
+$\mathbf{V}$, the outputs are shuffled the same way and not one number changes.
+
+So <W>the dog bites the postman</W> and <W>the postman bites the dog</W> reach the layer as the same
+set of vectors. The recurrence didn't have this problem, and not through any merit of its own: it
+had it solved from birth, because it read in order and the reading order was the sentence's order.
+Nor did the concatenated MLP from <Leccion slug="por-que-falla-el-mlp">the
+lesson on why the MLP fails on sequences</Leccion>, for the opposite reason: each position multiplied
+its own block of columns, which is why it could tell them apart and couldn't generalise across them.
+Attention has neither.
+
+The concession is a big one and this lesson doesn't fix it: removing the recurrence takes away the
+only thing that knew the order. The fix is to add to each row something that depends on where it
+is, and that's <Leccion slug="codificacion-posicional">a lesson further on, about positional
+encoding</Leccion>. Until then, everything that follows treats the input as a bag of vectors.
+
+## Check it by hand on a sentence of 50 tokens
+
+Do both counts with numbers, which is where you see the change isn't theoretical. Take $d = 512$
+(the width of the paper's model) and a sentence of $T = 50$ tokens.
+
+The recurrence: $2 \cdot 50 \cdot 512^{2} = 26\,214\,400$ multiplications, spread over $50$ steps
+that come one after another. The grid: $2 \cdot 50^{2} \cdot 512 = 2\,560\,000$, and not in $50$
+waits but in two matrix products. Ten times less work, and the depth of the chain has gone from $50$
+to a number that doesn't even mention $50$.
+
+Now go up to $T = 1\,000$, a long text. The grid needs
+$2 \cdot 1\,000^{2} \cdot 512 = 1\,024\,000\,000$ and the recurrence
+$2 \cdot 1\,000 \cdot 512^{2} = 524\,288\,000$: almost double, and this time the expensive one is
+the newcomer. The ratio between them is $1\,000/512 \approx 1.95$, exactly as $T/d$ said. Do it
+yourself with $T = 2\,000$ and check that it comes out at $3.9$. And notice that the depth of the
+chain still hasn't moved, while the recurrence's has gone to $2\,000$.
+
+That's the deal, with both columns in view: you pay in work, which can be shared out between
+processors, and you buy back waiting, which can't be shared out between anything.
+
+## Test your intuition
+
+Four questions: what can't overlap, where the two counts cross, what happens if you shuffle the
+rows, and what becomes of the path between two distant positions.
+
+<Quiz id="q-cadena-de-esperas" />
+
+<Quiz id="q-donde-se-cruzan" />
+
+<Quiz id="q-ciega-al-orden" />
+
+<Quiz id="q-camino-mas-largo" />
+
+---
+
+That leaves a gap in the most visible place. The attention call needs queries, keys and values, and
+throughout the previous block they were made by two recurrent networks: the queries were the
+decoder's states, one per step, and the keys and the values were the encoder's. Those states have
+gone with the recurrence, and without them the operation this lesson has put at the centre of the
+architecture has nothing to start from.
+
+The answer is the one that gives <Leccion slug="self-attention">the next lesson, on
+self-attention</Leccion>, its name: let the sequence ask itself. If the queries, the keys and the
+values are three readings of the same vectors, one per position, there's no need for a second
+network to produce anything, and each position gets to look at all the others, itself included.
+It's the same attention as in the previous block, with all three roles in the hands of a single
+sequence, and it's what turns the diagram above into something that can be computed.
