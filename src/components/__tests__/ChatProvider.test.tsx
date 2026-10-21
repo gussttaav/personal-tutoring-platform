@@ -22,10 +22,10 @@ import ChatProvider from "@/components/ChatProvider";
 import { useChat, OPEN_CHAT_EVENT } from "@/hooks/useChat";
 
 function Probe() {
-  const { available, isOpen, unseen, toggle, close } = useChat();
+  const { available, isOpen, toggle, close } = useChat();
   return (
     <>
-      <p data-testid="state">{`available:${available} open:${isOpen} unseen:${unseen}`}</p>
+      <p data-testid="state">{`available:${available} open:${isOpen}`}</p>
       <button onClick={toggle}>toggle</button>
       <button onClick={close}>close</button>
     </>
@@ -47,28 +47,28 @@ beforeEach(() => {
 });
 
 describe("ChatProvider", () => {
-  it("mounts the chat closed and unseen on a page that offers it", () => {
+  it("mounts the chat closed on a page that offers it", () => {
     mockPathname = "/cursos/dl-nlp/intro";
     renderApp();
     expect(screen.getByTestId("chat")).toBeTruthy();
-    expect(state()).toBe("available:true open:false unseen:true");
+    expect(state()).toBe("available:true open:false");
   });
 
-  it("opens on the landing CTAs' open-chat event and clears the unseen dot", () => {
+  it("opens on the landing CTAs' open-chat event", () => {
     renderApp();
     act(() => { window.dispatchEvent(new Event(OPEN_CHAT_EVENT)); });
-    expect(state()).toBe("available:true open:true unseen:false");
+    expect(state()).toBe("available:true open:true");
   });
 
   it("toggles and closes from any entry point", () => {
     renderApp();
     fireEvent.click(screen.getByText("toggle"));
-    expect(state()).toBe("available:true open:true unseen:false");
+    expect(state()).toBe("available:true open:true");
     fireEvent.click(screen.getByText("toggle"));
-    expect(state()).toBe("available:true open:false unseen:false");
+    expect(state()).toBe("available:true open:false");
     fireEvent.click(screen.getByText("toggle"));
     fireEvent.click(screen.getByText("close"));
-    expect(state()).toBe("available:true open:false unseen:false");
+    expect(state()).toBe("available:true open:false");
   });
 
   it("leaves the classroom without a chat, and reports it unavailable", () => {
@@ -76,12 +76,12 @@ describe("ChatProvider", () => {
     renderApp();
     expect(screen.queryByTestId("chat")).toBeNull();
     act(() => { window.dispatchEvent(new Event(OPEN_CHAT_EVENT)); });
-    expect(state()).toBe("available:false open:false unseen:false");
+    expect(state()).toBe("available:false open:false");
   });
 
   it("answers 'not available' with no-ops outside the provider", () => {
     render(<Probe />);
     fireEvent.click(screen.getByText("toggle"));
-    expect(state()).toBe("available:false open:false unseen:false");
+    expect(state()).toBe("available:false open:false");
   });
 });

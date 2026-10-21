@@ -28,11 +28,10 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const available = isChatRoute(pathname);
   const [isOpen, setIsOpen] = useState(false);
-  const [unseen, setUnseen] = useState(true);
 
-  const open = useCallback(() => { setIsOpen(true); setUnseen(false); }, []);
+  const open = useCallback(() => { setIsOpen(true); }, []);
   const close = useCallback(() => { setIsOpen(false); }, []);
-  const toggle = useCallback(() => { setIsOpen((prev) => !prev); setUnseen(false); }, []);
+  const toggle = useCallback(() => { setIsOpen((prev) => !prev); }, []);
 
   // The landing CTAs («Pregunta al asistente IA» in the closing band and the areas section)
   // dispatch this event rather than importing the hook.
@@ -42,8 +41,8 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
   }, [open]);
 
   const value = useMemo<ChatValue>(
-    () => ({ available, isOpen: available && isOpen, unseen, open, close, toggle }),
-    [available, isOpen, unseen, open, close, toggle],
+    () => ({ available, isOpen: available && isOpen, open, close, toggle }),
+    [available, isOpen, open, close, toggle],
   );
 
   return (

@@ -27,6 +27,13 @@
  * below `lg` — driving the page-wide `useChat()` state. It is absent where the chat is not
  * offered (the classroom). The icon and the hamburger close each other's panel, so the menu
  * and the chat are never open together.
+ *
+ * CHAT-DRAWER-01: from `lg` up the entry point is a labelled «Asistente IA» button LEFT of the
+ * sign-in, not the bare icon after the locale pill — an unlabelled robot glyph there read as
+ * decoration. Below `lg` it is still the icon, left of the hamburger. They are two buttons, one
+ * per range, shown and hidden in globals.css (`.chat-nav-btn--labelled` / `--icon`), so only
+ * one is ever rendered and in the tab order. The chat opens as a side panel under the bar.
+ * Neither shows the red «not opened yet» dot: a red dot reads as an unread message.
  */
 
 import { useState } from "react";
@@ -100,6 +107,12 @@ export default function Navbar() {
   const handlePackClick = () => {
     setMobileOpen(false);
     openPackBooking();
+  };
+
+  // Both assistant buttons (labelled at lg+, icon below) — the menu and the chat never stack.
+  const toggleChat = () => {
+    setMobileOpen(false);
+    chat.toggle();
   };
 
   const handleLogoClick = (e: React.MouseEvent) => {
@@ -180,6 +193,21 @@ export default function Navbar() {
 
         {/* Right: Auth (desktop) + locale pill + hamburger (mobile) */}
         <div className="flex items-center gap-3">
+
+          {/* ── AI assistant, labelled (lg+; the chat panel opens under the bar) ── */}
+          {chat.available && (
+            <button
+              type="button"
+              className="chat-nav-btn chat-nav-btn--labelled"
+              onClick={toggleChat}
+              aria-label={chat.isOpen ? tChat("closeAssistant") : tChat("openAssistant")}
+              aria-expanded={chat.isOpen}
+              aria-controls="chat-panel"
+            >
+              <ChatAvatarIcon size={22} />
+              <span>{tChat("navLabel")}</span>
+            </button>
+          )}
 
           {/* ── Desktop auth ── */}
           {isLoaded && (
@@ -308,18 +336,18 @@ export default function Navbar() {
             <LocaleSwitcher />
           </div>
 
-          {/* ── AI assistant (every width; the chat panel drops from under it) ── */}
+          {/* ── AI assistant, icon only (below lg) ── */}
           {chat.available && (
             <button
               type="button"
-              className="chat-nav-btn"
-              onClick={() => { setMobileOpen(false); chat.toggle(); }}
+              className="chat-nav-btn chat-nav-btn--icon"
+              onClick={toggleChat}
               aria-label={chat.isOpen ? tChat("closeAssistant") : tChat("openAssistant")}
               title={chat.isOpen ? tChat("closeAssistant") : tChat("openAssistant")}
               aria-expanded={chat.isOpen}
+              aria-controls="chat-panel"
             >
               <ChatAvatarIcon size={24} />
-              {chat.unseen && !chat.isOpen && <span className="chat-nav-dot" aria-hidden="true" />}
             </button>
           )}
 

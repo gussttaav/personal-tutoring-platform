@@ -23,8 +23,6 @@ export interface ChatValue {
   /** The chat is offered on this route (`isChatRoute`). */
   available: boolean;
   isOpen: boolean;
-  /** Not opened yet this visit: the entry points show the pulsing dot. */
-  unseen: boolean;
   open: () => void;
   close: () => void;
   toggle: () => void;
@@ -35,7 +33,6 @@ const noop = () => {};
 export const ChatContext = createContext<ChatValue>({
   available: false,
   isOpen: false,
-  unseen: false,
   open: noop,
   close: noop,
   toggle: noop,
