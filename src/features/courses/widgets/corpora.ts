@@ -192,13 +192,13 @@ export type CorpusWidgetId = keyof typeof WIDGET_CORPORA;
  * widgets that read it, rather than by one widget's default corpus.
  */
 export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
-  "self-attention-heatmap":
-    "The presets are scored against the hand-built Spanish lexicon in " +
-    "math/self-attention.ts (determiner/noun/verb features, number agreement). An " +
-    "English sentence falls outside it, so every token takes its vector from a hash " +
-    "of its own letters and the map says nothing. Needs an English lexicon first.",
+  // self-attention-heatmap was here until COURSE-P11-08: math/self-attention.ts now has an
+  // English lexicon (LEXICONS.en) and English presets, picked per locale by the widget.
   "multi-head-view":
-    "Same lexicon as self-attention-heatmap, and the four heads ARE its four rules.",
+    "Same lexicon as self-attention-heatmap, and the four heads ARE its four rules. The " +
+    "lexicon has an English half since COURSE-P11-08, but this widget still reads only " +
+    "the Spanish one: its default sentence is chosen so the heads disagree on two verbs " +
+    "in opposite directions, and the English one is Block 5 lesson 4's decision.",
   // embedding-projection was here until COURSE-P11-04: it now has an English scatter,
   // public/courses/dl-nlp/embeddings-sample.en.json, picked per locale by the widget.
   "attention-alignment":

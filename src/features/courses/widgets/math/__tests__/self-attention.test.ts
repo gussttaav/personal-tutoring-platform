@@ -20,14 +20,20 @@ import {
   D_K,
   D_MODEL,
   D_V,
+  FOCUS_ROW,
   LEXICON,
+  LEXICONS,
   LEXICON_WORDS,
   MAX_TOKENS,
   PRESETS,
+  PRESETS_BY_LOCALE,
+  PRESETS_EN,
   RULES,
   W_K,
   W_Q,
   embedTokens,
+  lexiconLocale,
+  lexiconWords,
   selfAttentionMap,
   tokeniseSentence,
   unknownVector,
@@ -251,5 +257,86 @@ describe("selfAttentionMap with the causal mask", () => {
   it("does nothing to a one-token sentence, masked or not", () => {
     const { weights } = selfAttentionMap("gato", true, true);
     expect(weights).toEqual([[1]]);
+  });
+});
+
+/*
+ * COURSE-P11-08 — the English lexicon, for the English Block 5 lesson 2. The lesson's
+ * prose points at three things in the default sentence, and each is pinned here: every
+ * token is in the lexicon (no hashed row), the unprojected diagonal wins EVERY row
+ * strictly (the sentence repeats no vector, unlike a sentence with two `the`), and with
+ * the projections the row of `are` peaks on `keys`, past the nearer `car` and above
+ * itself. The Spanish tests above run with the default locale, so they pin that nothing
+ * moved for the Spanish lesson.
+ */
+describe("the English lexicon", () => {
+  const FLAGSHIP_EN = PRESETS_EN[0]; // "the keys to this car are here"
+
+  it("falls back to Spanish for any locale but en", () => {
+    expect(lexiconLocale("en")).toBe("en");
+    expect(lexiconLocale("es")).toBe("es");
+    expect(lexiconLocale("de")).toBe("es");
+    expect(PRESETS_BY_LOCALE.es).toBe(PRESETS);
+  });
+
+  it("gives every entry a unit-length vector, and knows as many words as the Spanish one", () => {
+    expect(lexiconWords("en").length).toBeGreaterThan(40);
+    expect(lexiconWords("es")).toEqual(LEXICON_WORDS);
+    for (const word of lexiconWords("en")) {
+      expect(LEXICONS.en[word]).toHaveLength(D_MODEL);
+      expect(norm(LEXICONS.en[word])).toBeCloseTo(1, 12);
+    }
+  });
+
+  it("knows every token of every preset, in both locales", () => {
+    for (const locale of ["es", "en"] as const) {
+      for (const preset of PRESETS_BY_LOCALE[locale]) {
+        expect(tokeniseSentence(preset, locale).known.every(Boolean)).toBe(true);
+      }
+    }
+  });
+
+  it("opens on the verb, at FOCUS_ROW, in both locales", () => {
+    expect(tokeniseSentence(PRESETS[0]).tokens[FOCUS_ROW.es]).toBe("están");
+    expect(tokeniseSentence(FLAGSHIP_EN, "en").tokens[FOCUS_ROW.en]).toBe("are");
+  });
+
+  it("without the projections, the diagonal wins every row strictly", () => {
+    const { tokens, weights } = selfAttentionMap(FLAGSHIP_EN, false, false, "en");
+    expect(tokens).toHaveLength(7);
+    weights.forEach((row, i) =>
+      row.forEach((w, j) => {
+        if (j !== i) expect(w).toBeLessThan(row[i]);
+      }),
+    );
+  });
+
+  it("with the projections, `are` reaches past `car` to `keys`", () => {
+    const { tokens, weights } = selfAttentionMap(FLAGSHIP_EN, true, false, "en");
+    const verb = tokens.indexOf("are");
+    const subject = tokens.indexOf("keys");
+    const distractor = tokens.indexOf("car");
+    expect(distractor).toBe(verb - 1);
+    expect(Math.max(...weights[verb])).toBe(weights[verb][subject]);
+    expect(weights[verb][subject]).toBeGreaterThan(weights[verb][verb]);
+    expect(weights[verb][subject]).toBeGreaterThan(weights[verb][distractor]);
+    // And the asymmetry the lesson argues: `are` needs `keys` more than `keys` needs `are`.
+    expect(weights[verb][subject]).toBeGreaterThan(weights[subject][verb]);
+  });
+
+  it("separates number agreement from mismatch, as rule 2 does in Spanish", () => {
+    const along = (word: string, w: number[][]) =>
+      LEXICONS.en[word].map((x, f) => x * w[f][1]).reduce((a, b) => a + b, 0);
+    expect(along("are", W_Q) * along("keys", W_K)).toBeGreaterThan(0);
+    expect(along("are", W_Q) * along("car", W_K)).toBeLessThan(0);
+    expect(along("are", W_Q) * along("the", W_K)).toBe(0);
+  });
+
+  it("keeps the masked rows independent of what comes after, in English too", () => {
+    const long = selfAttentionMap("the cat sleeps and the dogs eat", true, true, "en");
+    const short = selfAttentionMap("the cat sleeps and", true, true, "en");
+    short.output.forEach((row, i) =>
+      row.forEach((coordinate, c) => expect(coordinate).toBeCloseTo(long.output[i][c], 12)),
+    );
   });
 });

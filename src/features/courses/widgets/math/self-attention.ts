@@ -30,6 +30,17 @@
  * characters. That keeps every vector unit-length (which is what makes the identity
  * claim above exact rather than approximate) and keeps the widget honest: the map for a
  * word I never chose a vector for means nothing, and the component flags it.
+ *
+ * COURSE-P11-08 — an English lexicon beside the Spanish one (`LEXICONS.en`), for the
+ * English Block 5 lesson 2. Same seven features, same four rules, same projections: only
+ * the words and their feature values move, so every claim above holds unchanged. English
+ * marks number on fewer words, and the lexicon says so rather than inventing marks it
+ * does not have: `the`, `my` and the adjectives carry number 0, and only the present
+ * tense of a verb is singular or plural. Rule 2 still has what it needs in "the keys to
+ * this car are here" — `are` and `keys` plural, `this` and `car` singular — and the
+ * sentence repeats no vector (no second `the`), so the unprojected diagonal wins every
+ * row STRICTLY, as it does in Spanish. Every function takes the locale last and
+ * defaults to `es`, which is why `multi-head` (still Spanish-only) did not change.
  */
 
 import { scaledDotProductAttention } from "./attention";
@@ -74,7 +85,7 @@ export const MAX_TOKENS = 10;
  */
 type Group = [words: string[], slots: number[], number: number, animate: number];
 
-const GROUPS: Group[] = [
+const GROUPS_ES: Group[] = [
   // Determinantes.
   [["el", "la", "un", "una", "mi", "su", "este", "esta"], [DET], -1, 0],
   [["los", "las", "unos", "unas", "mis", "sus", "estos", "estas"], [DET], 1, 0],
@@ -100,29 +111,67 @@ const GROUPS: Group[] = [
   [["ahí", "aquí", "hoy", "ayer", "siempre", "nunca"], [MOD], 0, 0],
 ];
 
+/** COURSE-P11-08 — the English lexicon. Same slots, English number marking. */
+const GROUPS_EN: Group[] = [
+  // Determiners: most carry no number in English; a few are singular or plural.
+  [["the", "my", "your", "his", "her", "its", "our", "their"], [DET], 0, 0],
+  [["a", "an", "this", "that", "every", "each"], [DET], -1, 0],
+  [["these", "those", "many", "several"], [DET], 1, 0],
+  // Links: prepositions, conjunctions and relative pronouns.
+  [["of", "to", "in", "on", "at", "with", "by", "for", "from", "and", "who", "which"], [ENL], 0, 0],
+  // Nouns.
+  [["key", "table", "house", "city", "car", "book", "door", "box", "milk", "water"], [SUST], -1, 0],
+  [["cat", "dog", "child", "boy", "girl", "mouse", "neighbour", "postman"], [SUST], -1, 1],
+  [["keys", "tables", "houses", "cities", "cars", "books", "doors", "boxes"], [SUST], 1, 0],
+  [["cats", "dogs", "children", "boys", "girls", "mice", "neighbours", "postmen"], [SUST], 1, 1],
+  // Verbs: English marks number in the present tense only.
+  [["is", "sleeps", "eats", "chases", "reads", "lives", "bites", "has"], [VERB], -1, 0],
+  [["are", "sleep", "eat", "chase", "read", "live", "bite", "have"], [VERB], 1, 0],
+  // Modifiers: adjectives and adverbs carry no number in English.
+  [["red", "new", "old", "good", "small", "big", "black", "blue", "very", "little", "much"], [MOD], 0, 0],
+  [["here", "there", "today", "yesterday", "always", "never"], [MOD], 0, 0],
+];
+
+/** The locales this widget has a lexicon for; anything else falls back to `es`. */
+export type LexiconLocale = "es" | "en";
+
+export const lexiconLocale = (locale: string): LexiconLocale => (locale === "en" ? "en" : "es");
+
+const GROUPS_BY_LOCALE: Record<LexiconLocale, Group[]> = { es: GROUPS_ES, en: GROUPS_EN };
+
 /** Scale a vector to length 1. Every vector in this module is unit-length — see the header. */
 function unit(v: number[]): number[] {
   const norm = Math.sqrt(v.reduce((acc, x) => acc + x * x, 0));
   return norm === 0 ? v.map(() => 0) : v.map((x) => x / norm);
 }
 
-/** The lexicon: one unit-length vector per entry. */
-export const LEXICON: Record<string, number[]> = Object.fromEntries(
-  GROUPS.flatMap(([words, slots, number, animate]) =>
-    words.map((word) => {
-      const vector = new Array<number>(D_MODEL).fill(0);
-      for (const s of slots) vector[s] = 1;
-      vector[NUM] = number;
-      vector[ANIM] = animate;
-      return [word, unit(vector)] as const;
-    }),
-  ),
-);
+/** One lexicon: one unit-length vector per entry. */
+const buildLexicon = (groups: Group[]): Record<string, number[]> =>
+  Object.fromEntries(
+    groups.flatMap(([words, slots, number, animate]) =>
+      words.map((word) => {
+        const vector = new Array<number>(D_MODEL).fill(0);
+        for (const s of slots) vector[s] = 1;
+        vector[NUM] = number;
+        vector[ANIM] = animate;
+        return [word, unit(vector)] as const;
+      }),
+    ),
+  );
 
-/** Everything the lexicon knows — the component tells the reader how many there are. */
-export const LEXICON_WORDS: string[] = Object.keys(LEXICON).sort((a, b) =>
-  a.localeCompare(b, "es"),
-);
+export const LEXICONS: Record<LexiconLocale, Record<string, number[]>> = {
+  es: buildLexicon(GROUPS_BY_LOCALE.es),
+  en: buildLexicon(GROUPS_BY_LOCALE.en),
+};
+
+/** The Spanish lexicon, which `multi-head` reads. */
+export const LEXICON = LEXICONS.es;
+
+/** Everything a lexicon knows — the component tells the reader how many there are. */
+export const lexiconWords = (locale: LexiconLocale = "es"): string[] =>
+  Object.keys(LEXICONS[locale]).sort((a, b) => a.localeCompare(b, locale));
+
+export const LEXICON_WORDS: string[] = lexiconWords("es");
 
 /** Sentences that stay inside the lexicon. The first is the heatmap's default; the
  *  multi-head view's tests sweep all of them (MH_PRESETS). */
@@ -131,6 +180,21 @@ export const PRESETS = [
   "el gato duerme y los perros comen",
   "la vecina que lee duerme poco",
 ] as const;
+
+/** COURSE-P11-08 — the English presets, inside `LEXICONS.en`. The first is the default. */
+export const PRESETS_EN = [
+  "the keys to this car are here",
+  "the cat sleeps and the dogs eat",
+  "the neighbour who reads sleeps little",
+] as const;
+
+export const PRESETS_BY_LOCALE: Record<LexiconLocale, readonly string[]> = {
+  es: PRESETS,
+  en: PRESETS_EN,
+};
+
+/** The row the heatmap opens on: the verb of the default sentence, «están» / `are`. */
+export const FOCUS_ROW: Record<LexiconLocale, number> = { es: 4, en: 5 };
 
 /**
  * The four rules, as the columns of W^Q and W^K. `query` is what the asking position is
@@ -225,21 +289,21 @@ export interface TokenisedSentence {
  * Lowercase, cut into tokens by Block 1's own tokeniser, drop punctuation (a comma has
  * no features here) and stop at `MAX_TOKENS`.
  */
-export function tokeniseSentence(text: string): TokenisedSentence {
-  const all = tokenizeWords(text.toLocaleLowerCase("es")).filter((token) =>
+export function tokeniseSentence(text: string, locale: LexiconLocale = "es"): TokenisedSentence {
+  const all = tokenizeWords(text.toLocaleLowerCase(locale)).filter((token) =>
     /[\p{L}\p{N}]/u.test(token),
   );
   const tokens = all.slice(0, MAX_TOKENS);
   return {
     tokens,
-    known: tokens.map((token) => token in LEXICON),
+    known: tokens.map((token) => token in LEXICONS[locale]),
     truncated: all.length > tokens.length,
   };
 }
 
 /** The rows of X: one unit-length vector per token, from the lexicon or from the hash. */
-export function embedTokens(tokens: string[]): Matrix {
-  return tokens.map((token) => LEXICON[token] ?? unknownVector(token));
+export function embedTokens(tokens: string[], locale: LexiconLocale = "es"): Matrix {
+  return tokens.map((token) => LEXICONS[locale][token] ?? unknownVector(token));
 }
 
 export interface SelfAttentionMap extends TokenisedSentence {
@@ -269,9 +333,10 @@ export function selfAttentionMap(
   text: string,
   project = true,
   causal = false,
+  locale: LexiconLocale = "es",
 ): SelfAttentionMap {
-  const { tokens, known, truncated } = tokeniseSentence(text);
-  const x = embedTokens(tokens);
+  const { tokens, known, truncated } = tokeniseSentence(text, locale);
+  const x = embedTokens(tokens, locale);
   if (tokens.length === 0) {
     return { tokens, known, truncated, x, scores: [], weights: [], output: [] };
   }

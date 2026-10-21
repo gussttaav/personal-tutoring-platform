@@ -1,0 +1,457 @@
+---
+slug: self-attention
+title: "Self-attention: the sequence looks at itself"
+block: 5
+order: 2
+minutes: 29
+summary: "With no recurrent encoder or decoder left, nothing makes the queries, the keys or the values, and the way out is for the sentence itself to make them. But using its vectors as they are in all three roles doesn't work: what a vector most resembles is itself, the diagonal wins every row and the layer hands back what came in, without a single parameter to train. What fixes that is three projections of the same X (one to ask, one to be asked, one to be mixed), and with them the grid becomes square, stops being symmetric and costs a number of parameters in which the length of the sentence does not appear."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-tres-lecturas
+    type: single
+    prompt: 'In a self-attention layer, where do $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ come from?'
+    options:
+      - { id: a, text: 'From the same matrix $\mathbf{X}$, through three different projections: $\mathbf{Q} = \mathbf{X}\mathbf{W}^Q$, $\mathbf{K} = \mathbf{X}\mathbf{W}^K$ and $\mathbf{V} = \mathbf{X}\mathbf{W}^V$.' }
+      - { id: b, text: 'The queries from the previous layer, and the keys and the values from the embedding table, which is the only one with a row per token.' }
+      - { id: c, text: 'All three are $\mathbf{X}$ as it is. The projections come in later, to save computation when $d_{\text{model}}$ is large.' }
+      - { id: d, text: 'The query comes from the position asking, and the keys and the values from the positions before it, which are the only ones already read.' }
+    answer: a
+    explanation: '(a), and that is where the <W>self</W> in the name comes from: a single matrix, $\mathbf{X}$, read three ways. (b) splits the layer between two places that don''t exist: there is no other network producing anything, which is exactly what the previous lesson left empty. (c) is the trap this lesson takes apart in full: with $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ equal to $\mathbf{X}$ the grid goes to its own diagonal and the layer has not a single parameter to learn, so the projections save nothing; they are the only thing that makes the operation worth having. (d) describes a mask, which is something else and arrives in <Leccion slug="encoder-decoder-masking">the lesson on the encoder, the decoder and the masks</Leccion>; without one, every position looks at every position.'
+    hint: 'How many different matrices go into the layer?'
+  - id: q-forma-cuadrada
+    type: numeric
+    prompt: 'A sentence of $T = 12$ tokens goes into a self-attention layer with $d_{\text{model}} = 512$ and $d_k = d_v = 64$. How many numbers does the weight map $\mathbf{A}$ hold?'
+    answer: 144
+    tolerance: 0
+    unit: numbers
+    explanation: 'One hundred and forty-four: $\mathbf{A}$ is $T \times T$, and $12^{2} = 144$. Neither $d_k$ nor $d_v$ nor $d_{\text{model}}$ enters the count: they live inside the comparison and the mixture, and none of the three survives into the weight, which is a single number per pair of positions. Keep the shape of the answer rather than the number: the only thing that decides the size of the map is the length of the sentence, and it does so squared.'
+    hint: 'One row per position that asks, one column per position that answers.'
+  - id: q-sin-proyecciones
+    type: single
+    prompt: 'You remove the three projections ($\mathbf{Q} = \mathbf{K} = \mathbf{V} = \mathbf{X}$), with token vectors that are all the same length. What does the layer compute?'
+    options:
+      - { id: a, text: 'Every row puts its largest weight on its own diagonal, all of them at once, so the mixture leans towards the position''s own vector; and not a single parameter is left to train.' }
+      - { id: b, text: 'An even share, $1/T$ in every cell, because all the vectors are the same length and none of them stands out from the rest.' }
+      - { id: c, text: 'Nothing: the shapes don''t fit, because the query and the key have to be $d_k$ long and $\mathbf{X}$ is $d_{\text{model}}$ long.' }
+      - { id: d, text: 'The same grid as with the projections, only frozen: the weights come out the same, and what is lost is the ability to adjust them.' }
+    answer: a
+    explanation: '(a). The calculation takes one line: with every vector of length $r$, Cauchy–Schwarz gives $\mathbf{x}_i^{\top}\mathbf{x}_j \le r^{2} = \mathbf{x}_i^{\top}\mathbf{x}_i$, so the diagonal cell is the largest in its row and the softmax gives it the highest weight. (b) confuses having the same length with pointing in the same direction: it is the directions that share the weight out. (c) invents a shape restriction: the query and the key have to be the same length *as each other*, and $\mathbf{X}$ against $\mathbf{X}$ meets it. (d) is the most tempting and fails where it matters: without the matrices there is no share-out to freeze, because the one that comes out depends on nothing learnt.'
+    hint: 'Which vector does a vector most resemble: the one next to it, or itself?'
+  - id: q-simetria
+    type: single
+    prompt: 'With $\mathbf{Q} = \mathbf{K} = \mathbf{X}$, what is symmetric and what isn''t?'
+    options:
+      - { id: a, text: 'The scores are, because $\mathbf{x}_i^{\top}\mathbf{x}_j = \mathbf{x}_j^{\top}\mathbf{x}_i$; the weights aren''t, because each row is normalised with its own denominator.' }
+      - { id: b, text: 'Both. The softmax is increasing, so it respects any equality there was between the scores.' }
+      - { id: c, text: 'Neither: the dot product stops being symmetric as soon as it is divided by $\sqrt{d_k}$, which is different in every row.' }
+      - { id: d, text: 'The weights are and the scores aren''t, which is the reverse of how it looks: the softmax shares out one unit per row, and that evens out the two directions.' }
+    answer: a
+    explanation: '(a), and the distinction holds for the whole lesson: the dot product doesn''t care about the order of its two factors, but the softmax of row $i$ divides by the sum of row $i$, which has no reason to equal that of row $j$. (b) uses a true property (the softmax is increasing) to conclude something that doesn''t follow from it: it preserves the *order* within a row, not equalities between different rows. (c) makes up a divisor per row: $\sqrt{d_k}$ is the same number across the whole grid. (d) turns both facts round. And with the projections in place the symmetry of the scores breaks as well, which is what is needed: in <W>the keys to this car are here</W>, <W>are</W> needs to look at <W>keys</W> far more than <W>keys</W> needs to look at <W>are</W>.'
+    hint: 'Write $\alpha_{ij}$ and $\alpha_{ji}$ with their denominators in front.'
+  - id: q-que-crece-con-t
+    type: multi
+    prompt: 'The same layer receives first a sentence of $T = 20$ tokens and then one of $T = 200$. Mark what is true.'
+    options:
+      - { id: a, text: 'The map $\mathbf{A}$ goes from $400$ to $40\,000$ cells.' }
+      - { id: b, text: 'The number of parameters in the layer doesn''t change: it is $d_{\text{model}}\left(2d_k + d_v\right)$, and $T$ does not appear in it.' }
+      - { id: c, text: 'Each row of the map still sums to $1$; it only shares that unit out among ten times as many positions.' }
+      - { id: d, text: 'What comes out of each position now has more coordinates, because there are more values to mix.' }
+    answer: [a, b, c]
+    explanation: 'The first three. (a) is the square grid: $T^{2}$ cells, the count whose price the previous lesson measured. (b) is the property that separates this layer from the concatenated MLP of <Leccion slug="por-que-falla-el-mlp">the lesson on why the MLP fails on sequences</Leccion>: there each position had its own block of columns and lengthening the input meant adding parameters, while here the three matrices multiply rows, not positions. (c) is what the softmax by rows does, and on the way it says something awkward that <Leccion slug="scaled-dot-product">the lesson on the *scaled dot-product*</Leccion> picks up further on: one unit shared among $200$ positions leaves very small weights. (d) is false: what comes out is a mixture of values, so it is $d_v$ long whether ten values go in or two hundred.'
+    hint: 'Look at where $T$ appears in each of the three shapes: $\mathbf{A}$, the matrices and the output.'
+challenges:
+  - id: ch-auto-atencion
+    prompt: |
+      Write `self_attention(X, Wq, Wk, Wv)`. It takes the sentence already turned into vectors,
+      `X` of shape $(T, d_{\text{model}})$ with one row per position, and the three projections:
+      `Wq` and `Wk` of shape $(d_{\text{model}}, d_k)$ and `Wv` of shape $(d_{\text{model}}, d_v)$.
+      It returns *the pair* `(output, A)`, in that order: the output, of shape $(T, d_v)$, and
+      the weight map $\mathbf{A}$, of shape $(T, T)$, already normalised by rows.
+
+      The score is the dot product of each query with each key *divided by* $\sqrt{d_k}$, with
+      $d_k$ read from the shape of `Wq`. Write it with matrix products, without looping over the
+      pairs one by one, and don't write into the arrays you receive.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def self_attention(X, Wq, Wk, Wv):
+          # your code here
+          pass
+    tests:
+      - name: "it returns both shapes, and the map is square"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          X = rng.normal(size=(7, 8))
+          Wq, Wk, Wv = rng.normal(size=(8, 4)), rng.normal(size=(8, 4)), rng.normal(size=(8, 5))
+          res = self_attention(X, Wq, Wk, Wv)
+          assert res is not None, 'self_attention has to return (output, A), not print them'
+          assert isinstance(res, tuple) and len(res) == 2, 'return the pair (output, A), in that order'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert A.shape == (7, 7), 'the map has one row and one column per position: it is square'
+          assert Y.shape == (7, 5), 'the output is a mixture of values: d_v columns'
+          assert np.allclose(A.sum(axis=1), 1.0), 'each position shares one unit out among all the positions'
+      - name: "it matches projecting, scoring and mixing by hand"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          X = rng.normal(size=(7, 8))
+          Wq, Wk, Wv = rng.normal(size=(8, 4)), rng.normal(size=(8, 4)), rng.normal(size=(8, 5))
+          Q, K, V = X @ Wq, X @ Wk, X @ Wv
+          E = np.array([[Q[i] @ K[j] for j in range(7)] for i in range(7)]) / np.sqrt(4)
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          expected = Z / Z.sum(axis=1, keepdims=True)
+          res = self_attention(X, Wq, Wk, Wv)
+          assert res is not None, 'self_attention has to return the pair (output, A)'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert np.allclose(A, expected), 'divide by the square root of d_k: d_k is the number of columns of Wq'
+          assert np.allclose(Y, expected @ V), 'the output of position i is the mixture of the values with row i'
+      - name: "without real projections, the diagonal wins its row"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(11)
+          X = rng.normal(size=(6, 5))
+          X = X / np.linalg.norm(X, axis=1, keepdims=True)
+          I = np.eye(5)
+          res = self_attention(X, I, I, I)
+          assert res is not None, 'self_attention has to return the pair (output, A)'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert np.all(A.argmax(axis=1) == np.arange(6)), 'with all three projections set to the identity, every row has to be won by itself'
+          assert np.abs(Y - X).max() < 0.9, 'that layer hands back almost what came in'
+      - name: "it does not overflow with large scores"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          X = rng.normal(size=(7, 8)) * 60
+          Wq, Wk, Wv = rng.normal(size=(8, 4)) * 6, rng.normal(size=(8, 4)) * 6, rng.normal(size=(8, 5))
+          res = self_attention(X, Wq, Wk, Wv)
+          assert res is not None, 'self_attention has to return the pair (output, A)'
+          assert np.isfinite(np.asarray(res[0])).all(), 'it overflows: subtract the maximum of each row before exponentiating'
+          assert np.isfinite(np.asarray(res[1])).all(), 'it overflows: subtract the maximum of each row before exponentiating'
+      - name: "it does not write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(19)
+          X = rng.normal(size=(5, 6))
+          Wq, Wk, Wv = rng.normal(size=(6, 3)), rng.normal(size=(6, 3)), rng.normal(size=(6, 4))
+          copies = [X.copy(), Wq.copy(), Wk.copy(), Wv.copy()]
+          self_attention(X, Wq, Wk, Wv)
+          assert all(np.array_equal(u, v) for u, v in zip([X, Wq, Wk, Wv], copies)), "don't write into the arrays you receive: E -= E.max(...) on a view spoils them"
+    solution: |
+      import numpy as np
+
+
+      def self_attention(X, Wq, Wk, Wv):
+          Q, K, V = X @ Wq, X @ Wk, X @ Wv     # three readings of the same X
+          E = Q @ K.T / np.sqrt(Wq.shape[1])   # (T, T): one score per pair
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          return A @ V, A
+    explanation: |
+      One line more than the challenge in <Leccion slug="atencion-como-consulta">the lesson on
+      attention as query, key and value</Leccion>, and that line is the whole lesson: $\mathbf{Q}$,
+      $\mathbf{K}$ and $\mathbf{V}$ are made from the same `X`. From there on there is nothing new
+      (product, softmax by rows, mixture), and the shapes chain together on their own:
+      $(T, d_{\text{model}})$ against $(d_{\text{model}}, d_k)$ gives $(T, d_k)$, and
+      $\mathbf{Q}\mathbf{K}^{\top}$ comes out $(T, T)$ because both are the same sentence.
+      `Wq.shape[1]` is $d_k$, which is what goes under the root; reading it from `X` gives
+      $d_{\text{model}}$, and the weights come out different.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar and others'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'The operation is its equation (1); that Q, K and V come from the same sequence is in §3.2.3, in one sentence. What the paper doesn''t do is defend the projections: why the layer copies itself without them is yours.'
+  - kind: blog
+    title: 'The Illustrated Transformer'
+    authors: 'Jay Alammar'
+    year: '2018'
+    venue: 'jalammar.github.io'
+    lang: en
+    url: 'https://jalammar.github.io/illustrated-transformer/'
+    note: 'Draws the computation of Q, K and V and the weight grid, first vector by vector and then in matrix form. It stays with the mechanics: the symmetry and the diagonal you use here to justify the three matrices it leaves alone.'
+---
+
+{/* COURSE-P5-05: Block 5, Lesson 2. COURSE-P11-08: English translation. */}
+
+The previous lesson left the architecture without a single recurrent piece and with one operation
+at its centre, attention, which has to be handed three things: queries, keys and values. Nothing is
+left to make any of them, because both networks that did were recurrent. The only thing that still
+has a row for every position is the sentence, already turned into vectors, so there is one candidate
+for all three roles and no second one.
+
+Using it as it is doesn't work, though, and the reason fits in a line: what a vector most resembles
+is itself. Every position would give itself the highest weight, in every row at once, and the layer
+would hand each one back what it already had, without a single parameter to do anything else with.
+And it needs to do something else: in <W>the keys to this car are here</W>, getting <W>are</W>
+right means having looked at <W>keys</W>, four positions back, and not at <W>car</W>, which sits
+right next to it and is singular. This lesson builds the layer that can do that, and what it costs
+is three learnt matrices, one per role. Multiplying a vector by one of them is *projecting* it: out
+comes another vector, usually shorter, whose coordinates are combinations of the original's, and
+the matrix decides which combinations. Each position is projected three times, and those give its
+query, its key and its value.
+
+The grid below is a sentence set against itself: the row is the one asking, the column is the one
+answering, and each cell is how much of that column goes into what that row reads. Type any
+sentence you like and, above all, switch the projections off and on. Off, the queries, the keys and
+the values are the sentence's vectors as they are, and the highest cell in each row is the one that
+position gives itself, in all seven rows at once. On, the row of <W>are</W> goes looking for
+<W>keys</W> above everything else.
+
+<Explorable
+  id="self-attention-heatmap"
+  caption='The same positions on both axes, which never happened in the previous block. Unprojected, every row is won by its own diagonal; with the three projections, "are" skips "car" and goes to "keys".'
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+Self-attention is the previous block's attention with the queries, the keys and the values taken
+from the same sentence: each position asks every position of its own sentence, itself included, and
+takes away a mixture of what they answer.
+</Callout>
+
+## Three readings of the same matrix
+
+Stack the sentence by rows, the way the previous block stacked the encoder's states:
+
+$$
+\mathbf{X} \in \mathbb{R}^{T \times d_{\text{model}}},
+$$
+
+where row $t$ is $\mathbf{x}_t^{\top}$, the vector of the token at position $t$ (transposed,
+because in this course vectors are columns). That is everything that goes into the layer: one
+matrix, and no second network.
+
+The queries, the keys and the values come out of it, each through its own matrix:
+
+$$
+\mathbf{Q} = \mathbf{X}\mathbf{W}^Q, \qquad \mathbf{K} = \mathbf{X}\mathbf{W}^K, \qquad \mathbf{V} = \mathbf{X}\mathbf{W}^V,
+$$
+
+with $\mathbf{W}^Q, \mathbf{W}^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$ and
+$\mathbf{W}^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$, so that
+$\mathbf{Q}, \mathbf{K} \in \mathbb{R}^{T \times d_k}$ and $\mathbf{V} \in \mathbb{R}^{T \times d_v}$.
+The superscripts on these three matrices are *labels for the role each one plays*, not layer
+indices: it's the only place in the course where a superscript doesn't count layers, and it comes
+from the paper's notation. There's a single set of these three projections here; a real layer
+carries several in parallel, and that is <Leccion slug="multi-head">a lesson further on, about
+multi-head attention</Leccion>.
+
+That is where the <W>self</W> in the name comes from, and it's what separates this lesson from
+<Leccion slug="atencion-como-consulta">the lesson on attention as query, key and value</Leccion>.
+There the query was the state of one network and the keys and the values were the states of
+another: two sources for three roles. Here all three come out of the same $\mathbf{X}$. The
+operation that receives them is that lesson's with one addition, the divisor the paper puts in the
+score:
+
+$$
+\text{Attention}\left(\mathbf{Q}, \mathbf{K}, \mathbf{V}\right) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V} \in \mathbb{R}^{T \times d_v},
+$$
+
+with the softmax taken by rows. That divisor, $\sqrt{d_k}$, is the only thing in the line nobody
+has justified yet; it's noted, and I come back to it at the end.
+
+That $\mathbf{Q}$ comes whole out of $\mathbf{X}$ doesn't contradict the previous lesson's caveat,
+that when generating text the decoder still writes one token per step. Here $\mathbf{X}$ is a
+sentence that is already complete (the source sentence, or the target one during training), and
+then all the queries come out at once. When generating, the decoder's $\mathbf{X}$ is what it has
+written so far and gains a row per step, and $\mathbf{Q}$ with it. But the new query is that row
+multiplied by $\mathbf{W}^Q$, not the state of a network that needs the previous step's: the only
+thing that forces it to go one token at a time is that the next token hasn't been written yet. How
+that decoder is put together is <Leccion slug="encoder-decoder-masking">the lesson on masks</Leccion>.
+
+Now look at the shapes, which is where you can tell that the input and the output are the same
+sentence. $\mathbf{Q}\mathbf{K}^{\top}$ multiplies a $T \times d_k$ matrix by a $d_k \times T$ one,
+so the product is *square*, $T \times T$: one row and one column per position. The softmax doesn't
+change that shape, so the weight map $\mathbf{A}$ that comes out of it is $T \times T$ as well, with
+the weight $\alpha_{ij}$ in cell $(i, j)$: how much of position $j$ goes into what position $i$
+reads. It's the grid from the start of the lesson, and the literature calls it the *attention
+weights* or the *attention map*. In the previous block it was $T_y \times T_x$ and its two axes were
+two different sentences; here both axes are the same one, and that's why the cell $\alpha_{ii}$
+exists and means something: how much of itself a position keeps. Each row still sums to $1$,
+because the softmax still normalises one row at a time, and no position is left out of any row:
+every position looks at every position.
+
+And count the parameters, which is the other property of shape that decides the rest of the block.
+The three matrices hold between them
+
+$$
+d_{\text{model}}\left(2d_k + d_v\right) \quad \text{parameters},
+$$
+
+and $T$ does not appear in that count. They multiply rows of $\mathbf{X}$, and it makes no
+difference to them how many rows there are. Set that beside <Leccion slug="por-que-falla-el-mlp">the
+lesson on why the MLP fails on sequences</Leccion>: there each position had its own block of columns
+$\mathbf{W}^{(1)}_t$, so lengthening the input meant adding parameters, and each position learnt on
+its own. These three matrices are the same for every position and for every length.
+
+### Without projections, the layer copies itself
+
+What's left to defend is what looks like a detour: if $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$
+are readings of $\mathbf{X}$, why not use it as it is and save the three projections? Set
+$\mathbf{Q} = \mathbf{K} = \mathbf{V} = \mathbf{X}$ and work it through. The score of the pair
+$(i,j)$ becomes the dot product of the two token vectors,
+
+$$
+e_{ij} = \frac{\mathbf{x}_i^{\top}\mathbf{x}_j}{\sqrt{d_{\text{model}}}},
+$$
+
+and two things follow from that, neither of them good. The first:
+$\mathbf{x}_i^{\top}\mathbf{x}_j = \mathbf{x}_j^{\top}\mathbf{x}_i$, so the grid of scores is
+*symmetric*. The weights aren't (each row is divided by its own sum, and those sums have no reason to
+match), but the order within each row is fixed by a number that can't tell the one asking from the
+one answering. A language can: <W>are</W> needs <W>keys</W> far more than <W>keys</W> needs
+<W>are</W>.
+
+The second is worse. Suppose all the token vectors have the same length,
+$\lVert \mathbf{x}_t \rVert = r$. I'm assuming it here so that the calculation comes out exact,
+and the Cauchy–Schwarz inequality does the rest:
+
+$$
+\mathbf{x}_i^{\top}\mathbf{x}_j \le \lVert \mathbf{x}_i \rVert \lVert \mathbf{x}_j \rVert = r^{2} = \mathbf{x}_i^{\top}\mathbf{x}_i,
+$$
+
+with equality only when $\mathbf{x}_j$ points in the direction of $\mathbf{x}_i$. The diagonal cell
+is the largest in its row, always, in every row at once, so the softmax gives the highest weight to
+the position itself and the mixture leans towards $\mathbf{x}_i$: the layer hands back a faded
+version of what came in. How far it leans depends on how long the vectors are: the larger $r$, the
+more tightly the row closes on its diagonal. With lengths that differ from one another the
+conclusion keeps its form: the row then goes to whichever position has the longest vector, which is
+still a property of the vectors and not of what the sentence needs.
+
+What settles the argument isn't either of the two, but what's missing from both. That layer *has
+not a single parameter*. There's nothing to adjust, so there's no way for it to learn that a plural
+verb has to go and find a plural noun. The three matrices are what separates the three roles
+(comparing isn't being compared, and neither of them is contributing content) and, on top of that,
+the only thing the layer can learn.
+
+## The sequence in all three roles, in NumPy
+
+The whole layer is five lines. Read them with the shapes in front of you, which is where you see
+the sentence go in once and come out through three places.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model, d_k, d_v = 6, 8, 4, 5
+rng = np.random.default_rng(5)
+X = rng.normal(size=(T, d_model))          # row t: the vector of the token at position t
+Wq = rng.normal(size=(d_model, d_k)) * 0.6
+Wk = rng.normal(size=(d_model, d_k)) * 0.6
+Wv = rng.normal(size=(d_model, d_v)) * 0.6
+
+Q, K, V = X @ Wq, X @ Wk, X @ Wv           # three readings of the SAME X
+
+E = Q @ K.T / np.sqrt(d_k)                 # (T, T): one score per pair of positions
+Z = np.exp(E - E.max(axis=1, keepdims=True))
+A = Z / Z.sum(axis=1, keepdims=True)       # softmax by rows
+Y = A @ V
+
+print("X", X.shape, " Q", Q.shape, " K", K.shape, " V", V.shape)
+print("A", A.shape, " square:", A.shape[0] == A.shape[1])
+print("every row sums to 1:", bool(np.allclose(A.sum(axis=1), 1.0)))
+print("A symmetric:", bool(np.allclose(A, A.T)))
+print("output", Y.shape, "->", d_v, "coordinates per position")
+print("parameters:", d_model * (2 * d_k + d_v), " and T does not appear in the count")
+print("row 0 of A:", np.round(A[0], 3))
+`} />
+
+Change `T` to $9$ and run it again: the map becomes $9 \times 9$, the output gains three rows and
+the parameter line doesn't move. That's this layer's property of shape in one sentence.
+
+Now the check that holds up the previous section. The cell below removes the projections, measures
+what happens and puts them back.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(5)
+T, d_model = 6, 8
+X = rng.normal(size=(T, d_model))
+X = X / np.linalg.norm(X, axis=1, keepdims=True)   # all of length 1
+
+
+def softmax_rows(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+def attention(Q, K, V):
+    A = softmax_rows(Q @ K.T / np.sqrt(Q.shape[1]))
+    return A @ V, A
+
+
+# 1. Unprojected: Q, K and V are X.
+_, A0 = attention(X, X, X)
+print("symmetric scores:", bool(np.allclose(X @ X.T, (X @ X.T).T)))
+print("the diagonal wins its row:", bool(np.all(A0.argmax(axis=1) == np.arange(T))))
+print("weight on itself:      ", np.round(np.diag(A0), 3))
+print("largest of the rest:   ", np.round((A0 - np.eye(T)).max(axis=1), 3))  # diagonal left out
+_, A0_long = attention(3 * X, 3 * X, 3 * X)                # the same vectors, longer
+print("and with vectors 3 times longer:", np.round(np.diag(A0_long), 3))
+
+# 2. With projections: two different readings of the same X.
+d_k = 4
+Wq, Wk = rng.normal(size=(d_model, d_k)), rng.normal(size=(d_model, d_k))
+_, A1 = attention(X @ Wq, X @ Wk, X)
+print("now the diagonal wins its row:", bool(np.all(A1.argmax(axis=1) == np.arange(T))))
+print("weight on itself:      ", np.round(np.diag(A1), 3))
+print("row 0 in full:         ", np.round(A1[0], 3))
+
+# 3. The formula's divisor, measured and still unexplained.
+for d in (8, 64, 512):
+    Qd, Kd = rng.normal(size=(T, d)), rng.normal(size=(T, d))
+    undivided = softmax_rows(Qd @ Kd.T).max(axis=1).mean()
+    divided = softmax_rows(Qd @ Kd.T / np.sqrt(d)).max(axis=1).mean()
+    print(f"d_k = {d:3d}   largest weight undivided: {undivided:.3f}   divided: {divided:.3f}")
+`} />
+
+The first two parts are the previous section in numbers. Unprojected, all six rows put their
+maximum on their own diagonal, and the line with the vectors three times longer says what decides
+whether that maximum is a preference or a monopoly: at length $1$ the row shares its weight out
+almost evenly, and stretching the same vectors makes the weight a position gives itself shoot up.
+With two different readings of the same matrix that comes to an end, and the positions start to
+look at one another. The third part is something else, and it's worth reading slowly, because it's
+what the next lesson is about.
+
+## Test your intuition
+
+Five questions: where $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ come from, how big the map is,
+what the layer computes without its projections, what is symmetric and what isn't, and what moves
+when the sentence gets longer.
+
+<Quiz id="q-tres-lecturas" />
+
+<Quiz id="q-forma-cuadrada" />
+
+<Quiz id="q-sin-proyecciones" />
+
+<Quiz id="q-simetria" />
+
+<Quiz id="q-que-crece-con-t" />
+
+<CodeChallenge id="ch-auto-atencion" />
+
+---
+
+That leaves the divisor, and it can't be let slide any longer. The third part of the last cell
+measures it without touching anything else: with queries and keys of $d_k = 8$ the largest weight
+in a row stays at $0.558$, and with random vectors drawn the same way at $d_k = 512$ it climbs to
+$0.983$. A row like that has stopped being a mixture: it keeps one position and throws away the
+other five. That has had a name since <Leccion slug="funciones-activacion">the lesson on activation
+functions</Leccion>: it's saturated. Dividing by $\sqrt{d_k}$, the maximum grows too, but slowly,
+from $0.330$ to $0.486$, and the row goes on sharing its weight out.
+
+That root isn't a constant someone kept trying until things came out right: it's calculated, and
+what has to be calculated is how much a dot product grows as coordinates are added to it. The
+calculation takes up the whole of <Leccion slug="scaled-dot-product">the next lesson, on the
+*scaled dot-product*</Leccion>, and it deserves to be done slowly, because it's where two things
+this course left in different blocks meet again: the saturation that switches off a share-out and
+the gradient that vanishes on its way through one. Neither of them needed a sigmoid or a recurrence
+to appear.

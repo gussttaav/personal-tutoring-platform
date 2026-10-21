@@ -121,8 +121,8 @@ Line refs are into the `es/` file named in each heading.
   — `están` must look at `llaves` three positions back, not the adjacent singular `coche`), 202,
   206 (Explorable caption, which names «están», «coche» and «llaves»), 290–291 (the asymmetry:
   `están` needs `llaves` more than `llaves` needs `están`).
-- **The token count is quoted.** "en las seis filas a la vez" (201) is $T$ of the preset. `the keys
-  to the car are over there` is seven; the line moves with whatever P11-02 picks.
+- **The token count is quoted.** "en las seis filas a la vez" (201) is $T$ of the preset. The English
+  sentence 5.2 chose is seven tokens, and the line says "all seven rows" (see the decision below).
 - **`<Explorable>` `self-attention-heatmap`** (204–207) — its corpus is the sentence, via the
   widget's lexicon. See the widget table above.
 - **`<CodeChallenge>` `ch-auto-atencion`** (64–161): Spanish `prompt` (66–75), 1 `# tu código aquí`
@@ -401,7 +401,7 @@ which quotes five of its figures. Block 4's direction decision fixes 5.9's class
 ## Lesson progress
 
 - [x] 5.1 `adios-recurrencia`
-- [ ] 5.2 `self-attention`
+- [x] 5.2 `self-attention`
 - [ ] 5.3 `scaled-dot-product`
 - [ ] 5.4 `multi-head`
 - [ ] 5.5 `codificacion-posicional`
@@ -427,6 +427,20 @@ is that the cell the prose names is visibly the brightest in its row, not that t
 good translation.
 
 5.4 reuses the sentence to show different heads attending differently. Pick once, in 5.2.
+
+**Decided in 5.2 (COURSE-P11-08): `the keys to this car are here`**, seven tokens, `are` at row 6
+(index 5, `FOCUS_ROW.en`) reaching four positions back to `keys`. Not the sentence proposed above,
+which is eight tokens, not seven: its two `the`s share a vector, and so do `over` and `there`, so
+with the projections off those rows tie and the diagonal no longer wins outright (AUTHORING.en.md §3
+now says so). `this` keeps a singular determiner between subject and verb, as «del» does. Measured
+in the rendered widget: projected, the row of `are` gives `keys` **0.50**, itself 0.20, `car` 0.06;
+unprojected, the diagonal wins all seven rows. The sentence lives in
+`src/features/courses/widgets/math/self-attention.ts` as `PRESETS_EN[0]`, beside an English lexicon
+(`LEXICONS.en`, 97 words) that 5.2 built, since P11-02 had left the widget in
+`SPANISH_BOUND_CORPORA`. **5.7 reuses it verbatim** (its explorable is this widget with the mask on).
+**5.4 is still open:** `multi-head-view` reads only the Spanish lexicon and stays Spanish-bound, and
+its English sentence (two verbs needing subjects in opposite directions) is that lesson's decision;
+the English lexicon is there to build it on.
 
 ## 5.11 and the notebooks
 
