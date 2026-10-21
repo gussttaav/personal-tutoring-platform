@@ -4,7 +4,7 @@ title: "Varias cabezas, varios repartos"
 block: 5
 order: 4
 minutes: 35
-summary: "Una posición tiene una fila y en esa fila cabe una sola manera de mirar la frase. La atención multi-head monta h atenciones en paralelo sobre la misma X, cada una con sus tres proyecciones y su propio mapa, y las junta concatenando y proyectando. Lo que cambia no son las puntuaciones sino dónde se normaliza: cada grupo de coordenadas con su propio softmax, en vez de todas sumadas antes de uno solo, que es lo que deja a una regla tapar a otra sin dejar rastro. Y de repartir la anchura, d_k = d_model/h, sale que el coste no depende de h: los mismos parámetros y las mismas multiplicaciones con una cabeza que con dieciséis."
+summary: "Una posición tiene una fila y en esa fila cabe una sola manera de mirar la frase. La atención multi-head monta h atenciones en paralelo sobre la misma X, cada una con sus tres proyecciones y su propio mapa, y las junta concatenando y proyectando. Lo que cambia no son las puntuaciones sino en qué momento entra el softmax: cada grupo de coordenadas con el suyo, en vez de todas sumadas antes de uno solo, que es lo que deja a una regla tapar a otra sin dejar rastro. Y de repartir la anchura, d_k = d_model/h, sale que el coste no depende de h: los mismos parámetros y las mismas multiplicaciones con una cabeza que con dieciséis."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -13,13 +13,13 @@ quiz:
     type: single
     prompt: 'Una capa tiene una cabeza con $d_k = 4$. Otra tiene cuatro cabezas de $d_k = 1$, y sus columnas son exactamente las cuatro de la primera. ¿En qué se diferencian?'
     options:
-      - { id: a, text: 'En dónde se normaliza. Los cuatro términos del producto escalar son los mismos; la primera los suma y aplica un *softmax* al total, la segunda le da a cada uno su propio *softmax*. Por eso en la primera un término grande puede tapar a otro, y el reparto que sale ya no se puede descomponer.' }
+      - { id: a, text: 'En qué momento entra el *softmax*. Los cuatro términos del producto escalar son los mismos; la primera los suma y aplica un *softmax* al total, la segunda le da a cada uno su propio *softmax*. Por eso en la primera un término grande puede tapar a otro, y el reparto que sale ya no se puede descomponer.' }
       - { id: b, text: 'En las puntuaciones, que son cuatro números por pareja en vez de uno, así que la segunda capa compara con más resolución que la primera.' }
       - { id: c, text: 'En nada observable: el *softmax* es creciente y respeta el orden de las puntuaciones, así que las dos reparten igual y sólo cambia cómo está escrito el cálculo.' }
       - { id: d, text: 'En el número de parámetros: cuatro cabezas llevan cuatro veces más matrices que una.' }
     answer: a
     explanation: 'La (a). Las dos capas guardan los mismos números en las mismas columnas, y todo lo que cambia es que la suma sobre $m$ ocurre dentro del *softmax* en un caso y fuera en el otro. La (b) confunde tener cuatro puntuaciones con comparar mejor: cada una de esas cuatro mira una sola coordenada, que es menos resolución por comparación, no más. La (c) usa un hecho cierto en el sitio equivocado: el *softmax* conserva el orden *dentro de la fila que recibe*, y aquí la discusión es sobre qué fila recibe: una suma de cuatro términos, o cuatro filas por separado. La (d) es falsa por lo mismo que la (a) es cierta: son las mismas matrices, partidas de otra forma.'
-    hint: '¿Dónde cae la suma sobre las coordenadas en cada una de las dos, antes o después de normalizar?'
+    hint: '¿Dónde cae la suma sobre las coordenadas en cada una de las dos, antes o después del *softmax*?'
   - id: q-cuenta-parametros
     type: numeric
     prompt: 'Una capa multi-head con $d_{\text{model}} = 512$ y $h = 8$, repartiendo la anchura como manda el artículo ($d_k = d_v = d_{\text{model}}/h$). ¿Cuántos parámetros tiene en total, contando $\mathbf{W}^O$?'
@@ -185,7 +185,7 @@ reading:
     venue: 'arXiv:1706.03762'
     lang: en
     url: 'https://arxiv.org/abs/1706.03762'
-    note: 'Su §3.2.2 trae la concatenación con W^O y el reparto d_k = d_model/h, y afirma en una línea que h cabezas cuestan como una. Esa cancelación la desarrollas tú, y el marco «dónde se normaliza» no está en el artículo.'
+    note: 'Su §3.2.2 trae la concatenación con W^O y el reparto d_k = d_model/h, y afirma en una línea que h cabezas cuestan como una. Esa cancelación la desarrollas tú, y el marco «sumar antes o después del softmax» no está en el artículo.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 4. */}
@@ -237,9 +237,9 @@ verdad lleva varias reglas: dentro de ella se suman las que tienen que cumplirse
 cabezas distintas pueden acabar las que buscan cosas distintas.
 
 <Callout type="intuition" title="La idea en una frase">
-Multi-head no cambia lo que se compara: cambia dónde se normaliza. En vez de sumar todas las
-reglas y repartir una sola vez, reparte cada grupo de reglas por separado y junta después lo que ha
-leído cada uno.
+Multi-head no cambia las puntuaciones: cambia en qué momento entra el *softmax*. Una sola cabeza
+suma todas las reglas y aplica un único *softmax* al total; varias cabezas aplican un *softmax* a
+cada grupo de reglas por separado y combinan después lo que ha leído cada uno.
 </Callout>
 
 ## La misma matriz leída por varias atenciones a la vez
@@ -272,7 +272,13 @@ $\mathbf{W}^O \in \mathbb{R}^{\left(h \cdot d_v\right) \times d_{\text{model}}}$
 de la capa que no pertenece a ninguna cabeza. Su superíndice es una etiqueta de papel, como los de
 las otras tres.
 
-### Dónde se normaliza
+<Figure
+  src="/courses/dl-nlp/multi-head-bloques.svg"
+  alt="Tres filas. Arriba, X, de T por 512, multiplicada por W Q, un cuadrado de 512 por 512 partido en 8 bloques de 64 columnas, con el tercero resaltado, da Q, de T por 512, partida en los mismos 8 bloques: las 8 consultas una al lado de otra. Lo mismo con W K y W V. En medio, la cabeza 3 toma el bloque 3 de Q, de K y de V, cada uno de T por 64: Q 3 y K 3 dan, con el softmax de Q 3 por K 3 traspuesta entre la raíz de 64, el mapa A 3, cuadrado de T por T; A 3 por V 3 da head 3, de T por 64. Abajo, las 8 salidas puestas una al lado de otra, con head 3 en el bloque 3, forman una matriz de T por 512, que multiplicada por W O, de 512 por 512 y partida en 8 bloques de filas, da la salida, de T por 512."
+  caption="Las h matrices de consulta de la ecuación no se guardan sueltas: son los bloques de columnas de una sola matriz de 512 × 512, y lo mismo pasa con las de clave y de valor. Cada cabeza hace la atención de siempre con su bloque, y su salida ocupa ese mismo sitio en la concatenación, que es lo que recibe la proyección de salida."
+/>
+
+### Sumar antes o después del *softmax*
 
 La puntuación de una cabeza ya era una suma, y la lección anterior la escribió así precisamente
 para poder contarla:
@@ -284,14 +290,30 @@ $$
 donde $q_{im}$ es la coordenada $m$ de la consulta de la posición $i$. Cada coordenada de la
 comparación aporta su término, y el *softmax* no ve los términos: ve el total.
 
-Las reglas de la introducción son esos términos. Las del explorable de arriba ocupan una
-coordenada cada una, así que la capa de una sola cabeza, que las lleva todas, compara en
-$d_k = 4$ coordenadas, y cada una de las cuatro cabezas en una sola, $d_k = 1$. En una capa
-entrenada nadie escribe las reglas y una coordenada no tiene por qué significar nada por sí sola,
-pero la cuenta es la misma: términos que llegan sumados al *softmax*.
+Las reglas de la introducción son esos términos. El explorable de arriba está hecho así a
+propósito: cada regla es una columna de $\mathbf{W}^Q$ y otra de $\mathbf{W}^K$, de modo que la
+coordenada $m$ de la consulta por la coordenada $m$ de la clave es la puntuación de la regla $m$.
+La capa de una sola cabeza lleva las cuatro columnas, así que compara en $d_k = 4$ coordenadas (y
+divide su suma entre $\sqrt{4} = 2$); cada una de las cuatro cabezas se queda con una sola
+columna, $d_k = 1$, y su puntuación es una regla y nada más. En una capa entrenada nadie escribe las reglas
+y una coordenada no tiene por qué significar nada por sí sola, pero la cuenta es la misma: términos que llegan sumados al *softmax*.
+
+Sumar dentro del *softmax* tiene una consecuencia que cabe en una línea. Si $a_j$ y $b_j$ son lo
+que dos reglas le dan a la palabra $j$, la exponencial convierte su suma en un producto:
+
+$$
+\text{softmax}_j\left(a_j + b_j\right) = \frac{e^{a_j}\,e^{b_j}}{\sum_{l} e^{a_l}\,e^{b_l}}.
+$$
+
+Repartir el total es multiplicar, palabra a palabra, lo que pondría cada regla por su cuenta, y
+reescalar para que la fila vuelva a sumar $1$. Un producto funciona como un «y»: si una regla
+puntúa bajo a una palabra, ésta se queda sin peso, diga lo que diga la otra. Es lo que
+le pasa a <W>ratón</W> en la fila de <W>persiguen</W>: la concordancia lo hunde, porque no coincide
+en número, y la regla del sustantivo, que lo puntuaba igual que a <W>gatos</W>, no puede sacarlo de
+ahí. Y como lo que sale es un solo reparto, ya no se puede saber cuánto puso cada regla.
 
 Ahí está la operación entera. Separar las coordenadas en $h$ grupos y darle a cada grupo su propio
-*softmax* es *normalizar antes de combinar*, en vez de combinar antes de normalizar. Salen $h$
+*softmax* es *repartir antes de combinar*, en vez de combinar antes de repartir. Salen $h$
 distribuciones en lugar de una, cada una con su denominador, y llegan hasta la salida sin tocarse;
 lo que las combina es $\mathbf{W}^O$, que es una matriz que se aprende y que las recibe ya
 repartidas. La suma que la capa de una cabeza hacía dentro del *softmax* era irreversible; hecha
