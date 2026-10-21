@@ -7,6 +7,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
 import UserSessionProvider from "@/components/UserSessionProvider";
+import ChatProvider from "@/components/ChatProvider";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
@@ -41,6 +42,11 @@ import "../globals.css";
  *
  * BOOKING-ATTRIBUTION-01: `AttributionCapture` stores the visit's first-touch source
  * (UTM tags / external referrer) so a later booking can carry it. Renders nothing.
+ *
+ * CHAT-GLOBAL-01: `ChatProvider` mounts the AI assistant once for every page it is offered on
+ * (`isChatRoute`), and holds its open state for the FAB, the Navbar icon and the Footer link.
+ * The chat itself is a lazy client chunk, so this adds nothing to any route's first-load JS
+ * beyond the provider.
  */
 
 const manrope = Manrope({
@@ -159,7 +165,9 @@ export default async function RootLayout({
           {/* REFACTOR-R4-P2-03: stays above every page — the Navbar needs the
               session, and so does the `UserPricingSync` inside CommerceProviders. */}
           <AuthProvider>
-            <UserSessionProvider>{children}</UserSessionProvider>
+            <UserSessionProvider>
+              <ChatProvider>{children}</ChatProvider>
+            </UserSessionProvider>
           </AuthProvider>
           <Analytics />
           <AttributionCapture />

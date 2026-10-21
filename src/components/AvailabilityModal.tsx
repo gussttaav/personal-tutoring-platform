@@ -585,8 +585,6 @@ export default function AvailabilityModal({
           from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        /* Hide the chat FAB while this modal is mounted */
-        .chat-fab { display: none !important; }
       `}</style>
     </>
   );

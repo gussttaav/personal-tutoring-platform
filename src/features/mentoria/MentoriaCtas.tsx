@@ -7,9 +7,8 @@
  * or the pack booking signed in) and `open-availability-modal` (the weekly calendar) — exactly
  * what the deleted `HeroSection` dispatched and what `HomeHeroCtas` dispatches on `/`. The shell
  * (`BookingOverlays`) is on this very page, so the booking opens in place: no navigation, URL
- * unchanged. Labels are existing copy (`landing.hero.cta.*`); the row around them
- * (`#hero-cta-row`, which `Chat.tsx` watches to keep the FAB clear) stays in the Server
- * Component. Styles are `mentoria.css`'s `.mt-cta*`.
+ * unchanged. Labels are existing copy (`landing.hero.cta.*`); the row around them stays in the
+ * Server Component. Styles are `mentoria.css`'s `.mt-cta*`.
  */
 
 import { useTranslations } from "next-intl";
