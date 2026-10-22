@@ -407,7 +407,7 @@ which quotes five of its figures. Block 4's direction decision fixes 5.9's class
 
 - [x] 5.1 `adios-recurrencia`
 - [x] 5.2 `self-attention`
-- [ ] 5.3 `scaled-dot-product`
+- [x] 5.3 `scaled-dot-product`
 - [ ] 5.4 `multi-head`
 - [ ] 5.5 `codificacion-posicional`
 - [ ] 5.6 `bloque-transformer`
