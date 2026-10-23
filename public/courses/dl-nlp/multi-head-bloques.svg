@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 410" width="540" height="615" role="img"
+     aria-label="Tres filas. Arriba, X, de T por 512, multiplicada por W Q, un cuadrado de 512 por 512 partido en 8 bloques de 64 columnas, con el tercero resaltado, da Q, de T por 512, partida en los mismos 8 bloques: las 8 consultas una al lado de otra. Lo mismo con W K y W V. En medio, la cabeza 3 toma el bloque 3 de Q, de K y de V, cada uno de T por 64: Q 3 y K 3 dan, con el softmax de Q 3 por K 3 traspuesta entre la raíz de 64, el mapa A 3, cuadrado de T por T; A 3 por V 3 da head 3, de T por 64. Abajo, las 8 salidas puestas una al lado de otra, con head 3 en el bloque 3, forman una matriz de T por 512, que multiplicada por W O, de 512 por 512 y partida en 8 bloques de filas, da la salida, de T por 512.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: rgba(134,148,138,0.10); }
+    .corte { stroke: rgba(134,148,138,0.45); stroke-width: 0.8; }
+    /* Verde: lo que es de la cabeza 3, desde su bloque de columnas hasta su sitio en la concatenación. */
+    .hi { fill: rgba(78,222,163,0.55); }
+    .hi-suave { fill: rgba(78,222,163,0.16); }
+    .marco { stroke: #4edea3; stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+    .via { stroke: #4edea3; stroke-width: 1.4; fill: none; }
+    .tit { font-size: 11px; fill: #bbcabf; font-weight: 600; }
+    .tit-si { font-size: 11px; fill: #4edea3; font-weight: 600; }
+    .cc { font-size: 15px; fill: #bbcabf; text-anchor: middle; }
+    .est { font-size: 11px; fill: #bbcabf; }
+    .lab { font-size: 10.5px; fill: #bbcabf; }
+    .lab-si { font-size: 10.5px; fill: #4edea3; }
+    .nota { font-size: 9.5px; fill: #86948a; text-anchor: middle; }
+    .nota-si { font-size: 10px; fill: #4edea3; text-anchor: middle; }
+    .nota-i { font-size: 9.5px; fill: #86948a; }
+    .op { font-size: 14px; fill: #86948a; text-anchor: middle; }
+    .sub { font-size: 7.5px; }
+    .sup-g { font-size: 10px; }
+  </style>
+
+  <defs>
+    <marker id="qv" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
+  </defs>
+
+  <!-- Arriba: las 8 cabezas viven en UNA matriz por papel, cada una en su bloque de columnas. -->
+  <text class="tit" x="4" y="12">Una matriz por papel, partida en 8 bloques de 64 columnas</text>
+  <rect class="caja" x="6" y="62" width="96" height="36" rx="2" />
+  <text class="cc" x="54.0" y="85.0">X</text>
+  <text class="nota" x="54.0" y="111">T × 512</text>
+  <text class="op" x="111" y="85.0">×</text>
+  <rect class="caja" x="120" y="32" width="96" height="96" rx="2" />
+  <rect class="hi" x="144" y="32" width="12" height="96" />
+  <line class="corte" x1="132" y1="32" x2="132" y2="128" />
+  <line class="corte" x1="144" y1="32" x2="144" y2="128" />
+  <line class="corte" x1="156" y1="32" x2="156" y2="128" />
+  <line class="corte" x1="168" y1="32" x2="168" y2="128" />
+  <line class="corte" x1="180" y1="32" x2="180" y2="128" />
+  <line class="corte" x1="192" y1="32" x2="192" y2="128" />
+  <line class="corte" x1="204" y1="32" x2="204" y2="128" />
+  <text class="cc" x="190.0" y="85.0" text-anchor="middle">W<tspan class="sup-g" dy="-7">Q</tspan><tspan dy="7"></tspan></text>
+  <text class="nota" x="168.0" y="141">512 × 512</text>
+  <text class="op" x="225" y="85.0">=</text>
+  <rect class="caja" x="234" y="62" width="96" height="36" rx="2" />
+  <rect class="hi" x="258" y="62" width="12" height="36" />
+  <line class="corte" x1="246" y1="62" x2="246" y2="98" />
+  <line class="corte" x1="258" y1="62" x2="258" y2="98" />
+  <line class="corte" x1="270" y1="62" x2="270" y2="98" />
+  <line class="corte" x1="282" y1="62" x2="282" y2="98" />
+  <line class="corte" x1="294" y1="62" x2="294" y2="98" />
+  <line class="corte" x1="306" y1="62" x2="306" y2="98" />
+  <line class="corte" x1="318" y1="62" x2="318" y2="98" />
+  <text class="cc" x="304.0" y="85.0">Q</text>
+  <text class="nota" x="282.0" y="111">T × 512, 8 consultas</text>
+  <text class="nota-si" x="264.0" y="57">Q<tspan class="sub" dy="3">3</tspan></text>
+  <text class="nota-si" x="150.0" y="29">W<tspan class="sub" dy="-4">Q</tspan><tspan class="sub" dx="-5" dy="7">3</tspan></text>
+  <text class="nota-i" x="4" y="158">Igual con W<tspan class="sub" dy="-4">K</tspan><tspan dy="4"> y con W</tspan><tspan class="sub" dy="-4">V</tspan><tspan dy="4">. Partirlas no cambia su tamaño:</tspan></text>
+  <text class="nota-i" x="4" y="171">con 1, 8 o 16 cabezas, las tres siguen siendo de 512 × 512.</text>
+  <!-- En medio: una cabeza es la atención de siempre sobre su bloque de Q, K y V. -->
+  <rect class="marco" x="2" y="184" width="356" height="82" rx="5" />
+  <text class="tit-si" x="10" y="199">Cabeza 3: el bloque 3 de Q, de K y de V</text>
+  <rect class="caja" x="30" y="210" width="12" height="36" rx="2" />
+  <rect class="hi" x="30" y="210" width="12" height="36" />
+  <text class="lab" x="36.0" y="258" text-anchor="middle">Q<tspan class="sub" dy="3">3</tspan><tspan dy="-3"></tspan></text>
+  <rect class="caja" x="56" y="210" width="12" height="36" rx="2" />
+  <rect class="hi" x="56" y="210" width="12" height="36" />
+  <text class="lab" x="62.0" y="258" text-anchor="middle">K<tspan class="sub" dy="3">3</tspan><tspan dy="-3"></tspan></text>
+  <line class="via" x1="76" y1="228.0" x2="186" y2="228.0" marker-end="url(#qv)" />
+  <text class="nota" x="131" y="223.0"><tspan font-style="italic">softmax</tspan>(Q<tspan class="sub" dy="3">3</tspan><tspan dy="-3">K</tspan><tspan class="sub" dy="3">3</tspan><tspan class="sub" dy="-7">⊤</tspan><tspan dy="4"> / √64)</tspan></text>
+  <rect class="caja" x="192" y="210" width="36" height="36" rx="2" />
+  <rect class="hi-suave" x="192" y="210" width="36" height="36" />
+  <text class="cc" x="210.0" y="233.0" text-anchor="middle">A<tspan class="sub" dy="3">3</tspan><tspan dy="-3"></tspan></text>
+  <text class="nota" x="210.0" y="258">T × T</text>
+  <text class="op" x="237" y="233.0">×</text>
+  <rect class="caja" x="246" y="210" width="12" height="36" rx="2" />
+  <rect class="hi" x="246" y="210" width="12" height="36" />
+  <text class="lab" x="252.0" y="258" text-anchor="middle">V<tspan class="sub" dy="3">3</tspan><tspan dy="-3"></tspan></text>
+  <text class="op" x="267" y="233.0">=</text>
+  <rect class="caja" x="276" y="210" width="12" height="36" rx="2" />
+  <rect class="hi" x="276" y="210" width="12" height="36" />
+  <text class="lab-si" x="293" y="229.0" text-anchor="start">head<tspan class="sub" dy="3">3</tspan><tspan dy="-3"></tspan></text>
+  <text class="nota" x="293" y="241.0" style="text-anchor: start">T × 64</text>
+  <!-- Abajo: las 8 salidas una al lado de otra, y W^O, la única matriz que no es de ninguna cabeza. -->
+  <text class="tit" x="4" y="284">Las 8 salidas una al lado de otra, y W<tspan class="sub" dy="-4">O</tspan></text>
+  <rect class="caja" x="6" y="322" width="96" height="36" rx="2" />
+  <rect class="hi" x="30" y="322" width="12" height="36" />
+  <line class="corte" x1="18" y1="322" x2="18" y2="358" />
+  <line class="corte" x1="30" y1="322" x2="30" y2="358" />
+  <line class="corte" x1="42" y1="322" x2="42" y2="358" />
+  <line class="corte" x1="54" y1="322" x2="54" y2="358" />
+  <line class="corte" x1="66" y1="322" x2="66" y2="358" />
+  <line class="corte" x1="78" y1="322" x2="78" y2="358" />
+  <line class="corte" x1="90" y1="322" x2="90" y2="358" />
+  <text class="nota" x="54.0" y="371">Concat, T × 512</text>
+  <text class="nota-si" x="36.0" y="317">head<tspan class="sub" dy="3">3</tspan></text>
+  <text class="op" x="111" y="345.0">×</text>
+  <rect class="caja" x="120" y="292" width="96" height="96" rx="2" />
+  <rect class="hi-suave" x="120" y="316" width="96" height="12" />
+  <line class="corte" x1="120" y1="304" x2="216" y2="304" />
+  <line class="corte" x1="120" y1="316" x2="216" y2="316" />
+  <line class="corte" x1="120" y1="328" x2="216" y2="328" />
+  <line class="corte" x1="120" y1="340" x2="216" y2="340" />
+  <line class="corte" x1="120" y1="352" x2="216" y2="352" />
+  <line class="corte" x1="120" y1="364" x2="216" y2="364" />
+  <line class="corte" x1="120" y1="376" x2="216" y2="376" />
+  <text class="cc" x="168.0" y="362.0" text-anchor="middle">W<tspan class="sup-g" dy="-7">O</tspan><tspan dy="7"></tspan></text>
+  <text class="nota" x="168.0" y="401">512 × 512, 8 bloques de filas</text>
+  <text class="op" x="225" y="345.0">=</text>
+  <rect class="caja" x="234" y="322" width="96" height="36" rx="2" />
+  <text class="est" x="282.0" y="344.0">salida</text>
+  <text class="nota" x="282.0" y="371">T × 512</text>
+</svg>

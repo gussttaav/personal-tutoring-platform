@@ -121,8 +121,8 @@ Line refs are into the `es/` file named in each heading.
   — `están` must look at `llaves` three positions back, not the adjacent singular `coche`), 202,
   206 (Explorable caption, which names «están», «coche» and «llaves»), 290–291 (the asymmetry:
   `están` needs `llaves` more than `llaves` needs `están`).
-- **The token count is quoted.** "en las seis filas a la vez" (201) is $T$ of the preset. `the keys
-  to the car are over there` is seven; the line moves with whatever P11-02 picks.
+- **The token count is quoted.** "en las seis filas a la vez" (201) is $T$ of the preset. The English
+  sentence 5.2 chose is seven tokens, and the line says "all seven rows" (see the decision below).
 - **`<Explorable>` `self-attention-heatmap`** (204–207) — its corpus is the sentence, via the
   widget's lexicon. See the widget table above.
 - **`<CodeChallenge>` `ch-auto-atencion`** (64–161): Spanish `prompt` (66–75), 1 `# tu código aquí`
@@ -172,22 +172,27 @@ Line refs are into the `es/` file named in each heading.
   head 1 ties `ratón` with `gatos` at **`0.30`**, head 2 puts **`0.26`** on three singulars that
   are not the subject, and the single-head layer answers `ratón` with **`0.31`**; on `persiguen`,
   the single-head layer keeps `gatos` at **`0.36`** and leaves `ratón` **`0.07`**, while head 1
-  still gives `ratón` **`0.30`**. A replacement must reproduce **all** of these properties, not
-  just the sentence.
+  still gives `ratón` **`0.30`**. The «Sumar antes o después del *softmax*» section (301–313)
+  comes back to that row: the agreement rule sinks `ratón` (wrong number) and the noun rule, which
+  scores it like `gatos`, cannot lift it. A replacement must reproduce **all** of these
+  properties, not just the sentence.
 - **No second corpus since the block 5 review (2026-10-19).** The re-read of 5.2's sentence on the
   row of `llaves` (four weights) was removed, together with the widget's preset buttons: the
   explorable only shows the default sentence, or whatever the reader types.
 - **`<Explorable>` `multi-head-view`** (221–224), Spanish caption quoting `duerme`, `persiguen` and
   `ratón`.
+- **`<Figure>` `multi-head-bloques.svg`** (275–279), needs a `.en.svg`: Spanish titles and notes
+  inside the SVG (`Una matriz por papel…`, `Cabeza 3: …`, `8 consultas`, `bloques de filas`), no
+  corpus.
 - **`<CodeChallenge>` `ch-multi-head`** (59–179): Spanish `prompt` (61–75), 1 `# tu código aquí`
   (82), 5 test `name`s, 12 Spanish assertion messages (92–150), Spanish `solution` comments
   (156–158) and `explanation` (167–179); identifier `multi_head`. Language-free.
-- **`<PyCell>` ×2** (379–420, 432–469). No corpus. Spanish identifiers `salidas`, `mapas`, `col`,
+- **`<PyCell>` ×2** (401–442, 454–491). No corpus. Spanish identifiers `salidas`, `mapas`, `col`,
   `proy`, `sal`, `iguales`, `distintas`, `bloque`. Quoted output: `0.591`, `0.531`, `0.005`
-  (423–424); the invariant table `786 432` / `262 144` / `1 048 576` (426); `0.458` (473).
+  (445–446); the invariant table `786 432` / `262 144` / `1 048 576` (448); `0.458` (495).
 - **`<Leccion ancla="">`: 0** (8 slug-only refs). **`reading`:** 1 (180–188), `lang: en`.
-- **`<W>`: 20.** `ratón` ×9, `gatos` ×5, `duerme` ×3, `persiguen` ×2, and the full sentence.
-  **All 20 move.**
+- **`<W>`: 23.** `ratón` ×10, `gatos` ×6, `duerme` ×3, `persiguen` ×3, and the full sentence.
+  **All 23 move.**
 
 #### 5.5 `codificacion-posicional` — `es/37-codificacion-posicional.mdx` — transpose
 
@@ -400,9 +405,9 @@ which quotes five of its figures. Block 4's direction decision fixes 5.9's class
 
 ## Lesson progress
 
-- [ ] 5.1 `adios-recurrencia`
-- [ ] 5.2 `self-attention`
-- [ ] 5.3 `scaled-dot-product`
+- [x] 5.1 `adios-recurrencia`
+- [x] 5.2 `self-attention`
+- [x] 5.3 `scaled-dot-product`
 - [ ] 5.4 `multi-head`
 - [ ] 5.5 `codificacion-posicional`
 - [ ] 5.6 `bloque-transformer`
@@ -427,6 +432,20 @@ is that the cell the prose names is visibly the brightest in its row, not that t
 good translation.
 
 5.4 reuses the sentence to show different heads attending differently. Pick once, in 5.2.
+
+**Decided in 5.2 (COURSE-P11-08): `the keys to this car are here`**, seven tokens, `are` at row 6
+(index 5, `FOCUS_ROW.en`) reaching four positions back to `keys`. Not the sentence proposed above,
+which is eight tokens, not seven: its two `the`s share a vector, and so do `over` and `there`, so
+with the projections off those rows tie and the diagonal no longer wins outright (AUTHORING.en.md §3
+now says so). `this` keeps a singular determiner between subject and verb, as «del» does. Measured
+in the rendered widget: projected, the row of `are` gives `keys` **0.50**, itself 0.20, `car` 0.06;
+unprojected, the diagonal wins all seven rows. The sentence lives in
+`src/features/courses/widgets/math/self-attention.ts` as `PRESETS_EN[0]`, beside an English lexicon
+(`LEXICONS.en`, 97 words) that 5.2 built, since P11-02 had left the widget in
+`SPANISH_BOUND_CORPORA`. **5.7 reuses it verbatim** (its explorable is this widget with the mask on).
+**5.4 is still open:** `multi-head-view` reads only the Spanish lexicon and stays Spanish-bound, and
+its English sentence (two verbs needing subjects in opposite directions) is that lesson's decision;
+the English lexicon is there to build it on.
 
 ## 5.11 and the notebooks
 

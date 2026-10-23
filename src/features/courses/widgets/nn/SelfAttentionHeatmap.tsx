@@ -42,11 +42,16 @@
  * every row would come from a hash. See SPANISH_BOUND_CORPORA in ../corpora.ts — an
  * English preset needs an English lexicon first, which is a pedagogical decision for the
  * lesson that embeds this, not a translation.
+ *
+ * COURSE-P11-08 — that lexicon now exists (`LEXICONS.en` in math/self-attention), so the
+ * widget picks lexicon, default sentence and opening row by locale: English opens on
+ * "the keys to this car are here", on the row of `are`, which reaches past `car` to
+ * `keys` exactly as «están» reaches past «coche» to «llaves».
  */
 
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { rowSums, topSource } from "../math/attention-alignment";
@@ -54,9 +59,11 @@ import {
   D_K,
   D_MODEL,
   D_V,
-  LEXICON_WORDS,
+  FOCUS_ROW,
   MAX_TOKENS,
-  PRESETS,
+  PRESETS_BY_LOCALE,
+  lexiconLocale,
+  lexiconWords,
   selfAttentionMap,
 } from "../math/self-attention";
 import { WidgetButton } from "../primitives/WidgetButton";
@@ -87,15 +94,19 @@ export default function SelfAttentionHeatmap(props: Record<string, unknown>) {
   // `t` is the token count in this file, so the translator is `tr`.
   const tr = useTranslations("courses.widgets.self-attention-heatmap");
   const tc = useTranslations("courses.widgets.common");
-  const [text, setText] = useState<string>(PRESETS[0]);
+  const lex = lexiconLocale(useLocale());
+  const [text, setText] = useState<string>(PRESETS_BY_LOCALE[lex][0]);
   const [project, setProject] = useState(true);
   const [causal, setCausal] = useState(false);
   // «están» in the first preset: the row the lesson's prose points at, so the widget
   // lands its claim before the reader touches anything.
-  const [row, setRow] = useState(4);
+  const [row, setRow] = useState(FOCUS_ROW[lex]);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const map = useMemo(() => selfAttentionMap(text, project, causal), [text, project, causal]);
+  const map = useMemo(
+    () => selfAttentionMap(text, project, causal, lex),
+    [text, project, causal, lex],
+  );
   const { tokens, known, truncated, weights } = map;
   const t = tokens.length;
 
@@ -354,7 +365,7 @@ export default function SelfAttentionHeatmap(props: Record<string, unknown>) {
       <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
         {tr("footnote", {
           dModel: D_MODEL,
-          lexicon: LEXICON_WORDS.length,
+          lexicon: lexiconWords(lex).length,
           dk: D_K,
           dv: D_V,
         })}

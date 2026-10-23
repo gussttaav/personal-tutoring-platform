@@ -1,0 +1,445 @@
+---
+slug: scaled-dot-product
+title: "The missing square root in attention"
+block: 5
+order: 3
+minutes: 28
+summary: "One symbol in the attention formula is still unjustified, and the justification is counted rather than measured. A score is a sum of d_k terms, and what grows as terms are added is not their size but how far the sum lands from zero, which goes with the root of d_k. What that size does to the softmax the course has already seen twice in other guises: the row closes on one position, both derivatives of the softmax switch off at once, and the only two matrices before the scores stop receiving gradient. Dividing by the root brings the scores back to a scale that does not depend on the width of the model, and the share-out and the gradient come back with it."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-tamano-tipico
+    type: numeric
+    prompt: 'The rows of $\mathbf{Q}$ and $\mathbf{K}$ in a layer have $d_k = 64$ coordinates, centred and independent, each of typical size $1$. Undivided, how big is a score $\mathbf{q}^{\top}\mathbf{k}$, typically?'
+    answer: 8
+    tolerance: 0
+    explanation: 'Eight. The mean of the square is $\mathbb{E}\left[e^{2}\right] = d_k = 64$, and what measures how far the score typically lands from zero is its root, $\sqrt{64} = 8$. The two gross errors sit at either end of that line: $64$ is the mean of the *square*, not a size (it has the wrong units), and $1$ is the size of each of the $64$ terms on its own. What the calculation says is precisely that adding $64$ terms of size $1$ that do not cancel completely leaves a number eight times larger than each of them.'
+    hint: 'What is $\mathbb{E}\left[e^{2}\right]$, and how does it relate to the size of $e$?'
+  - id: q-por-que-la-raiz
+    type: single
+    prompt: 'Why is the divisor $\sqrt{d_k}$ and not $d_k$?'
+    options:
+      - { id: a, text: 'Because what equals $d_k$ is the mean of the square, so the size of a score is its root. Dividing by $d_k$ would leave the scores at $1/\sqrt{d_k}$, closer to zero the wider the model, and every row would drift towards an even share.' }
+      - { id: b, text: 'Because you have to divide by the lengths of the two vectors to make the score a cosine, and a vector of $d_k$ coordinates of size $1$ has length $\sqrt{d_k}$.' }
+      - { id: c, text: 'Because the softmax does not notice a constant added to the whole row, but it does notice the row being multiplied, and $\sqrt{d_k}$ is the factor that leaves the row flat.' }
+      - { id: d, text: 'Because the paper tried several divisors on the translation task and $\sqrt{d_k}$ was the one that trained best.' }
+    answer: a
+    explanation: '(a), and what holds it up is that the failure has two sides. Scores that are too large close the row on one position; scores that are too small flatten it to $1/T$, and a flat row does not choose anything either. The root is the only exponent that falls into neither. (b) confuses two divisors: normalising to a cosine would call for $\lVert\mathbf{q}\rVert\lVert\mathbf{k}\rVert$, which under these assumptions is $d_k$ and not its root, and that is exactly the case (a) rules out. (c) uses two true facts to reach a false one: dividing does not flatten the row as such, and what makes a row flat is its scores coming close to one another. (d) is the reading this lesson exists to take apart: the divisor comes out of a calculation, and the calculation takes half a page.'
+    hint: 'Work out the typical size the score would have with each of the two divisors.'
+  - id: q-fila-saturada
+    type: multi
+    prompt: 'A row of the map has gone almost entirely to one position: $\alpha_{i1} \approx 1$ and all the rest $\approx 0$. Mark what is true.'
+    options:
+      - { id: a, text: 'The two derivatives of the softmax, $\alpha_{ij}\left(1 - \alpha_{ij}\right)$ and $-\alpha_{ij}\alpha_{im}$, are almost zero in every cell of that row.' }
+      - { id: b, text: 'No gradient reaches $\mathbf{W}^Q$ or $\mathbf{W}^K$ through that row, and they are the only matrices before the scores.' }
+      - { id: c, text: 'The layer still computes a perfectly well-defined output; what it can no longer do is change which positions that position looks at.' }
+      - { id: d, text: 'Raising the learning rate fixes it, by making up for how small the gradient has become.' }
+    answer: [a, b, c]
+    explanation: 'The first three. (a) comes from looking at both cases with $\alpha_{i1} \approx 1$: the diagonal one is $1 \cdot 0$, and the cross one always has a factor that is almost zero. (b) is what that costs: the scores come out of $\mathbf{Q}\mathbf{K}^{\top}$ and nothing else, so if the gradient does not get through the softmax, the two matrices that produce the queries and the keys are left without a correction. (c) is the distinction worth keeping: there is no error in the computation, but learning has stopped. (d) is false and dangerous: multiplying a gradient of $10^{-8}$ by $\eta$ gives a step of $10^{-8}$ times $\eta$, and raising $\eta$ enough to compensate wrecks every other row, none of which is saturated.'
+    hint: 'With $\alpha_{i1} \approx 1$, evaluate the two derivatives cell by cell.'
+  - id: q-sin-logaritmo
+    type: single
+    prompt: 'Block 2 also put a softmax in the network and never mentioned it saturating. Why did this not happen there?'
+    options:
+      - { id: a, text: 'Because there the softmax was followed by the cross-entropy, and the $-\log$ supplies the exact inverse factor: together the two give $\hat{\mathbf{y}} - \mathbf{y}$, which does not switch off while the network is wrong, however sure of itself it is. Behind this softmax there is only a multiplication by $\mathbf{V}$.' }
+      - { id: b, text: 'Because there the softmax shared out among three classes and here it shares out among $T$ positions, and a row with few cells never closes on a single one.' }
+      - { id: c, text: 'Because the pre-activations of an output layer are products of a matrix and a vector, not dot products, so they do not grow with the width.' }
+      - { id: d, text: 'Because Block 2''s softmax was the last operation in the network, and the last operation of a network receives no gradient from anything above it.' }
+    answer: a
+    explanation: '(a). The Jacobian of the softmax is the same in both places; what changes is what it is composed with. In Block 2 it cancels against the derivative of the logarithm and leaves $\hat{y}_c - 1$ in the correct class, which is $-1$ when the network is completely wrong, even if its softmax has saturated on the wrong answer, and fades only once the network is right. Here there is no logarithm to cancel it, so the Jacobian stays whole, zeros included. (b) points at something real (the more cells, the easier it is for one to take everything), but that is not the reason, and Block 2 predicted over vocabularies of tens of thousands. (c) makes up a difference: coordinate $j$ of $\mathbf{W}\mathbf{x}$ *is* a dot product, a row times a vector. (d) confuses position with direction: the loss sits right on top of that layer, and it is where the whole chain starts.'
+    hint: 'What operation comes immediately after the softmax in each case?'
+  - id: q-orden-de-la-fila
+    type: boolean
+    prompt: 'Dividing the scores of a row by $\sqrt{d_k}$ can change which position gets the largest weight.'
+    answer: false
+    explanation: 'False. $\sqrt{d_k}$ is positive and the same number across the whole score matrix, so dividing preserves the order of the scores within the row, and the softmax is increasing: the position that was winning still wins. What changes is by how much: the gaps between the scores shrink by the same factor, and with them how tightly the row closes. Another thing does not change either: the divisor is a constant and is not learnt, so the parameter count from the previous lesson, $d_{\text{model}}\left(2d_k + d_v\right)$, stays exactly the same.'
+    hint: 'What does dividing a set of numbers by the same positive number do to their order?'
+challenges:
+  - id: ch-gradiente-softmax
+    prompt: |
+      Write `score_gradient(A, G)`, the backward pass of the softmax by rows. It takes the weight
+      map already normalised, `A`, of shape $(T, T)$ with each row summing to $1$, and the gradient
+      coming down from above, `G`, of the same shape, with $g_{ij} = \partial\ell/\partial\alpha_{ij}$.
+      It returns $\partial\ell/\partial e$, of shape $(T, T)$.
+
+      The two cases of the derivative are worked out above; chained together, they give, cell by
+      cell, $\dfrac{\partial\ell}{\partial e_{ij}} = \alpha_{ij}\left(g_{ij} - \sum_{m} g_{im}\alpha_{im}\right)$,
+      where $m$ runs over row $i$.
+
+      Write it with array operations (no looping over cells, and no building of any Jacobian) and do
+      not write into the arrays you receive.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def score_gradient(A, G):
+          # your code here
+          pass
+    tests:
+      - name: "the shape, and every row summing to zero"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          E = rng.normal(size=(5, 5))
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          G = rng.normal(size=(5, 5))
+          res = score_gradient(A, G)
+          assert res is not None, 'score_gradient has to return the array, not print it'
+          D = np.asarray(res)
+          assert D.shape == (5, 5), 'one derivative per score: the same shape as A'
+          assert np.abs(D.sum(axis=1)).max() < 1e-9, 'each row sums to zero: the row of weights adds up to 1 whatever happens, so moving the scores only shifts weight between positions'
+      - name: "it matches the Jacobian built by hand"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          E = rng.normal(size=(5, 5))
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          G = rng.normal(size=(5, 5))
+          expected = np.stack([(np.diag(A[i]) - np.outer(A[i], A[i])) @ G[i] for i in range(5)])
+          D = np.asarray(score_gradient(A, G))
+          assert np.allclose(D, expected), 'the correction subtracted is the same for the whole row: sum_m g_im * a_im, one number per row'
+      - name: "a saturated row returns no gradient"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          E = rng.normal(size=(5, 5))
+          G = rng.normal(size=(5, 5))
+          Zs = np.exp(E * 200 - (E * 200).max(axis=1, keepdims=True))
+          As = Zs / Zs.sum(axis=1, keepdims=True)
+          Dsat = np.asarray(score_gradient(As, G))
+          Dflat = np.asarray(score_gradient(np.full((5, 5), 0.2), G))
+          assert np.abs(Dsat).max() < 1e-6, 'a saturated row returns no gradient: that is the price of not dividing'
+          assert np.abs(Dflat).max() > 0.05, 'a row that shares its weight out does return it: the factor a_ij is zero in no cell'
+      - name: "it does not write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(19)
+          A = np.full((4, 4), 0.25)
+          G = rng.normal(size=(4, 4))
+          copies = [A.copy(), G.copy()]
+          score_gradient(A, G)
+          assert all(np.array_equal(u, v) for u, v in zip([A, G], copies)), "don't write into the arrays you receive: G -= ... on a view spoils them"
+    solution: |
+      import numpy as np
+
+
+      def score_gradient(A, G):
+          corr = (G * A).sum(axis=1, keepdims=True)   # (T, 1): one number per row
+          return A * (G - corr)
+    explanation: |
+      Two lines, and both come out of the two cases of the derivative. The cross case,
+      $-\alpha_{ij}\alpha_{im}$, contributes the same term $-\alpha_{ij}\sum_m g_{im}\alpha_{im}$
+      to every cell of the row, which is why `corr` is *one number per row* and not a matrix: it
+      is what gets subtracted from $g_{ij}$ before multiplying by the weight. The diagonal case is
+      what is left, $\alpha_{ij}g_{ij}$.
+
+      The two properties the tests check follow from there. Each row sums to zero because
+      $\sum_j \alpha_{ij}\left(g_{ij} - \text{corr}_i\right) = \text{corr}_i - \text{corr}_i \cdot 1$,
+      using that the row of weights sums to $1$. Put another way, moving the scores cannot add
+      weight to the row, only pass it from one position to another. And the factor $\alpha_{ij}$
+      in front is what switches the saturated row off: with one weight at $1$ and the rest at $0$,
+      every cell vanishes at once, the maximum's included, where $g_{ij} - \text{corr}_i$ tends to
+      zero because the correction has become $g_{ij}$ itself.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar and others'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Its §3.2.1 and footnote 4 contain this lesson in two sentences: with q and k of mean 0 and variance 1, q·k has variance d_k, hence √d_k. It never gets to the saturated softmax or the vanishing gradient; that part is yours.'
+---
+
+{/* COURSE-P5-05: Block 5, Lesson 3. COURSE-P11-08: English translation. */}
+
+Self-attention is fully assembled except for one symbol. The three projections $\mathbf{Q}$,
+$\mathbf{K}$ and $\mathbf{V}$ have their argument, the weight matrix $\mathbf{A}$ is square
+($T \times T$) because the sentence looks at itself, and the softmax by rows shares one unit out
+among the positions of each row. But the $\sqrt{d_k}$ in the denominator was written into the
+formula without any explanation of why it is there. It is the only loan still outstanding, and this
+lesson pays it off.
+
+The question is sharper than it looks. Why a root, and not $d_k$ itself? And why of $d_k$, and not
+of $d_{\text{model}}$ or of the length of the sentence? Both are answered at once, because both
+depend on finding out how far a sum moves away from zero as terms are added to it. That takes no
+elaborate probability theory, only averaging, and the calculation starts by averaging over a finite
+list that can be walked through in full.
+
+Take the crudest possible version of a query and a key, that is, of a row of $\mathbf{Q}$ and a row
+of $\mathbf{K}$: all their coordinates are $+1$ or $-1$. The score is then a count of agreements,
+because each term contributes $+1$ if the two coordinates share a sign and $-1$ if they do not. With
+four coordinates, three agreements and one disagreement give $3 - 1 = 2$. With four hundred, the same
+proportion (three hundred against one hundred) gives $200$.
+
+What is worth noticing is not that the terms have grown, since they are still $\pm 1$, but that
+there are a hundred times as many of them. A small deviation from an even split, repeated over more
+terms, turns into a large number, and the softmax is about to exponentiate that number.
+
+With random signs the proportion does not stay fixed at three to one, and the score grows more
+slowly: its typical size goes with $\sqrt{d_k}$, as the next section derives. The figure takes one
+row of six scores at that size in three widths and tries three divisors before the softmax: $1$ (that
+is, not dividing), $\sqrt{d_k}$ and $d_k$ itself. Each group of bars is the row's share-out, one
+weight per position, and the number above it is what the winning position takes. Look for the row
+that does not change from one column to the next.
+
+<Figure
+  src="/courses/dl-nlp/escalado-softmax.en.svg"
+  alt="Three columns, one per width: d_k equal to 4, 16 and 64. At the top, the same row of six undivided scores in each column, with bars that grow with the width. Below, three rows of softmax share-outs, each with six bars, by the divisor applied first. Undivided, the largest weight rises from 0.68 to 0.92 and to 0.99 until it fills the whole bar. Dividing by the root of d_k, the highlighted row, the share-out is the same in all three columns, with the largest weight at 0.43. Dividing by d_k, the largest weight falls from 0.29 to 0.23 and to 0.20, and the six bars even out."
+  caption="Undivided, the wider the model, the more the softmax closes on a single position. Dividing by d_k does the opposite, flattening the share-out towards 1/6 at every position. Only √d_k gives the same share-out at all three widths: the divisor we are after is the one that stops the share-out depending on d_k."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+The root does not tune the share-out by eye: it takes away from the score exactly what the number of
+coordinates added to it, leaving the same scale in a narrow model and in a wide one.
+</Callout>
+
+## A score grows with the root of the width
+
+Each cell of $\mathbf{Q}\mathbf{K}^{\top}$ is the dot product of a row of $\mathbf{Q}$ (the query of
+one position) with a row of $\mathbf{K}$ (the key of another). Both live in $\mathbb{R}^{d_k}$, and I
+write them $\mathbf{q}$ and $\mathbf{k}$ without a position index, because the calculation is the
+same for any pair. The score is
+
+$$
+e = \mathbf{q}^{\top}\mathbf{k} = \sum_{m=1}^{d_k} q_m k_m,
+$$
+
+a sum of $d_k$ terms. The size that comes out depends on the size that goes in, so let's fix the
+exact case first: the coordinates are $+1$ or $-1$, as in the count of agreements above. Call
+$s_m = q_m k_m$ the $m$-th term, which is then $+1$ or $-1$, and $e = \sum_m s_m$.
+
+Squaring separates the diagonal from the rest:
+
+$$
+e^{2} = \left(\sum_{m} s_m\right)^{2} = \sum_{m} s_m^{2} + \sum_{m \neq n} s_m s_n = d_k + \sum_{m \neq n} s_m s_n,
+$$
+
+because $s_m^{2} = 1$ whatever the sign. The first term no longer depends on anything. The second is
+the one that has to be averaged, and averaging here means something perfectly finite: running
+through the $2^{d_k}$ sign combinations $\mathbf{q}$ can take, with $\mathbf{k}$ fixed, and taking the
+mean. We write it $\mathbb{E}\left[\cdot\right]$, the **mean** of a quantity over the randomness it is
+assumed to have. The cross terms all disappear.
+
+<Details summary="See why each cross term averages to zero">
+
+Fix two different indices $m \neq n$ and look at the term $s_m s_n = q_m k_m q_n k_n$. Pair each
+sign combination with the one you get by flipping the sign of $q_m$ and leaving the other
+$d_k - 1$ coordinates where they are. That pairs up the $2^{d_k}$ combinations perfectly into
+$2^{d_k - 1}$ pairs: each combination has exactly one partner, and it is never itself.
+
+Within a pair, $q_n$, $k_m$ and $k_n$ have not moved and $q_m$ has changed sign, so the two values
+of $s_m s_n$ are opposites and sum to zero. Adding zero $2^{d_k - 1}$ times and dividing by
+$2^{d_k}$ leaves
+
+$$
+\mathbb{E}\left[s_m s_n\right] = 0, \qquad m \neq n.
+$$
+
+The same pairing gives $\mathbb{E}\left[e\right] = 0$: in $e = \sum_m s_m$ each term changes sign
+along with its own coordinate, so each one averages zero on its own.
+
+</Details>
+
+So of the square, only the first term survives:
+
+$$
+\mathbb{E}\left[e^{2}\right] = d_k.
+$$
+
+With $\mathbb{E}\left[e\right] = 0$, that is all it takes. The score is spread around zero, and what
+measures how far it typically lands from it (the **standard deviation**) is the root of that mean:
+
+$$
+\sqrt{\mathbb{E}\left[e^{2}\right]} = \sqrt{d_k},
+$$
+
+which answers half the question. Dividing by $\sqrt{d_k}$ leaves
+$\mathbb{E}\left[\left(e/\sqrt{d_k}\right)^{2}\right] = 1$, and $d_k$ does not appear in that $1$: the
+same scale for queries of eight coordinates and for queries of a thousand.
+
+With the divisor in place, the whole operation (product, division, softmax and mixture) gets a name
+of its own: the **scaled dot-product**, which is what the paper calls it. The dot product is the
+ordinary one, the one in the line above; what is scaled is this division and nothing more.
+
+The signs were there to make the calculation exact, but notice which properties it really needed.
+Two: that $\mathbb{E}\left[s_m\right] = 0$ and that $\mathbb{E}\left[s_m^{2}\right] = 1$. Any centred
+initialisation whose coordinates are independent and of typical size $1$ meets them, and with them
+the same cancellation leaves the same $\mathbb{E}\left[e^{2}\right] = d_k$. The Gaussians from
+`rng.normal` that the course has used since <Leccion slug="implementar-mlp">the lesson on
+implementing an MLP</Leccion> are one such initialisation, and the first cell below measures it with
+them.
+
+It is worth saying out loud what that assumption is about, because it is not about the model you will
+end up using. It is about a *freshly initialised* network: nothing guarantees that after thousands of
+steps the coordinates of $\mathbf{q}$ are still independent or still of size $1$. That is why the
+divisor is fixed when the layer is designed rather than measured on the fly: it fixes the start,
+which is where the problem halts training before it has even begun.
+
+That leaves the part usually taken for granted: why the root and not $d_k$. The divisor has to take
+away from the score exactly what the width put into it, and what the width put in is a factor of
+$\sqrt{d_k}$. Dividing by $d_k$ would leave the scores at a typical size of $1/\sqrt{d_k}$, closer
+and closer to zero the wider the model; and scores that tend to zero give a softmax that tends to the
+even share, $1/T$ in every cell, so the row stops choosing anything. Those are two failures, one on
+each side, and the root is the only exponent that falls into neither.
+
+## A closed row returns no gradient
+
+If the scores measure $\sqrt{d_k}$, the *differences* between the scores in a row measure that too,
+and what the softmax looks at is the differences:
+
+$$
+\alpha_{ij} = \frac{\exp\left(e_{ij}\right)}{\sum_{m=1}^{T}\exp\left(e_{im}\right)},
+$$
+
+with $m$ running over the positions of row $i$. Two scores $8$ apart (an ordinary gap when the
+typical size is $8$, which is what $d_k = 64$ gives) end up a factor $\exp(8) \approx 2\,981$ from
+each other, and with that the share-out is over: one position takes almost the whole unit.
+
+A row that chooses firmly does not sound like a defect. The defect is in the derivative.
+
+Differentiate $\alpha_{ij}$ with respect to the scores of its own row. It is the same calculation
+that <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> did with the softmax
+of the output layer, and the same two cases come out, depending on whether the indices match:
+
+$$
+\frac{\partial \alpha_{ij}}{\partial e_{ij}} = \alpha_{ij}\left(1 - \alpha_{ij}\right), \qquad
+\frac{\partial \alpha_{ij}}{\partial e_{im}} = -\alpha_{ij}\,\alpha_{im} \quad (m \neq j).
+$$
+
+Now take the closed row, with one weight at almost $1$ and the rest at almost $0$. The diagonal case
+gives $1$ times $0$; the cross case, in any cell, carries at least one factor that is almost zero.
+Both derivatives switch off at once, and the whole row with them.
+
+What that costs becomes clear when you look at what comes before the scores: only $\mathbf{W}^Q$ and
+$\mathbf{W}^K$, since the scores come out of $\mathbf{Q}\mathbf{K}^{\top}$ and nothing else goes in.
+If the gradient does not get through the softmax, those two matrices receive nothing from that row,
+and they are precisely the ones that would have to learn which positions each position should look
+at. The layer goes on computing (a saturated output is a perfectly well-defined output); what it can
+no longer do is change its mind.
+
+It is worth pausing on why Block 2 never ran into this, because the difference is one line. There
+the softmax was followed by the cross-entropy, and the $-\log$ of the loss supplies the exact
+inverse factor: together the two gave
+$\nabla_{\mathbf{z}}\,\ell = \hat{\mathbf{y}} - \mathbf{y}$, which is $\hat{y}_c - 1$ in the
+correct class and does not vanish while the network is wrong, however sure of itself it is. Here
+there is no logarithm behind the softmax, only the multiplication by $\mathbf{V}$, the matrix of
+values. The Jacobian cancels against nothing: it stays whole, zeros included.
+
+And so two things the course had closed, in different blocks, turn up again. The curve
+$\alpha\left(1 - \alpha\right)$ is the same as the derivative of the sigmoid, with its maximum of
+$0.25$ in the middle and its two flat tails: the saturation from <Leccion slug="funciones-activacion">the
+lesson on activation functions</Leccion>, in a layer with no sigmoid in it. And a gradient that
+arrives switched off at the matrices that were meant to learn is the whole of Block 3, in an
+architecture without a single recurrence. What joined them was never the sigmoid or the recurrent
+state: it was that in both there was a function flattening out.
+
+A whole row comes down to one number, which comes from adding the diagonal case over the $T$
+positions:
+
+$$
+\sum_{j=1}^{T} \alpha_{ij}\left(1 - \alpha_{ij}\right) = \sum_{j} \alpha_{ij} - \sum_{j} \alpha_{ij}^{2} = 1 - \sum_{j=1}^{T} \alpha_{ij}^{2},
+$$
+
+where the last equality uses that the row sums to $1$. With the row shared out evenly it is
+$1 - 1/T$; with the whole row on one position it is $0$. It is the sum of the diagonal of the
+Jacobian, and it measures the same thing from both sides: how much that row shares out, and how much
+it still has left to learn.
+
+## The divisor, measured in NumPy
+
+The first cell takes the calculation done for signs and checks it where it actually applies:
+Gaussian coordinates, five widths, with the measured typical size set beside the $\sqrt{d_k}$
+column.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(7)
+N = 8000                                       # pairs of vectors per width
+
+print(f"{'d_k':>5}   {'mean':>7}   {'typical size':>13}   {'sqrt(d_k)':>9}   {'divided':>12}")
+for d_k in (4, 16, 64, 256, 1024):
+    Q = rng.normal(size=(N, d_k))              # centred coordinates, of typical size 1
+    K = rng.normal(size=(N, d_k))
+    e = np.sum(Q * K, axis=1)                  # one score per pair
+    typical = np.sqrt(np.mean(e ** 2))
+    print(f"{d_k:5d}   {e.mean():7.3f}   {typical:13.2f}   {np.sqrt(d_k):9.2f}   {typical / np.sqrt(d_k):12.2f}")
+`} />
+
+The two middle columns agree as far as a sample of eight thousand pairs allows, and the one on the
+right stays pinned at $1$: dividing puts the size in the same place whatever the width. The mean
+column is small next to the typical size on its row (at $d_k = 1\,024$, $0.236$ against $32.03$),
+which is what $\mathbb{E}\left[e\right] = 0$ says when it is measured instead of proved.
+
+The second cell moves from the scores to what comes out of them. Pay particular attention to the
+last column, which decides whether the layer can learn.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(11)
+T, N = 8, 4000                                 # 8 positions per row, 4000 rows measured
+
+
+def softmax_rows(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+print(f"{'':<11} {'d_k':>5}   {'top weight':>10}   {'share-out':>9}   {'max a(1-a)':>12}")
+for d_k in (8, 64, 512):
+    Q = rng.normal(size=(N, d_k))              # N queries against the same T keys
+    K = rng.normal(size=(T, d_k))
+    E = Q @ K.T
+    for name, Esc in (("undivided", E), ("divided", E / np.sqrt(d_k))):
+        A = softmax_rows(Esc)
+        print(f"{name:<11} {d_k:5d}   {A.max(axis=1).mean():10.3f}   "
+              f"{(1 - (A ** 2).sum(axis=1)).mean():9.3f}   {(A * (1 - A)).max(axis=1).mean():12.4f}")
+`} />
+
+Read it in pairs of lines. Undivided, the top weight climbs from $0.670$ to $0.953$ and the
+share-out $1 - \sum_j \alpha_{ij}^{2}$ sinks from $0.445$ to $0.066$ (the most it can be with eight
+positions is $1 - 1/8 = 0.875$), while the largest cell on the diagonal of the Jacobian falls from
+$0.1755$ to $0.0321$: more than five times less gradient for no reason other than having widened the
+model. Divided, the three lines stop moving: $0.36$ of top weight, $0.77$ of share-out and $0.216$
+of derivative at all three widths, $512$ included. That is the property the divisor buys. It does not
+make the numbers better; it makes them stop depending on $d_k$.
+
+## Test your intuition
+
+Five questions: how big a score is, why the root and nothing else, what a closed row loses, why
+Block 2 escaped this, and what dividing does not touch.
+
+<Quiz id="q-tamano-tipico" />
+
+<Quiz id="q-por-que-la-raiz" />
+
+<Quiz id="q-fila-saturada" />
+
+<Quiz id="q-sin-logaritmo" />
+
+<Quiz id="q-orden-de-la-fila" />
+
+<CodeChallenge id="ch-gradiente-softmax" />
+
+---
+
+With the divisor in place, the scale of the scores stops depending on the width, and the share-out
+and the gradient stop depending on it by the same calculation. But look at what the divisor takes
+for granted: it receives $d_k$ already decided. Nothing worked out so far says how long a query
+should be (only how to compensate for whatever length it has), and until now $d_k$ has been a number
+that turned up because the projections of the previous lesson had to come out at some width.
+
+There is a second thing this layer cannot do, and it points to the same place. A row of $\mathbf{A}$
+is a share-out, and only one: in <W>the keys to this car are here</W>, the position of <W>are</W>
+has to decide, with a single set of weights, whether to look at <W>keys</W>, which is what it agrees
+with, or at <W>to this car</W>, which is what stands between them; and with one row it cannot do
+both. The answer to both questions is the same and takes up <Leccion slug="multi-head">the next
+lesson, on multi-head attention</Leccion>: several pairs of projections working in parallel, each
+with its own share-out and its own width, carved out of $d_{\text{model}}$. There, $d_k$ stops being
+a given number and becomes a decision with a reason.
