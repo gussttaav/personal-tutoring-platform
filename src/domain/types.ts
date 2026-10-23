@@ -954,28 +954,163 @@ export interface ContentFeedbackOverview {
 // queried Supabase straight from app/. The reads now go through IAdminQueryRepository.
 // The snake_case rows keep the column names the admin components already render.
 
-/** A row of /admin/students. A student is a user with a booking or a credit pack. */
-export interface StudentSummary {
-  email:          string;
-  name:           string;
-  /** Credits across non-expired packs. */
-  totalCredits:   number;
-  earliestExpiry: string | null;
-  nextSession:    string | null;
+// ADMIN-USERS-01: /admin/students («Usuarios») lists every account but the admin's, not
+// just students: an account also exists to follow a course or to get blog/course emails.
+// The tabs, their definitions and their sort orders live in migration 0027.
+
+/** The tabs of /admin/students. */
+export type AdminUserSegment = "all" | "credits" | "upcoming" | "booked" | "courses" | "subscribed";
+
+/** Every tab's count, over the users matching the search (before the tab filter). */
+export type AdminUserCounts = Record<AdminUserSegment, number>;
+
+/** One course a user is enrolled in, as the users list shows it. */
+export interface AdminUserCourse {
+  slug:             string;
+  /** The course title, or the slug for a course no longer in the registry. */
+  title:            string;
+  /** Completed lessons among the published ones. */
+  completedLessons: number;
+  totalLessons:     number;
+  /** 0–100, rounded: the figure the reader sees (CourseProgressSummary.percentComplete). */
+  percent:          number;
 }
 
-/** One page of /admin/students. Both counts ignore the low-credit filter and the page
- *  window (they cover every student matching the search), so both tabs can show them. */
-export interface StudentListPage {
-  rows:           StudentSummary[];
-  total:          number;
-  lowCreditTotal: number;
+export interface AdminUserSubscription {
+  type:  SubscriptionType;
+  /** The blog areas followed; `null` = every area. Always `null` for courses. */
+  areas: BlogArea[] | null;
+}
+
+/** A subscription on a user's detail page: when they opted in, too. */
+export interface AdminUserSubscriptionDetail extends AdminUserSubscription {
+  createdAt: string;
+}
+
+/** A row of /admin/students. */
+export interface AdminUserSummary {
+  email:           string;
+  name:            string;
+  createdAt:       string;
+  /** Credits in unexpired packs. A credit is spent at booking, so these are classes
+   *  still to book. */
+  unbookedCredits: number;
+  /** Soonest expiry among the unexpired packs that still hold credits. */
+  earliestExpiry:  string | null;
+  nextSession:     string | null;
+  /** Bookings that were not cancelled, the free 15-min call included. */
+  bookingsCount:   number;
+  courses:         AdminUserCourse[];
+  subscriptions:   AdminUserSubscription[];
+}
+
+/** What IAdminQueryRepository returns for a row: the courses carry only the completed
+ *  count. Titles and totals come from the content registry (AdminService). */
+export interface AdminUserRow extends Omit<AdminUserSummary, "courses"> {
+  courses: { slug: string; completedLessons: number }[];
+}
+
+/** One page of /admin/students plus every tab's count. */
+export interface AdminUserListPage {
+  rows:   AdminUserSummary[];
+  counts: AdminUserCounts;
+}
+
+/** Where a reader stands in one course (migration 0027). Exactly one applies:
+ *  finished — every published lesson completed ("al día" for a course still being written);
+ *  active   — not finished, some activity in the last 30 days;
+ *  inactive — not finished, no activity in 30 days. */
+export type CourseReaderStatus = "active" | "finished" | "inactive";
+
+/** The tabs of /admin/courses/<slug>. */
+export type CourseReaderFilter = "all" | CourseReaderStatus;
+
+export type CourseReaderCounts = Record<CourseReaderFilter, number>;
+
+/** One reader of a course, as IAdminQueryRepository returns it. */
+export interface CourseReaderRow {
+  email:            string;
+  name:             string;
+  enrolledAt:       string;
+  /** Completed lessons among the published ones. */
+  completedLessons: number;
+  /** Most recently viewed published lesson. */
+  lastLessonSlug:   string | null;
+  /** The enrollment or the latest lesson view, whichever is newer. */
+  lastActivityAt:   string;
+  status:           CourseReaderStatus;
+}
+
+export interface CourseReaderPage {
+  rows:                CourseReaderRow[];
+  counts:              CourseReaderCounts;
+  /** Mean completed published lessons over every reader (0 with no readers). */
+  avgCompletedLessons: number;
+}
+
+/** A row of /admin/courses/<slug>. */
+export interface AdminCourseReader extends CourseReaderRow {
+  percent:         number;
+  lastLessonTitle: string | null;
+}
+
+/** A course on /admin/courses, and the header of its reader page. */
+export interface AdminCourseSummary {
+  slug:         string;
+  title:        string;
+  /** Published lessons: the progress denominator. */
+  totalLessons: number;
+  /** COURSE-BUILD-01: every planned lesson is published. When false, a reader at 100% is
+   *  caught up, not finished. */
+  complete:     boolean;
+  counts:       CourseReaderCounts;
+  /** Mean progress over every reader, 0–100, rounded. */
+  avgPercent:   number;
+}
+
+export interface AdminCourseReaderList {
+  course: AdminCourseSummary;
+  rows:   AdminCourseReader[];
+}
+
+/** One published lesson in the per-lesson funnel: readers who opened it (any progress
+ *  row) and readers who completed it. */
+export interface AdminLessonStat {
+  slug:      string;
+  title:     string;
+  started:   number;
+  completed: number;
+}
+
+/** A block of the funnel, in reading order; blocks with no published lesson are left out. */
+export interface AdminLessonStatsBlock {
+  id:      number;
+  title:   string;
+  lessons: AdminLessonStat[];
+}
+
+/** One course on a user's detail page. */
+export interface AdminUserCourseProgress {
+  slug:             string;
+  title:            string;
+  completedLessons: number;
+  totalLessons:     number;
+  percent:          number;
+  /** The same classification as the course's reader list (30-day activity window). */
+  status:           CourseReaderStatus;
+  /** COURSE-BUILD-01: the course itself is fully written (see AdminCourseSummary). */
+  courseComplete:   boolean;
+  lastLessonTitle:  string | null;
+  lastSeenAt:       string | null;
+  enrolledAt:       string | null;
 }
 
 export interface StudentDetail {
-  id:    string;
-  email: string;
-  name:  string;
+  id:        string;
+  email:     string;
+  name:      string;
+  /** ADMIN-USERS-01: when the account was created. */
+  createdAt: string;
 }
 
 export interface CreditPackRow {
@@ -1021,8 +1156,8 @@ export interface AdminPaymentRow {
 /** The /admin dashboard's stat cards. */
 export interface AdminDashboardCounts {
   upcomingBookings:  number;
-  /** Students (not users) with <= 1 active credit. */
-  lowCreditStudents: number;
+  /** ADMIN-USERS-01: users holding credits not yet booked (replaced the low-credit count). */
+  usersWithCredits:  number;
   failedBookings:    number;
 }
 

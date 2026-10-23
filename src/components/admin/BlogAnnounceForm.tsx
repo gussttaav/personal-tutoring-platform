@@ -16,6 +16,7 @@
 
 import { useState } from "react";
 import type { BlogArea } from "@/domain/types";
+import { BLOG_AREA_LABEL } from "./format";
 import { AnnounceSamples, type AnnounceSample } from "./AnnounceSamples";
 import { ConfirmSendDialog } from "./ConfirmSendDialog";
 import { RecipientCount } from "./RecipientCount";
@@ -52,16 +53,8 @@ interface SendResult {
 
 const ENDPOINT = "/api/admin/blog-announce";
 
-/** Admin-facing area names. The panel is Spanish and outside next-intl. */
-const AREA_LABEL: Record<BlogArea, string> = {
-  "ia":             "Inteligencia artificial",
-  "bases-de-datos": "Bases de datos",
-  "matematicas":    "Matemáticas",
-  "programacion":   "Programación",
-};
-
 const areaList = (areas: BlogArea[]) =>
-  areas.length > 0 ? areas.map((a) => AREA_LABEL[a]).join(" · ") : "Sin área (llega a todos)";
+  areas.length > 0 ? areas.map((a) => BLOG_AREA_LABEL[a]).join(" · ") : "Sin área (llega a todos)";
 
 export function BlogAnnounceForm({ posts }: { posts: PostOption[] }) {
   const [slug, setSlug] = useState(posts[0]?.slug ?? "");
