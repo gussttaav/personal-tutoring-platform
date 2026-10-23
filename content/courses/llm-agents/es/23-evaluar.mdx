@@ -1,0 +1,523 @@
+---
+slug: evaluar
+title: "Evaluar: pruebas exactas, jueces y sus trampas"
+block: 3
+order: 6
+minutes: 35
+summary: "Una tasa de acierto sale de unas pocas pruebas, y sin su intervalo no dice cuánto se movería con otras. La lección deriva el intervalo de Wilson y enseña dónde falla el normal, compara dos harness sobre las mismas pruebas contando sólo aquéllas en que discrepan, mide a un juez con la kappa de Cohen y explica por qué un banco público puede estar midiendo memoria."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-cuantas-pruebas
+    type: numeric
+    prompt: 'En lo que llevas probado, tu harness acierta alrededor del 80 %. ¿Cuántas pruebas hacen falta, como mínimo, para que la mitad del intervalo normal no pase de $0.03$?'
+    answer: 683
+    tolerance: 1
+    explanation: '$1.96^{2} \cdot 0.8 \cdot 0.2 / 0.03^{2} = 3.8416 \cdot 0.16 / 0.0009 \approx 682.95$, así que 683. Con un acierto cerca de $1/2$ harían falta 1 068, porque ahí la raíz es máxima. Y la mitad de error, $\pm 0.015$, cuesta el cuádruple de pruebas, 2 732: el error cae como $1/\sqrt{n}$.'
+    hint: 'Despeja $n$ de $1.96\sqrt{\mu(1 - \mu)/n} \le 0.03$ con $\mu = 0.8$.'
+  - id: q-doce-de-doce
+    type: single
+    prompt: 'Tu harness acierta las doce pruebas de un banco. ¿Qué puedes decir de $\mu$?'
+    options:
+      - { id: a, text: 'Que según Wilson está entre 0.757 y 1. Un harness que acertara el 80 % sacaría doce de doce en casi uno de cada quince bancos.' }
+      - { id: b, text: 'Que vale 1: el intervalo normal es el punto 1, porque la raíz se anula.' }
+      - { id: c, text: 'Nada: con doce pruebas no se puede calcular ningún intervalo.' }
+      - { id: d, text: 'Que está entre $0.917$ y 1, porque cada prueba vale $1/12 \approx 0.083$.' }
+    answer: a
+    explanation: 'La (a): $0.8^{12} \approx 0.069$, una vez de cada 14.6. La (b) es el fallo del intervalo normal en el borde. Sustituye $\mu$ por el acierto dentro de la raíz, y con doce de doce esa raíz vale 0, como si una sola muestra sin fallos demostrara que no hay fallos. La (c) es demasiado pesimista: el intervalo existe, sólo que es ancho. La (d) confunde lo que vale una prueba en el número con lo que el número dice de $\mu$.'
+    hint: '¿Con qué probabilidad acierta doce de doce un harness cuyo $\mu$ es 0.8?'
+  - id: q-juez-que-coincide
+    type: numeric
+    prompt: 'Etiquetas a mano 100 respuestas, y aciertan 85. Un juez da por buenas otras 85, no necesariamente las mismas, y coincide con tus etiquetas en 90. ¿Cuánto vale su $\kappa$? Dos decimales.'
+    answer: 0.61
+    tolerance: 0.005
+    explanation: '$\text{acuerdo}_{\text{azar}} = 0.85 \cdot 0.85 + 0.15 \cdot 0.15 = 0.745$, y $\kappa = (0.90 - 0.745)/(1 - 0.745) \approx 0.608$. Un 90 % de acuerdo suena a casi siempre, pero dos evaluadores que no se miraran ya coincidirían en el 74.5 %. Y las cuentas dicen más: los diez desacuerdos se reparten cinco y cinco, así que de las 15 respuestas que fallan, el juez da por buenas 5, una de cada tres.'
+    hint: 'Primero, cuánto coincidirían por azar dos evaluadores que dicen «acierta» el 85 % de las veces sin mirarse.'
+  - id: q-el-numero-que-sube
+    type: multi
+    prompt: 'Cambias el prompt de sistema para que el asistente explique sus respuestas, y en tus 400 pruebas el acierto según un juez pasa de 0.71 a 0.78. Marca lo que tienes que comprobar antes de quedarte con el cambio.'
+    options:
+      - { id: a, text: 'Que el juez no premia la longitud: etiqueta a mano una muestra de respuestas de los dos prompts.' }
+      - { id: b, text: 'Que la diferencia es creíble comparada sobre las mismas pruebas, con las que sólo acierta cada versión.' }
+      - { id: c, text: 'Que el juez es un modelo más grande que el que responde.' }
+      - { id: d, text: 'Nada más: con 400 pruebas el intervalo de cada acierto mide unos $\pm 4.5$ puntos, y 7 es más que eso.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). El cambio alarga las respuestas, que es justo lo que un juez puede premiar sin que sean mejores, y sólo unas etiquetas a mano lo separan. La (b) es la cuenta de la lección: con las pruebas en que discrepan las dos versiones. La (c) no basta, porque los jueces grandes también tienen sesgos. Y la (d) mezcla dos errores. El intervalo sólo cubre el azar de qué pruebas tocaron, no los errores del evaluador; y dos intervalos que no se solapan dicen menos que el de la diferencia emparejada.'
+    hint: 'El intervalo cubre un tipo de error. ¿Cuál queda fuera?'
+challenges:
+  - id: ch-comparar
+    prompt: |
+      Implementa `comparar(a, b)`. Recibe dos listas de 0 y 1 (o de `False` y `True`), lo que el evaluador dijo de dos harness, A y B, sobre las mismas pruebas y en el mismo orden. Devuelve la tupla `(diferencia, inferior, superior)`: $\text{acierto}_A - \text{acierto}_B$ y su intervalo normal emparejado al 95 %,
+
+      $$
+      \text{sólo}_A - \text{sólo}_B \pm 1.96\sqrt{\frac{\text{sólo}_A + \text{sólo}_B - (\text{sólo}_A - \text{sólo}_B)^{2}}{n}},
+      $$
+
+      con las fracciones observadas. Si las listas tienen distinta longitud o están vacías, lanza `ValueError`: sin las mismas pruebas no hay nada que emparejar.
+    starter: |
+      import math
+
+      def comparar(a, b):
+          """La diferencia de acierto de A sobre B, emparejada por prueba, con su intervalo al 95 %."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "dos harness iguales: diferencia 0, sin anchura"
+        code: |
+          r = comparar([1, 0, 1, 1], [1, 0, 1, 1])
+          assert r is not None and len(r) == 3, 'devuelve la tupla (diferencia, inferior, superior); sale %r' % (r,)
+          assert all(abs(x) < 1e-12 for x in r), 'si aciertan y fallan las mismas pruebas no hay ninguna discrepancia: (0, 0, 0). Sale %r' % (r,)
+      - name: "el ejemplo de la lección"
+        code: |
+          a = [1] * 120 + [1] * 20 + [0] * 8 + [0] * 52
+          b = [1] * 120 + [0] * 20 + [1] * 8 + [0] * 52
+          d, lo, hi = comparar(a, b)
+          assert abs(d - 0.06) < 1e-9, 'A acierta 140 y B 128 de 200: la diferencia es 0.06; sale %s' % d
+          assert abs(lo - 0.0088) < 1e-3 and abs(hi - 0.1112) < 1e-3, 'el intervalo emparejado va de 0.009 a 0.111; sale [%.4f, %.4f]' % (lo, hi)
+      - name: "emparejado, no por separado"
+        code: |
+          a = [1] * 120 + [1] * 20 + [0] * 8 + [0] * 52
+          b = [1] * 120 + [0] * 20 + [1] * 8 + [0] * 52
+          d, lo, hi = comparar(a, b)
+          assert lo > 0, 'emparejado, el intervalo no llega al 0 (va de 0.009 a 0.111). Si sale [%.3f, %.3f], estás sumando el error de cada acierto por separado, que cuenta también las 172 pruebas en que A y B coinciden' % (lo, hi)
+      - name: "el orden de A y B cambia el signo"
+        code: |
+          a = [1, 1, 1, 0, 0, 1, 0, 1, 1, 0]
+          b = [1, 0, 0, 1, 0, 1, 0, 0, 1, 0]
+          d1, lo1, hi1 = comparar(a, b)
+          d2, lo2, hi2 = comparar(b, a)
+          assert abs(d1 + d2) < 1e-12 and abs(lo1 + hi2) < 1e-12 and abs(hi1 + lo2) < 1e-12, 'comparar(b, a) es comparar(a, b) con el signo cambiado: (%.3f, %.3f, %.3f) frente a (%.3f, %.3f, %.3f)' % (d1, lo1, hi1, d2, lo2, hi2)
+          assert abs(d1 - 0.2) < 1e-12, 'A acierta sola en 3 pruebas y B sola en 1, de 10: la diferencia es 0.2; sale %s' % d1
+      - name: "acepta True y False"
+        code: |
+          d, lo, hi = comparar([True, True, False, True], [True, False, False, False])
+          assert abs(d - 0.5) < 1e-12, 'A acierta sola en 2 de 4: la diferencia es 0.5; sale %s' % d
+      - name: "sin las mismas pruebas, ValueError"
+        code: |
+          for a, b in [([1, 0, 1], [1, 0]), ([], [])]:
+              try:
+                  comparar(a, b)
+              except ValueError:
+                  continue
+              raise AssertionError('con listas de longitudes %d y %d no hay pruebas que emparejar: lanza ValueError' % (len(a), len(b)))
+    solution: |
+      import math
+
+      def comparar(a, b):
+          """La diferencia de acierto de A sobre B, emparejada por prueba, con su intervalo al 95 %."""
+          if len(a) != len(b) or not a:
+              raise ValueError("hacen falta las mismas pruebas, en el mismo orden, y al menos una")
+          n = len(a)
+          solo_a = sum(1 for x, y in zip(a, b) if x and not y) / n
+          solo_b = sum(1 for x, y in zip(a, b) if y and not x) / n
+          d = solo_a - solo_b
+          radio = 1.96 * math.sqrt((solo_a + solo_b - d * d) / n)
+          return d, d - radio, d + radio
+    explanation: 'Las pruebas que aciertan o fallan los dos harness no cambian la diferencia, y sólo cuentan las discrepantes. Por prueba, la diferencia vale 1, −1 o 0, y su cuadrado vale 1 en las discrepantes, así que su varianza es $\text{sólo}_A + \text{sólo}_B - (\text{sólo}_A - \text{sólo}_B)^{2}$; la de la media de $n$ pruebas es eso entre $n$. La raíz nunca es negativa: $(\text{sólo}_A - \text{sólo}_B)^{2} \le (\text{sólo}_A + \text{sólo}_B)^{2} \le \text{sólo}_A + \text{sólo}_B$. Con pocas discrepancias, este intervalo falla igual que el normal de una sola tasa.'
+reading:
+  - kind: paper
+    title: 'Interval Estimation for a Binomial Proportion'
+    authors: 'Brown, Cai y DasGupta'
+    year: '2001'
+    venue: 'Statistical Science 16(2)'
+    lang: en
+    url: 'https://doi.org/10.1214/ss/1009213286'
+    note: 'Por qué el intervalo normal falla también con muchos datos, con las gráficas de su cobertura, que sube y baja sin orden. Recomiendan el de Wilson con pocas pruebas, y el artículo trae los comentarios de otros estadísticos y la réplica.'
+  - kind: paper
+    title: 'Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations'
+    authors: 'Miller'
+    year: '2024'
+    venue: 'arXiv:2411.00640'
+    lang: en
+    url: 'https://arxiv.org/abs/2411.00640'
+    note: 'Esta lección aplicada a bancos de pruebas reales: el error de un acierto, la comparación emparejada, el error contado por pasaje cuando varias preguntas comparten uno y cuántas pruebas hacen falta antes de lanzar una evaluación.'
+  - kind: paper
+    title: 'A Careful Examination of Large Language Model Performance on Grade School Arithmetic'
+    authors: 'Zhang, Da, Lee, Robinson, Wu, Song y otros'
+    year: '2024'
+    venue: 'NeurIPS 2024 · arXiv:2405.00332'
+    lang: en
+    url: 'https://arxiv.org/abs/2405.00332'
+    note: 'GSM1k: 1 205 problemas nuevos con el estilo de GSM8K, guardados sin publicar. Su tabla dice, modelo a modelo, cuánto acierto se pierde al cambiar de banco; las familias Phi y Mistral son las que más pierden.'
+  - kind: paper
+    title: 'Judging the Judges: Evaluating Alignment and Vulnerabilities in LLMs-as-Judges'
+    authors: 'Thakur, Choudhary, Ramayapally, Vaidyanathan y Hupkes'
+    year: '2024'
+    venue: 'arXiv:2406.12624'
+    lang: en
+    url: 'https://arxiv.org/abs/2406.12624'
+    note: 'Trece jueces frente a etiquetas humanas sobre respuestas con una respuesta esperada, como el juez de la lección. Un porcentaje de acuerdo alto puede esconder puntuaciones muy distintas, y el fallo más común es la indulgencia.'
+---
+
+{/* COURSE-C2-P1-03 — Bloque 3, lección 6. Las dos celdas corren sobre el modelo guionizado
+    (cargado de guionizado.py), como asistente y como juez; no cargan la red. */}
+
+<Leccion slug="ventana-de-contexto">La lección sobre la ventana de contexto</Leccion> dejó al
+harness con reglas que funcionan y sin forma de saber si otras funcionarían mejor salvo
+probarlas. El curso ya ha medido algo así una vez: el recuperador de TF-IDF (*term
+frequency–inverse document frequency*) de <Leccion slug="recuperacion">la lección sobre
+recuperación</Leccion> puso el primero el pasaje que respondía en seis de doce preguntas. ¿Es eso
+un 50 %? Con otras doce preguntas sobre la misma novela podía haber salido un 25 % o un 75 %, y
+aquella cuenta no decía nada de eso.
+
+Evaluar un harness pide tres cosas: una lista de pruebas, cada una un caso con la respuesta que se
+espera; un evaluador, que dice si cada respuesta acierta; y un número, la fracción de aciertos. Las
+tres fallan a su manera. El número sale de unas pruebas y no de otras, y lleva un error que hay que
+escribir a su lado. El evaluador, cuando una respuesta admite muchas formas, suele ser otro modelo,
+con sus propios errores. Y las pruebas pueden estar en el texto con el que se entrenó el modelo.
+¿Cuándo dice un número de una evaluación lo que parece decir?
+
+Piensa en todas las preguntas que va a recibir tu asistente, las de hoy y las del mes que viene.
+Sobre todas ellas acierta una fracción que nadie conoce, y tus pruebas son unas pocas sacadas de
+ahí. Saca otras y el número cambia, igual que la pérdida de un *batch* cambiaba de uno a otro
+cuando <Leccion slug="entrenar-un-mini-gpt">entrenaste el mini-GPT</Leccion>. Con doce pruebas,
+cada una mueve el número más de ocho puntos; con cuatrocientas, un cuarto de punto. Lo que una
+evaluación puede dar no es esa fracción, sino un intervalo donde probablemente está, más estrecho
+cuantas más pruebas.
+
+Si dos harness responden a las mismas pruebas, las fáciles las aciertan los dos y las imposibles
+las fallan los dos, y ninguna de ésas dice cuál es mejor. Y dar por buena o por mala <W>La fecha es
+2026-12-02.</W> cuando se esperaba <W>2026-12-02</W> ya es decidir qué estás midiendo.
+
+<Callout type="intuition" title="La idea en una frase">
+Una tasa de acierto es una media sobre unas pocas pruebas sacadas de muchas, y sin su intervalo no
+dice cuánto se movería con otras. Entre dos harness sólo cuentan las pruebas en que discrepan. Y el
+evaluador forma parte de lo que se mide: si es un modelo, sus errores entran en el número.
+</Callout>
+
+## Un acierto es una media, y tiene su intervalo
+
+Una **prueba** es un caso con su **respuesta esperada**. Un **banco de pruebas** (*benchmark*) es
+una lista de ellas, y un **evaluador** es la función que, dada la respuesta del harness a una
+prueba, dice si **acierta**: 1 o 0. Llamemos $n$ al número de pruebas del banco (no son los bytes
+del bloque 1, que esta lección no cuenta) y $\text{acierto}$ a la fracción que acierta, la tasa de
+acierto (*accuracy*) del curso anterior con su mismo símbolo. Y llamemos $\mu$ a la fracción que
+acertaría sobre todas las preguntas de las que salen las pruebas. Es la $P(\text{acierta})$ de la
+lección sobre recuperación, con una letra que no se confunda con $\text{acierto}$ en una misma
+fórmula.
+
+Supongamos que las pruebas se sacan al azar de esas preguntas, cada una con independencia de las
+demás. Cada prueba aporta un 1 con probabilidad $\mu$; su media es $\mu$, y la de su cuadrado
+también, porque $1^{2} = 1$ y $0^{2} = 0$. Su varianza, la media de lo que se aleja de su media al
+cuadrado, es entonces $\mu - \mu^{2}$. Una media de $n$ variables independientes conserva la media
+y divide la varianza por $n$:
+
+$$
+\mathbb{E}[\text{acierto}] = \mu, \qquad \mathbb{E}\!\left[(\text{acierto} - \mu)^{2}\right] = \frac{\mu(1 - \mu)}{n}.
+$$
+
+La desviación típica, la raíz de eso, cae como $1/\sqrt{n}$: para partir el error por la mitad hacen
+falta cuatro veces más pruebas. Con $n$ grande, el teorema central del límite dice que el
+$\text{acierto}$ se reparte como una normal alrededor de $\mu$, y una normal deja a menos de 1.96
+desviaciones típicas de su media el 95 % de su masa:
+
+$$
+\lvert \text{acierto} - \mu \rvert \le 1.96\sqrt{\frac{\mu(1 - \mu)}{n}} \quad \text{con probabilidad } 0.95.
+$$
+
+Un **intervalo de confianza** al 95 % es una regla que, aplicada a cada banco que podrías haber
+sacado, da un intervalo que contiene a $\mu$ en el 95 % de ellos. La garantía es de la regla; de un
+intervalo concreto no se sabe si es uno de los buenos. Para escribir la regla hay que salir de la
+desigualdad, que habla de $\mu$, la fracción que no conoces. La salida más corta es poner el
+$\text{acierto}$ en su lugar dentro de la raíz y despejar:
+
+$$
+\mu \in \text{acierto} \pm 1.96\sqrt{\frac{\text{acierto}\,(1 - \text{acierto})}{n}}.
+$$
+
+Es el intervalo normal, el que dan casi todos los informes, y falla donde más se usa, con pocas
+pruebas o con un acierto cerca de 0 o de 1. Con doce de doce, la raíz vale 0 y el intervalo es el
+punto 1, como si doce aciertos demostraran que el harness no falla nunca. Con once de doce llega a
+1.073, por encima de lo posible. Y aun dentro de $[0, 1]$, no cumple lo que promete: con $\mu = 0.9$
+y doce pruebas, contiene a $\mu$ en el 71 % de los bancos, no en el 95 %.
+
+Wilson, en 1927, no sustituyó nada. Buscó todos los $\mu$ que dejan el $\text{acierto}$ observado
+dentro de la desigualdad, que elevada al cuadrado es de segundo grado en $\mu$. Sus dos raíces son
+los extremos del intervalo:
+
+$$
+\mu \in \frac{\text{acierto} + \dfrac{1.96^{2}}{2n} \pm 1.96\sqrt{\dfrac{\text{acierto}\,(1 - \text{acierto})}{n} + \dfrac{1.96^{2}}{4n^{2}}}}{1 + \dfrac{1.96^{2}}{n}}.
+$$
+
+<Details summary="La ecuación de segundo grado, paso a paso">
+Elevemos al cuadrado los dos lados de la desigualdad y pasemos todo al izquierdo:
+
+$$
+\left(1 + \frac{1.96^{2}}{n}\right)\mu^{2} - \left(2\,\text{acierto} + \frac{1.96^{2}}{n}\right)\mu + \text{acierto}^{2} \le 0.
+$$
+
+Un polinomio de segundo grado con el primer coeficiente positivo es negativo entre sus dos raíces,
+así que los $\mu$ que buscamos son los de ese tramo. La fórmula de la ecuación de segundo grado da
+las raíces, y el cuarto de su discriminante es
+
+$$
+\left(\text{acierto} + \frac{1.96^{2}}{2n}\right)^{2} - \left(1 + \frac{1.96^{2}}{n}\right)\text{acierto}^{2} = \frac{1.96^{2}}{n}\left(\text{acierto}\,(1 - \text{acierto}) + \frac{1.96^{2}}{4n}\right),
+$$
+
+cuya raíz es la del numerador de arriba.
+</Details>
+
+Su centro no es el $\text{acierto}$: está desplazado hacia $1/2$, tanto más cuanto menos pruebas
+haya. Con doce de doce va de 0.757 a 1, y con seis de doce, de 0.254 a 0.746 (el 25 % y el 75 % del
+principio). Con $\mu = 0.9$ y doce pruebas contiene a $\mu$ el 97 % de las veces. Brown, Cai y
+DasGupta compararon los intervalos que se usan y recomiendan éste para $n$ pequeño.
+
+¿Cuántas pruebas hacen falta? La raíz del intervalo normal es máxima en $\mu = 1/2$, donde vale
+$1.96\sqrt{1/(4n)} = 0.98/\sqrt{n}$. Para que la mitad del intervalo no pase de cinco puntos,
+
+$$
+\frac{0.98}{\sqrt{n}} \le 0.05 \iff n \ge \left(\frac{0.98}{0.05}\right)^{2} \approx 384.
+$$
+
+Para dos puntos son 2 401, y para uno, 9 604. Un banco de unas pocas centenas de preguntas no puede
+distinguir dos harness que se llevan un punto.
+
+### Dos harness, las mismas pruebas
+
+Con dos harness, A y B, sobre el mismo banco, lo que importa es $\text{acierto}_A -
+\text{acierto}_B$, y tomar el error de cada uno por separado lo exagera. Llamemos $\text{sólo}_A$ a
+la fracción de pruebas que acierta A y falla B, y $\text{sólo}_B$ a la contraria. Una prueba que
+aciertan o fallan los dos suma lo mismo a los dos aciertos, así que se cancela:
+
+$$
+\text{acierto}_A - \text{acierto}_B = \text{sólo}_A - \text{sólo}_B.
+$$
+
+Prueba a prueba, la diferencia vale 1, −1 o 0, y su cuadrado vale 1 en las pruebas que discrepan.
+Su varianza es entonces $\text{sólo}_A + \text{sólo}_B - (\text{sólo}_A - \text{sólo}_B)^{2}$, y la
+de la media de $n$ pruebas, eso dividido por $n$. Con las fracciones observadas dentro de la raíz,
+como en el intervalo normal (y con sus mismos fallos cuando hay pocas discrepancias), el intervalo
+de la diferencia es
+
+$$
+\text{sólo}_A - \text{sólo}_B \pm 1.96\sqrt{\frac{\text{sólo}_A + \text{sólo}_B - (\text{sólo}_A - \text{sólo}_B)^{2}}{n}}.
+$$
+
+Doscientas pruebas: A acierta 140 y B 128; A acierta 20 que B falla, y B 8 que A falla. La
+diferencia es 0.06, y su intervalo emparejado va de 0.009 a 0.111. A es mejor. Por separado, cada
+acierto tiene un intervalo de Wilson de unos trece puntos de ancho, y los dos se solapan; la
+diferencia calculada como si vinieran de bancos distintos va de −0.032 a 0.152, y el 0 queda
+dentro. La información estaba en las 28 pruebas que discrepan, y emparejar es no tirarla.
+
+Todo esto supone pruebas independientes. Si varias preguntas salen de un mismo pasaje, no lo son, y
+el error real es mayor: Miller encontró bancos de comprensión lectora en los que el error, contado
+por pasaje, triplicaba el que se calcula prueba a prueba.
+
+## Qué cuenta como acierto, y quién lo cuenta
+
+Hasta aquí el evaluador era una caja que devuelve 1 o 0. Cuando la respuesta tiene una sola forma
+correcta, la caja es código: una **prueba exacta** compara la respuesta con la esperada, carácter
+a carácter o después de **normalizarla** (quitar espacios, mayúsculas, el texto que rodea a lo que
+importa). Cuánto normalizar no es un detalle técnico.
+<Leccion slug="el-prompt-es-una-especificacion">La especificación de las fechas</Leccion> prohibía
+cualquier texto alrededor de la fecha. Un evaluador que busca la fecha dentro de <W>La fecha es
+2026-12-02.</W> y la da por buena mide si el modelo sabe la fecha, no si cumple la especificación.
+Las dos cosas pueden interesarte, pero son dos números, y la celda de abajo saca los dos de las
+mismas respuestas.
+
+Muchas respuestas no tienen una sola forma. <W>El hijo ciego de don Francisco Penáguilas</W> y
+<W>un joven ciego, hijo de don Francisco</W> dicen lo mismo, y ningún código razonable lo ve. Ahí
+el evaluador suele ser un **juez**, el modelo que
+<Leccion slug="de-donde-salen-las-preferencias">la lección sobre las preferencias</Leccion> ponía a
+comparar respuestas, ahora con la pregunta, la respuesta esperada y la del harness delante,
+contestando si dicen lo mismo. Aquella lección citó que un juez grande coincide con las personas
+casi tanto como ellas entre sí, y que se deja llevar por el orden y por la longitud. Un juez es otra
+llamada a `modelo`, con su prompt y su comprobación, y su veredicto es una respuesta como cualquier
+otra.
+
+A un juez se le mide antes de creerle. Etiquetas a mano unas decenas de respuestas y cuentas en
+cuántas coincide contigo; esa fracción es el $\text{acuerdo}$. Engaña cuando casi todas las
+respuestas aciertan: un juez que dice siempre «acierta» coincide en un 90 % con unas etiquetas que
+aciertan en un 90 %, y no ha mirado nada. La **kappa de Cohen** descuenta lo que coincidirían el
+juez y tus etiquetas si no tuvieran nada que ver, cada uno con su propia frecuencia de aciertos:
+$\text{acuerdo}_{\text{azar}} = \text{acierto}_{\text{juez}}\,\text{acierto}_{\text{mano}} + (1 -
+\text{acierto}_{\text{juez}})(1 - \text{acierto}_{\text{mano}})$, y
+
+$$
+\kappa = \frac{\text{acuerdo} - \text{acuerdo}_{\text{azar}}}{1 - \text{acuerdo}_{\text{azar}}}.
+$$
+
+Vale 1 si coinciden siempre y 0 si coinciden lo que coincidirían sin mirarse. Esta $\kappa$ no es
+la línea base de <Leccion slug="rlhf">la lección sobre el aprendizaje por refuerzo con
+retroalimentación humana (*reinforcement learning from human feedback*, RLHF)</Leccion>; es la
+letra de Cohen, con la que la vas a encontrar. Thakur y sus coautores midieron trece jueces contra etiquetas humanas: jueces
+con un acuerdo alto daban puntuaciones muy distintas, y el fallo más común era la indulgencia, dar
+por buena una respuesta que no lo es.
+
+La trampa más cara no está en el juez, sino en lo que haces con él. Cada cambio del harness que
+conservas porque el juez lo puntúa mejor es un paso de optimización contra el juez, y lo que el juez
+premia sin que sea mejor (la longitud, un tono seguro) es lo primero que crece. Es el *reward
+hacking* del RLHF, con el harness en el lugar de la política y tú en el del optimizador. Lo que
+no se mueve con el optimizador son tus etiquetas: cuando el número del juez sube, etiqueta a
+mano otra muestra.
+
+### Las pruebas que el modelo ya ha leído
+
+Un banco público tiene un problema que ningún intervalo arregla: está en internet, y el texto con el
+que se entrena un modelo grande sale en buena parte de internet. Si las pruebas o sus soluciones
+estaban en ese texto, el acierto mide memoria. Es la **contaminación** (*contamination*), y es la
+razón por la que <Leccion slug="perplejidad">la lección sobre la perplejidad</Leccion> midió la
+pérdida en el texto reservado y no en el de entrenamiento. Zhang y sus coautores escribieron 1 205
+problemas nuevos de aritmética escolar, con el estilo y la dificultad de *Grade School Math 8K*
+(GSM8K), un banco público muy usado, y compararon. Algunos modelos abiertos acertaron hasta 8
+puntos menos en los nuevos, y los más capaces, casi lo mismo. Los nuevos no los publicaron, para que
+no les pasara lo mismo.
+
+Para tu harness la consecuencia es práctica. El banco que más te dice es uno tuyo, hecho con
+preguntas como las que recibe y que no esté publicado en ningún sitio. Es, además, el único cuyas
+pruebas salen de las preguntas de las que $\mu$ habla.
+
+## Un banco de pruebas sobre el modelo guionizado
+
+Las dos celdas corren sobre el modelo guionizado de la lección sobre la especificación, cargado con
+una línea. Todo lo que responde, como asistente y como juez, lo he escrito yo, así que los números
+de esta sección no dicen nada de ningún modelo: miden tu código de evaluar, que se lleva tal cual a
+un modelo de verdad. La primera celda vuelve a las fechas, con cuarenta pruebas exactas y dos
+evaluadores, y calcula la cobertura de los dos intervalos sin sortear nada, sumando sobre los
+resultados posibles.
+
+<PyCell code={`
+import math, re
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, lección 18
+
+SISTEMA = ("Extraes la fecha de una cita de un mensaje. Responde sólo con la fecha, en la forma "
+           "AAAA-MM-DD, sin ningún otro texto. Si el mensaje no dice el año, es 2026. "
+           "Si no fija ningún día, responde: ninguna")
+MESES = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split()
+FRASES = ["Nos vemos el %d de %s en la biblioteca.", "La reunión se pasa al %d de %s.",
+          "El plazo para entregar acaba el %d de %s.", "Te espero el %d de %s en la puerta del cine."]
+PRUEBAS = [(FRASES[i % 4] % (1 + 11 * i % 28, MESES[i % 12]),                 # (caso, esperada)
+            "2026-%02d-%02d" % (i % 12 + 1, 1 + 11 * i % 28)) for i in range(36)]
+PRUEBAS += [(x, "ninguna") for x in ["Ya quedaremos otro día.", "Avísame si cambia algo.",
+                                     "Llámame cuando vuelvas.", "A ver si coincidimos."]]
+ESCRITAS = [esperada for _, esperada in PRUEBAS]          # las 40 respuestas, escritas por mí
+for i in (4, 15, 27): ESCRITAS[i] = "La fecha es %s." % ESCRITAS[i]               # sobra texto
+for i in (9, 22): ESCRITAS[i] = ESCRITAS[i][:8] + "%02d" % (int(ESCRITAS[i][8:]) + 1)   # un día más
+ESCRITAS[31] = "/".join(ESCRITAS[31].split("-")[::-1])                            # DD/MM/AAAA
+ESCRITAS[38] = "2026-06-01"                                         # no hay día y se lo inventa
+
+def exacta(y, esperada): return y == esperada
+def normalizada(y, esperada):                              # busca la fecha dentro de la respuesta
+    hallada = re.search(r"\\d{4}-\\d{2}-\\d{2}|ninguna", y)
+    return hallada is not None and hallada.group() == esperada
+def evaluar(modelo, pruebas, puntuar):                     # una llamada por prueba; los aciertos
+    return sum(puntuar(modelo([("sistema", SISTEMA), ("usuario", x)]), e) for x, e in pruebas)
+
+def normal(k, n):
+    a = k / n; r = 1.96 * math.sqrt(a * (1 - a) / n); return a - r, a + r
+def wilson(k, n):
+    a, c = k / n, 1.96 ** 2 / n
+    centro, r = (a + c / 2) / (1 + c), 1.96 * math.sqrt(a * (1 - a) / n + c / (4 * n)) / (1 + c)
+    return centro - r, centro + r
+
+guion = [([("sistema", SISTEMA), ("usuario", x)], y) for (x, _), y in zip(PRUEBAS, ESCRITAS)]
+casos = [(f.__name__, evaluar(ModeloGuionizado(guion), PRUEBAS, f), 40) for f in (exacta, normalizada)]
+for nombre, k, n in casos + [("TF-IDF", 6, 12), ("sin fallos", 12, 12)]:
+    print("%-11s %2d de %d   Wilson [%.3f, %.3f]   normal [%.3f, %.3f]"
+          % (nombre, k, n, *wilson(k, n), *normal(k, n)))
+def cobertura(mu, n, intervalo):           # P(el intervalo contiene a mu), sumada sobre los k posibles
+    return sum(math.comb(n, k) * mu ** k * (1 - mu) ** (n - k)
+               for k in range(n + 1) if intervalo(k, n)[0] <= mu <= intervalo(k, n)[1])
+for mu, n in [(0.9, 12), (0.9, 40), (0.5, 12)]:
+    print("mu = %.1f, n = %d: el normal contiene a mu el %.1f %%; el de Wilson, el %.1f %%"
+          % (mu, n, 100 * cobertura(mu, n, normal), 100 * cobertura(mu, n, wilson)))
+`} />
+
+Con el evaluador exacto, el modelo acierta 33 de 40: 0.825, entre 0.680 y 0.913 según Wilson. El
+que busca la fecha dentro de la respuesta da 36 de 40, porque cuenta las tres respuestas que llevan
+<W>La fecha es</W> delante. Son las mismas respuestas y dos números, y la diferencia es toda del
+evaluador. Las coberturas son las del apartado anterior, ahora con un decimal (71.3 % y 97.4 % con
+doce pruebas), y con cuarenta la distancia se acorta, 91.4 % y 94.3 %, pero el normal sigue por
+debajo de lo que promete.
+
+Cámbialo tú: estropea en `ESCRITAS` otra respuesta de una manera nueva y decide antes de ejecutar si
+`normalizada` debería darla por buena.
+
+La segunda celda es un juez. Son doce preguntas sobre *Marianela*, con la respuesta que he escrito
+para el asistente y mi etiqueta; el juez es otro modelo guionizado, con su prompt de sistema, y su
+veredicto pasa una comprobación antes de contar. Sus veredictos también los he escrito yo, y se
+equivoca dos veces de la manera que más se ha medido, por indulgente: da por buenas dos respuestas
+largas que fallan.
+
+<PyCell code={`
+# Necesita la celda anterior: ModeloGuionizado.
+JUEZ = ("Comparas la respuesta de un asistente a una pregunta sobre la novela Marianela con la "
+        "respuesta esperada. Responde sólo sí, si dicen lo mismo, o no, si no.")
+CASOS = [  # pregunta, esperada, respuesta del asistente, mi etiqueta, veredicto del juez
+    ("¿Quién es Pablo?", "El hijo ciego de don Francisco Penáguilas.",
+     "Un joven ciego, hijo de don Francisco Penáguilas.", 1, "sí"),
+    ("¿Quién le hace de lazarillo a Pablo?", "La Nela.", "Marianela, a la que llaman la Nela.", 1, "sí"),
+    ("¿Cómo se llama el perro de Pablo?", "Choto.", "Choto.", 1, "sí"),
+    ("¿Cuántos años tiene la Nela?", "Dieciséis.", "Dice que tiene diez y seis años.", 1, "sí"),
+    ("¿Qué oficio tiene Teodoro Golfín?", "Es médico: cura los ojos.", "Médico de los ojos.", 1, "sí"),
+    ("¿De quién es prima Florentina?", "De Pablo.", "De Pablo.", 1, "sí"),
+    ("¿En qué minas pasa la novela?", "En las de Socartes.", "En las minas de Socartes.", 1, "sí"),
+    ("¿Quién es Carlos Golfín?", "El ingeniero de las minas, hermano de Teodoro.",
+     "El médico que opera a Pablo.", 0, "no"),
+    ("¿Con quién vive la Nela?", "Con la familia del señor Centeno.", "Con los Centeno.", 1, "sí"),
+    ("¿Quién es el padre de Pablo?", "Don Francisco Penáguilas.", "Don Francisco Penáguilas, "
+     "el ingeniero que dirige las minas de Socartes y vive en Aldeacorba.", 0, "sí"),
+    ("¿Quién le devuelve la vista a Pablo?", "Teodoro Golfín.", "Su padre, don Francisco, que lo "
+     "lleva a un médico de fuera y paga la operación con lo que gana.", 0, "sí"),
+    ("¿Cómo se llama la mujer del señor Centeno?", "Señana.", "No lo sé.", 0, "no")]
+
+def para_el_juez(pregunta, esperada, y):
+    return [("sistema", JUEZ),
+            ("usuario", "Pregunta: %s\\nEsperada: %s\\nRespuesta: %s" % (pregunta, esperada, y))]
+juez = ModeloGuionizado([(para_el_juez(p, e, y), v) for p, e, y, _, v in CASOS])
+dice = []
+for p, e, y, _, _ in CASOS:
+    veredicto = juez(para_el_juez(p, e, y))
+    if veredicto not in ("sí", "no"):                     # el juez también pasa una comprobación
+        raise ValueError("el juez no ha respondido sí o no: %r" % veredicto)
+    dice.append(veredicto == "sí")
+mano = [etiqueta == 1 for _, _, _, etiqueta, _ in CASOS]
+
+n = len(CASOS)
+acuerdo = sum(j == m for j, m in zip(dice, mano)) / n
+aj, am = sum(dice) / n, sum(mano) / n                     # acierto según el juez y a mano
+azar = aj * am + (1 - aj) * (1 - am)
+print("acierto según el juez %.3f, a mano %.3f" % (aj, am))
+print("acuerdo %.3f, por azar %.3f, kappa %.3f" % (acuerdo, azar, (acuerdo - azar) / (1 - azar)))
+for (p, e, y, _, _), j, m in zip(CASOS, dice, mano):
+    if j != m:
+        print("\\nel juez da por buena:" if j else "\\nel juez rechaza:", y, "\\n   esperada:", e)
+`} />
+
+Juez y etiquetas coinciden en diez de doce, un 83.3 %, y la kappa es 0.571: con estas frecuencias,
+el azar ya daría un 61.1 %. Pero lo que mueve el número es hacia dónde caen los dos errores. Según
+el juez, el asistente acierta el 83.3 %; según las etiquetas, el 66.7 %. Dos errores hacia el mismo
+lado no se cancelan, se suman al acierto. Y con doce respuestas la kappa misma es poco más que un
+ejemplo: las decenas de etiquetas de arriba son el mínimo para creérsela.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: cuántas pruebas hacen falta, doce de doce, un juez que casi siempre coincide y un
+número que sube. Después, la comparación emparejada.
+
+<Quiz id="q-cuantas-pruebas" />
+
+<Quiz id="q-doce-de-doce" />
+
+<Quiz id="q-juez-que-coincide" />
+
+<Quiz id="q-el-numero-que-sube" />
+
+<CodeChallenge id="ch-comparar" />
+
+---
+
+El bloque tiene ya todas sus piezas. Una especificación escrita dos veces, en el prompt y en una
+comprobación; una forma que la máscara garantiza; los pasajes que trae el recuperador; una ventana
+que el harness reparte; y una manera de saber si todo eso junto acierta, con un intervalo que dice
+cuánto creerse el número. Cada lección ha probado la suya en su propia celda, por separado.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug proyecto-asistente), envolver «La lección siguiente, el proyecto del bloque» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, el proyecto del bloque, las monta en un solo asistente sobre *Marianela*, que
+recupera, responde en un formato que el harness comprueba y se mide sobre un banco de pruebas.
+Corre sobre el modelo guionizado, y por eso un desafío puede comprobar tu código entero.
