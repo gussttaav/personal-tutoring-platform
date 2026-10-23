@@ -10,6 +10,9 @@
  * the header pill says whether anything needs attention. Dates are formatted in the
  * tutor's timezone (ScheduleConfig.timezone), not the server's UTC, so "Hoy" is today
  * where the classes happen.
+ * ADMIN-USERS-01: the low-credit tile and list are gone. In their place, «Créditos sin
+ * reservar»: users holding pack credits not yet booked, soonest expiry first, so a reminder
+ * can go out before they lapse.
  */
 
 import Link from "next/link";
@@ -42,19 +45,19 @@ const studentHref = (email: string) => `/admin/students/${encodeURIComponent(ema
 export default async function AdminDashboard() {
   if (!isAdmin(await auth())) redirect("/");
 
-  const [counts, revenueCents, bookings, lowCreditStudents, failed, schedule] =
+  const [counts, revenueCents, bookings, withCredits, failed, schedule] =
     await Promise.all([
       adminService.dashboardCounts(),
       adminService.revenueLast30Days(),
       adminService.listAllBookings(),
-      adminService.listStudents({ lowCredit: true, page: 1, pageSize: 4 }),
+      adminService.listUsers({ segment: "credits", page: 1, pageSize: 4 }),
       paymentService.listFailedBookings(),
       scheduleService.getConfig(),
     ]);
   const {
-    upcomingBookings:  upcomingCount,
-    lowCreditStudents: lowCreditCount,
-    failedBookings:    failedCount,
+    upcomingBookings: upcomingCount,
+    usersWithCredits: creditsCount,
+    failedBookings:   failedCount,
   } = counts;
   const tz = schedule.timezone;
 
@@ -93,7 +96,7 @@ export default async function AdminDashboard() {
       </>
     );
 
-  const lowCredit = lowCreditStudents.rows;
+  const creditHolders = withCredits.rows;
 
   return (
     <div className="page-stack">
@@ -136,12 +139,11 @@ export default async function AdminDashboard() {
           tone="green"
         />
         <StatCard
-          label="Pocos créditos"
-          value={lowCreditCount}
-          icon="warning"
-          href="/admin/students?filter=low-credit"
-          foot="Alumnos con ≤ 1 crédito"
-          tone={lowCreditCount > 0 ? "amber" : "neutral"}
+          label="Créditos sin reservar"
+          value={creditsCount}
+          icon="credit_card"
+          href="/admin/students?filter=credits"
+          foot="Usuarios con clases por reservar"
         />
         <StatCard
           label="Reservas fallidas"
@@ -207,36 +209,34 @@ export default async function AdminDashboard() {
         )}
 
         <Card
-          title="Pocos créditos"
-          count={lowCreditCount}
+          title="Créditos sin reservar"
+          count={creditsCount}
           action={
-            <Link href="/admin/students?filter=low-credit" className="link-emerald">
+            <Link href="/admin/students?filter=credits" className="link-emerald">
               Ver todos
               <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
             </Link>
           }
           padding={false}
         >
-          {lowCredit.length === 0 ? (
-            <Empty icon="check_circle" tone="good" label="Todos con créditos suficientes." />
+          {creditHolders.length === 0 ? (
+            <Empty icon="credit_card_off" label="Nadie tiene créditos sin reservar." />
           ) : (
             <ul className="lc-list">
-              {lowCredit.map((s) => (
+              {creditHolders.map((s) => (
                 <li key={s.email}>
                   <Link href={studentHref(s.email)} className="lc-row">
                     <span className="lc-avatar" aria-hidden="true">{initials(s.name)}</span>
                     <span className="person-meta">
                       <span className="person-name">{s.name}</span>
                       <span className="person-sub">
-                        {s.totalCredits > 0 && s.earliestExpiry
-                          ? `Caduca el ${fmtDayMonth(s.earliestExpiry, tz)}`
-                          : "Sin créditos activos"}
+                        {s.earliestExpiry ? `Caduca el ${fmtDayMonth(s.earliestExpiry, tz)}` : s.email}
                       </span>
                     </span>
-                    <span className={`lc-credits ${s.totalCredits === 0 ? "is-zero" : ""}`}>
-                      <span className="lc-credits-num">{s.totalCredits}</span>
+                    <span className="lc-credits">
+                      <span className="lc-credits-num">{s.unbookedCredits}</span>
                       <span className="lc-credits-label">
-                        {s.totalCredits === 1 ? "crédito" : "créditos"}
+                        {s.unbookedCredits === 1 ? "crédito" : "créditos"}
                       </span>
                     </span>
                     <span className="material-symbols-outlined chevron" aria-hidden="true">chevron_right</span>

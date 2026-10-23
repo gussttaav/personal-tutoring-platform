@@ -18,6 +18,8 @@
  * means the read failed and the sidebar renders without them.
  *
  * BLOG-15: «Avisos del blog» (/admin/blog-announce) beside the course announcements.
+ * ADMIN-USERS-01: «Alumnos» is «Usuarios» (every account, not only students; the URL
+ * stays /admin/students), and «Cursos» (/admin/courses) opens the Contenido section.
  */
 "use client";
 
@@ -46,7 +48,7 @@ const NAV: NavSection[] = [
   {
     label: "Operaciones",
     items: [
-      { href: "/admin/students", label: "Alumnos", icon: "groups" },
+      { href: "/admin/students", label: "Usuarios", icon: "groups" },
       { href: "/admin/bookings", label: "Reservas", icon: "calendar_month" },
       { href: "/admin/failed-bookings", label: "Reservas fallidas", icon: "error", badge: "failedBookings", tone: "red" },
     ],
@@ -61,6 +63,7 @@ const NAV: NavSection[] = [
   {
     label: "Contenido",
     items: [
+      { href: "/admin/courses", label: "Cursos", icon: "school" },
       { href: "/admin/course-announce", label: "Anuncios de cursos", icon: "campaign" },
       { href: "/admin/blog-announce", label: "Avisos del blog", icon: "notifications_active" },
       { href: "/admin/feedback", label: "Feedback", icon: "rate_review", badge: "openReports", tone: "amber" },
@@ -211,9 +214,9 @@ export function AdminShell({
             <input
               type="search"
               name="q"
-              placeholder="Buscar alumno…"
-              aria-label="Buscar alumno por nombre o email"
-              title="Buscar alumno"
+              placeholder="Buscar usuario…"
+              aria-label="Buscar usuario por nombre o email"
+              title="Buscar usuario"
             />
           </Form>
 

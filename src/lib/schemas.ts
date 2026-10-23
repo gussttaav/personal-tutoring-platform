@@ -87,13 +87,22 @@ export type AdjustCreditsInput = z.infer<typeof AdjustCreditsSchema>;
 // REFACTOR-R4-P3-02: /admin/students search params (?q=, ?filter=, ?page=), shared by the
 // page and GET /api/admin/students. Lenient: a bad value reads as "no search" / page 1
 // rather than an error, since these come from a URL the admin can edit by hand.
+// ADMIN-USERS-01: ?filter= is the users tab; absent or unknown (the old `low-credit`
+// included) reads as "all".
 export const AdminStudentsQuerySchema = z.object({
   q:      z.string().trim().max(200).optional().catch(undefined),
-  filter: z.string().optional().catch(undefined),
+  filter: z.enum(["all", "credits", "upcoming", "booked", "courses", "subscribed"]).catch("all"),
   page:   z.coerce.number().int().min(1).catch(1),
 });
 
 export type AdminStudentsQuery = z.infer<typeof AdminStudentsQuerySchema>;
+
+// ADMIN-USERS-01: /admin/courses/<slug> search params (?status=, ?page=), lenient like the
+// students list: absent or unknown reads as "all" / page 1.
+export const AdminCourseReadersQuerySchema = z.object({
+  status: z.enum(["all", "active", "finished", "inactive"]).catch("all"),
+  page:   z.coerce.number().int().min(1).catch(1),
+});
 
 // Admin price update — amount in cents. The pack "original" strikethrough is
 // derived (1h price × hours), so it isn't an input here.

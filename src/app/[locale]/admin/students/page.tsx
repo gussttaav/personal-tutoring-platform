@@ -5,6 +5,10 @@
  * run in Postgres through adminService.listStudents. Students only: a user with a
  * booking or a credit pack.
  *
+ * ADMIN-USERS-01: now «Usuarios» — every account but the admin's, through
+ * adminService.listUsers, with one tab per relationship (?filter=: credits, upcoming,
+ * booked, courses, subscribed). The low-credit tab is gone. The URL stays /admin/students.
+ *
  * SEC-07: the page gates ITSELF before fetching, on top of the layout's gate. Next
  * renders a layout and its page segment in parallel, so the layout's `redirect()`
  * does not stop this page from rendering — and the rendered RSC payload (data
@@ -21,7 +25,7 @@ import { isAdmin } from "@/lib/admin";
 import { AdminStudentsQuerySchema } from "@/lib/schemas";
 import { adminService, scheduleService } from "@/services";
 import { STUDENTS_PAGE_SIZE } from "@/services/AdminService";
-import { StudentsTable } from "@/components/admin/StudentsTable";
+import { UsersTable } from "@/components/admin/UsersTable";
 
 interface StudentsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -32,25 +36,24 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
 
   const { q, filter, page } = AdminStudentsQuerySchema.parse(await searchParams);
   const query = q ?? "";
-  // One call carries both tab counts (computed before the low-credit filter).
-  const [{ rows, total, lowCreditTotal }, schedule] = await Promise.all([
-    adminService.listStudents({
+  // One call carries every tab count (computed before the tab filter).
+  const [{ rows, counts }, schedule] = await Promise.all([
+    adminService.listUsers({
       query,
-      lowCredit: filter === "low-credit",
+      segment:  filter,
       page,
-      pageSize:  STUDENTS_PAGE_SIZE,
+      pageSize: STUDENTS_PAGE_SIZE,
     }),
     scheduleService.getConfig(),
   ]);
 
   return (
-    <StudentsTable
+    <UsersTable
       rows={rows}
-      total={total}
-      lowCreditTotal={lowCreditTotal}
+      counts={counts}
+      segment={filter}
       page={page}
       pageSize={STUDENTS_PAGE_SIZE}
-      filter={filter}
       query={query}
       timeZone={schedule.timezone}
     />

@@ -38,6 +38,7 @@ import { registryCourseCatalog } from "@/lib/courses/catalog";
 import { registryContentCatalog } from "@/lib/content/catalog";
 import { registryBlogPostCatalog } from "@/lib/blog/post-catalog";
 import { registryCourseAnnouncementCatalog } from "@/lib/courses/announcement-catalog";
+import { registryAdminCourseCatalog } from "@/lib/courses/admin-catalog";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
@@ -129,11 +130,15 @@ export const contentFeedbackService = new ContentFeedbackService(
 
 // REFACTOR-R4-P3-02: the admin panel's reads (IAdminQueryRepository) and the manual
 // credit adjustment, which goes through CreditService like every other credit write.
+// ADMIN-USERS-01: plus the course views — CourseService for a user's own progress, and
+// the registry (titles, published lessons) injected like the other course catalogs.
 export const adminService = new AdminService(
   supabaseAdminQueryRepository,
   creditService,
   pricingService,
   supabaseAuditRepository,
+  courseService,
+  registryAdminCourseCatalog,
 );
 
 // REFACTOR-R4-P3-03: the daily read-only audit of upcoming bookings against their

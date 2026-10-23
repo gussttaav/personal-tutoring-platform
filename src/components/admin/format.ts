@@ -9,7 +9,7 @@
  * parameter is required so a new caller cannot fall back to the runtime's zone.
  */
 
-import type { SessionType } from "@/domain/types";
+import type { BlogArea, CourseReaderStatus, SessionType } from "@/domain/types";
 
 /** "09/10/2026" */
 export const fmtDate = (iso: string, timeZone: string): string =>
@@ -130,3 +130,26 @@ export const sessionTypeTone = (type: string): string =>
 /** "vie 9 oct, 22:14" */
 export const fmtDayTime = (iso: string, timeZone: string): string =>
   `${fmtDayShort(iso, timeZone)}, ${fmtTime(iso, timeZone)}`;
+
+/* ─── ADMIN-USERS-01: users list and course views ───────────────────────────── */
+
+/** Admin-facing blog area names (BLOG-15; moved here from BlogAnnounceForm so the users
+ *  pages share them). The panel is Spanish and outside next-intl. */
+export const BLOG_AREA_LABEL: Record<BlogArea, string> = {
+  "ia":             "Inteligencia artificial",
+  "bases-de-datos": "Bases de datos",
+  "matematicas":    "Matemáticas",
+  "programacion":   "Programación",
+};
+
+/** "Deep Learning para NLP" for "Deep Learning para NLP: del Perceptrón al Transformer":
+ *  a course's short name, for table cells. The full title goes in a `title` attribute. */
+export const shortCourseTitle = (title: string): string => title.split(":")[0].trim();
+
+/** "1 reserva" / "3 reservas" */
+export const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+
+/** The `course` StatusBadge key: a finished reader of a course still being written
+ *  (COURSE-BUILD-01) is "al día", not "terminado". */
+export const courseStatusKey = (status: CourseReaderStatus, courseComplete: boolean): string =>
+  status === "finished" && !courseComplete ? "caught_up" : status;

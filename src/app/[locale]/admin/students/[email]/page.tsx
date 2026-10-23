@@ -6,6 +6,10 @@
  * ADMIN-02: cells are marked for the phone layout; session types read as labels.
  * ADMIN-03: dates are formatted in the tutor's timezone (ScheduleConfig.timezone), not
  * the server's UTC.
+ * ADMIN-USERS-01: a user's page, not only a student's: the «Bajo en créditos» chip is
+ * gone, the hero shows the account's age and its course count, and two cards follow the
+ * bookings — the user's courses (progress as the reader sees it, linking to the course
+ * page) and their blog/course email opt-ins.
  */
 
 import Link from "next/link";
@@ -17,6 +21,8 @@ import { StudentPricingForm } from "@/components/admin/StudentPricingForm";
 import { adminService, pricingService, scheduleService } from "@/services";
 import { Card, StatusBadge, Empty } from "@/components/admin/ui";
 import {
+  BLOG_AREA_LABEL,
+  courseStatusKey,
   fmtDate,
   fmtDateTime,
   fmtShort,
@@ -37,11 +43,13 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
   const { email: rawEmail } = await params;
   const email = decodeURIComponent(rawEmail);
 
-  const [student, packs, bookings, audit, defaultPrices, schedule] = await Promise.all([
+  const [student, packs, bookings, audit, courses, subscriptions, defaultPrices, schedule] = await Promise.all([
     adminService.getStudent(email),
     adminService.listCreditPacks(email),
     adminService.listStudentBookings(email),
     adminService.listAuditLog(email),
+    adminService.listUserCourses(email),
+    adminService.listUserSubscriptions(email),
     // Public prices, for the "por defecto" column. Read from the service, never the
     // ISR cache — admin surfaces always show current values.
     pricingService.getAll(),
@@ -65,7 +73,7 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
     <div className="page-stack">
       <Link href="/admin/students" className="back-link">
         <span className="material-symbols-outlined">arrow_back</span>
-        Alumnos
+        Usuarios
       </Link>
 
       <header className="student-hero">
@@ -73,20 +81,22 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
         <div className="student-hero-meta">
           <h1 className="student-hero-name">{student.name}</h1>
           <p className="student-hero-email">{student.email}</p>
-          {activeCredits <= 1 && (
-            <div className="student-hero-tags">
-              <span className="chip chip-warn">Bajo en créditos</span>
-            </div>
-          )}
+          <div className="student-hero-tags">
+            <span className="chip">Cuenta creada el {fmtDate(student.createdAt, tz)}</span>
+          </div>
         </div>
         <div className="student-hero-stats">
           <div className="hero-stat">
             <span className="hero-stat-value">{activeCredits}</span>
-            <span className="hero-stat-label">Créditos activos</span>
+            <span className="hero-stat-label">Créditos sin reservar</span>
           </div>
           <div className="hero-stat">
             <span className="hero-stat-value">{completedCount}</span>
             <span className="hero-stat-label">Sesiones completadas</span>
+          </div>
+          <div className="hero-stat">
+            <span className="hero-stat-value">{courses.length}</span>
+            <span className="hero-stat-label">Cursos</span>
           </div>
         </div>
       </header>
@@ -195,6 +205,85 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
               ))}
             </tbody>
           </table>
+        )}
+      </Card>
+
+      <Card title="Cursos" padding={false}>
+        {courses.length === 0 ? (
+          <div className="card-body">
+            <Empty icon="school" label="No se ha inscrito en ningún curso." />
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Curso</th>
+                <th>Progreso</th>
+                <th>Última lección</th>
+                <th>Última actividad</th>
+                <th>Inscrito</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {courses.map((c) => (
+                <tr key={c.slug}>
+                  <td className="c-main">
+                    <Link href={`/admin/courses/${c.slug}`} className="cell-strong cell-link">
+                      {c.title}
+                    </Link>
+                  </td>
+                  <td data-label="Progreso">
+                    <div className="credit-bar">
+                      <div className="credit-bar-track">
+                        <div className="credit-bar-fill" style={{ width: `${c.percent}%` }} />
+                      </div>
+                      <span className="credit-bar-label">
+                        {c.completedLessons}/{c.totalLessons}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="muted" data-label="Última lección">{c.lastLessonTitle ?? "—"}</td>
+                  <td className="muted" data-label="Última actividad">
+                    {c.lastSeenAt ? fmtShort(c.lastSeenAt, tz) : "—"}
+                  </td>
+                  <td className="muted" data-label="Inscrito">{c.enrolledAt ? fmtDate(c.enrolledAt, tz) : "—"}</td>
+                  <td className="c-side">
+                    <StatusBadge kind="course" status={courseStatusKey(c.status, c.courseComplete)} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      <Card title="Suscripciones">
+        {subscriptions.length === 0 ? (
+          <Empty icon="mail" label="No recibe avisos por correo." />
+        ) : (
+          <ul className="subs-list">
+            {subscriptions.map((sub) => (
+              <li key={sub.type} className="subs-row">
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  {sub.type === "blog" ? "notifications_active" : "campaign"}
+                </span>
+                <span className="person-meta">
+                  <span className="person-name">
+                    {sub.type === "blog" ? "Artículos del blog" : "Novedades de los cursos"}
+                  </span>
+                  <span className="person-sub">
+                    {sub.type === "blog"
+                      ? sub.areas
+                        ? sub.areas.map((a) => BLOG_AREA_LABEL[a]).join(" · ")
+                        : "Todas las áreas"
+                      : "Lanzamientos, traducciones y actualizaciones"}
+                  </span>
+                </span>
+                <span className="cell-meta">Desde el {fmtDate(sub.createdAt, tz)}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
 

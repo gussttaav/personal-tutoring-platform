@@ -8,6 +8,9 @@
  * { requested, applied } response; the debit loop itself is covered in
  * src/services/__tests__/AdminService.test.ts. The POST runs the REAL isValidOrigin:
  * a cross-site request is refused before the session is even read.
+ *
+ * ADMIN-USERS-01: GET /api/admin/students lists users (adminService.listUsers) by tab and
+ * answers { users, counts, filter, page, pageSize }.
  */
 
 import { NextRequest } from "next/server";
@@ -19,11 +22,11 @@ const mockAuth = jest.fn<Promise<Session | null>, []>();
 jest.mock("@/auth", () => ({ auth: () => mockAuth() }));
 
 const mockAdjustCredits = jest.fn();
-const mockListStudents  = jest.fn();
+const mockListUsers     = jest.fn();
 jest.mock("@/services", () => ({
   adminService: {
     adjustCredits:       (...args: unknown[]) => mockAdjustCredits(...args),
-    listStudents:        (...args: unknown[]) => mockListStudents(...args),
+    listUsers:           (...args: unknown[]) => mockListUsers(...args),
     getStudent:          jest.fn().mockResolvedValue({ id: "u1", email: "test@example.com", name: "Test User" }),
     listCreditPacks:     jest.fn().mockResolvedValue([]),
     listStudentBookings: jest.fn().mockResolvedValue([]),
@@ -56,6 +59,8 @@ function makeRequest(
 }
 
 const ADMIN_EMAIL = "admin@example.com";
+
+const COUNTS = { all: 0, credits: 0, upcoming: 0, booked: 0, courses: 0, subscribed: 0 };
 
 // ─── POST /api/admin/students/[email] ────────────────────────────────────────
 
@@ -177,7 +182,7 @@ describe("GET /api/admin/students", () => {
   beforeEach(() => {
     process.env.ADMIN_EMAILS = ADMIN_EMAIL;
     jest.clearAllMocks();
-    mockListStudents.mockResolvedValue({ rows: [], total: 0, lowCreditTotal: 0 });
+    mockListUsers.mockResolvedValue({ rows: [], counts: COUNTS });
   });
 
   afterEach(() => {
@@ -200,25 +205,39 @@ describe("GET /api/admin/students", () => {
     expect(res.status).toBe(403);
   });
 
-  it("returns 200 with students for admin", async () => {
+  it("returns 200 with users for admin, on the «all» tab by default", async () => {
     mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await GET(makeGetRequest());
     expect(res.status).toBe(200);
-    const body = await res.json() as { students: unknown[] };
-    expect(Array.isArray(body.students)).toBe(true);
+    const body = await res.json() as { users: unknown[]; filter: string };
+    expect(Array.isArray(body.users)).toBe(true);
+    expect(body.filter).toBe("all");
+    expect(mockListUsers).toHaveBeenCalledWith({ query: undefined, segment: "all", page: 1, pageSize: 50 });
   });
 
-  it("passes search, tab and page to the service and returns both counts", async () => {
+  it("passes search, tab and page to the service and returns every count", async () => {
     mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
-    const row = { email: "ana@example.com", name: "Ana", totalCredits: 1, earliestExpiry: null, nextSession: null };
-    mockListStudents.mockResolvedValue({ rows: [row], total: 120, lowCreditTotal: 7 });
+    const row = {
+      email: "ana@example.com", name: "Ana", createdAt: "2026-10-01T00:00:00.000Z",
+      unbookedCredits: 2, earliestExpiry: null, nextSession: null, bookingsCount: 3,
+      courses: [], subscriptions: [],
+    };
+    mockListUsers.mockResolvedValue({ rows: [row], counts: { ...COUNTS, all: 120, credits: 7 } });
 
-    const res = await GET(makeGetRequest("?q=ana&filter=low-credit&page=2"));
+    const res = await GET(makeGetRequest("?q=ana&filter=credits&page=2"));
 
-    expect(mockListStudents).toHaveBeenCalledWith({ query: "ana", lowCredit: true, page: 2, pageSize: 50 });
+    expect(mockListUsers).toHaveBeenCalledWith({ query: "ana", segment: "credits", page: 2, pageSize: 50 });
     expect(await res.json()).toEqual({
-      students: [row], total: 120, lowCreditTotal: 7, page: 2, pageSize: 50,
+      users: [row], counts: { ...COUNTS, all: 120, credits: 7 }, filter: "credits", page: 2, pageSize: 50,
     });
+  });
+
+  it("an unknown tab — the old low-credit one included — reads as «all»", async () => {
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
+
+    await GET(makeGetRequest("?filter=low-credit"));
+
+    expect(mockListUsers).toHaveBeenCalledWith({ query: undefined, segment: "all", page: 1, pageSize: 50 });
   });
 });
 
