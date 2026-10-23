@@ -1815,6 +1815,47 @@
         "legendAfter": "con máscara: renormalizado en las permitidas",
         "legendCut": "fuera de la gramática",
         "totals": "Este camino, hasta aquí: {raw} sin máscara, {masked} con ella."
+      },
+      "context-window": {
+        "groupAria": "Lo que cabe en una llamada al modelo: todo lo que tiene el harness, la ventana de contexto y quién decide lo que no cabe",
+        "policyLabel": "Lo que no cabe",
+        "policies": {
+          "front": "lo trunca el modelo",
+          "drop": "lo descarta el harness",
+          "compact": "el harness compacta"
+        },
+        "allTitle": "Lo que tiene el harness: {total} tokens. La raya es la ventana",
+        "allAria": "Todo lo que tiene el harness, {total} tokens en orden, con la ventana de {tCtx} tokens marcada",
+        "callTitle": "La llamada: {used} de {tCtx} tokens",
+        "callNone": "La llamada no se hace: lo que el harness no descarta suma {used} tokens, y la ventana tiene {tCtx}",
+        "callAria": "La llamada ocupa {used} de {tCtx} tokens: {parts}",
+        "segmentTitle": "{name}: {tokens} tokens",
+        "kinds": {
+          "sistema": "prompt de sistema",
+          "ejemplo": "ejemplo {n}",
+          "turno": "turno {n}",
+          "pasaje": "pasaje {n}",
+          "pregunta": "pregunta",
+          "respuesta": "reserva para la respuesta",
+          "resumen": "resumen"
+        },
+        "legend": {
+          "sistema": "prompt de sistema",
+          "ejemplo": "ejemplos",
+          "turno": "turnos: pregunta y respuesta",
+          "pasaje": "pasajes, del mejor al peor",
+          "pregunta": "pregunta",
+          "respuesta": "reserva para la respuesta",
+          "resumen": "resumen de los turnos viejos",
+          "out": "fuera de la llamada"
+        },
+        "allFits": "Cabe todo: nadie tiene que decidir nada.",
+        "noFit": "No cabe, y el harness no corta nada a medias: la llamada falla antes de hacerse.",
+        "compacted": "Compactados: {parts}. Sus {replaced} tokens son ahora un resumen de {summary}, y escribirlo es una llamada más que lee esos {replaced}.",
+        "cut": "Cortado: {name}. Entran sus últimos {kept} tokens de {tokens}.",
+        "dropped": "Fuera de la llamada: {parts}.",
+        "slider": "Ventana de contexto",
+        "sliderValue": "{tokens} tokens"
       }
     }
   },

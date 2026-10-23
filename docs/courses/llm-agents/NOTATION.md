@@ -396,6 +396,7 @@ in `dl-nlp`'s table, and the two never share a page.
 | $\omega_1$ | the tarea an especificación describes, against every other $\omega$: Block 1 lesson 8's $\omega_1$, the first of two tareas compared, given that role (Block 3 lesson 1) |
 | $\mathbf{h}^{(l)}_t$ | the row of position $t$ at the output of capa $l$; $\mathbf{h}^{(0)}_t$ is the input row, the embedding of $x_t$ plus its position's vector. The first course's $\mathbf{h}^{(l)}$ with the position as subscript (shared §2); $\mathbf{h}^{(L)}_t$ is Block 2's $\mathbf{h}$ before the final layer norm (Block 3 lesson 2) |
 | $R$ | the tokens of a cadena de pensamiento: how many the model writes between the question, of $T$ tokens, and the first token of its respuesta, which is drawn with $\mathbf{z}_{T+R}$ (Block 3 lesson 2) |
+| $\text{tokens}(\cdot)$ | the positions a pieza takes in the call, as the plantilla writes it: a mensaje's contenido plus its rol token and its `<\|fin\|>`. Roman, a word, like $\text{intentos}$; the cells' `tokens(m)` and Block 5's `tokens(M)` are the same function in code. With it, $T$ counts every position of one call, the prompt's and the respuesta's (Block 3 lesson 5) |
 
 **The $\mathbf{q}$ collision, resolved by context and said once.** $\mathbf{q}$ is the attention
 query throughout the first course. In Block 1 here it always carries its position, $\mathbf{q}_t$

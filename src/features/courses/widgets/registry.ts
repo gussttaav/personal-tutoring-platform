@@ -76,4 +76,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "dpo-loss": dynamic(() => import("./nn/DpoLoss"), { ssr: false }),
   // COURSE-C2-P1-03 — llm-agents Block 3 lesson 3 (salida estructurada: generación restringida).
   "logit-mask": dynamic(() => import("./nlp/LogitMask"), { ssr: false }),
+  // COURSE-C2-P1-03 — llm-agents Block 3 lesson 5 (la ventana de contexto), reused in Blocks 4–5.
+  "context-window": dynamic(() => import("./nlp/ContextWindow"), { ssr: false }),
 };
