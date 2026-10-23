@@ -54,7 +54,7 @@ it. Nothing it outputs touches the world. That is the bridge block.
 - [x] 20. `salida-estructurada`
 - [x] 21. `recuperacion`
 - [x] 22. `ventana-de-contexto`
-- [ ] 23. `evaluar`
+- [x] 23. `evaluar`
 - [ ] 24. `proyecto-asistente`
 
 ## Mathematical content

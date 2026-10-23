@@ -1323,3 +1323,36 @@ confirmed by Gustavo at review:
   prose reads checked; all four quiz questions right and wrong; no horizontal page scroll at 360 px
   (the widget fits at 320 px; three displays scroll in their own boxes, all fit the desktop
   column). Not on a phone.
+
+Lesson 23 `evaluar` authored on its own branch. 2 466 words (over the 2 000 target, under the
+ceiling: interval, paired comparison, exact tests vs. a juez, the optimisation trap and
+contamination in one lesson), 10 display equations, no widget, 2 cells (45 and 42 lines), 4 quiz,
+1 challenge (`ch-comparar`), 4 readings (Brown, Cai & DasGupta 2001; Miller 2024; Zhang et al. 2024
+/ GSM1k, «up to 8 %» per the current version; Thakur et al. 2024 / Judging the Judges; pages
+checked). `minutes: 35` (lint ≈37, advisory reading-time warning, as lesson 21). Runs on the
+**scripted model**, as assistant and as juez, and says before the first cell that every respuesta
+is the author's. Decisions, confirmed by Gustavo at review:
+- **The formal content:** the acierto as a mean of $n$ independent pruebas, its variance
+  $\mu(1-\mu)/n$; the normal (Wald) interval and its failures (12/12 → the point 1; coverage 71.3 %
+  at $\mu = 0.9$, $n = 12$, computed exactly by summing over $k$); Wilson's interval as the roots of
+  the quadratic (in a `<Details>`), 97.4 % there; $n \ge (0.98/\text{margin})^2$ (384 for ±5
+  points); the paired comparison, $\text{acierto}_A - \text{acierto}_B = \text{sólo}_A - \text{sólo}_B$
+  with its interval (200 pruebas: paired [0.009, 0.111] vs. unpaired [−0.032, 0.152]); Miller's
+  clustered-by-passage caveat cited; prueba exacta vs. normalizar (33 vs. 36 of 40 on the same
+  respuestas); the juez measured with Cohen's κ (stated); optimising against a juez as lesson 14's
+  reward hacking; contamination cited (GSM1k). Wilson's numbers checked against statsmodels.
+- **Letters and terms added before writing:** $\hat{s}$ retired; $\text{acierto}$ without $(D)$;
+  $n$, $\mu$, $\text{sólo}_A$/$\text{sólo}_B$, $\text{acuerdo}$/$\text{acuerdo}_{\text{azar}}$/$\kappa$
+  in `NOTATION.md`, with the note on 1.96 as a number (no $z$) and no $\operatorname{Var}$;
+  `prueba`, `respuesta esperada`, `banco de pruebas`, `evaluador`, `acertar`/`acierto`, `prueba
+  exacta`/`normalizar`, `intervalo de confianza`/`cobertura`, `comparación emparejada`,
+  `acuerdo`/`kappa de Cohen`, `contaminación` in the delta's §4; the `juez` row extended.
+- **Lesson 21's body reference and lesson 22's bridge now link this lesson** (placeholder comments
+  removed). This lesson's bridge names lesson 24 (`proyecto-asistente`) in prose with the usual
+  comment.
+- Verified: `pnpm lint:content` (only the words and reading-time warnings), `pnpm build` green with
+  0 KaTeX errors, 1 240 course and widget tests; both cells run in the Browser pane on `pnpm start`
+  with the CPython prototype's output; the challenge's solution passes all six tests there, and the
+  starter, an empty submission and an unpaired version each fail with their own message (CPython);
+  no horizontal page scroll at 375 px (every wide display scrolls in its own box). Quiz not answered
+  in the browser. Not on a phone.
