@@ -58,6 +58,9 @@ export const WIDGET_IDS = [
   "dpo-loss",
   // COURSE-C2-P1-03 — llm-agents Block 3 lesson 3 (salida estructurada: generación restringida).
   "logit-mask",
+  // COURSE-C2-P1-03 — llm-agents Block 3 lesson 5 (la ventana de contexto); Block 4 lesson 6
+  // (estado y memoria) and Block 5 lesson 5 (compactación) reuse it with presets of their own.
+  "context-window",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

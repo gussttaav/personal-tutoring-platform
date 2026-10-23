@@ -1815,6 +1815,47 @@
         "legendAfter": "with mask: renormalised over the allowed ones",
         "legendCut": "outside the grammar",
         "totals": "This path, so far: {raw} without the mask, {masked} with it."
+      },
+      "context-window": {
+        "groupAria": "What fits in one call to the model: everything the harness has, the context window, and who decides what does not fit",
+        "policyLabel": "What does not fit",
+        "policies": {
+          "front": "the model truncates it",
+          "drop": "the harness drops it",
+          "compact": "the harness compacts"
+        },
+        "allTitle": "What the harness has: {total} tokens. The line is the window",
+        "allAria": "Everything the harness has, {total} tokens in order, with the {tCtx}-token window marked",
+        "callTitle": "The call: {used} of {tCtx} tokens",
+        "callNone": "The call is not made: what the harness will not drop adds up to {used} tokens, and the window holds {tCtx}",
+        "callAria": "The call takes {used} of {tCtx} tokens: {parts}",
+        "segmentTitle": "{name}: {tokens} tokens",
+        "kinds": {
+          "sistema": "system prompt",
+          "ejemplo": "example {n}",
+          "turno": "turn {n}",
+          "pasaje": "passage {n}",
+          "pregunta": "question",
+          "respuesta": "reserve for the response",
+          "resumen": "summary"
+        },
+        "legend": {
+          "sistema": "system prompt",
+          "ejemplo": "examples",
+          "turno": "turns: question and answer",
+          "pasaje": "passages, best to worst",
+          "pregunta": "question",
+          "respuesta": "reserve for the response",
+          "resumen": "summary of the old turns",
+          "out": "left out of the call"
+        },
+        "allFits": "Everything fits: nobody has to decide anything.",
+        "noFit": "It does not fit, and the harness cuts nothing in half: the call fails before it is made.",
+        "compacted": "Compacted: {parts}. Their {replaced} tokens are now a {summary}-token summary, and writing it is one more call that reads those {replaced}.",
+        "cut": "Cut: {name}. Its last {kept} of {tokens} tokens get in.",
+        "dropped": "Left out of the call: {parts}.",
+        "slider": "Context window",
+        "sliderValue": "{tokens} tokens"
       }
     }
   },

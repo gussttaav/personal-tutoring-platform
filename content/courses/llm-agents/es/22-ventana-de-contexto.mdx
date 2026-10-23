@@ -1,0 +1,333 @@
+---
+slug: ventana-de-contexto
+title: "La ventana de contexto es un recurso escaso"
+block: 3
+order: 5
+minutes: 27
+summary: "Todo lo que un harness le da al modelo en una llamada tiene que caber en la ventana de contexto, y lo que cabe se paga: un token más en el prompt cuesta lo que el último de la llamada, así que el precio crece con todo lo demás. La lección convierte la ventana en un presupuesto, compara truncar, descartar y compactar cuando no cabe todo, escribe el contrato de un harness que elige qué entra y cita la medida de que al modelo no le da igual dónde va cada pasaje."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-donde-se-igualan
+    type: numeric
+    prompt: 'Un modelo de $L = 80$ capas tiene $d_{\text{model}} = 8\,192$, un perceptrón por posiciones de dos matrices con $d_{\text{ff}} = 28\,672$ y un vocabulario de $128\,000$ entradas. ¿En qué posición $T + 1$ la atención de un token cuesta lo mismo que todas sus matrices?'
+    answer: 45856
+    tolerance: 1
+    explanation: '$2 \cdot 8\,192 + 28\,672 + 128\,000 / 160 = 16\,384 + 28\,672 + 800 = 45\,856$. Fíjate en lo que pesa cada término: la anchura lo decide casi todo, y la profundidad sólo entra a través del vocabulario, repartido entre las $2L$ multiplicaciones de la atención. Más capas no adelantan el cruce, porque las matrices y la atención crecen las dos con $L$. Por debajo de unos 46 000 tokens, en este modelo un token cuesta casi lo mismo esté donde esté; por encima, manda la atención.'
+    hint: 'Divide $c_{\text{fila}}$ entre lo que cuesta, por posición leída, la atención de un token: $2L \cdot d_{\text{model}}$.'
+  - id: q-lo-que-pierde
+    type: single
+    prompt: 'Un harness le manda a un modelo un prompt más largo que su ventana, y el modelo, sin avisar, se queda con los últimos tokens que caben. ¿Qué pierde primero?'
+    options:
+      - { id: a, text: 'El prompt de sistema y los ejemplos: la especificación, que es lo primero que escribe la plantilla. Y nada le dice que la ha perdido.' }
+      - { id: b, text: 'La pregunta, porque es lo último que llega.' }
+      - { id: c, text: 'Los pasajes de menor coseno, que el modelo reconoce como los menos útiles.' }
+      - { id: d, text: 'Nada que importe: el modelo ve que falta texto y responde con más cuidado.' }
+    answer: a
+    explanation: 'La (a). Truncar por delante quita lo que va delante, y la plantilla pone delante el prompt de sistema y los ejemplos. En la celda, de los 64 tokens del prompt de sistema el modelo lee los siete últimos: <W>: no lo sé.</W> y su <W>\<|fin|></W>. La (b) lo tiene al revés: la pregunta, al final, es lo último que se perdería. La (c) le atribuye al modelo una decisión que no toma: truncar no mira qué dice cada pieza, sólo dónde está. Y la (d) es lo que no pasa nunca. El modelo recibe una secuencia de tokens, sin rastro de la que había antes del corte.'
+    hint: '¿En qué orden escribe la plantilla las piezas de una llamada?'
+  - id: q-el-contrato
+    type: multi
+    prompt: '¿Qué garantiza `encajar`, según su contrato?'
+    options:
+      - { id: a, text: 'El prompt de sistema, los ejemplos y la pregunta entran enteros, o la llamada no se hace.' }
+      - { id: b, text: 'Lo que entra va en el orden en que estaba.' }
+      - { id: c, text: 'Entra el pasaje que responde a la pregunta.' }
+      - { id: d, text: 'La respuesta del modelo cabe entera en la ventana.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). La (c) no la puede garantizar nadie que no sepa la respuesta: `encajar` descarta los pasajes por su puesto en el recuperador, el peor primero, y <Leccion slug="recuperacion">la lección sobre recuperación</Leccion> midió que el primero en coseno no siempre es el que responde. La (d) confunde la reserva con una promesa: el harness guarda `max_tokens` para la respuesta, y una respuesta que quiera más se corta ahí, como en el contrato de `modelo`.'
+    hint: 'Separa lo que `encajar` decide de lo que depende del modelo o del recuperador.'
+  - id: q-en-medio
+    type: single
+    prompt: 'Con veinte pasajes en el prompt y uno solo con la respuesta, GPT-3.5-Turbo acierta el 75.8 % de las preguntas si ese pasaje va el primero, el 53.8 % si va el décimo y el 56.1 % sin ningún pasaje. ¿Qué te dice eso de tu harness?'
+    options:
+      - { id: a, text: 'Que el orden de los pasajes es una decisión del harness: lo mejor no va en medio, y añadir pasajes empuja los que ya había hacia el centro. Cuánto pesa con tu modelo hay que medirlo.' }
+      - { id: b, text: 'Que la atención no puede leer las posiciones del centro de un prompt largo.' }
+      - { id: c, text: 'Que recuperar no sirve: el modelo acierta más sin pasajes.' }
+      - { id: d, text: 'Que la caché guarda mal las claves y los valores de las posiciones intermedias.' }
+    answer: a
+    explanation: 'La (a). La (b) es la explicación que la arquitectura descarta: la atención lee cualquier posición con las mismas cuentas, y por eso el resultado es una medida y no una consecuencia. La (c) mira sólo la peor posición: con el pasaje primero, el modelo acierta casi veinte puntos más que sin ninguno. La (d) confunde el coste con el uso: la caché guarda las claves y los valores exactos, cifra a cifra, en cualquier posición. Y el 53.8 % es de un modelo de 2023 en una tarea concreta: el tuyo puede dibujar otra curva.'
+    hint: '¿Se deduce de la arquitectura, o se midió?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Lost in the Middle: How Language Models Use Long Contexts'
+    authors: 'Liu, Lin, Hewitt, Paranjape, Bevilacqua, Petroni y Liang'
+    year: '2023'
+    venue: 'TACL · arXiv:2307.03172'
+    lang: en
+    url: 'https://arxiv.org/abs/2307.03172'
+    note: 'La curva en U de la lección, con seis modelos, 10, 20 y 30 pasajes y la tabla posición a posición. Su apartado sobre poner la pregunta antes y después de los pasajes mide un remedio para el harness.'
+  - kind: paper
+    title: "RULER: What's the Real Context Size of Your Long-Context Language Models?"
+    authors: 'Hsieh, Sun, Kriman, Acharya, Rekesh, Jia, Zhang y Ginsburg'
+    year: '2024'
+    venue: 'COLM 2024 · arXiv:2404.06654'
+    lang: en
+    url: 'https://arxiv.org/abs/2404.06654'
+    note: 'La ventana que un modelo anuncia no es la que usa bien: de 17 modelos que dicen admitir 32 000 tokens o más, sólo la mitad rinde de forma aceptable a esa longitud en sus trece tareas.'
+  - kind: paper
+    title: 'MemGPT: Towards LLMs as Operating Systems'
+    authors: 'Packer, Wooders, Lin, Fang, Patil, Stoica y Gonzalez'
+    year: '2023'
+    venue: 'arXiv:2310.08560'
+    lang: en
+    url: 'https://arxiv.org/abs/2310.08560'
+    note: 'Un harness que trata la ventana como la memoria de un sistema operativo: avisa al modelo cuando se llena, saca los mensajes viejos a un almacén que puede consultar y deja en su lugar un resumen que se rehace en cada vaciado.'
+---
+
+{/* COURSE-C2-P1-03 — Bloque 3, lección 5. La celda corre sobre el modelo guionizado (cargado de
+    guionizado.py) y cuenta tokens con el tokenizador del mini-GPT; no carga la red. */}
+
+<Leccion slug="recuperacion">La lección sobre recuperación</Leccion> acabó con una cuenta que no
+salía: tres pasajes de la novela ocupan 98 tokens, y en la ventana del mini-GPT caben 64. En un
+modelo con miles de tokens de ventana caben de sobra, pero el problema sólo cambia de escala. Un
+asistente que conversa vuelve a mandar en cada llamada su prompt de sistema, sus ejemplos, todo lo
+que se ha dicho y los pasajes de la pregunta nueva, porque el modelo no guarda nada de una llamada
+a la siguiente. Cada turno deja dos mensajes más, y antes o después la suma pasa de
+$T_{\text{ctx}}$, una cifra que fijó quien entrenó el modelo.
+
+Entonces algo se queda fuera, y lo único que se puede decidir es quién lo elige. Si no lo elige
+nadie, el modelo rechaza la llamada o trunca el prompt por su cuenta. Tu mini-GPT, desde
+<Leccion slug="proyecto-mini-gpt">su proyecto</Leccion>, lee sólo los últimos 64 tokens, y lo
+primero que pierde así es lo primero que escribiste: la especificación. Elegir bien pide saber qué
+cuesta cada token que sí entra, que no es siempre lo mismo, y si al modelo le da igual el sitio de
+lo que se queda.
+
+Mira cómo se llena. En el explorable, un asistente sobre *Marianela* va por su séptima pregunta y
+tiene para ella un prompt de sistema, dos ejemplos, los seis turnos anteriores, los cinco pasajes
+que trajo el recuperador (del más parecido a la pregunta al menos) y la pregunta, más 400 tokens
+reservados para la respuesta: 3 410 tokens. Los tamaños los he puesto yo, redondos, del orden que
+daría un tokenizador de verdad. La ventana empieza en 2 560.
+
+Con «lo trunca el modelo», el prompt de sistema, los dos ejemplos y el primer turno se quedan
+fuera, y del segundo entra el final. Cambia a «lo descarta el harness»: salen los cinco turnos más
+viejos, enteros, y se quedan el último y los cinco pasajes. Con «el harness compacta», los cuatro
+primeros turnos pasan a ser un resumen y sólo sobra el peor pasaje. Vuelve a «lo descarta el
+harness» y baja la ventana: en 1 024 tokens no queda más que lo que el harness no descarta nunca,
+y en 768 ni eso cabe, así que la llamada no se hace.
+
+<Explorable id="context-window" preset="asistente" caption="Todo lo que el harness tiene para la séptima pregunta y lo que entra en una llamada, según quién decida qué sobra: el modelo, que se queda con los últimos tokens, o el harness, que descarta piezas enteras o resume los turnos viejos." />
+
+<Callout type="intuition" title="La idea en una frase">
+La ventana es un presupuesto con dos precios: lo que no cabe no llega al modelo, y lo que cabe
+encarece cada token que se escribe detrás. Cuando no cabe todo, algo sale; o lo elige el harness,
+con una regla escrita, o lo elige el modelo, y lo primero que pierde es la especificación.
+</Callout>
+
+## La ventana es un presupuesto
+
+Escribamos $\text{tokens}(\cdot)$ para las posiciones que ocupa una pieza tal como la escribe
+<Leccion slug="plantilla-de-chat">la plantilla de chat</Leccion>: el contenido de cada mensaje,
+más su token de rol y su <W>\<|fin|></W>. Una llamada lleva el prompt de sistema $s$, los ejemplos
+$e_{1:K}$, el **historial** (los mensajes de los turnos anteriores, dos por turno, la pregunta y la
+respuesta), los pasajes, el caso $x$, el token de rol que abre la respuesta y la respuesta $y$. Todo
+tiene que caber:
+
+$$
+\begin{aligned}
+& \text{tokens}(s) + \text{tokens}(e_{1:K}) + \text{tokens}(\text{historial}) + \text{tokens}(\text{pasajes}) \\
+& \qquad + \text{tokens}(x) + 1 + \text{tokens}(y) \le T_{\text{ctx}}.
+\end{aligned}
+$$
+
+El último término no se conoce hasta que la respuesta está escrita. El harness le guarda sitio de
+antemano, la **reserva**: el `max_tokens` del contrato de `modelo`, y una respuesta que quiera más
+se corta ahí. Lo demás es lo que el harness elige. De todas las piezas, sólo el historial crece
+solo, dos mensajes por turno, y es el que acaba desbordando la suma en una conversación larga.
+
+### Un token más cuesta lo que el último
+
+Caber no es gratis. <Leccion slug="kv-cache">La lección sobre la caché</Leccion> contó que, con la
+caché, el token de la posición $t$ cuesta $c(t) = c_{\text{fila}} + 2Lt \cdot d_{\text{model}}$
+multiplicaciones: una fila por todas las matrices de la red, y una consulta contra $t$ claves y
+valores en cada capa. Una llamada de $T$ posiciones, las del prompt y las de la respuesta, cuesta
+la suma de todas, como allí,
+
+$$
+\sum_{t=1}^{T} c(t) = T\,c_{\text{fila}} + LT(T+1) \cdot d_{\text{model}},
+$$
+
+y el *prefill* hace las mismas multiplicaciones que si el prompt se leyera token a token, sólo que
+de una pasada.
+
+Metamos un token más en el prompt, en una posición $j$ cualquiera. Cambian dos cosas. Su fila
+cuesta $c(j)$. Y cada una de las $T + 1 - j$ posiciones que quedan detrás lee una clave y un valor
+más, $2L \cdot d_{\text{model}}$ multiplicaciones cada una. Sumadas,
+
+$$
+c(j) + 2L(T + 1 - j) \cdot d_{\text{model}} = c_{\text{fila}} + 2L(T + 1) \cdot d_{\text{model}} = c(T + 1).
+$$
+
+La $j$ se va. Un token más, entre donde entre, cuesta lo que costaría el último de una llamada un
+token más larga, así que su precio lo pone toda la llamada y no su sitio. El total crece como
+$T^{2}$ en su parte de atención: un prompt el doble de largo cuesta más del doble. Y mientras dura
+la llamada, la caché guarda sus $2LT \cdot d_{\text{model}}$ números.
+
+¿A partir de cuántas posiciones manda la atención? Cuando $2L(T + 1) \cdot d_{\text{model}}$
+alcanza a $c_{\text{fila}}$. Con el $c_{\text{fila}}$ de la lección sobre la caché, de matrices de
+atención de $d_{\text{model}} \times d_{\text{model}}$, un perceptrón por posiciones de dos matrices
+y la capa de salida,
+
+$$
+T + 1 = \frac{L\left(4d_{\text{model}}^{2} + 2d_{\text{model}} \cdot d_{\text{ff}}\right) + d_{\text{model}} \cdot \lvert V \rvert}{2L \cdot d_{\text{model}}} = 2d_{\text{model}} + d_{\text{ff}} + \frac{\lvert V \rvert}{2L}.
+$$
+
+En el mini-GPT son $128 + 256 + 128 = 512$ posiciones, la cifra de aquella lección. En su modelo de
+32 capas y $d_{\text{model}} = 4\,096$, con las cifras habituales en esa forma
+($d_{\text{ff}} = 16\,384$, un vocabulario de 32 000 entradas), son $8\,192 + 16\,384 + 500 =
+25\,076$. Por debajo de unos 25 000 tokens, un token más cuesta casi lo mismo que el primero. En
+una ventana de 128 000 (131 072 tokens), el último cuesta 6.2 veces lo que el primero, y la caché
+de esa llamada, a 2 bytes por número, ocupa 64 GiB, cinco veces los pesos. Las variantes que
+comparten claves y valores entre cabezas, que el curso deja fuera, existen sobre todo por esta
+cifra.
+
+## Cuando no cabe, alguien elige qué sale
+
+Hay tres maneras de que quepa. La primera es la de un modelo al que nadie ha preparado nada:
+**truncar**, quedarse con los últimos $T_{\text{ctx}}$ menos la reserva y no saber nada de lo
+anterior. Lo que cae es lo primero que escribe la plantilla, el prompt de sistema y los ejemplos,
+y el corte pasa por en medio de un mensaje, que entra sin su token de rol. El modelo no recibe
+ninguna señal de que eso ha pasado: lee una secuencia de tokens, y ésa es la única que hay.
+
+La segunda es **descartar**: el harness deja fuera piezas enteras, con una regla escrita. Su
+contrato, para una función `encajar(T_ctx, reserva) -> mensajes` que monta la llamada:
+
+1. Con la reserva y el token de rol de la respuesta, la llamada no pasa de $T_{\text{ctx}}$.
+2. El prompt de sistema, los ejemplos y la pregunta entran enteros. Si ellos solos no caben, la
+   llamada falla y no se hace: una especificación truncada es otra especificación.
+3. Cada pieza entra entera o no entra. Un turno sale con sus dos mensajes.
+4. Salen en un orden fijado de antemano: los turnos, del más viejo al más nuevo, y después los
+   pasajes, del último en el recuperador al primero. Sale lo justo: el prefijo más corto de ese
+   orden que deja caber el resto.
+5. Lo que entra va en el orden en que estaba.
+
+El orden del punto 4 es una política, no un teorema. Los pasajes se trajeron para esta pregunta y
+los turnos viejos hablaban de otras, pero una pregunta que dice <W>ella</W> necesita el turno que
+la nombró. Elegir el subconjunto de piezas que más vale y cabe es el problema de la mochila, y el
+harness no conoce el valor de cada pieza, así que no hay nada que optimizar: ordena por una
+prioridad y descarta desde el principio de la lista.
+
+La tercera es **compactar**: sustituir los turnos viejos por un resumen que escribe el propio
+modelo y dejar los recientes como estaban. Lo que se conserva ocupa menos en cada llamada
+posterior, y algo de lo descartado sobrevive. Pero el resumen cuesta una llamada más, que lee los
+turnos que resume, y es una respuesta del modelo como cualquier otra: puede dejarse lo que la
+pregunta siguiente iba a necesitar, o escribir algo que nadie dijo. El bloque 5 le da su contrato,
+qué conserva siempre y qué no puede perder, en un agente que de verdad se queda sin ventana.
+
+### Lo que cabe no se lee igual en todas partes
+
+Que una pieza entre no quiere decir que el modelo la use. Liu y sus coautores le dieron a varios
+modelos preguntas de NaturalQuestions-Open con veinte pasajes, unos 4 000 tokens, de los que sólo
+uno contenía la respuesta, y fueron moviendo ese pasaje de sitio. GPT-3.5-Turbo acertó el 75.8 %
+de las preguntas con el pasaje el primero, el 53.8 % con el pasaje el décimo y el 63.2 % con el
+pasaje el último. Sin ningún pasaje acertaba el 56.1 %, así que, en el centro del prompt, el
+pasaje que respondía le restaba. La mayoría de los modelos dibujaron la misma curva en U, también
+los de ventana larga. Sus autores lo llamaron *lost in the middle*, «perdido en el medio».
+
+Nada en la arquitectura lo pide. La atención lee cualquier posición con las mismas cuentas, y la
+caché guarda las claves y los valores exactos de todas: es lo que hacen los modelos entrenados, y
+se mide, no se deduce. Aquí no puedes reproducirlo, porque el modelo guionizado no lee lo que le
+mandas y en la ventana del mini-GPT no caben veinte pasajes. Para el harness, la consecuencia es
+que el orden también es suyo: lo mejor va en un extremo, nunca en medio, y cada pasaje que añades
+empuja los demás hacia el centro.
+
+## Encajar el prompt, sobre el modelo guionizado
+
+La celda corre sobre el modelo guionizado de <Leccion slug="el-prompt-es-una-especificacion">la
+lección sobre la especificación</Leccion>, que ahora se carga con una línea, y cuenta los tokens con
+el tokenizador de tu mini-GPT. El modelo guionizado no tiene tokenizador ni ventana: la ventana de
+256 tokens la he puesto yo, y quien la hace cumplir es `encajar`. El asistente va por su cuarta
+pregunta, con tres turnos detrás y los tres pasajes que el recuperador de TF-IDF (*term
+frequency–inverse document frequency*) de la lección anterior trae para ella. La celda compara lo
+que leería un modelo que trunca con lo que manda `encajar`, y se lo da al modelo guionizado, cuyo
+guion dice qué mensajes espera recibir con este presupuesto.
+
+<PyCell code={`
+import json
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, lección 18
+exec(open_url("/courses/llm-agents/bpe.py").read())          # codificar: aquí sólo cuenta tokens
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+def tokens(m):                         # lo que ocupa un mensaje: contenido, token de rol y <|fin|>
+    return len(codificar(m[1], F)) + 2
+
+SISTEMA = ("sistema", "Respondes preguntas sobre la novela Marianela con los pasajes que "
+           "acompañan a cada pregunta. Si no la responden, di: no lo sé.")
+HISTORIAL = [("usuario", "¿Quién es Pablo?"),                 # tres turnos, del más viejo
+             ("asistente", "El hijo ciego de don Francisco Penáguilas."),
+             ("usuario", "¿Quién le hace de lazarillo?"), ("asistente", "La Nela."),
+             ("usuario", "¿Con quién vive ella?"),
+             ("asistente", "Con el señor Centeno, capataz de ganado en las minas.")]
+PASAJES = [                                       # los tres que trae TF-IDF, del mejor al peor
+    "—Dicen que tengo diez y seis años—replicó la Nela, examinando a su vez al doctor.",
+    "No hay mal que cien años dure.", "Le conozco; tiene una voz ronca y pausada."]
+PREGUNTA = "¿Cuántos años tiene la Nela?"
+
+def montar(historial, pasajes):
+    texto = "".join("Pasaje: %s\\n" % p for p in pasajes) + "Pregunta: " + PREGUNTA
+    return [SISTEMA] + historial + [("usuario", texto)]
+
+def encajar(T_ctx, reserva):
+    """Sistema y pregunta enteros; salen turnos, del más viejo, y después pasajes, del peor."""
+    h, p = list(HISTORIAL), list(PASAJES)
+    while 1 + sum(map(tokens, montar(h, p))) + reserva > T_ctx:   # 1: el <|asistente|> del final
+        if h:   h = h[2:]                         # un turno: su pregunta y su respuesta, juntas
+        elif p: p = p[:-1]
+        else:   raise ValueError("no caben ni el sistema y la pregunta: la llamada no se hace")
+    return montar(h, p)
+
+T_CTX, RESERVA = 256, 24
+todo, llamada = montar(HISTORIAL, PASAJES), encajar(T_CTX, RESERVA)
+cabe = T_CTX - RESERVA - 1                        # lo que deja leer un modelo que trunca
+leidos = [max(0, min(tokens(m), cabe - sum(map(tokens, todo[i + 1:])))) for i, m in enumerate(todo)]
+print("%d tokens con la reserva, ventana de %d" % (sum(map(tokens, todo)) + 1 + RESERVA, T_CTX))
+print("\\nrol        tokens   si trunca el modelo   con encajar")
+for m, k in zip(todo, leidos):
+    trunca = "entero" if k == tokens(m) else "fuera" if k == 0 else "sus últimos %d" % k
+    print("%-9s %6d   %-19s   %s" % (m[0], tokens(m), trunca, "entra" if m in llamada else "fuera"))
+espera = [SISTEMA] + HISTORIAL[4:] + montar([], PASAJES)[-1:]   # lo que he previsto yo
+modelo = ModeloGuionizado([(espera, "Dieciséis años, según dice ella misma.")])
+print("\\nel modelo guionizado responde:", modelo(llamada))
+`} />
+
+Todo junto son 313 tokens para una ventana de 256. Un modelo que trunca lee los 231 últimos del
+prompt, y del prompt de sistema le llegan siete: <W>: no lo sé.</W> y el <W>\<|fin|></W>. Lee
+entera la conversación y los pasajes, y de su especificación, sólo la orden de no saber. `encajar`
+descarta los dos turnos más viejos, que no hacen falta para esta pregunta, y deja el prompt de
+sistema entero, el tercer turno y los tres pasajes. Es lo que el guion esperaba, y el modelo
+guionizado responde.
+
+Ahora sube `RESERVA` a 32. Ocho tokens más para la respuesta obligan a descartar también el tercer
+turno, y el modelo guionizado falla en el mensaje 1: su guion esperaba ese turno. Quien falla no es
+el modelo. Es tu presupuesto, comprobado contra lo que habías previsto que recibiera.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: dónde empieza a mandar la atención en un modelo más ancho, qué pierde un modelo
+que trunca, qué garantiza `encajar` y qué hacer con la curva en U.
+
+<Quiz id="q-donde-se-igualan" />
+
+<Quiz id="q-lo-que-pierde" />
+
+<Quiz id="q-el-contrato" />
+
+<Quiz id="q-en-medio" />
+
+---
+
+Todo lo que el harness decide en esta lección tiene un número que nadie ha medido todavía para el
+tuyo: cuántos pasajes traer, en qué orden ponerlos, si el historial sale antes que ellos, cuánto
+reservar. La curva en U se midió con veinte pasajes y miles de preguntas, y contradecía lo que la
+arquitectura dejaba esperar. Con tu modelo y tus preguntas puede salir otra, y lo único que lo dice
+es contar aciertos.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug evaluar), envolver «La lección siguiente, sobre evaluar» en su Leccion slug=…; el lint
+    falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, sobre evaluar, convierte «acierta más» en un número con su intervalo:
+cuántas preguntas hacen falta para que la diferencia entre dos harness sea creíble, cómo se puntúa
+una respuesta que no tiene una sola forma correcta y qué falla cuando el que puntúa es otro modelo.

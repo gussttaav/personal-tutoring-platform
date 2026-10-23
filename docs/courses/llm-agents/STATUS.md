@@ -1288,3 +1288,38 @@ advisory reading-time warning, as lessons 12–15 and 20). Decisions, confirmed 
   passes, while the starter, an empty submission, a dot-product version and a non-stable sort each
   fail with their own message; no horizontal page scroll at 360 px (the widest display, 576 px,
   scrolls in its own box; all four fit the desktop column). Not on a phone.
+
+Lesson 22 `ventana-de-contexto` authored on its own branch, with the `context-window` widget built
+first in the same change. 1 953 words, 4 display equations (under the 5–12 target, as lessons 19
+and 21), 1 widget, 1 cell (45 lines), 4 quiz, no challenge, 3 readings (Liu et al. 2023 / lost in
+the middle, Hsieh et al. 2024 / RULER, Packer et al. 2023 / MemGPT; arXiv pages checked, the
+20-document numbers from the paper's Table 6). `minutes: 27` (lint ≈25). Runs on the **scripted
+model**, and says so before the cell; tokens are counted with the mini-GPT's tokenizer. Decisions,
+confirmed by Gustavo at review:
+- **The formal content:** the window as a sum with a ceiling, the respuesta's share held as a
+  `reserva` (`max_tokens`); with lesson 5's $c(t)$, one more prompt token at any position $j$ costs
+  $c(j) + 2L(T + 1 - j) \cdot d_{\text{model}} = c(T + 1)$, so its price is the whole call's; the
+  crossover $T + 1 = 2d_{\text{model}} + d_{\text{ff}} + \lvert V \rvert/(2L)$ (512 for the mini-GPT,
+  lesson 5's; 25 076 for the 32-layer model; at 131 072 tokens the last token costs 6.2× the first
+  and the caché 64 GiB). Then truncar (the model) vs. descartar (the harness, a five-clause contract
+  for `encajar`) vs. compactar (named here, contract in Block 5); lost in the middle cited, not
+  derived (GPT-3.5-Turbo, 20 passages: 75.8 % first, 53.8 % tenth, 56.1 % closed-book).
+- **`guionizado.py`:** lesson 18's `ModeloGuionizado` frozen as a public asset, as planned for the
+  first later lesson that loads it; `llm-agents-assets.test.ts` checks it equals the lesson's cell
+  character for character.
+- **`context-window`:** general from the start (segments with drop ranks, policies front / drop /
+  compact, presets by name via `preset="…"`), so lessons 30 and 36 add presets only.
+  `context-window.test.ts` checks every policy's invariants at every slider window against a
+  brute-force recount, and the numbers the intuition quotes. The preset's sizes are the author's,
+  and the lesson says so.
+- **Letters and terms added before writing:** $\text{tokens}(\cdot)$ in `NOTATION.md`; `pieza`,
+  `historial`, `reserva`, `truncar`, `descartar`, *lost in the middle* in the delta's §4, and the
+  `compactación` row now says it is first named here.
+- **Lesson 21's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 23 (`evaluar`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors, 1 240 course and widget tests; the cell run in the Browser pane on `pnpm start` with the
+  CPython prototype's output (the `RESERVA = 32` variation in CPython only); every widget state the
+  prose reads checked; all four quiz questions right and wrong; no horizontal page scroll at 360 px
+  (the widget fits at 320 px; three displays scroll in their own boxes, all fit the desktop
+  column). Not on a phone.
