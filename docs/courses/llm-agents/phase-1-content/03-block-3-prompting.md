@@ -1,6 +1,6 @@
 # P1-03 — Block 3: Hablar con el modelo es programar
 
-**Tag:** `COURSE-C2-P1-03` · **Effort:** L · **Owner:** _tbd_ · **Status:** 🔄
+**Tag:** `COURSE-C2-P1-03` · **Effort:** L · **Owner:** _tbd_ · **Status:** ✅
 **Depends on:** P1-02 · Block 3 widgets (built in this task)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** derivation → systems
 **Runs on:** the **scripted model** from lesson 18; the mini-GPT where the mechanism is
@@ -55,7 +55,7 @@ it. Nothing it outputs touches the world. That is the bridge block.
 - [x] 21. `recuperacion`
 - [x] 22. `ventana-de-contexto`
 - [x] 23. `evaluar`
-- [ ] 24. `proyecto-asistente`
+- [x] 24. `proyecto-asistente`
 
 ## Mathematical content
 

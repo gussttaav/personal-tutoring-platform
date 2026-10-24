@@ -38,7 +38,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
-| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (4/7) | _tbd_ | |
+| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
@@ -1117,7 +1117,7 @@ confirmed by Gustavo at review:
   stand-in model for the training cells, and through the «before» measurements with the real one;
   the GPU run is Gustavo's. Not on a phone.
 
-**COURSE-C2-P1-03** — In progress (started 2026-10-13). Lesson 18 `el-prompt-es-una-especificacion`
+**COURSE-C2-P1-03** — Done (started 2026-10-13, finished 2026-10-24). Lesson 18 `el-prompt-es-una-especificacion`
 authored on `staging`, the block's first. 1 998 words, 6 display equations, no widget (the block md
 assigns none), **2 cells** (17 + 39 lines; the plan said 1, but as one cell it was 54 lines, and
 AUTHORING §3's fix is the split: the class with a pointer demo, then the specification and the
@@ -1356,3 +1356,40 @@ is the author's. Decisions, confirmed by Gustavo at review:
   starter, an empty submission and an unpaired version each fail with their own message (CPython);
   no horizontal page scroll at 375 px (every wide display scrolls in its own box). Quiz not answered
   in the browser. Not on a phone.
+
+Lesson 24 `proyecto-asistente` authored on its own branch, the block's last. 1 982 words, 5 display
+equations, no widget, 3 cells (37, 44 and 45 lines), 3 quiz, 1 challenge (`ch-asistente`), 3
+readings (Barnett et al. 2024 / seven RAG failure points, Gao et al. 2023 / ALCE, Es et al. 2023 /
+Ragas; arXiv pages checked). `minutes: 35` (lint ≈35, advisory reading-time warning). Runs on the
+**scripted model**, retrieving with TF-IDF over lesson 21's 288 pasajes; no cell loads the network.
+Approved by Gustavo at review:
+- **The contract:** `asistente(modelo, pregunta, k=3, tope=2) -> (respuesta, citado)`, four
+  clauses: retrieve (no pasajes → «no lo sé» without a call), assemble (numbered pasajes; the window
+  only named, via `encajar`, since the scripted model has none), call up to `tope` times keeping the
+  first respuesta that passes the comprobación (a JSON object with exactly `respuesta` and `pasaje`,
+  an int in range or `null` iff «no lo sé»), return the cited pasaje's text or raise.
+- **The formal content:** reintentar as lesson 20's rejection sampling with the comprobación for the
+  gramática and a cap: $(1-\pi)^{\text{tope}}$ and $\mathbb{E}[\text{llamadas}] = (1 - (1-\pi)^{\text{tope}})/\pi$;
+  Jensen (lesson 11's) over the questions, so retries fix random failures, not habitual ones
+  (temperature 0 is the extreme). Measuring by stage: lesson 21's total probability as an identity on
+  the banco's counts, the retriever's ceiling $\text{acierto} \le \text{recuperadas}$, each fallo to
+  the first stage that fails (recuperador, formato, lectura), each conditional rate with its own
+  Wilson $n$.
+- **The cells:** 7 of 12 aciertos (Wilson [0.32, 0.81]), 9 of 12 recuperadas, 7 of 9 given the
+  pasaje; fallos 3 recuperador (two «no lo sé», one invented «Teodoro» exposed by its citation), 1
+  formato, 1 lectura (the piano trace). Every respuesta is the author's, and the lesson says so.
+- **The challenge** completes the cell's one-call `asistente` (retries, the no-call shortcut, raise);
+  each test is a scripted conversation and `modelo.turno` counts calls. Its starter and tests load
+  `guionizado.py` with `open_url`, the first challenge to load an asset; it works in the runner.
+- **Proposed, not yet applied:** `NOTATION.md` rows for $\text{tope}$, $\text{llamadas}$,
+  $\mathbb{E}_x$, $\text{recuperadas}$, $\text{acierto}_{\text{rec}}$ / $\text{acierto}_{\text{no rec}}$
+  and $\pi_\theta(\text{cumple} \mid s, x)$ without ejemplos; delta §4 rows for `reintentar` /
+  `reintento`, `etapa`, `citar` / `citado`.
+- **Lesson 23's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names Block 4's first lesson (`de-chat-a-agente`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (only the reading-time warning), `pnpm build` green with 0 KaTeX
+  errors; all three cells run in the Browser pane on `pnpm start` with the CPython prototype's output;
+  the challenge's solution passes all six tests there and the starter fails each with its message;
+  four wrong variants each fail their own test (CPython); `q-cuantas-llamadas` answered right and
+  wrong in the browser, the other two not confirmed; no horizontal page scroll at 360 px (the 691 px
+  display scrolls in its own box, also on desktop). Not on a phone.
