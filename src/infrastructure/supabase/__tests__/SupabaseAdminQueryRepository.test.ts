@@ -23,6 +23,11 @@ import { supabase } from "../client";
 
 const describeDb = process.env.NEXT_PUBLIC_SUPABASE_URL ? describe : describe.skip;
 
+// The beforeAll seeds six users one at a time plus their packs, bookings, progress and
+// opt-ins: a few dozen serial round trips to the remote test database. That fits in
+// Jest's 5 s default locally but not from a CI runner, which timed out every test.
+jest.setTimeout(20_000);
+
 const DAY_MS = 86_400_000;
 const daysAgo = (n: number) => new Date(Date.now() - n * DAY_MS).toISOString();
 
