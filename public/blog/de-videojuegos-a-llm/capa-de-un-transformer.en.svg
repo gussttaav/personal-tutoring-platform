@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" width="760" height="250" role="img"
+ aria-label="One layer of Llama 3 405B as a row of matrix multiplications, with their sizes. In comes the vector of one token, 16,384 numbers. Attention: query, a 16,384 × 16,384 matrix; key and value, two of 16,384 × 1,024; comparing queries with keys and mixing values, two more multiplications; output, 16,384 × 16,384. Feed-forward network: two 16,384 × 53,248 matrices and one of 53,248 × 16,384. Out comes another vector of 16,384 numbers. Below: about 3.2 billion parameters per layer, times 126 layers, plus the 128,000-token vocabulary, about 405 billion.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.f { stroke: #4edea3; fill: rgba(78,222,163,0.45); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .ar { stroke: #86948a; stroke-width: 1.2; fill: none; marker-end: url(#ah); }
+</style>
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7"
+  orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="#86948a"/></marker></defs>
+<rect class="bx m" x="451.2" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="467.2" y="14.0">multiplication between tokens, no parameters</text>
+<rect class="bx w" x="320.0" y="5.0" width="11.0" height="11.0" rx="2"/>
+<text class="sb" x="336.0" y="14.0">parameter matrix</text>
+<rect class="bx b" x="16.0" y="76.0" width="14.0" height="100.0" rx="2"/>
+<text class="sb" x="23.0" y="192.0" style="text-anchor:middle">token</text>
+<text class="tx" x="23.0" y="206.0" style="text-anchor:middle">16,384</text>
+<rect class="bx g" x="46.0" y="36.0" width="382.0" height="176.0" rx="4"/>
+<text class="lb" x="56.0" y="52.0">Attention</text>
+<rect class="bx w" x="58.0" y="76.0" width="54.0" height="70.0" rx="2"/>
+<text class="tx" x="85.0" y="162.0" style="text-anchor:middle">query</text>
+<text class="tx" x="85.0" y="176.0" style="text-anchor:middle">16,384</text>
+<rect class="bx w" x="134.0" y="76.0" width="14.0" height="70.0" rx="2"/>
+<text class="tx" x="141.0" y="162.0" style="text-anchor:middle">key</text>
+<text class="tx" x="141.0" y="176.0" style="text-anchor:middle">1,024</text>
+<rect class="bx w" x="174.0" y="76.0" width="14.0" height="70.0" rx="2"/>
+<text class="tx" x="181.0" y="162.0" style="text-anchor:middle">value</text>
+<text class="tx" x="181.0" y="176.0" style="text-anchor:middle">1,024</text>
+<rect class="bx m" x="214.0" y="88.0" width="46.0" height="46.0" rx="2"/>
+<text class="lb" x="237.0" y="115.0" style="text-anchor:middle">×</text>
+<text class="tx" x="237.0" y="162.0" style="text-anchor:middle">compare</text>
+<rect class="bx m" x="276.0" y="88.0" width="46.0" height="46.0" rx="2"/>
+<text class="lb" x="299.0" y="115.0" style="text-anchor:middle">×</text>
+<text class="tx" x="299.0" y="162.0" style="text-anchor:middle">mix</text>
+<rect class="bx w" x="338.0" y="76.0" width="54.0" height="70.0" rx="2"/>
+<text class="tx" x="365.0" y="162.0" style="text-anchor:middle">output</text>
+<text class="tx" x="365.0" y="176.0" style="text-anchor:middle">16,384</text>
+<text class="sb" x="237.0" y="202.0" style="text-anchor:middle">the parameter matrices have 16,384 rows; below, their columns</text>
+<rect class="bx g" x="442.0" y="36.0" width="252.0" height="176.0" rx="4"/>
+<text class="lb" x="452.0" y="52.0">Feed-forward network</text>
+<rect class="bx w" x="454.0" y="76.0" width="120.0" height="54.0" rx="2"/>
+<text class="tx" x="514.0" y="108.0" style="text-anchor:middle">widen ×2</text>
+<text class="tx" x="514.0" y="148.0" style="text-anchor:middle">16,384 × 53,248</text>
+<rect class="bx w" x="590.0" y="70.0" width="54.0" height="120.0" rx="2"/>
+<text class="tx" x="617.0" y="134.0" style="text-anchor:middle">narrow</text>
+<text class="tx" x="617.0" y="206.0" style="text-anchor:middle">53,248 × 16,384</text>
+<text class="sb" x="514.0" y="176.0" style="text-anchor:middle">(SwiGLU)</text>
+<rect class="bx b" x="708.0" y="76.0" width="14.0" height="100.0" rx="2"/>
+<text class="sb" x="715.0" y="192.0" style="text-anchor:middle">token</text>
+<text class="tx" x="715.0" y="206.0" style="text-anchor:middle">16,384</text>
+<text class="tx" x="380.0" y="238.0" style="text-anchor:middle">≈ 3.2 billion parameters per layer × 126 layers + vocabulary (128,000 tokens) ≈ 405 billion</text>
+</svg>

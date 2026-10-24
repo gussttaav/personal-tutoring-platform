@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 210" width="760" height="210" role="img"
+ aria-label="Cuatro etapas de izquierda a derecha. Uno, vértices: tres puntos con coordenadas x, y, z. Dos, colocar: cada vértice se multiplica por la misma matriz de 4×4, 16 multiplicaciones y 12 sumas por vértice. Tres, rasterizar: el triángulo, ya en la pantalla, sobre una cuadrícula de píxeles, con los que cubre marcados. Cuatro, pintar: cada píxel cubierto recibe su color con un producto escalar entre la normal y la dirección de la luz. Debajo, una nota: la misma operación para millones de vértices y de píxeles, ninguno espera a otro.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.f { stroke: #4edea3; fill: rgba(78,222,163,0.45); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .ar { stroke: #86948a; stroke-width: 1.2; fill: none; marker-end: url(#ah); }
+</style>
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7"
+  orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="#86948a"/></marker></defs>
+<text class="lb" x="16.0" y="22.0">1. Vértices</text>
+<text class="sb" x="16.0" y="38.0">x, y, z de cada uno</text>
+<rect class="bx g" x="16.0" y="52.0" width="172.0" height="112.0" rx="4"/>
+<text class="lb" x="206.0" y="22.0">2. Colocar</text>
+<text class="sb" x="206.0" y="38.0">la misma matriz de 4×4</text>
+<rect class="bx g" x="206.0" y="52.0" width="172.0" height="112.0" rx="4"/>
+<text class="lb" x="396.0" y="22.0">3. Rasterizar</text>
+<text class="sb" x="396.0" y="38.0">qué píxeles cubre</text>
+<rect class="bx g" x="396.0" y="52.0" width="172.0" height="112.0" rx="4"/>
+<text class="lb" x="586.0" y="22.0">4. Pintar</text>
+<text class="sb" x="586.0" y="38.0">el color de cada píxel</text>
+<rect class="bx g" x="586.0" y="52.0" width="172.0" height="112.0" rx="4"/>
+<path class="ar" d="M190.0,108.0 L203.0,108.0"/>
+<path class="ar" d="M380.0,108.0 L393.0,108.0"/>
+<path class="ar" d="M570.0,108.0 L583.0,108.0"/>
+<polygon points="56.0,140.0 148.0,126.0 94.0,74.0" fill="none" stroke="#3b3b3e" stroke-dasharray="3 3"/>
+<circle cx="56.0" cy="140.0" r="4" fill="#6fb1e8"/>
+<text class="mo" x="56.0" y="156.0" style="text-anchor:middle">(x₁, y₁, z₁)</text>
+<circle cx="148.0" cy="126.0" r="4" fill="#6fb1e8"/>
+<text class="mo" x="148.0" y="142.0" style="text-anchor:middle">(x₂, y₂, z₂)</text>
+<circle cx="94.0" cy="74.0" r="4" fill="#6fb1e8"/>
+<text class="mo" x="94.0" y="66.0" style="text-anchor:middle">(x₃, y₃, z₃)</text>
+<rect class="bx w" x="224.0" y="70.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="239.0" y="70.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="254.0" y="70.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="269.0" y="70.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="224.0" y="85.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="239.0" y="85.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="254.0" y="85.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="269.0" y="85.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="224.0" y="100.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="239.0" y="100.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="254.0" y="100.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="269.0" y="100.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="224.0" y="115.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="239.0" y="115.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="254.0" y="115.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx w" x="269.0" y="115.0" width="13.0" height="13.0" rx="1"/>
+<rect class="bx b" x="298.0" y="70.0" width="13.0" height="13.0" rx="1"/>
+<text class="mo" x="304.5" y="80.5" style="text-anchor:middle">x</text>
+<rect class="bx b" x="298.0" y="85.0" width="13.0" height="13.0" rx="1"/>
+<text class="mo" x="304.5" y="95.5" style="text-anchor:middle">y</text>
+<rect class="bx b" x="298.0" y="100.0" width="13.0" height="13.0" rx="1"/>
+<text class="mo" x="304.5" y="110.5" style="text-anchor:middle">z</text>
+<rect class="bx b" x="298.0" y="115.0" width="13.0" height="13.0" rx="1"/>
+<text class="mo" x="304.5" y="125.5" style="text-anchor:middle">1</text>
+<text class="tx" x="289.0" y="103.0" style="text-anchor:middle">×</text>
+<text class="tx" x="323.0" y="103.0" style="text-anchor:middle">=</text>
+<rect class="bx b" x="335.0" y="70.0" width="19.0" height="13.0" rx="1"/>
+<text class="mo" x="344.5" y="80.5" style="text-anchor:middle">x'</text>
+<rect class="bx b" x="335.0" y="85.0" width="19.0" height="13.0" rx="1"/>
+<text class="mo" x="344.5" y="95.5" style="text-anchor:middle">y'</text>
+<rect class="bx b" x="335.0" y="100.0" width="19.0" height="13.0" rx="1"/>
+<text class="mo" x="344.5" y="110.5" style="text-anchor:middle">z'</text>
+<rect class="bx b" x="335.0" y="115.0" width="19.0" height="13.0" rx="1"/>
+<text class="mo" x="344.5" y="125.5" style="text-anchor:middle">w'</text>
+<text class="sb" x="292.0" y="144.0" style="text-anchor:middle">16 multiplicaciones</text>
+<text class="sb" x="292.0" y="158.0" style="text-anchor:middle">y 12 sumas por vértice</text>
+<rect class="bx s" x="418.0" y="62.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="431.0" y="62.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="444.0" y="62.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="457.0" y="62.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="470.0" y="62.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="483.0" y="62.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="496.0" y="62.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="418.0" y="75.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="431.0" y="75.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="444.0" y="75.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="457.0" y="75.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="470.0" y="75.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="483.0" y="75.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="496.0" y="75.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="418.0" y="88.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="431.0" y="88.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="444.0" y="88.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="457.0" y="88.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="470.0" y="88.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="483.0" y="88.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="496.0" y="88.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="418.0" y="101.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="431.0" y="101.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="444.0" y="101.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="457.0" y="101.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="470.0" y="101.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="483.0" y="101.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="496.0" y="101.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="418.0" y="114.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="431.0" y="114.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="444.0" y="114.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="457.0" y="114.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="470.0" y="114.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="483.0" y="114.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="496.0" y="114.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="418.0" y="127.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="431.0" y="127.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="444.0" y="127.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="457.0" y="127.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx m" x="470.0" y="127.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="483.0" y="127.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="496.0" y="127.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="418.0" y="140.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="431.0" y="140.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="444.0" y="140.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="457.0" y="140.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="470.0" y="140.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="483.0" y="140.0" width="12.0" height="12.0" rx="1"/>
+<rect class="bx s" x="496.0" y="140.0" width="12.0" height="12.0" rx="1"/>
+<polygon points="425.8,145.2 503.8,129.6 457.0,68.5" fill="none" stroke="#6fb1e8" stroke-width="1.4"/>
+<path d="M612.0,122.0 L732.0,122.0" stroke="#4edea3" stroke-width="3"/>
+<path class="ar" d="M672.0,122.0 L672.0,70.0"/>
+<text class="mo" x="678.0" y="78.0">n</text>
+<circle cx="730.0" cy="60.0" r="7" fill="#e8a24c"/>
+<path class="ar" d="M722.0,66.0 L678.0,116.0"/>
+<text class="sb" x="740.0" y="70.0">luz</text>
+<text class="sb" x="672.0" y="144.0" style="text-anchor:middle">normal · luz:</text>
+<text class="sb" x="672.0" y="158.0" style="text-anchor:middle">un producto escalar</text>
+<text class="tx" x="380.0" y="196.0" style="text-anchor:middle">La misma operación para millones de vértices y de píxeles: ninguno espera a otro.</text>
+</svg>

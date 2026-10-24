@@ -1,9 +1,12 @@
 /**
- * GET /api/admin/students — list students with credit and session summaries.
+ * GET /api/admin/students — list users with their classes, courses and subscriptions.
  *
  * ADMIN-01: Thin adapter — auth + admin check, then delegate to the service.
  * REFACTOR-R4-P3-02: delegates to adminService; accepts the page's ?q=, ?filter=, ?page=
- * and answers one page of 50 plus both tab counts.
+ * and answers one page of 50 plus the tab counts.
+ * ADMIN-USERS-01: every user but the admin, not just students; ?filter= is the users tab
+ * and the body is `{ users, counts, filter, page, pageSize }` (was `students`, `total`,
+ * `lowCreditTotal`).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -27,14 +30,14 @@ export async function GET(req: NextRequest) {
   const { q, filter, page } = AdminStudentsQuerySchema.parse(
     Object.fromEntries(req.nextUrl.searchParams),
   );
-  const { rows, total, lowCreditTotal } = await adminService.listStudents({
-    query:     q,
-    lowCredit: filter === "low-credit",
+  const { rows, counts } = await adminService.listUsers({
+    query:    q,
+    segment:  filter,
     page,
-    pageSize:  STUDENTS_PAGE_SIZE,
+    pageSize: STUDENTS_PAGE_SIZE,
   });
 
-  log("info", "Admin listed students", {
+  log("info", "Admin listed users", {
     service: "admin",
     email: session.user.email,
     count: rows.length,
@@ -42,5 +45,5 @@ export async function GET(req: NextRequest) {
     page,
   });
 
-  return NextResponse.json({ students: rows, total, lowCreditTotal, page, pageSize: STUDENTS_PAGE_SIZE });
+  return NextResponse.json({ users: rows, counts, filter, page, pageSize: STUDENTS_PAGE_SIZE });
 }

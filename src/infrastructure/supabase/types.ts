@@ -897,6 +897,38 @@ export type Database = {
         Args: { p_duration_minutes: number; p_start_iso: string }
         Returns: boolean
       }
+      admin_course_lesson_stats: {
+        Args: { p_course_slug: string }
+        Returns: {
+          completed_count: number
+          lesson_slug: string
+          started_count: number
+        }[]
+      }
+      admin_list_course_users: {
+        Args: {
+          p_active_since?: string
+          p_course_slug: string
+          p_lessons?: string[]
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+        }
+        Returns: {
+          active_count: number
+          avg_completed: number
+          completed_lessons: number
+          email: string
+          enrolled_at: string
+          finished_count: number
+          inactive_count: number
+          last_activity_at: string
+          last_lesson_slug: string
+          name: string
+          status: string
+          total_count: number
+        }[]
+      }
       admin_list_students: {
         Args: {
           p_limit?: number
@@ -912,6 +944,32 @@ export type Database = {
           next_session: string
           total_count: number
           total_credits: number
+        }[]
+      }
+      admin_list_users: {
+        Args: {
+          p_course_lessons?: Json
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_segment?: string
+        }
+        Returns: {
+          booked_count: number
+          bookings_count: number
+          courses: Json
+          courses_count: number
+          created_at: string
+          credits_count: number
+          earliest_expiry: string
+          email: string
+          name: string
+          next_session: string
+          subscribed_count: number
+          subscriptions: Json
+          total_count: number
+          unbooked_credits: number
+          upcoming_count: number
         }[]
       }
       cancel_booking: { Args: { p_cancel_token: string }; Returns: Json }

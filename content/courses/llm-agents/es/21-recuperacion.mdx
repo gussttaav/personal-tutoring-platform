@@ -1,0 +1,448 @@
+---
+slug: recuperacion
+title: "Embeddings y recuperación: darle al modelo lo que no sabe"
+block: 3
+order: 4
+minutes: 33
+summary: "Lo que el modelo no sabe se le puede dar a leer: un recuperador busca en un corpus los pasajes más cercanos a la pregunta y el harness los escribe en el prompt. La lección define esa cercanía con el coseno de dos vectores y mide dos maneras de hacerlos sobre Marianela: TF-IDF encuentra el pasaje cuando comparte palabras con la pregunta, y la media de los vectores del mini-GPT no lo encuentra nunca, por una razón que sale de la máscara causal y que delata el signo ¿."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-dos-sitios
+    type: numeric
+    prompt: 'Un recuperador trae el pasaje que responde en el 80 % de las preguntas que recibe el harness. Con el pasaje en el prompt, el modelo acierta el 90 % de las veces; sin él, el 30 %, con lo que sabe. ¿Qué proporción de las preguntas acierta el harness? Dos decimales.'
+    answer: 0.78
+    tolerance: 0.005
+    explanation: '$0.8 \cdot 0.9 + 0.2 \cdot 0.3 = 0.72 + 0.06 = 0.78$. Fíjate en lo que mueve cada palanca. Un modelo que leyera sin fallar subiría el total a $0.8 + 0.06 = 0.86$; un recuperador que trajera siempre el pasaje, a $0.9$. Con este reparto rinde más mejorar el recuperador que el modelo, y la proporción de recuperadas la mides sin llamar al modelo.'
+    hint: 'Separa las preguntas cuyo pasaje llega al prompt de las demás.'
+  - id: q-el-signo
+    type: single
+    prompt: 'Sin el <W>¿</W> del principio, casi ninguno de los vecinos que el mini-GPT trae para las doce preguntas es una pregunta; sin el <W>?</W> del final, casi todos lo siguen siendo. ¿Por qué?'
+    options:
+      - { id: a, text: 'Porque el <W>¿</W> entra en todos los sumandos de la media y el <W>?</W> sólo en el último: cada posición ha leído lo que tiene detrás, nunca lo que tiene delante.' }
+      - { id: b, text: 'Porque el tokenizador del mini-GPT no tiene una entrada para el <W>?</W>.' }
+      - { id: c, text: 'Porque en la novela hay más <W>¿</W> que <W>?</W>.' }
+      - { id: d, text: 'Porque el coseno pesa más las primeras coordenadas del vector.' }
+    answer: a
+    explanation: 'La (a). Con la máscara causal, el vector de la posición $t$ ha leído $x_1, \dots, x_t$, así que el token $x_j$ entra en $T - j + 1$ de los $T$ sumandos: el primero en todos, el último en uno. Un modelo bidireccional no tiene esa asimetría. La (b) es falsa: los 256 bytes son entradas del vocabulario, y el <W>?</W> es uno de ellos. La (c) no explica nada, porque cada <W>¿</W> de la novela cierra con su <W>?</W>. Y la (d) confunde coordenadas con posiciones: el coseno trata igual las 64 coordenadas, y ninguna corresponde a un token.'
+    hint: '¿Qué posiciones de la frase han leído el primer token, y cuáles el último?'
+  - id: q-fallos-tfidf
+    type: multi
+    prompt: 'TF-IDF no trae entre los tres primeros el pasaje que responde a tres de las doce preguntas de la celda. ¿Qué lo explica en esos casos?'
+    options:
+      - { id: a, text: 'La pregunta dice con una palabra lo que el pasaje dice con otra, como <W>edad</W> y <W>años</W>.' }
+      - { id: b, text: 'El pasaje sólo responde leído junto con la pregunta que lo precede en la novela, como <W>Con el señor Centeno, capataz de ganado en las minas.</W>' }
+      - { id: c, text: 'La pregunta empieza por <W>¿</W>.' }
+      - { id: d, text: 'El pasaje es una frase de un diálogo.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). En TF-IDF cada palabra es una coordenada, y dos palabras distintas no se parecen nada, como en la codificación one-hot de la que sale: <W>edad</W> no acerca a <W>años</W>. La (b) es un límite de partir el corpus en frases: el pasaje dice con quién vive alguien, pero quién lo decía la pregunta de Golfín que va delante. La (c) y la (d) delatan al mini-GPT, no a TF-IDF: `palabras` se queda sólo con letras y cifras, así que ni los signos de interrogación ni los de diálogo llegan a su vector.'
+    hint: 'Mira qué guarda `palabras` de un texto, y qué deja fuera.'
+  - id: q-edicion-nueva
+    type: single
+    prompt: 'Una edición nueva de la novela cambia una frase: ahora la Nela dice que tiene diecisiete años. ¿Qué hace falta para que el harness responda <W>diecisiete</W> cuando le pregunten cuántos años tiene?'
+    options:
+      - { id: a, text: 'Cambiar la frase en el corpus y recalcular los vectores de TF-IDF; el modelo, ni tocarlo.' }
+      - { id: b, text: 'Volver a entrenar el modelo con la edición nueva.' }
+      - { id: c, text: 'Un ajuste supervisado con la pregunta y su respuesta nueva.' }
+      - { id: d, text: 'Subir $k$, para que entren más pasajes.' }
+    answer: a
+    explanation: 'La (a). Lo recuperado vive fuera de los pesos: cambias el corpus, y el modelo lo lee en la llamada siguiente. Con TF-IDF hay que recalcular todos los vectores, no sólo el de esa frase, porque cada palabra pesa según en cuántos pasajes sale. La (b) y la (c) cambian lo que el modelo sabe, que es justo lo que recuperar evita tocar: un entrenamiento por cada edición. La (d) no cambia nada de lo que dice el pasaje. Y fíjate en lo que la (a) no arregla: si el pasaje no llega al prompt, el modelo responde con lo que sabe, y si se entrenó con la edición vieja, lo que sabe dice dieciséis.'
+    hint: '¿Dónde vive cada cosa: en $\theta$ o en el corpus?'
+challenges:
+  - id: ch-recuperar
+    prompt: |
+      El recuperador de la lección devuelve siempre $k$ pasajes, aunque ninguno se parezca a la pregunta. Implementa `recuperar(q, D, k, minimo=0.0)`, que devuelve los índices de, como mucho, `k` filas de `D` (una por pasaje), de mayor a menor coseno con `q`, y sólo las de coseno estrictamente mayor que `minimo`. A igual coseno va antes el índice menor. Una fila nula no tiene dirección: cuenta como coseno 0, sin dividir por cero. Si ninguna pasa, la lista vacía.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+      def recuperar(q, D, k, minimo=0.0):
+          """Los índices de, como mucho, k filas de D con coseno mayor que minimo, de mayor a menor."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "ordena por el coseno, no por el producto escalar"
+        code: |
+          import numpy as np
+          D = np.array([[10.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+          r = [int(i) for i in recuperar(np.array([1.0, 1.0]), D, 3, -1.0)]
+          assert r[0] == 1, 'el pasaje 1 apunta igual que la pregunta (coseno 1) y el 0 no; el 0 sólo gana si comparas productos escalares, que premian al vector más largo. Sale %s' % r
+      - name: "a igual coseno, el índice menor primero"
+        code: |
+          import numpy as np
+          D = np.array([[10.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+          r = [int(i) for i in recuperar(np.array([1.0, 1.0]), D, 3, -1.0)]
+          assert r == [1, 0, 2], 'los pasajes 0 y 2 empatan a coseno 0.707: va primero el 0. Sale %s' % r
+          D = np.array([[1.0, 1.0], [1.0, 0.0]] * 10)
+          r = [int(i) for i in recuperar(np.array([1.0, 0.0]), D, 10)]
+          assert r == list(range(1, 20, 2)), 'los diez impares son el mismo vector y empatan a coseno 1: van por índice, 1, 3, 5... Sale %s; np.argsort sólo garantiza el orden de los empates con kind="stable"' % r
+      - name: "como mucho k"
+        code: |
+          import numpy as np
+          r = [int(i) for i in recuperar(np.array([1.0, 0.0, 0.0, 0.0]), np.eye(4) + 0.1, 2)]
+          assert len(r) == 2 and r[0] == 0, 'con k = 2 devuelve dos pasajes, el 0 el primero; sale %s' % r
+      - name: "sólo los de coseno mayor que minimo"
+        code: |
+          import numpy as np
+          D = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+          r = [int(i) for i in recuperar(np.array([1.0, 0.0]), D, 3)]
+          assert r == [0, 2], 'el pasaje 1 no tiene nada en común con la pregunta (coseno 0) y minimo es 0: se queda fuera. Sale %s' % r
+          r = [int(i) for i in recuperar(np.array([1.0, 0.0]), D, 3, 0.8)]
+          assert r == [0], 'con minimo = 0.8 sólo pasa el pasaje 0; el 2 tiene coseno 0.707. Sale %s' % r
+      - name: "si ninguno pasa, la lista vacía"
+        code: |
+          import numpy as np
+          r = list(recuperar(np.array([1.0, 0.0]), np.array([[-1.0, 0.0], [0.0, 1.0]]), 2))
+          assert r == [], 'ningún pasaje tiene coseno mayor que 0: el recuperador no trae nada. Sale %s' % r
+      - name: "una fila nula cuenta como coseno 0"
+        code: |
+          import numpy as np
+          D = np.array([[0.0, 0.0], [1.0, 0.0], [-1.0, 0.0]])
+          with np.errstate(all="ignore"):
+              r = [int(i) for i in recuperar(np.array([1.0, 0.0]), D, 3, -0.5)]
+          assert r == [1, 0], 'la fila 0 es nula: su coseno es 0, que pasa un minimo de -0.5, y va detrás de la 1. Si divides por su norma sale nan, y el nan no pasa ningún minimo. Sale %s' % r
+    solution: |
+      import numpy as np
+
+      def recuperar(q, D, k, minimo=0.0):
+          """Los índices de, como mucho, k filas de D con coseno mayor que minimo, de mayor a menor."""
+          normas = np.linalg.norm(D, axis=1) * np.linalg.norm(q)
+          cos = np.divide(D @ q, normas, out=np.zeros(len(D)), where=normas > 0)   # nula: coseno 0
+          orden = np.argsort(-cos, kind="stable")                  # empates: el índice menor antes
+          return [int(i) for i in orden[:k] if cos[i] > minimo]
+    explanation: 'Es la `recuperar` de la primera celda con dos cuidados más. `np.divide` con `where` deja a 0 el coseno de una fila nula, la que TF-IDF le daría a un pasaje sin ninguna palabra del vocabulario, en lugar del `nan` de dividir por cero; sumar `1e-12` al denominador, como la celda, también vale. `kind="stable"` es lo que garantiza que dos pasajes empatados salgan por índice. Y filtrar después de cortar es correcto, porque el orden ya va de mayor a menor. Qué `minimo` poner depende del vector: con TF-IDF, 0 quiere decir «ni una palabra rara en común»; con la media del mini-GPT, que acerca cualquier par de preguntas, no hay umbral que separe lo que responde de lo que no.'
+reading:
+  - kind: paper
+    title: 'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks'
+    authors: 'Lewis, Perez, Piktus, Petroni, Karpukhin, Goyal, Küttler, Lewis, Yih, Rocktäschel, Riedel y Kiela'
+    year: '2020'
+    venue: 'NeurIPS 2020 · arXiv:2005.11401'
+    lang: en
+    url: 'https://arxiv.org/abs/2005.11401'
+    note: 'El artículo que da nombre a RAG. Llama memoria paramétrica a lo que el modelo sabe y no paramétrica a lo que lee, y compara un modelo con las dos frente a uno que sólo tiene la primera.'
+  - kind: paper
+    title: 'Dense Passage Retrieval for Open-Domain Question Answering'
+    authors: 'Karpukhin, Oğuz, Min, Lewis, Wu, Edunov, Chen y Yih'
+    year: '2020'
+    venue: 'EMNLP 2020 · arXiv:2004.04906'
+    lang: en
+    url: 'https://arxiv.org/abs/2004.04906'
+    note: 'El recuperador entrenado de la lección: pares de pregunta y pasaje, los demás pasajes del batch como los equivocados y el producto escalar como puntuación. Trae el pasaje entre los veinte primeros de 9 a 19 puntos más a menudo que BM25.'
+  - kind: paper
+    title: 'Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks'
+    authors: 'Reimers y Gurevych'
+    year: '2019'
+    venue: 'EMNLP 2019 · arXiv:1908.10084'
+    lang: en
+    url: 'https://arxiv.org/abs/1908.10084'
+    note: 'Su introducción encuentra en BERT lo que la celda encuentra en el mini-GPT: la media de los vectores de la última capa da malos embeddings de frase, a menudo peores que promediar los de GloVe. El remedio es entrenarlos para comparar.'
+  - kind: paper
+    title: 'SGPT: GPT Sentence Embeddings for Semantic Search'
+    authors: 'Muennighoff'
+    year: '2022'
+    venue: 'arXiv:2202.08904'
+    lang: en
+    url: 'https://arxiv.org/abs/2202.08904'
+    note: 'Saca embeddings de modelos causales partiendo de la cuenta de la lección: sólo la última posición ha leído todo el texto. Pondera cada posición por su índice antes de la media y entrena con la pérdida contrastiva con coseno.'
+---
+
+{/* COURSE-C2-P1-03 — Bloque 3, lección 4. Las celdas corren sobre el mini-GPT (su tokenizador y los
+    vectores de su última capa) y sobre TF-IDF; ninguna le pide a un modelo que responda. */}
+
+Tres lecciones han cambiado cómo responde un modelo de pesos fijos sin tocar lo que sabe.
+<Leccion slug="el-prompt-es-una-especificacion">La especificación</Leccion> le quitó las lecturas que
+no querías, <Leccion slug="cadena-de-pensamiento">la cadena de pensamiento</Leccion> le dio pasadas
+para decidir y <Leccion slug="salida-estructurada">la generación restringida</Leccion> le impuso la
+forma. Lo que sabe es lo que el entrenamiento dejó en $\theta$, y eso tiene fecha y límites: el
+contrato que firmaste ayer, o el manual interno de tu empresa, no estaban en ningún texto que
+leyera. Pero hay una puerta por la que entra texto nuevo en cada llamada: el prompt. Un modelo que
+sabe leer puede contestar con lo que lee ahí.
+
+Construir alrededor de esa puerta se llama generación aumentada por recuperación
+(*retrieval-augmented generation*, RAG), y lo difícil no es escribir en el prompt, sino elegir qué.
+Un corpus de verdad tiene miles de pasajes, la ventana de contexto admite unos pocos, y darle cada
+uno al modelo para que juzgue si sirve costaría una llamada por pasaje. El harness tiene que decidir
+sin el modelo, con algo barato, qué pasaje responde a qué pregunta. El curso anterior dejó un
+instrumento para eso, un vector por texto y el coseno entre dos; falta saber de dónde sale el vector.
+
+Sigue al harness paso a paso. Antes de que llegue ninguna pregunta, parte el corpus en pasajes,
+calcula el vector de cada uno y lo guarda. Cuando llega una, calcula el suyo, lo compara con todos
+los guardados y se queda con los pocos más cercanos, que van al prompt. Del resto del corpus, el
+modelo no sabe nada.
+
+Lo delicado es qué quiere decir «cercano». Toma la pregunta <W>¿Qué edad tiene la Nela?</W> y dos
+frases seguidas del tercer capítulo de *Marianela*. En la primera, Golfín le pregunta a la Nela qué
+edad tiene; en la segunda, ella contesta: <W>Dicen que tengo diez y seis años</W>. La primera se
+parece mucho más a tu pregunta, porque es la misma pregunta. La que la responde es la segunda, y de
+tu pregunta sólo repite el nombre. Parecerse y responder son cosas distintas, y un vector sólo mide
+lo primero.
+
+<Callout type="intuition" title="La idea en una frase">
+Recuperar es quedarse con los $k$ pasajes cuyo vector forma el ángulo más pequeño con el de la
+pregunta y escribirlos en el prompt. El coseno mide parecido; que «cerca» signifique «responde» lo
+decide de dónde sale el vector.
+</Callout>
+
+## Recuperar es quedarse con los pasajes más cercanos
+
+Partamos el corpus en **pasajes**, trozos que el harness copia enteros en el prompt (en las celdas,
+una frase de la novela cada uno), y supongamos una función que le da un vector a cualquier texto. A
+ese vector lo llamaremos el ***embedding*** del texto: el del curso anterior era una fila de la
+tabla, uno por entrada del vocabulario, y éste es uno por texto entero. Sea $\mathbf{d}_i$ el del
+pasaje $i$ y $\mathbf{q}$ el de la pregunta. Esta $\mathbf{q}$ no es la consulta de una cabeza de
+atención ni la distribución del muestreo, que no salen en esta lección.
+
+Compararemos dos vectores con la similitud coseno de <Leccion curso="dl-nlp"
+slug="bolsa-de-palabras">la lección sobre TF-IDF del curso anterior</Leccion>,
+
+$$
+\cos(\mathbf{q}, \mathbf{d}_i) = \frac{\mathbf{q}^{\top}\mathbf{d}_i}{\lVert \mathbf{q} \rVert \, \lVert \mathbf{d}_i \rVert},
+$$
+
+que no cambia al multiplicar un vector por un número positivo: compara direcciones, no longitudes.
+La **recuperación** de $k$ pasajes los ordena por $\cos(\mathbf{q}, \mathbf{d}_i)$, de mayor a menor,
+y se queda con los $k$ primeros. Es el corte de top-k de <Leccion slug="muestreo">la lección sobre
+el muestreo</Leccion> sobre otra lista, pasajes por coseno en lugar de entradas por probabilidad, y
+por eso la letra es la misma.
+
+Como pieza del harness, el **recuperador** promete poco. Calcula los
+$\mathbf{d}_i$ una vez por corpus, y una pregunta le cuesta un vector y un producto escalar por
+pasaje, sin llamar al modelo. Devuelve $k$ pasajes, ordenados. Y devuelve $k$ aunque
+ninguno responda: el corte no tiene forma de decir que no hay nada, y lo que traiga irá al prompt
+igual. El desafío del final le da esa forma.
+
+### Qué significa «cerca» depende de quién hizo el vector
+
+Sin entrenar nada, hay dos sitios de donde sacar los vectores. El primero es TF-IDF (*term
+frequency–inverse document frequency*), de la misma lección que el coseno: una coordenada por
+palabra del corpus, que vale cuántas veces sale la palabra en el texto por el logaritmo de lo rara
+que es entre los pasajes. Dos textos quedan cerca cuando comparten palabras raras, y sólo entonces:
+<W>edad</W> y <W>años</W> son dos coordenadas distintas, tan lejos una de otra como dos palabras
+cualesquiera, igual que en <Leccion curso="dl-nlp" slug="one-hot">la codificación one-hot</Leccion>
+de la que sale.
+
+El segundo es el propio mini-GPT. En cada posición, su última capa deja un vector de 64 números, el
+$\mathbf{h}$ que la tabla multiplica para dar los logits; nombrado por lo que leyó,
+$\mathbf{h}(x_{\le t})$ es el de la posición que ha leído los $t$ primeros tokens de un texto
+$x_{1:T}$. Es la representación contextual de <Leccion curso="dl-nlp" slug="bert-y-gpt">la lección
+sobre BERT y GPT</Leccion>, en un modelo causal. Su media sobre las $T$ posiciones,
+
+$$
+\mathbf{d} = \frac{1}{T}\sum_{t=1}^{T} \mathbf{h}(x_{\le t}),
+$$
+
+es un *embedding* que sale gratis de un modelo ya entrenado, la misma lectura de un texto entero que
+hacía <Leccion slug="modelo-de-recompensa">el modelo de recompensa</Leccion> con una respuesta.
+
+### La media de un modelo causal oye más el principio que el final
+
+Esa media hereda una asimetría de la máscara causal. El vector $\mathbf{h}(x_{\le t})$ depende de
+$x_1, \dots, x_t$ y de nada más, así que el token $x_j$ entra en los sumandos con $t \ge j$, que son
+$T - j + 1$ de los $T$. El primer token entra en todos; el último, en uno. En español eso tiene una
+consecuencia que la segunda celda mide, porque una pregunta empieza por un signo: en una de doce
+tokens, la media oye el <W>¿</W> doce veces y el <W>?</W> una.
+
+Un modelo bidireccional no tiene esa asimetría: con la tercera firma de aquella lección, el vector de
+cada posición ha leído la frase entera, y cada token entra en todos los sumandos. Por eso los
+primeros recuperadores entrenados eran *encoders* bidireccionales como BERT (*Bidirectional Encoder
+Representations from Transformers*), y quien saca *embeddings* de un modelo causal pondera más las
+últimas posiciones, las únicas que han leído el texto entero.
+
+### Un vector entrenado para que cerca sea responder
+
+Nadie entrenó ninguno de los dos para recuperar. Un recuperador entrenado aprende sus vectores de
+pares de pregunta y pasaje que la responde, para acercar cada par. Con un batch de $B$ pares, numerando los pasajes de modo que $\mathbf{d}_1$ sea el de la pregunta $\mathbf{q}$, la
+pérdida de esa pregunta es
+
+$$
+-\log \frac{e^{\cos(\mathbf{q}, \mathbf{d}_1)/\tau}}{\sum_{i=1}^{B} e^{\cos(\mathbf{q}, \mathbf{d}_i)/\tau}},
+$$
+
+la entropía cruzada de siempre, con los pasajes del batch como vocabulario, los cosenos como logits y
+$\tau$ como la temperatura del muestreo. Los otros $B - 1$ pasajes, que responden a otras preguntas,
+hacen de pasajes equivocados sin que nadie los escriba. Con esa pérdida, «cerca» significa
+«responde» por construcción, y una pregunta con <W>edad</W> acaba cerca de un pasaje con <W>años</W>
+si el entrenamiento los ha visto emparejados. Karpukhin y sus coautores entrenaron así, con el
+producto escalar en lugar del coseno, un recuperador que trae el pasaje entre los veinte primeros de
+9 a 19 puntos más a menudo que BM25 (*Best Matching 25*), la variante de TF-IDF de los buscadores.
+Ésa es la versión de producción; aquí mides los dos que tienes.
+
+## Lo que el modelo lee y lo que sabe
+
+Con un recuperador delante, una respuesta sale de uno de dos sitios. Si el pasaje que responde está
+entre los $k$, el modelo puede leerlo; si no, le queda lo que sabe, más $k$ pasajes que hablan de
+otra cosa. Llamemos **recuperada** a una pregunta del primer tipo, y
+escribamos $P(\cdot)$ para la proporción, entre las preguntas que recibe el harness, de las que
+cumplen algo, con el sorteo del modelo dentro. La probabilidad total separa los dos casos:
+
+$$
+\begin{aligned}
+P(\text{acierta}) = {} & P(\text{recuperada})\,P(\text{acierta} \mid \text{recuperada}) \\
+& + \bigl(1 - P(\text{recuperada})\bigr)\,P(\text{acierta} \mid \text{no recuperada}).
+\end{aligned}
+$$
+
+Cada factor es de alguien. $P(\text{recuperada})$ es del recuperador, y la mides sin llamar al
+modelo, con preguntas cuyo pasaje conoces: es lo que hace la segunda celda.
+$P(\text{acierta} \mid \text{recuperada})$ es lo bien que lee el modelo, y
+$P(\text{acierta} \mid \text{no recuperada})$, lo que sabe; ahí recuperar no suma, y puede restar si
+el modelo se fía de pasajes que hablan de otra cosa. Lo que la recuperación aporta va multiplicado
+por $P(\text{recuperada})$: un recuperador que no trae el pasaje deja al modelo con lo que sabía, lea
+lo bien que lea.
+
+Lo leído y lo sabido difieren en más cosas. Lo leído lo cambias editando el corpus,
+sin tocar $\theta$, y el harness sabe qué pasajes puso, así que puede citarlos; pero cada pasaje lo
+pagas en tokens en cada llamada, al precio de <Leccion slug="kv-cache">la lección sobre la
+caché</Leccion>. Lo sabido no cuesta nada por llamada, pero cambiarlo es entrenar, y nadie puede
+señalar de qué texto salió. Y un pasaje no es verdad por estar en el prompt: el modelo lee lo que el
+harness le da.
+
+## TF-IDF y el mini-GPT, sobre la novela
+
+Las celdas corren sobre tu mini-GPT del bloque 1, pero no le piden que escriba nada: usan su
+tokenizador y los vectores de su última capa. Responder, con pasaje o sin él, no sabría. Los pasajes son las frases de los tres primeros
+capítulos de *Marianela* que tienen al menos seis palabras y caben en su ventana de 64 tokens. La
+primera celda construye los dos recuperadores y les hace la misma pregunta dos veces, con dos
+palabras distintas.
+
+<PyCell packages={["numpy"]} code={`
+import re, math
+from collections import Counter
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())    # red, F, codificar, quitar_cabecera
+
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+lineas = [l for l in texto.split("\\n") if l.strip()]
+tres = lineas[:lineas.index("La familia de piedra")]      # los tres primeros capítulos
+frases = [f for l in tres for f in re.split(r"(?<=[.?!…])(?<! D\\.)\\s+", l)]
+PASAJES = [f for f in frases if len(f.split()) >= 6 and len(codificar(f, F)) <= 64]
+
+def palabras(t):
+    return re.findall(r"\\w+", t.lower())                 # sin signos: ni ¿ ni ? ni guiones
+
+DF = Counter(w for p in PASAJES for w in set(palabras(p)))   # en cuántos pasajes sale
+COL = {w: i for i, w in enumerate(DF)}                    # una coordenada por palabra
+
+def tfidf(t):
+    v = np.zeros(len(COL))
+    for w, n in Counter(palabras(t)).items():
+        if w in COL:                                      # una palabra nueva no tiene columna
+            v[COL[w]] = n * math.log(len(PASAJES) / DF[w])
+    return v
+
+def media(t):
+    """La media de los vectores de la última capa del mini-GPT, uno por posición."""
+    _, (_, _, _, H) = red.adelante(np.array([codificar(t, F)]))
+    return H[0].mean(axis=0)
+
+def cosenos(q, D):
+    return D @ q / (np.linalg.norm(D, axis=1) * np.linalg.norm(q) + 1e-12)
+
+def recuperar(q, D, k):
+    """Los índices de los k pasajes de mayor coseno con q, de mayor a menor."""
+    return np.argsort(-cosenos(q, D), kind="stable")[:k]
+
+D_tfidf = np.stack([tfidf(p) for p in PASAJES])           # (pasajes, palabras)
+D_media = np.stack([media(p) for p in PASAJES])           # (pasajes, 64)
+print("%d pasajes, %d palabras distintas\\n" % (len(PASAJES), len(COL)))
+for x in ["¿Cuántos años tiene la Nela?", "¿Qué edad tiene la Nela?"]:
+    print(x)
+    for nombre, D, emb in [("TF-IDF", D_tfidf, tfidf), ("mini-GPT", D_media, media)]:
+        for i in recuperar(emb(x), D, 2):
+            print("  %-8s %s" % (nombre, PASAJES[i][:64]))
+`} />
+
+Con <W>años</W>, TF-IDF trae primero el pasaje que responde. Con <W>edad</W>, trae una frase que
+sólo comparte <W>tiene</W> y <W>qué</W> con la pregunta y, detrás, la de Golfín, que se le parece y
+no la responde.
+El mini-GPT trae preguntas las dos veces, y ninguna habla de la edad.
+
+Dos preguntas no son una medida. La segunda celda hace doce, cada una con un trozo del pasaje que la
+responde, y apunta en qué puesto llega ese pasaje con cada recuperador. Después le quita a cada
+pregunta el <W>¿</W> o el <W>?</W>, para ver qué oye el mini-GPT, y mide cuánto ocupan los pasajes.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior.
+ORO = {   # cada pregunta, con un trozo del pasaje que la responde
+    "¿Cómo se llamaba la madre de la Nela?": "la señá María Canela",
+    "¿Quién es Carlos Golfín?": "Yo soy hermano de Carlos Golfín",
+    "¿Cuántos años tiene la Nela?": "diez y seis años",
+    "¿Qué edad tiene la Nela?": "diez y seis años",
+    "¿Dónde vive Francisco Penáguilas?": "hijo único de D. Francisco",
+    "¿Quién es el padre de Pablo?": "hijo único de D. Francisco",
+    "¿Qué mineral se agotó en la Terrible?": "el mineral de calamina",
+    "¿Quién es el lazarillo de Pablo?": "es mi lazarillo",
+    "¿Es Pablo ciego de nacimiento?": "Sí, señor, de nacimiento",
+    "¿A qué estación llegó Teodoro?": "la estación de Villamojada",
+    "¿Con quién vive la Nela?": "Con el señor Centeno",
+    "¿Quién toca el piano?": "la señorita Sofía, que toca",
+}
+def puesto(x, D, emb, trozo):
+    """El puesto, contando desde 1, del primer pasaje que contiene el trozo."""
+    orden = list(recuperar(emb(x), D, len(PASAJES)))
+    return min(orden.index(i) for i, p in enumerate(PASAJES) if trozo in p) + 1
+
+for nombre, D, emb in [("TF-IDF", D_tfidf, tfidf), ("mini-GPT", D_media, media)]:
+    p = [puesto(x, D, emb, trozo) for x, trozo in ORO.items()]
+    print("%-8s puestos %s\\n         primero: %d de 12, entre los 3 primeros: %d de 12"
+          % (nombre, p, sum(n == 1 for n in p), sum(n <= 3 for n in p)))
+
+pregunta = np.array([p.lstrip("—").startswith("¿") for p in PASAJES])
+print("\\nde los %d pasajes, %d son preguntas" % (len(PASAJES), pregunta.sum()))
+for cambio, f in [("tal cual", lambda x: x), ("sin el ¿", lambda x: x[1:]),
+                  ("sin el ?", lambda x: x[:-1])]:
+    n = sum(pregunta[recuperar(media(f(x)), D_media, 10)].sum() for x in ORO)
+    print("mini-GPT, %-8s: %3d de sus 120 vecinos son preguntas" % (cambio, n))
+
+tokens = [len(codificar(p, F)) for p in PASAJES]
+print("\\nun pasaje ocupa de media %.1f tokens; tres, %.0f de los %d de la ventana"
+      % (np.mean(tokens), 3 * np.mean(tokens), red.cfg["T_ctx"]))
+`} />
+
+TF-IDF trae el pasaje el primero en seis de las doce y entre los tres primeros en nueve. Falla en
+tres, por dos motivos: <W>edad</W> frente a <W>años</W>, y dos pasajes que sólo responden leídos con
+la pregunta que los precede en la novela (<W>Con el señor Centeno, capataz de ganado en las
+minas.</W> no dice quién vive con él). El mini-GPT no trae ninguno entre los veinte primeros, y el
+pasaje de la edad lo deja entre los cuatro últimos de 288 para las dos preguntas. Cuánto vale un
+número sacado de doce casos lo trata más adelante <Leccion slug="evaluar">la lección sobre
+evaluar</Leccion>.
+
+Las tres líneas siguientes dicen por qué. Sólo 20 de los 288 pasajes son preguntas, y con las doce
+tal cual, 100 de los 120 vecinos que trae el mini-GPT lo son. Sin el <W>?</W> del final quedan 97;
+sin el <W>¿</W> del principio, 10, más o menos lo que daría el azar. Es la
+cuenta de la máscara causal: el <W>¿</W> entra en todos los sumandos de la media, el <W>?</W> en
+uno. El vector del mini-GPT dice antes que nada que el texto es una pregunta, y el coseno lo oye.
+Nadie lo entrenó para otra cosa: su pérdida le pidió el token siguiente, y para eso saber que está
+dentro de una pregunta sirve mucho. En esta novela, y con lo que cabe en el navegador, el recuperador
+honrado es TF-IDF; el de producción es un modelo entrenado con la pérdida de arriba.
+
+La última línea es el precio. Un pasaje ocupa 32.8 tokens de media, así que tres, 98, no caben en la
+ventana del mini-GPT ni sin la pregunta. Con una ventana de miles de tokens sí caben, pero los pagas
+en cada llamada.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: los dos sitios de los que sale una respuesta, el signo <W>¿</W>, los fallos de
+TF-IDF y una edición nueva de la novela. Después, un recuperador que sabe no traer nada.
+
+<Quiz id="q-dos-sitios" />
+
+<Quiz id="q-el-signo" />
+
+<Quiz id="q-fallos-tfidf" />
+
+<Quiz id="q-edicion-nueva" />
+
+<CodeChallenge id="ch-recuperar" />
+
+---
+
+Recuperar decide qué lee el modelo, y en el mejor caso le trae lo que no sabía. Pero cada pasaje
+que trae ocupa un sitio que también quieren el prompt de sistema, los ejemplos, la conversación y la
+respuesta que queda por escribir, y la ventana no crece porque haga falta. Meter más tampoco sale gratis, porque cada token que entra encarece todos los
+que el modelo escribe detrás.
+
+<Leccion slug="ventana-de-contexto">La lección siguiente, sobre la ventana de contexto</Leccion>, la trata como un presupuesto: cuánto
+cuesta cada token según cuántos tiene delante, qué hacer cuando no cabe todo y si al modelo le da
+igual el sitio que ocupa cada pasaje.

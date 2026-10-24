@@ -4,13 +4,25 @@
 // Real CreditService + PricingService over the in-memory repositories, so the
 // adjustment is checked against an actual balance: a debit stops at it and says so,
 // and a failure that is not "no credits left" propagates instead of being swallowed.
-import { AdminService, STUDENTS_PAGE_SIZE } from "../AdminService";
+//
+// ADMIN-USERS-01 — the users list (every account but the admin's, one tab per
+// relationship) and the course views. The in-memory repository mirrors migration 0027;
+// these tests pin what the service adds on top: the published lessons it sends, the
+// titles and percentages from the catalog, paging, and a user's own course status.
+import {
+  AdminService,
+  COURSE_READERS_PAGE_SIZE,
+  STUDENTS_PAGE_SIZE,
+} from "../AdminService";
 import { CreditService } from "../CreditService";
 import { PricingService } from "../PricingService";
+import { FakeAdminCourseCatalog, type FakeCourseSpec } from "@/__tests__/fixtures/FakeAdminCourseCatalog";
+import { FakeCourseCatalog } from "@/__tests__/fixtures/FakeCourseCatalog";
 import { InMemoryAdminQueryRepository } from "@/__tests__/fixtures/InMemoryAdminQueryRepository";
 import { InMemoryAuditRepository } from "@/__tests__/fixtures/InMemoryAuditRepository";
 import { InMemoryCreditsRepository } from "@/__tests__/fixtures/InMemoryCreditsRepository";
 import { InMemoryPricingRepository } from "@/__tests__/fixtures/InMemoryPricingRepository";
+import { buildTestCourseService } from "@/__tests__/fixtures/services";
 
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 
@@ -20,15 +32,42 @@ const ADMIN  = "admin@example.com";
 
 const inDays = (days: number) => new Date(Date.now() + days * DAY_MS).toISOString();
 
-function setup() {
+/** Two courses: dl-nlp fully written (3 lessons over 2 blocks), llm-agents still being
+ *  written (2 published lessons). */
+const COURSES: FakeCourseSpec[] = [
+  {
+    slug:    "dl-nlp",
+    title:   "Deep Learning para NLP: del Perceptrón al Transformer",
+    blocks:  [{ id: 1, title: "Fundamentos" }, { id: 2, title: "Secuencias" }, { id: 3, title: "Sin publicar" }],
+    lessons: [
+      { slug: "perceptron", block: 1, title: "El perceptrón" },
+      { slug: "mlp",        block: 1, title: "El MLP" },
+      { slug: "rnn",        block: 2, title: "Las RNN" },
+    ],
+  },
+  {
+    slug:     "llm-agents",
+    title:    "Modelos de Lenguaje: del Transformer al Agente",
+    lessons:  [{ slug: "atencion" }, { slug: "gpt" }],
+    complete: false,
+  },
+];
+
+function setup(courses: FakeCourseSpec[] = COURSES) {
   const queries     = new InMemoryAdminQueryRepository();
   const creditsRepo = new InMemoryCreditsRepository();
   const audit       = new InMemoryAuditRepository();
   const pricingRepo = new InMemoryPricingRepository();
   const credits     = new CreditService(creditsRepo, audit);
   const pricing     = new PricingService(pricingRepo, audit);
-  const service     = new AdminService(queries, credits, pricing, audit);
-  return { service, queries, creditsRepo, audit, pricingRepo };
+  // CourseService over the same published lessons the admin catalog declares.
+  const courseSvc   = buildTestCourseService({
+    catalog: new FakeCourseCatalog(Object.fromEntries(courses.map((c) => [c.slug, c.lessons.map((l) => l.slug)]))),
+  });
+  const service     = new AdminService(
+    queries, credits, pricing, audit, courseSvc.service, new FakeAdminCourseCatalog(courses),
+  );
+  return { service, queries, creditsRepo, audit, pricingRepo, courseService: courseSvc.service };
 }
 
 async function seedCredits(creditsRepo: InMemoryCreditsRepository, credits: number) {
@@ -134,78 +173,334 @@ describe("AdminService.adjustCredits", () => {
   });
 });
 
-describe("AdminService.listStudents", () => {
-  function seedStudents(queries: InMemoryAdminQueryRepository) {
-    queries.addUser("reader@example.com", "Solo Lee");           // course reader: no booking, no pack
-    queries.addUser("booker@example.com", "Bea Booker");
-    queries.addBooking("booker@example.com", { startsAt: inDays(3) });
-    queries.addUser("holder@example.com", "Hugo Holder");
-    queries.addPack("holder@example.com", { credits: 4, expiresAt: inDays(60) });
-    queries.addUser("low@example.com", "Lola Low");
-    queries.addPack("low@example.com", { credits: 1, expiresAt: inDays(60) });
-    queries.addPack("low@example.com", { credits: 5, expiresAt: inDays(-1) }); // expired: doesn't count
+describe("AdminService.listUsers", () => {
+  /** One user per relationship, plus the admin's own account. Accounts are created in this
+   *  order, so "newest first" is reader-only first. */
+  function seedUsers(queries: InMemoryAdminQueryRepository) {
+    queries.addUser("admin@example.com", "Gustavo", { role: "admin" });
+    queries.addPack("admin@example.com", { credits: 5, expiresAt: inDays(60) });
+
+    queries.addUser("holder@example.com", "Hugo Holder");            // credits to book
+    queries.addPack("holder@example.com", { credits: 3, expiresAt: inDays(60) });
+    queries.addPack("holder@example.com", { credits: 5, expiresAt: inDays(-1) });  // expired
+
+    queries.addUser("spent@example.com", "Sara Spent");              // pack used up, booked ahead
+    queries.addPack("spent@example.com", { credits: 0, expiresAt: inDays(60) });
+    queries.addBooking("spent@example.com", { startsAt: inDays(5), sessionType: "pack" });
+
+    queries.addUser("caller@example.com", "Carla Caller");           // free call, done
+    queries.addBooking("caller@example.com", { startsAt: inDays(-10), status: "completed", sessionType: "free15min" });
+
+    queries.addUser("quitter@example.com", "Quique Quitter");        // cancelled only
+    queries.addBooking("quitter@example.com", { startsAt: inDays(3), status: "cancelled" });
+
+    queries.addUser("subscriber@example.com", "Susana Sub");         // newsletter only
+    queries.addSubscription("subscriber@example.com", "blog", { areas: ["ia"] });
+
+    queries.addUser("reader@example.com", "Lola Lectora");           // course only
+    queries.addLessonProgress("reader@example.com", "dl-nlp", "perceptron", { status: "completed", lastSeenAt: inDays(-2) });
+    queries.addLessonProgress("reader@example.com", "dl-nlp", "mlp", { lastSeenAt: inDays(-1) });
   }
 
-  it("lists students only, with both counts, and leaves course readers out", async () => {
+  const emails = (page: { rows: { email: string }[] }) => page.rows.map((r) => r.email);
+
+  it("lists every account but the admin's, newest first, with every tab count", async () => {
     const { service, queries } = setup();
-    seedStudents(queries);
+    seedUsers(queries);
 
-    const page = await service.listStudents({ lowCredit: false, page: 1, pageSize: STUDENTS_PAGE_SIZE });
+    const page = await service.listUsers({ segment: "all", page: 1, pageSize: STUDENTS_PAGE_SIZE });
 
-    expect(page.rows.map((r) => r.email)).toEqual([
-      "booker@example.com", "holder@example.com", "low@example.com",
+    expect(emails(page)).toEqual([
+      "reader@example.com", "subscriber@example.com", "quitter@example.com",
+      "caller@example.com", "spent@example.com", "holder@example.com",
     ]);
-    expect(page.total).toBe(3);
-    // booker (0 credits) and low (1 active; the 5 in the expired pack don't count)
-    expect(page.lowCreditTotal).toBe(2);
-    expect(await service.getStudent("reader@example.com")).toMatchObject({ email: "reader@example.com" });
+    expect(page.counts).toEqual({
+      all: 6, credits: 1, upcoming: 1, booked: 2, courses: 1, subscribed: 1,
+    });
   });
 
-  it("the low-credit tab keeps the unfiltered total", async () => {
+  it("«Con créditos»: unbooked credits in unexpired packs only, with the soonest expiry", async () => {
     const { service, queries } = setup();
-    seedStudents(queries);
+    seedUsers(queries);
+    const lateExpiry = inDays(10);
+    queries.addUser("late@example.com", "Luis Late");
+    queries.addPack("late@example.com", { credits: 1, expiresAt: lateExpiry });
+    queries.addPack("late@example.com", { credits: 2, expiresAt: inDays(90) });
 
-    const page = await service.listStudents({ lowCredit: true, page: 1, pageSize: STUDENTS_PAGE_SIZE });
+    const page = await service.listUsers({ segment: "credits", page: 1, pageSize: STUDENTS_PAGE_SIZE });
 
-    expect(page.rows.map((r) => r.email)).toEqual(["booker@example.com", "low@example.com"]);
-    expect(page).toMatchObject({ total: 3, lowCreditTotal: 2 });
+    // Soonest expiry first; the used-up pack and the expired 5 never count.
+    expect(emails(page)).toEqual(["late@example.com", "holder@example.com"]);
+    expect(page.rows[0]).toMatchObject({ unbookedCredits: 3, earliestExpiry: lateExpiry });
+    expect(page.rows[1]).toMatchObject({ unbookedCredits: 3 });
+    expect(page.counts.credits).toBe(2);
   });
 
-  it("maps the 1-based page to an offset and trims the query", async () => {
+  it("«Clases próximas» and «Han reservado»: the free call counts, a cancellation doesn't", async () => {
     const { service, queries } = setup();
+    seedUsers(queries);
 
-    await service.listStudents({ query: "  ana  ", lowCredit: false, page: 3, pageSize: 50 });
+    const upcoming = await service.listUsers({ segment: "upcoming", page: 1, pageSize: 50 });
+    const booked   = await service.listUsers({ segment: "booked", page: 1, pageSize: 50 });
 
-    expect(queries.listCalls.at(-1)).toEqual({ query: "ana", lowCredit: false, limit: 50, offset: 100 });
+    expect(emails(upcoming)).toEqual(["spent@example.com"]);
+    expect(upcoming.rows[0].nextSession).not.toBeNull();
+    // Most recently booked first: the caller's booking was created after the spender's.
+    expect(emails(booked)).toEqual(["caller@example.com", "spent@example.com"]);
+    expect(booked.rows.map((r) => r.bookingsCount)).toEqual([1, 1]);
   });
 
-  it("a blank query lists everyone and a nonsense page reads as page 1", async () => {
+  it("«En cursos» carries each course's title and progress against the published lessons", async () => {
     const { service, queries } = setup();
+    seedUsers(queries);
+    // A completion on a lesson that is no longer published must not count.
+    queries.addLessonProgress("reader@example.com", "dl-nlp", "retired-lesson", { status: "completed", lastSeenAt: inDays(-1) });
 
-    await service.listStudents({ query: "   ", lowCredit: false, page: 0, pageSize: 50 });
-    await service.listStudents({ lowCredit: false, page: 2.5, pageSize: 50 });
+    const page = await service.listUsers({ segment: "courses", page: 1, pageSize: 50 });
 
-    expect(queries.listCalls).toEqual([
-      { query: undefined, lowCredit: false, limit: 50, offset: 0 },
-      { query: undefined, lowCredit: false, limit: 50, offset: 0 },
+    expect(emails(page)).toEqual(["reader@example.com"]);
+    expect(page.rows[0].courses).toEqual([{
+      slug:             "dl-nlp",
+      title:            "Deep Learning para NLP: del Perceptrón al Transformer",
+      completedLessons: 1,
+      totalLessons:     3,
+      percent:          33,
+    }]);
+    expect(queries.listCalls.at(-1)?.courseLessons).toEqual({
+      "dl-nlp":     ["perceptron", "mlp", "rnn"],
+      "llm-agents": ["atencion", "gpt"],
+    });
+  });
+
+  it("a course that left the catalog shows its slug and 0%", async () => {
+    const { service, queries } = setup();
+    queries.addUser("old@example.com");
+    queries.addLessonProgress("old@example.com", "retired-course", "x", { status: "completed", lastSeenAt: inDays(-1) });
+
+    const page = await service.listUsers({ segment: "courses", page: 1, pageSize: 50 });
+
+    expect(page.rows[0].courses).toEqual([
+      { slug: "retired-course", title: "retired-course", completedLessons: 0, totalLessons: 0, percent: 0 },
     ]);
   });
 
-  it("finds a student past the first 100 by email", async () => {
+  it("«Suscritos» carries the blog areas; null means every area", async () => {
+    const { service, queries } = setup();
+    seedUsers(queries);
+    queries.addSubscription("reader@example.com", "courses");
+    queries.addSubscription("reader@example.com", "blog");
+
+    const page = await service.listUsers({ segment: "subscribed", page: 1, pageSize: 50 });
+
+    // Latest opt-in first.
+    expect(emails(page)).toEqual(["reader@example.com", "subscriber@example.com"]);
+    expect(page.rows[0].subscriptions).toEqual([
+      { type: "blog", areas: null },
+      { type: "courses", areas: null },
+    ]);
+    expect(page.rows[1].subscriptions).toEqual([{ type: "blog", areas: ["ia"] }]);
+  });
+
+  it("the search narrows the rows and every count", async () => {
+    const { service, queries } = setup();
+    seedUsers(queries);
+
+    const page = await service.listUsers({ query: "  HOLDER ", segment: "all", page: 1, pageSize: 50 });
+
+    expect(emails(page)).toEqual(["holder@example.com"]);
+    expect(page.counts).toEqual({ all: 1, credits: 1, upcoming: 0, booked: 0, courses: 0, subscribed: 0 });
+    expect(queries.listCalls.at(-1)?.query).toBe("HOLDER");
+  });
+
+  it("maps the 1-based page to an offset; a blank query or a nonsense page reads as none / 1", async () => {
+    const { service, queries } = setup();
+
+    await service.listUsers({ query: "  ana  ", segment: "booked", page: 3, pageSize: 50 });
+    await service.listUsers({ query: "   ", segment: "all", page: 0, pageSize: 50 });
+    await service.listUsers({ segment: "all", page: 2.5, pageSize: 50 });
+
+    expect(queries.listCalls.map(({ query, segment, limit, offset }) => ({ query, segment, limit, offset }))).toEqual([
+      { query: "ana",     segment: "booked", limit: 50, offset: 100 },
+      { query: undefined, segment: "all",    limit: 50, offset: 0 },
+      { query: undefined, segment: "all",    limit: 50, offset: 0 },
+    ]);
+  });
+
+  it("finds a user past the first 100 and pages them", async () => {
     const { service, queries } = setup();
     for (let i = 0; i < 120; i++) {
-      const email = `alumno-${String(i).padStart(3, "0")}@example.com`;
-      queries.addUser(email, `Alumno ${i}`);
-      queries.addBooking(email, { startsAt: inDays(1 + i) });
+      queries.addUser(`usuario-${String(i).padStart(3, "0")}@example.com`, `Usuario ${i}`);
     }
 
-    const found = await service.listStudents({ query: "alumno-110", lowCredit: false, page: 1, pageSize: 50 });
-    const page3 = await service.listStudents({ lowCredit: false, page: 3, pageSize: 50 });
+    const found = await service.listUsers({ query: "usuario-110", segment: "all", page: 1, pageSize: 50 });
+    const page3 = await service.listUsers({ segment: "all", page: 3, pageSize: 50 });
 
-    expect(found.rows.map((r) => r.email)).toEqual(["alumno-110@example.com"]);
-    expect(page3.rows.map((r) => r.email)).toContain("alumno-110@example.com");
+    expect(emails(found)).toEqual(["usuario-110@example.com"]);
+    // Newest first: page 3 holds the 20 oldest accounts.
+    expect(emails(page3)).toContain("usuario-000@example.com");
     expect(page3.rows).toHaveLength(20);
-    expect(page3.total).toBe(120);
+    expect(page3.counts.all).toBe(120);
+  });
+});
+
+describe("AdminService course views", () => {
+  /** dl-nlp (3 lessons): Ana finished, Beto halfway and active, Ciro idle for 40 days. */
+  function seedReaders(queries: InMemoryAdminQueryRepository) {
+    queries.addUser("admin@example.com", "Gustavo", { role: "admin" });
+    queries.addLessonProgress("admin@example.com", "dl-nlp", "perceptron", { status: "completed", lastSeenAt: inDays(-1) });
+
+    queries.addUser("ana@example.com", "Ana");
+    ["perceptron", "mlp", "rnn"].forEach((lesson, i) => {
+      queries.addLessonProgress("ana@example.com", "dl-nlp", lesson, { status: "completed", lastSeenAt: inDays(-52 + i) });
+    });
+    queries.addUser("beto@example.com", "Beto");
+    queries.addLessonProgress("beto@example.com", "dl-nlp", "perceptron", { status: "completed", lastSeenAt: inDays(-5) });
+    queries.addLessonProgress("beto@example.com", "dl-nlp", "mlp", { lastSeenAt: inDays(-3) });
+    queries.addUser("ciro@example.com", "Ciro");
+    queries.addLessonProgress("ciro@example.com", "dl-nlp", "perceptron", { lastSeenAt: inDays(-40) });
+
+    queries.addUser("dora@example.com", "Dora");                     // llm-agents, caught up
+    queries.addLessonProgress("dora@example.com", "llm-agents", "atencion", { status: "completed", lastSeenAt: inDays(-90) });
+    queries.addLessonProgress("dora@example.com", "llm-agents", "gpt", { status: "completed", lastSeenAt: inDays(-90) });
+  }
+
+  it("listCourses: per-course counts by status and the average progress", async () => {
+    const { service, queries } = setup();
+    seedReaders(queries);
+
+    const courses = await service.listCourses();
+
+    expect(courses).toEqual([
+      {
+        slug: "dl-nlp", title: "Deep Learning para NLP: del Perceptrón al Transformer",
+        totalLessons: 3, complete: true,
+        counts: { all: 3, active: 1, finished: 1, inactive: 1 },
+        // (3 + 1 + 0) / 3 readers = 1.33 lessons of 3 → 44%
+        avgPercent: 44,
+      },
+      {
+        slug: "llm-agents", title: "Modelos de Lenguaje: del Transformer al Agente",
+        totalLessons: 2, complete: false,
+        counts: { all: 1, active: 0, finished: 1, inactive: 0 },
+        avgPercent: 100,
+      },
+    ]);
+    // Counts only, with the published lessons and a 30-day window.
+    const call = queries.courseListCalls[0];
+    expect(call).toMatchObject({ courseSlug: "dl-nlp", lessons: ["perceptron", "mlp", "rnn"], status: "all", limit: 0 });
+    const days = (Date.now() - new Date(call.activeSince).getTime()) / DAY_MS;
+    expect(days).toBeGreaterThan(29.99);
+    expect(days).toBeLessThan(30.01);
+  });
+
+  it("getCourseReaders: latest activity first, with percent and the last lesson's title", async () => {
+    const { service, queries } = setup();
+    seedReaders(queries);
+
+    const list = await service.getCourseReaders("dl-nlp", { status: "all", page: 1, pageSize: COURSE_READERS_PAGE_SIZE });
+
+    expect(list?.rows.map((r) => [r.email, r.status, r.percent, r.lastLessonTitle])).toEqual([
+      ["beto@example.com", "active",   33,  "El MLP"],
+      ["ciro@example.com", "inactive", 0,   "El perceptrón"],
+      ["ana@example.com",  "finished", 100, "Las RNN"],
+    ]);
+    expect(list?.course.counts).toEqual({ all: 3, active: 1, finished: 1, inactive: 1 });
+  });
+
+  it("getCourseReaders: a status tab filters the rows, not the counts, and pages", async () => {
+    const { service, queries } = setup();
+    seedReaders(queries);
+
+    const inactive = await service.getCourseReaders("dl-nlp", { status: "inactive", page: 1, pageSize: 50 });
+    await service.getCourseReaders("dl-nlp", { status: "active", page: 2, pageSize: 50 });
+
+    expect(inactive?.rows.map((r) => r.email)).toEqual(["ciro@example.com"]);
+    expect(inactive?.course.counts.all).toBe(3);
+    expect(queries.courseListCalls.at(-1)).toMatchObject({ status: "active", limit: 50, offset: 50 });
+  });
+
+  it("an unpublished course has no reader page and no funnel", async () => {
+    const { service } = setup();
+
+    expect(await service.getCourseReaders("nope", { status: "all", page: 1, pageSize: 50 })).toBeNull();
+    expect(await service.getCourseLessonStats("nope")).toBeNull();
+  });
+
+  it("getCourseLessonStats: published lessons by block, in reading order, admin left out", async () => {
+    const { service, queries } = setup();
+    seedReaders(queries);
+    queries.addLessonProgress("beto@example.com", "dl-nlp", "retired-lesson", { lastSeenAt: inDays(-1) });
+
+    const blocks = await service.getCourseLessonStats("dl-nlp");
+
+    // Block 3 has nothing published; the retired lesson is dropped.
+    expect(blocks).toEqual([
+      {
+        id: 1, title: "Fundamentos",
+        lessons: [
+          { slug: "perceptron", title: "El perceptrón", started: 3, completed: 2 },
+          { slug: "mlp",        title: "El MLP",        started: 2, completed: 1 },
+        ],
+      },
+      {
+        id: 2, title: "Secuencias",
+        lessons: [{ slug: "rnn", title: "Las RNN", started: 1, completed: 1 }],
+      },
+    ]);
+  });
+});
+
+describe("AdminService.listUserCourses", () => {
+  it("reports the reader's own progress, last lesson and status per course", async () => {
+    const { service, courseService } = setup();
+    await courseService.markLessonCompleted(EMAIL, "dl-nlp", "perceptron");
+    await courseService.markLessonSeen(EMAIL, "dl-nlp", "mlp");
+    await courseService.markLessonCompleted(EMAIL, "llm-agents", "atencion");
+    await courseService.markLessonCompleted(EMAIL, "llm-agents", "gpt");
+
+    const courses = await service.listUserCourses(EMAIL);
+
+    expect(courses).toEqual([
+      expect.objectContaining({
+        slug: "dl-nlp", title: "Deep Learning para NLP: del Perceptrón al Transformer",
+        completedLessons: 1, totalLessons: 3, percent: 33,
+        lastLessonTitle: "El MLP", courseComplete: true,
+      }),
+      expect.objectContaining({
+        slug: "llm-agents", completedLessons: 2, totalLessons: 2, percent: 100,
+        status: "finished", courseComplete: false,
+      }),
+    ]);
+  });
+
+  it("the status uses the same 30-day window as the course page", async () => {
+    const { service, courseService } = setup();
+    await courseService.markLessonSeen(EMAIL, "dl-nlp", "mlp");
+    // InMemoryCourseRepository's clock sits in January 2026: long before the window.
+    const [course] = await service.listUserCourses(EMAIL);
+
+    expect(course.status).toBe("inactive");
+  });
+
+  it("an unknown user has no courses", async () => {
+    const { service } = setup();
+
+    expect(await service.listUserCourses("nobody@example.com")).toEqual([]);
+  });
+});
+
+describe("AdminService.listUserSubscriptions", () => {
+  it("returns the user's opt-ins with their areas and dates", async () => {
+    const { service, queries } = setup();
+    queries.addUser(EMAIL, "Ana");
+    queries.addSubscription(EMAIL, "courses", { createdAt: "2026-03-01T00:00:00.000Z" });
+    queries.addSubscription(EMAIL, "blog", { areas: ["ia", "matematicas"], createdAt: "2026-02-01T00:00:00.000Z" });
+
+    expect(await service.listUserSubscriptions(EMAIL)).toEqual([
+      { type: "blog",    areas: ["ia", "matematicas"], createdAt: "2026-02-01T00:00:00.000Z" },
+      { type: "courses", areas: null,                  createdAt: "2026-03-01T00:00:00.000Z" },
+    ]);
+    expect(await service.listUserSubscriptions("nobody@example.com")).toEqual([]);
   });
 });
 
@@ -221,16 +516,18 @@ describe("AdminService dashboard reads", () => {
     expect(await service.revenueLast30Days()).toBe(4600);
   });
 
-  it("dashboardCounts counts low-credit students, not every user", async () => {
+  it("dashboardCounts counts users with credits still to book", async () => {
     const { service, queries } = setup();
-    queries.addUser("reader-1@example.com");
-    queries.addUser("reader-2@example.com");
+    queries.addUser("reader@example.com");
+    queries.addUser("spent@example.com");
+    queries.addPack("spent@example.com", { credits: 0, expiresAt: inDays(10) });
     queries.addUser("holder@example.com");
     queries.addPack("holder@example.com", { credits: 1, expiresAt: inDays(10) });
+    queries.addBooking("holder@example.com", { startsAt: inDays(2) });
     queries.failedBookings = 2;
 
     expect(await service.dashboardCounts()).toEqual({
-      upcomingBookings: 0, lowCreditStudents: 1, failedBookings: 2,
+      upcomingBookings: 1, usersWithCredits: 1, failedBookings: 2,
     });
   });
 });

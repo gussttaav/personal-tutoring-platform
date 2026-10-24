@@ -18,6 +18,19 @@
  *
  * All Week 4 fixes are carried forward:
  *   - QUAL-01: Components typed via react-markdown's Components interface
+ *
+ * CHAT-GLOBAL-01: mounted once by `ChatProvider` (root layout), which also owns the open state
+ * (`useChat()`), so the Navbar icon and the Footer link open this same panel. There is no
+ * floating button: it sat on the reading column of lessons and posts between 1024 and ~1270px,
+ * so the Navbar icon is the entry point at every width and the panel drops from under it. The
+ * mobile hero-overlap tracking (the FAB hid itself while it sat on the hero CTAs) went with it.
+ *
+ * CHAT-DRAWER-01: the panel is a full-height side panel under the Navbar (full screen on a
+ * phone), 440px wide, so there is no «expand» mode any more: the 340×530 dropdown squeezed
+ * every list answer, and the 800×700 expanded one covered the page. It is a NON-modal dialog:
+ * the page beside it stays usable. Closed, it is `inert` (and `visibility: hidden` once it has
+ * slid out), so its input is no longer a hidden tab stop. Escape and ✕ close it and hand focus
+ * back to whatever opened it. «Nueva conversación» drops the thread and the server session id.
  */
 
 import {
@@ -33,6 +46,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import ChatAvatarIcon from "@/components/icons/ChatAvatarIcon";
+import { useChat } from "@/hooks/useChat";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -131,19 +145,16 @@ export default function Chat() {
   const [sessionId,       setSessionId]       = useState<string | null>(() =>
     typeof window !== "undefined" ? localStorage.getItem(LOCAL_STORAGE_KEY) : null
   );
-  const [isOpen,          setIsOpen]          = useState(false);
-  const [isExpanded,      setIsExpanded]      = useState(false);
+  const { isOpen, close } = useChat();
   const [input,           setInput]           = useState("");
   const [isLoading,       setIsLoading]       = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
-  const [showDot,         setShowDot]         = useState(true);
-  // UX: on mobile the FAB sits exactly over the hero "Ver disponibilidad"
-  // button. Track whether the hero CTA row is on screen so we can hide the
-  // FAB while it would overlap and reveal it once the user scrolls past.
-  const [heroCtaOnScreen, setHeroCtaOnScreen] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
+  // CHAT-DRAWER-01: the element that had focus when the panel opened (a Navbar button, the
+  // Footer link, a landing CTA): closing from inside the panel hands focus back to it.
+  const openerRef      = useRef<HTMLElement | null>(null);
 
   // UX-04: Persist messages to sessionStorage whenever they change.
   // We skip the initial INITIAL_MESSAGES-only state to avoid a no-op write
@@ -159,62 +170,38 @@ export default function Chat() {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    if (isOpen) setTimeout(() => inputRef.current?.focus(), 220);
+    if (!isOpen) return;
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setTimeout(() => inputRef.current?.focus(), 220);
   }, [isOpen]);
 
-  // Hide the FAB while it would overlap the hero CTAs (mobile overlap fix).
-  // The CSS only acts on the resulting class below the mobile breakpoint,
-  // so desktop is unaffected regardless of this state.
-  //
-  // The FAB sits in the bottom ~96px of the viewport (32px offset + 64px
-  // height). We hide it while the hero CTA row's bottom edge is still within
-  // that band (+16px gap) and reveal it the moment the row scrolls clear —
-  // i.e. as soon as "Ver disponibilidad" rises above the FAB, not only once
-  // the hero has left the screen entirely. An IntersectionObserver can't
-  // express a px-from-bottom line, so we measure the row directly on scroll,
-  // rAF-throttled and only writing state on an actual change.
-  useEffect(() => {
-    const heroCta = document.getElementById("hero-cta-row");
-    if (!heroCta) return;
-
-    const FAB_ZONE = 112; // 32px offset + 64px height + 16px gap
-    let frame = 0;
-
-    const measure = () => {
-      frame = 0;
-      const overlapping =
-        heroCta.getBoundingClientRect().bottom > window.innerHeight - FAB_ZONE;
-      setHeroCtaOnScreen((prev) => (prev === overlapping ? prev : overlapping));
-    };
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(measure);
-    };
-
-    measure(); // sync initial state with current scroll position
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleOpenChat() { setIsOpen(true); setShowDot(false); }
-    window.addEventListener("open-chat", handleOpenChat);
-    return () => window.removeEventListener("open-chat", handleOpenChat);
-  }, []);
-
-  function togglePanel() {
-    setIsOpen((prev) => !prev);
-    setShowDot(false);
-    if (isOpen) setIsExpanded(false);
+  // Focus goes back BEFORE the panel turns inert: inert would drop it on <body>. A close from
+  // the Navbar button needs none of this, focus is already on it. Safari doesn't focus a
+  // clicked button, so the opener can be <body>, and a client navigation since may have
+  // unmounted it: then the visible Navbar button that controls this panel takes focus instead.
+  function closeFromPanel() {
+    const saved = openerRef.current;
+    const opener = saved && saved !== document.body && saved.isConnected
+      ? saved
+      : Array.from(document.querySelectorAll<HTMLElement>('[aria-controls="chat-panel"]'))
+          .find((el) => el.getClientRects().length > 0);
+    opener?.focus();
+    close();
   }
 
-  function toggleExpand() { setIsExpanded((prev) => !prev); }
+  function startNewConversation() {
+    setMessages(initialMessages);
+    setShowSuggestions(true);
+    setInput("");
+    setSessionId(null);
+    try {
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } catch {
+      // storage unavailable — the in-memory reset above is what the reader sees
+    }
+    inputRef.current?.focus();
+  }
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -256,50 +243,56 @@ export default function Chat() {
   }
 
   return (
-    <>
-      <div
-        className={`chat-panel${isOpen ? " chat-panel--open" : ""}${isExpanded ? " chat-panel--expanded" : ""}`}
-        role="dialog" aria-modal="true" aria-label={t("assistantLabel")}
-      >
-        <div className="chat-header">
-          <div className="chat-header-avatar" aria-hidden="true"><ChatAvatarIcon size={22} /></div>
-          <div className="chat-header-info">
-            <div className="chat-header-name">{t("title")}</div>
-            <div className="chat-header-status">{t("status")}</div>
-          </div>
-          <div className="chat-header-actions">
-            <button className="chat-expand-btn" onClick={toggleExpand} aria-label={isExpanded ? t("minimize") : t("expand")} title={isExpanded ? t("minimize") : t("expand")}>
-              {isExpanded
-                ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" /></svg>
-                : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
-              }
-            </button>
-            <button className="chat-close-btn" onClick={togglePanel} aria-label={t("close")}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
+    <div
+      id="chat-panel"
+      className={`chat-panel${isOpen ? " chat-panel--open" : ""}`}
+      role="dialog" aria-label={t("assistantLabel")}
+      inert={!isOpen}
+      onKeyDown={(e) => { if (e.key === "Escape") closeFromPanel(); }}
+    >
+      <div className="chat-header">
+        <div className="chat-header-avatar" aria-hidden="true"><ChatAvatarIcon size={22} /></div>
+        <div className="chat-header-info">
+          <div className="chat-header-name">{t("title")}</div>
+          <div className="chat-header-status">{t("status")}</div>
         </div>
+        <div className="chat-header-actions">
+          <button
+            className="chat-new-btn" onClick={startNewConversation}
+            disabled={isLoading || messages.length <= INITIAL_MESSAGES_COUNT}
+            aria-label={t("newConversation")} title={t("newConversation")}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+            </svg>
+          </button>
+          <button className="chat-close-btn" onClick={closeFromPanel} aria-label={t("close")}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-        <div className="chat-messages" role="log" aria-live="polite">
-          {messages.map((msg, i) => (
-            <div key={i} className={`chat-msg chat-msg--${msg.role}`}>
-              {msg.role === "bot" ? <BotMessage text={msg.text} /> : msg.text}
-            </div>
+      <div className="chat-messages" role="log" aria-live="polite">
+        {messages.map((msg, i) => (
+          <div key={i} className={`chat-msg chat-msg--${msg.role}`}>
+            {msg.role === "bot" ? <BotMessage text={msg.text} /> : msg.text}
+          </div>
+        ))}
+        {isLoading && <div className="chat-typing" aria-label={t("status")}><span /><span /><span /></div>}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {showSuggestions && (
+        <div className="chat-suggestions">
+          {suggestions.map((s) => (
+            <button key={s} className="chat-suggestion" onClick={() => sendMessage(s)} disabled={isLoading}>{s}</button>
           ))}
-          {isLoading && <div className="chat-typing" aria-label={t("status")}><span /><span /><span /></div>}
-          <div ref={messagesEndRef} />
         </div>
+      )}
 
-        {showSuggestions && (
-          <div className="chat-suggestions">
-            {suggestions.map((s) => (
-              <button key={s} className="chat-suggestion" onClick={() => sendMessage(s)} disabled={isLoading}>{s}</button>
-            ))}
-          </div>
-        )}
-
+      <div className="chat-composer">
         <div className="chat-input-row">
           <input
             ref={inputRef} className="chat-input" type="text" placeholder={t("placeholder")}
@@ -307,25 +300,13 @@ export default function Chat() {
             disabled={isLoading} maxLength={1000} aria-label={t("placeholderShort")}
           />
           <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} aria-label={t("send")}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
           </button>
         </div>
+        <p className="chat-disclaimer">{t("disclaimer")}</p>
       </div>
-
-      <button
-        className={`chat-fab${isOpen ? " chat-fab--open" : ""}${heroCtaOnScreen && !isOpen ? " chat-fab--hero-overlap" : ""}`}
-        onClick={togglePanel} aria-label={isOpen ? t("closeAssistant") : t("openAssistant")} aria-expanded={isOpen}
-      >
-        {showDot && !isOpen && <div className="chat-fab-dot" aria-hidden="true" />}
-        <svg className="chat-fab-icon-chat" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-        <svg className="chat-fab-icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
-    </>
+    </div>
   );
 }

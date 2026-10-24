@@ -11,9 +11,10 @@
 // → closing band (the app showcase was later removed from `/`; it still mounts on /mentoria,
 // P2-03). The sessions/packs sections (`InteractiveShell`) and their `Suspense` boundary (the
 // `useSearchParams` bailout, via `RescheduleBridge`) live on /mentoria only; nothing here reads
-// search params. The booking overlays stay mounted, alone (their one child is `HomeChat`, the
-// chat FAB, which the sections rendered until now — see that file for why it sits inside the
-// provider). `ClosingCta` is a shared component (src/components/) because /mentoria mounts it too.
+// search params. The booking overlays stay mounted, alone. `ClosingCta` is a shared component
+// (src/components/) because /mentoria mounts it too.
+// CHAT-GLOBAL-01: the chat FAB is no longer mounted here (it was `HomeChat`, the overlays' one
+// child); `ChatProvider` in the root layout mounts it on every page.
 // REDESIGN-P1-05: `generateMetadata` reads `home.meta.*`, its own title/description, and
 // `StructuredData` takes `variant="home"`, which drops the `Service` JSON-LD — it belongs
 // on /mentoria, the page that sells it.
@@ -36,7 +37,6 @@ import HomePosts from "@/features/home/HomePosts";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import BookingOverlays from "@/features/booking/BookingOverlays";
 import ClosingCta from "@/components/ClosingCta";
-import HomeChat from "@/components/HomeChat";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CommerceProviders } from "@/components/commerce/CommerceProviders";
@@ -119,9 +119,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <ClosingCta locale={locale} />
           </section>
 
-          <BookingOverlays>
-            <HomeChat />
-          </BookingOverlays>
+          <BookingOverlays />
 
           {/*
             <div

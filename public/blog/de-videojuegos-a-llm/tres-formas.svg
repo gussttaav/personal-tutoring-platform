@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" width="760" height="250" role="img"
+ aria-label="Tres esquemas, uno al lado del otro, de cómo un chip multiplica matrices. Uno, núcleos de una GPU: 32 hilos de un warp en fila, cada uno con su multiplicación y su suma por ciclo, la misma instrucción para todos. Dos, núcleo tensorial: dos matrices de 4×4, A y B, entran juntas y sale D igual a A por B más C, 64 multiplicaciones y sumas en un paso. Tres, matriz sistólica de la TPU: una cuadrícula de celdas; los parámetros están cargados en las celdas, los datos entran por la izquierda y los resultados parciales bajan de celda en celda hasta salir por abajo, de modo que cada número leído se usa en toda una fila.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.14); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.16); }
+  .bx.b { stroke: #6fb1e8; fill: rgba(111,177,232,0.14); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.s { stroke: #3b3b3e; fill: rgba(134,148,138,0.10); }
+  .bx.f { stroke: #4edea3; fill: rgba(78,222,163,0.45); }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .b { fill: #6fb1e8; }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .rf { stroke: #86948a; stroke-width: 1; stroke-dasharray: 4 4; }
+  .ar { stroke: #86948a; stroke-width: 1.2; fill: none; marker-end: url(#ah); }
+</style>
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7"
+  orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" fill="#86948a"/></marker></defs>
+<text class="lb" x="16.0" y="22.0">Núcleos de una GPU</text>
+<text class="sb" x="16.0" y="38.0">32 hilos, la misma instrucción</text>
+<rect class="bx g" x="16.0" y="52.0" width="236.0" height="160.0" rx="4"/>
+<text class="sb" x="134.0" y="230.0" style="text-anchor:middle">1 multiplicación y suma por hilo y ciclo</text>
+<text class="lb" x="268.0" y="22.0">Núcleo tensorial</text>
+<text class="sb" x="268.0" y="38.0">D = A × B + C, de 4×4</text>
+<rect class="bx g" x="268.0" y="52.0" width="236.0" height="160.0" rx="4"/>
+<text class="sb" x="386.0" y="230.0" style="text-anchor:middle">64 multiplicaciones y sumas por paso</text>
+<text class="lb" x="520.0" y="22.0">Matriz sistólica (TPU)</text>
+<text class="sb" x="520.0" y="38.0">256 × 256 en el chip real</text>
+<rect class="bx g" x="520.0" y="52.0" width="236.0" height="160.0" rx="4"/>
+<text class="sb" x="638.0" y="230.0" style="text-anchor:middle">cada dato se usa en toda la fila</text>
+<rect class="bx w" x="30.0" y="66.0" width="208.0" height="18.0" rx="2"/>
+<text class="mo" x="134.0" y="79.0" style="text-anchor:middle">a ← a + x · y</text>
+<rect class="bx m" x="34.0" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="44.5" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="59.5" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="70.0" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="85.0" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="95.5" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="110.5" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="121.0" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="136.0" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="146.5" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="161.5" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="172.0" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="187.0" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="197.5" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="212.5" y="96.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="223.0" y="110.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="34.0" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="44.5" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="59.5" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="70.0" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="85.0" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="95.5" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="110.5" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="121.0" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="136.0" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="146.5" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="161.5" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="172.0" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="187.0" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="197.5" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="212.5" y="123.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="223.0" y="137.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="34.0" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="44.5" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="59.5" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="70.0" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="85.0" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="95.5" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="110.5" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="121.0" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="136.0" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="146.5" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="161.5" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="172.0" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="187.0" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="197.5" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="212.5" y="150.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="223.0" y="164.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="34.0" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="44.5" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="59.5" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="70.0" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="85.0" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="95.5" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="110.5" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="121.0" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="136.0" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="146.5" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="161.5" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="172.0" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="187.0" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="197.5" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx m" x="212.5" y="177.0" width="21.0" height="21.0" rx="2"/>
+<text class="sb" x="223.0" y="191.0" style="text-anchor:middle">×+</text>
+<rect class="bx b" x="280.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="291.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="302.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="313.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="280.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="291.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="302.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="313.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="280.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="291.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="302.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="313.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="280.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="291.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="302.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="313.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<text class="mo" x="302.0" y="160.0" style="text-anchor:middle">A</text>
+<text class="tx" x="332.0" y="128.0" style="text-anchor:middle">×</text>
+<rect class="bx b" x="340.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="351.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="362.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="373.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="340.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="351.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="362.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="373.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="340.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="351.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="362.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="373.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="340.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="351.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="362.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx b" x="373.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<text class="mo" x="362.0" y="160.0" style="text-anchor:middle">B</text>
+<text class="tx" x="392.0" y="128.0" style="text-anchor:middle">+</text>
+<rect class="bx s" x="400.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="411.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="422.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="433.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="400.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="411.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="422.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="433.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="400.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="411.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="422.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="433.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="400.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="411.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="422.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx s" x="433.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<text class="mo" x="422.0" y="160.0" style="text-anchor:middle">C</text>
+<path class="ar" d="M448.0,124.0 L464.0,124.0"/>
+<rect class="bx m" x="468.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="479.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="490.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="501.0" y="102.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="468.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="479.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="490.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="501.0" y="113.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="468.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="479.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="490.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="501.0" y="124.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="468.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="479.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="490.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<rect class="bx m" x="501.0" y="135.0" width="9.5" height="9.5" rx="0.8"/>
+<text class="mo" x="490.0" y="160.0" style="text-anchor:middle">D</text>
+<rect class="bx w" x="586.0" y="74.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="605.0" y="74.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="624.0" y="74.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="643.0" y="74.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="662.0" y="74.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="681.0" y="74.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="586.0" y="93.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="605.0" y="93.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="624.0" y="93.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="643.0" y="93.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="662.0" y="93.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="681.0" y="93.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="586.0" y="112.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="605.0" y="112.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="624.0" y="112.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="643.0" y="112.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="662.0" y="112.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="681.0" y="112.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="586.0" y="131.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="605.0" y="131.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="624.0" y="131.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="643.0" y="131.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="662.0" y="131.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="681.0" y="131.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="586.0" y="150.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="605.0" y="150.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="624.0" y="150.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="643.0" y="150.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="662.0" y="150.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="681.0" y="150.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="586.0" y="169.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="605.0" y="169.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="624.0" y="169.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="643.0" y="169.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="662.0" y="169.0" width="16.0" height="16.0" rx="1.5"/>
+<rect class="bx w" x="681.0" y="169.0" width="16.0" height="16.0" rx="1.5"/>
+<path class="ar" d="M560.0,82.0 L582.0,82.0"/>
+<path class="ar" d="M560.0,101.0 L582.0,101.0"/>
+<path class="ar" d="M560.0,120.0 L582.0,120.0"/>
+<path class="ar" d="M560.0,139.0 L582.0,139.0"/>
+<path class="ar" d="M560.0,158.0 L582.0,158.0"/>
+<path class="ar" d="M560.0,177.0 L582.0,177.0"/>
+<text class="sb" x="554.0" y="135.0" style="text-anchor:end">datos</text>
+<path class="ar" d="M594.0,188.0 L594.0,202.0"/>
+<path class="ar" d="M613.0,188.0 L613.0,202.0"/>
+<path class="ar" d="M632.0,188.0 L632.0,202.0"/>
+<path class="ar" d="M651.0,188.0 L651.0,202.0"/>
+<path class="ar" d="M670.0,188.0 L670.0,202.0"/>
+<path class="ar" d="M689.0,188.0 L689.0,202.0"/>
+<text class="sb" x="706.0" y="200.0">sumas</text>
+<path class="ar" d="M594.0,121.5 L684.8,121.5" stroke="#4edea3"/>
+</svg>

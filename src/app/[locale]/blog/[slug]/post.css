@@ -649,7 +649,7 @@ body:has(.post-shell) {
 .post-archive-fab:hover {
   transform: scale(1.06);
 }
-/* Scroll-down hides it (the chat FAB's --hero-overlap recipe). Declared AFTER :hover
+/* Scroll-down hides it (fade + shrink, pointer-events off). Declared AFTER :hover
    so the hidden transform wins while the pointer is still over it. */
 .post-archive-fab--hidden {
   opacity: 0;

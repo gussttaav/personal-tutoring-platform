@@ -5,6 +5,7 @@
  * ADMIN-02: StatCard is the redesigned KPI tile (icon chip, value, a footnote line);
  * Card takes an optional count chip beside its title; Empty has a "good" tone for
  * the all-clear states (a green filled check instead of a grey icon).
+ * ADMIN-USERS-01: StatusBadge has a "course" kind (a reader's standing in a course).
  */
 
 import Link from "next/link";
@@ -12,7 +13,7 @@ import type { ReactNode } from "react";
 
 /* ─── Status badge ───────────────────────────────────────────────────── */
 
-type BadgeKind = "booking" | "payment" | "report";
+type BadgeKind = "booking" | "payment" | "report" | "course";
 
 const BADGE_MAP: Record<BadgeKind, Record<string, { c: string; bg: string; label: string }>> = {
   booking: {
@@ -31,6 +32,14 @@ const BADGE_MAP: Record<BadgeKind, Record<string, { c: string; bg: string; label
   report: {
     open: { c: "var(--warning)", bg: "var(--warning-bg)", label: "Abierto" },
     resolved: { c: "var(--green)", bg: "var(--green-dim)", label: "Resuelto" },
+  },
+  // ADMIN-USERS-01: a reader's standing in a course (CourseReaderStatus). `caught_up` is
+  // `finished` in a course still being written — see courseStatusKey in format.ts.
+  course: {
+    finished: { c: "var(--green)", bg: "var(--green-dim)", label: "Terminado" },
+    caught_up: { c: "var(--green)", bg: "var(--green-dim)", label: "Al día" },
+    active: { c: "#9ec5ff", bg: "rgba(158,197,255,0.10)", label: "En curso" },
+    inactive: { c: "var(--text-dim)", bg: "rgba(255,255,255,0.05)", label: "Sin actividad" },
   },
 };
 

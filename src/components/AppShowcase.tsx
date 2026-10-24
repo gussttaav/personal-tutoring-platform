@@ -19,11 +19,15 @@
  * APP-ANDROID-01 above); `NEXT_PUBLIC_APP_STORE_URL` flips it to a real `<a>` without a code
  * change.
  *
+ * CHAT-CONTENT-01 — both store URLs live in src/constants/app-stores.ts, shared with the chat
+ * assistant's prompt.
+ *
  * The three benefit icons render from the self-hosted Material Symbols font, like the
  * neighbouring `HomeAreas` boxes; the icons inside the phone are the mock's inline SVGs.
  */
 
 import { getTranslations } from "next-intl/server";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/constants/app-stores";
 
 interface AppShowcaseProps {
   locale: string;
@@ -34,9 +38,6 @@ const BENEFITS = [
   { key: "book", icon: "calendar_month" },
   { key: "credits", icon: "credit_card" },
 ] as const;
-
-const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL;
-const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=dev.gustavoai.mobile";
 
 function StoreButton({ href, kicker, label }: { href?: string; kicker: string; label: string }) {
   const inner = (

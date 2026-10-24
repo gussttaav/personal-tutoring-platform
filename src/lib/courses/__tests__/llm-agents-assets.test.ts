@@ -209,3 +209,38 @@ describe("llm-agents assets — the frozen modelo the later blocks load", () => 
     expect(src).toContain('assert not prompt.endswith(" "),');
   });
 });
+
+/*
+ * COURSE-C2-P1-03 — guionizado.py is Block 3 lesson 1's ModeloGuionizado frozen, the way
+ * modelo.py freezes Block 1's project: the later lessons load it with one exec line instead of
+ * pasting the class again. The lesson's cell is the source of truth, so the class here must be
+ * the cell's, character for character — a change to either one alone fails CI.
+ */
+describe("llm-agents assets — the frozen modelo guionizado", () => {
+  const src = read("guionizado.py");
+
+  /** The cell's text as Pyodide runs it: the template literal, dedented, `\\` unescaped. */
+  function lessonClass(): string {
+    const mdx = fs.readFileSync(
+      path.join(process.cwd(), "content", "courses", "llm-agents", "es", "18-el-prompt-es-una-especificacion.mdx"),
+      "utf8",
+    );
+    const start = mdx.indexOf("<PyCell code={`") + "<PyCell code={`".length;
+    const body = mdx.slice(start, mdx.indexOf("`} />", start));
+    const lines = body.replace(/^\n/, "").split("\n");
+    const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => l.length - l.trimStart().length));
+    const cell = lines.map((l) => l.slice(indent)).join("\n").replace(/\\\\/g, "\\");
+    return cell.slice(cell.indexOf("class ModeloGuionizado:"), cell.indexOf("\nhola =")).trimEnd();
+  }
+
+  it("is lesson 18's class, character for character", () => {
+    const frozen = src.slice(src.indexOf("class ModeloGuionizado:")).trimEnd();
+    expect(frozen).toBe(lessonClass());
+  });
+
+  it("defines only the class, and imports nothing", () => {
+    expect(src).not.toMatch(/^\s*(import|from)\s/m);
+    expect(src.match(/^class /gm)).toHaveLength(1);
+    expect(src).not.toMatch(/^def /m);
+  });
+});

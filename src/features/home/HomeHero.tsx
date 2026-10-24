@@ -14,8 +14,10 @@
  *
  * The photo frame moved up from the bio (`BiographySection.tsx`, which loses it in P1-02): one
  * `<Image>` whose wrapper is the 128px glow box above the text below 1024 and the 4/5 offset
- * frame beside it from 1024 (`home.css`), hence the two-part `sizes`. `#hero-cta-row` stays on
- * the CTA row: `Chat.tsx` watches it to keep the FAB out of the buttons' way.
+ * frame beside it from 1024 (`home.css`), hence the two-part `sizes`.
+ *
+ * CHAT-GLOBAL-01: the CTA row lost its `#hero-cta-row` id. `Chat.tsx` watched it to keep the
+ * mobile FAB off the buttons, and there is no FAB any more.
  */
 
 import Image from "next/image";
@@ -106,7 +108,7 @@ export default async function HomeHero({ locale }: HomeHeroProps) {
           </p>
 
           {/* ── CTAs ── */}
-          <div id="hero-cta-row" className="hero-cta-row home-hero-cta-row" style={{ gap: "16px" }}>
+          <div className="hero-cta-row home-hero-cta-row" style={{ gap: "16px" }}>
             <HomeHeroCtas />
           </div>
 

@@ -10,8 +10,7 @@
  * does. Not links into `/mentoria?book=…` (the original P1-01 spec): that detoured the visitor
  * through Mentoría to reach a screen that is an overlay anyway — see `PLAN.md` «Amendments».
  *
- * A leaf client island: the CTA row (`#hero-cta-row`, which `Chat.tsx` watches) and everything
- * around it stay in the Server Component.
+ * A leaf client island: the CTA row and everything around it stay in the Server Component.
  */
 
 import { useTranslations } from "next-intl";

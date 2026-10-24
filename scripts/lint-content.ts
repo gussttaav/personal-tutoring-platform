@@ -11,6 +11,8 @@
  * COURSE-P11-01 — + the voice pass runs the families of the lesson's own locale.
  * BLOG-01     — + validate every blog post's frontmatter under `content/blog/`.
  * COURSE-C2-P0-04 — + the longest fenced code block joins the budget report (advisory).
+ * CONTENT-DOLLAR-01 — + a `$` used as a currency sign in a post or lesson fails (remark-math
+ *                      would typeset the text between two of them as a formula).
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the
@@ -47,6 +49,7 @@ import {
   lessonCounts,
 } from "@/lib/courses/budget";
 import { validateAllBlogContent } from "@/lib/blog/registry";
+import { validateCurrencyDollars } from "@/lib/content/validate-currency-dollar";
 import { DEFAULT_CONTENT_ROOT, collectMdxFiles } from "@/lib/courses/content-files";
 import { validateAllContent } from "@/lib/courses/registry";
 import { validateChallengeRefs } from "@/lib/courses/validate-challenges";
@@ -76,6 +79,9 @@ try {
   validateChallengeRefs();
   validateCrosslinks();
   validateReading();
+  // CONTENT-DOLLAR-01: covers posts AND lessons, so it sits after the course passes it
+  // shares no state with.
+  validateCurrencyDollars();
   console.log("✓ content lint passed");
 } catch (err) {
   console.error(`✗ content lint failed: ${(err as Error).message}`);

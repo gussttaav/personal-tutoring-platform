@@ -1,7 +1,15 @@
 // ADMIN-03: the admin date helpers format in the timezone they are given (the tutor's
 // ScheduleConfig.timezone), never the runtime's — on Vercel that is UTC, 1–2 h off Madrid.
 // Instants are pinned in UTC, so the assertions hold whatever zone Jest runs in.
-import { fmtDate, fmtDateTime, fmtShort } from "@/components/admin/format";
+// ADMIN-USERS-01: plus the users list and course view helpers.
+import {
+  courseStatusKey,
+  fmtDate,
+  fmtDateTime,
+  fmtShort,
+  plural,
+  shortCourseTitle,
+} from "@/components/admin/format";
 
 const MADRID = "Europe/Madrid";
 
@@ -40,5 +48,35 @@ describe("fmtShort", () => {
     expect(fmtShort(SUMMER, MADRID)).toBe("9/10, 22:14");
     expect(fmtShort(WINTER, MADRID)).toBe("3/12, 09:05");
     expect(fmtShort(LATE_EVENING, MADRID)).toBe("1/12, 00:30");
+  });
+});
+
+describe("shortCourseTitle", () => {
+  it("keeps the part before the colon", () => {
+    expect(shortCourseTitle("Deep Learning para NLP: del Perceptrón al Transformer")).toBe("Deep Learning para NLP");
+  });
+
+  it("leaves a title without a colon whole", () => {
+    expect(shortCourseTitle("Python desde cero")).toBe("Python desde cero");
+  });
+});
+
+describe("plural", () => {
+  it("picks the singular for exactly one", () => {
+    expect(plural(1, "reserva", "reservas")).toBe("1 reserva");
+    expect(plural(0, "reserva", "reservas")).toBe("0 reservas");
+    expect(plural(3, "reserva", "reservas")).toBe("3 reservas");
+  });
+});
+
+describe("courseStatusKey", () => {
+  it("a finished reader of a course still being written is «al día»", () => {
+    expect(courseStatusKey("finished", false)).toBe("caught_up");
+    expect(courseStatusKey("finished", true)).toBe("finished");
+  });
+
+  it("the other statuses pass through", () => {
+    expect(courseStatusKey("active", false)).toBe("active");
+    expect(courseStatusKey("inactive", true)).toBe("inactive");
   });
 });

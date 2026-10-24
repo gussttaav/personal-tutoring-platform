@@ -48,12 +48,6 @@ export default function PackModal({
 
   const pack = useProductPrice(packSize === 5 ? "pack5" : "pack10");
 
-  // Hide the chat FAB on mobile while the modal is open
-  useEffect(() => {
-    document.body.classList.add("pack-modal-open");
-    return () => document.body.classList.remove("pack-modal-open");
-  }, []);
-
   // Self-fetch the PaymentIntent when the parent didn't pre-fetch one.
   // This covers the OAuth round-trip case (packClientSecret is null after login).
   // AbortController ensures React Strict Mode's first mount (setup → cleanup → setup)

@@ -68,6 +68,13 @@ foreign, a reason that disappears in English). Set it plain, introduced by a col
 full stop, with the attribution in the lead-in: `it is almost always cited in Firth's line: you shall
 know a word by the company it keeps.` *Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04).*
 
+A cited work's title (a paper, a book) is a fourth thing: it is italicised, as the work itself
+prints it, capitals included: *Attention Is All You Need*. That is a typographic convention standing
+outside the five marks, not a third job for italics, because a title is neither a term of art nor
+the word that flips a sentence; and it never takes quotation marks. The spelling to copy is the one
+the lesson's own `reading` entry gives in `title`. *Settled by `en/33-adios-recurrencia.mdx`
+(COURSE-P11-08).*
+
 The `<W>` boundary is [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)'s,
 unchanged. Its plain-text prop exception carries over: `caption`, `alt` and `summary` are strings, so
 a string the lesson talks about is written `"tokenisation"` there.
@@ -159,6 +166,14 @@ plural verb (*the council are*), so *council*, *team* or *government* cannot be 
 plural subject has to survive: the contrast the example rests on is gone for the reader who hears it
 plural. Pick a noun that is only ever singular (*mayor*, *square*). *Settled by `en/23-lstm.mdx`
 (COURSE-P11-06).*
+
+**A sentence shown in the self-attention widgets repeats no vector.** The widgets' lexicon gives
+every word in one group the same vector (both `the`s, `here` and `there`), and two equal vectors tie
+when the projections are off: the diagonal no longer wins its row outright, and the outlined cell lands
+on the first copy instead. So the sentence is chosen so that no two of its tokens share a group:
+<W>the keys to this car are here</W>, not <W>the keys to the car are over there</W>, with `this`
+keeping a singular determiner between the subject and the verb as «del» does in Spanish. Check it in
+the rendered widget, unprojected, row by row. *Settled by `en/34-self-attention.mdx` (COURSE-P11-08).*
 
 **A reversal example is two real words with no repeated letter.** A lesson that reverses a string
 names letters by position (the output's first letter is the input's last), and a repeated letter
@@ -265,6 +280,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | the random draw from the model's own distribution | to sample, sampling | |
 | giving a symbol or variable its value | assign to | put into |
 | a short run in a cell whose result the next paragraph reads | experiment | probe — that is the derivative check one row down |
+| a numbered section of one code cell (`# 1.`, `# 2.`) | part | block — capitalised, Block names a division of the course, and a cell's "third block" reads as a forward reference. *Settled by `en/34-self-attention.mdx` (COURSE-P11-08)* |
 | moving one parameter a little each way and re-evaluating, to check a derivative against the algebra | probe, numerical probe; to probe | experiment; finite-difference check as a second name |
 | always taking the highest-probability output | greedy decoding | |
 | source to target sequence · the task Block 4 demonstrates on | sequence-to-sequence model, nickname *seq2seq* · machine translation | |
@@ -276,6 +292,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | the decoding search this course does **not** cover, named once so the concession is honest | *beam search* | |
 | the small network that computes the score $a$ | alignment model | attention network |
 | Bahdanau's score · Luong's score | additive attention · multiplicative attention | dot-product attention for Luong's |
+| how a row of weights divides its unit among the positions (`reparto`) | to share out, a share-out; an even share for the uniform one | distribution as the noun, which is the probability object the row also is; spread. *Settled by `en/30-bahdanau.mdx`, `en/31-luong.mdx` and `en/34-self-attention.mdx`* |
 | the three roles of one attention call | query, key, value | request, lookup, content as the name of a role; *lookup* stays free for the dictionary operation Block 4's analogy starts from |
 | the two-layer network applied to each position on its own | position-wise perceptron | feed-forward network (true of every layer in Blocks 2–3, so it says the one thing that is not the point); dense layer |
 | the decoder sublayer taking its keys and values from the encoder | encoder-decoder attention | cross-attention |
@@ -328,9 +345,10 @@ both, so the table above says which is which rather than banning the word. The c
 on (the chain rule, backpropagation, BPTT) — the thing worth keeping to hand when a derivative
 written out by hand does not add up. *Settled by `en/15-regla-de-la-cadena.mdx` (COURSE-P11-05).*
 
-**Acronyms** are unchanged: expand every one on **first use, in every lesson**, then use it bare —
-*out-of-vocabulary (OOV)*, *masked language modelling (MLM)*. Per lesson, not per course: lessons
-are entered from search results and from the sidebar, and it costs four words.
+**Acronyms** follow `AUTHORING.md` §5 unchanged: expand one the first time the course uses it, and
+in a lesson that introduces it, then use it bare: *out-of-vocabulary (OOV)*, *masked language
+modelling (MLM)*. Acronyms that recur throughout the course (RNN, LSTM, GRU, MLP, …) are written bare
+elsewhere.
 
 ## 7. en-GB, stated once
 

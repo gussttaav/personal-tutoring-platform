@@ -52,9 +52,9 @@ it. Nothing it outputs touches the world. That is the bridge block.
 - [x] 18. `el-prompt-es-una-especificacion`
 - [x] 19. `cadena-de-pensamiento`
 - [x] 20. `salida-estructurada`
-- [ ] 21. `recuperacion`
-- [ ] 22. `ventana-de-contexto`
-- [ ] 23. `evaluar`
+- [x] 21. `recuperacion`
+- [x] 22. `ventana-de-contexto`
+- [x] 23. `evaluar`
 - [ ] 24. `proyecto-asistente`
 
 ## Mathematical content

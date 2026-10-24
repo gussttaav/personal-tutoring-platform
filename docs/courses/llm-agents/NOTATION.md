@@ -377,7 +377,10 @@ in `dl-nlp`'s table, and the two never share a page.
 
 | Symbol | Meaning |
 |---|---|
-| $\mathbf{q}$, $\mathbf{d}_i$ | the query embedding and the $i$-th document embedding in retrieval; the score is $\mathbf{q}^{\top}\mathbf{d}_i$ or $\cos(\mathbf{q}, \mathbf{d}_i)$ |
+| $\mathbf{q}$, $\mathbf{d}_i$ | the *embedding* of the question and of pasaje $i$ in retrieval; the score is $\cos(\mathbf{q}, \mathbf{d}_i)$, the first course's. In the contrastive loss, $\mathbf{d}_1$ is the pasaje that answers $\mathbf{q}$ and $\mathbf{d}_2, \dots, \mathbf{d}_B$ the batch's others (Block 3 lesson 4) |
+| $k$ | how many pasajes the recuperador keeps: top-k's letter (Block 1 lesson 4), because it is the same corte on another list, pasajes ranked by cosine where there were entries ranked by probability (Block 3 lesson 4) |
+| $\mathbf{h}(x_{\le t})$ · $\mathbf{d} = \frac{1}{T}\sum_{t=1}^{T}\mathbf{h}(x_{\le t})$ | Block 2's $\mathbf{h}$ at the position that has read the first $t$ tokens of a text $x_{1:T}$ · its mean over the $T$ positions, the mini-GPT's *embedding* of the text: Block 2 lesson 4's $\bar{\mathbf{h}}(x, y)$ with no prompt in front (Block 3 lesson 4) |
+| $P(\text{recuperada})$ · $P(\text{acierta} \mid \cdot)$ | over the questions a harness receives (and the model's sorteo): the share whose answering pasaje is among the $k$ recuperados · the share answered well, given that or its contrary (Block 3 lesson 4) |
 | $\mathcal{G}$ | a gramática: a set of texts, the ones a generación restringida may produce. A respuesta $y$ is in $\mathcal{G}$ when its text, as bytes, is one of them; several token sequences can spell one text (Block 3 lesson 3) |
 | $A_j \subseteq V$ | the allowed set for token $j$ of the respuesta: the entries whose bytes, after those of $y_{<j}$, are still the beginning of a text of $\mathcal{G}$. Indexed by $j$, like the $y_j$ it draws; the seed and the task md wrote $A_t$ (Block 3 lesson 3) |
 | $p_\theta(A_j \mid x, y_{<j})$ | the masa of the allowed set, $\sum_{v \in A_j} p_\theta(v \mid x, y_{<j})$: what the máscara keeps at that position (Block 3 lesson 3) |
@@ -385,14 +388,18 @@ in `dl-nlp`'s table, and the two never share a page.
 | $p_\theta(y \mid x, \mathcal{G})$ | the condicionada: $p_\theta(y \mid x) / p_\theta(\mathcal{G} \mid x)$ for $y \in \mathcal{G}$, $0$ elsewhere. What muestreo por rechazo draws from (Block 3 lesson 3) |
 | $\tilde{q}(v \mid x, y_{<j})$ · $\tilde{q}(y \mid x)$ | Block 1 lesson 9's rows read with the máscara as the corte: $p_\theta(v \mid x, y_{<j}) / p_\theta(A_j \mid x, y_{<j})$ on $A_j$, and their product over the respuesta (Block 3 lesson 3) |
 | $\text{intentos}$ | the number of whole respuestas muestreo por rechazo draws until one is in $\mathcal{G}$: geometric, with $\mathbb{E}[\text{intentos}] = 1/p_\theta(\mathcal{G} \mid x)$. Roman, a word, like $\text{margen}$; an English lesson writes $\text{tries}$ (Block 3 lesson 3) |
-| $\hat{s}$ | a score — what an evaluator assigns one response |
-| $\text{acierto}$ | accuracy on an evaluation set, $\text{acierto}(D)$, as the first course wrote it |
+| $\text{acierto}$ · $\text{acierto}_A$ | the tasa de acierto: the fraction of the $n$ pruebas of a banco that the evaluador marks as acertadas, the first course's symbol, written without the first course's $(D)$ (here $D$ is Kaplan's tokens) · the same for harness $A$, a label subscript like Block 2 lesson 4's $y_A$; $\text{acierto}_{\text{juez}}$ and $\text{acierto}_{\text{mano}}$ are the fractions a juez and the hand labels mark (Block 3 lesson 6) |
+| $n$ | the number of pruebas in a banco (Block 3 lesson 6). Block 1 lesson 2's bytes, said once in a clause; the two never share a page, and $n$ is what every statistics text and the Wilson interval write |
+| $\mu$ | the tasa de acierto over all the questions the pruebas are drawn from, which $\text{acierto}$ estimates: Block 3 lesson 4's $P(\text{acierta})$, lettered because $\text{acierto}$ and $\text{acierta}$ would sit one letter apart in one formula, and the lesson says so (Block 3 lesson 6) |
+| $\text{sólo}_A$, $\text{sólo}_B$ | the fraction of pruebas that harness $A$ acierta and $B$ falla, and the converse: $\text{acierto}_A - \text{acierto}_B = \text{sólo}_A - \text{sólo}_B$ (Block 3 lesson 6) |
+| $\text{acuerdo}$ · $\text{acuerdo}_{\text{azar}}$ · $\kappa$ | the fraction of respuestas on which a juez and the hand labels agree · what two independent evaluadores with those two acierto rates would agree on · Cohen's kappa, $(\text{acuerdo} - \text{acuerdo}_{\text{azar}})/(1 - \text{acuerdo}_{\text{azar}})$ (Block 3 lesson 6) |
 | $s$ | the prompt de sistema, a token sequence: the contenido of the mensaje of rol `sistema`. With Block 1 lesson 8's $e_{1:K}$ and $x$, the three pieces of a prompt, $\pi_\theta(y \mid s, e_{1:K}, x)$; each ejemplo is two mensajes, its caso as the usuario's and its respuesta as the asistente's, and $x$ is the last usuario mensaje (Block 3 lesson 1) |
 | $\pi_\theta(\text{cumple} \mid s, e_{1:K}, x)$ | the masa on the respuestas that meet an especificación: the third event in words, after Block 2 lesson 1's $\text{obedece}$ and $\text{buena}$. A respuesta can obey and not meet it, which is the lesson's opening case (Block 3 lesson 1) |
 | $p_{\text{SFT}}(\omega)$, $p_{\text{SFT}}(s \mid \omega)$ | Block 2 lesson 3's $p_{\text{SFT}}$ read with Block 1 lesson 8's latent tarea: the conversations of the ajuste in the place of that lesson's documents, each following a tarea $\omega$ and most opening on a prompt de sistema that describes it (Block 3 lesson 1) |
 | $\omega_1$ | the tarea an especificación describes, against every other $\omega$: Block 1 lesson 8's $\omega_1$, the first of two tareas compared, given that role (Block 3 lesson 1) |
 | $\mathbf{h}^{(l)}_t$ | the row of position $t$ at the output of capa $l$; $\mathbf{h}^{(0)}_t$ is the input row, the embedding of $x_t$ plus its position's vector. The first course's $\mathbf{h}^{(l)}$ with the position as subscript (shared §2); $\mathbf{h}^{(L)}_t$ is Block 2's $\mathbf{h}$ before the final layer norm (Block 3 lesson 2) |
 | $R$ | the tokens of a cadena de pensamiento: how many the model writes between the question, of $T$ tokens, and the first token of its respuesta, which is drawn with $\mathbf{z}_{T+R}$ (Block 3 lesson 2) |
+| $\text{tokens}(\cdot)$ | the positions a pieza takes in the call, as the plantilla writes it: a mensaje's contenido plus its rol token and its `<\|fin\|>`. Roman, a word, like $\text{intentos}$; the cells' `tokens(m)` and Block 5's `tokens(M)` are the same function in code. With it, $T$ counts every position of one call, the prompt's and the respuesta's (Block 3 lesson 5) |
 
 **The $\mathbf{q}$ collision, resolved by context and said once.** $\mathbf{q}$ is the attention
 query throughout the first course. In Block 1 here it always carries its position, $\mathbf{q}_t$
@@ -446,6 +453,38 @@ respuesta is drawn from $\mathbf{z}_{T+R}$. $\mathbf{h}^{(l)}_t$ is built from t
 (layer superscript, position subscript) and needs no new convention; the lesson that writes it never
 writes Block 2's bare $\mathbf{h}$. The indices of a camino, $i_0 \le \dots \le i_L$, live in one
 display and take no row.
+
+**Evaluation is written in words, and the one Greek letter is the mean** (`COURSE-C2-P1-03`,
+Block 3 lesson 6). The seeded $\hat{s}$ is retired, as the $s$ note above asked: the lesson's
+evaluador returns 1 or 0 and needs no letter for a score, and its two code versions (`exacta`,
+`normalizada`) are Python names. The quantities are roman words, the course's device for a set or a
+fraction named by what it counts ($\text{cumple}$, $\text{intentos}$, $\text{tokens}$):
+$\text{acierto}$ keeps the first course's symbol, and the paired difference is written with
+$\text{sólo}_A$ and $\text{sólo}_B$, so that the identity the lesson proves reads in Spanish. The
+true rate is $\mu$, a mean, and free in both courses (the first course's $\mu_t$, LayerNorm's,
+always carries its row); it is not the hat's job, which stays «estimated from a batch». The
+normal quantile is **written as the number 1.96**, never $z$: $z_v$ is Block 1 lesson 4's logit,
+and a lesson with one confidence level needs no letter for it. There is no $\operatorname{Var}$:
+the variance is written as $\mathbb{E}[(\text{acierto} - \mu)^{2}]$ once and named in prose.
+Cohen's $\kappa$ is the literature's letter and is kept against Block 2 lesson 5's línea base
+$\kappa(x)$ (a function of the instrucción, never bare); the lesson says so in a clause.
+
+**Retrieval keeps the seeded letters and adds one bare $P$** (`COURSE-C2-P1-03`, Block 3 lesson 4).
+$\mathbf{q}$ is the question's *embedding*, and the lesson says in a clause that it is neither an
+attention head's query nor Block 1 lesson 4's sampler (neither appears on its page). The question
+itself gets **no letter**: $x$ without a subscript is the caso (Block 1 lesson 8), and the lesson
+needs $x_{1:T}$ for the tokens of a pasaje, so it writes only the question's vector. The mini-GPT's
+*embedding* is a sum, not Block 2 lesson 4's $\mathbb{E}_j$, because the lesson counts the terms each
+token enters ($x_j$ enters $T - j + 1$ of them, under the causal mask); it is unlettered,
+$\mathbf{d}$ or $\mathbf{d}_i$ for pasaje $i$. The contrastive loss divides cosines by
+$\tau$, Block 1 lesson 4's temperature in the same job (it divides logits before a softmax), and
+counts the batch with $B$ (shared §4); it gets no $\mathcal{L}$ subscript because it is written once,
+as one question's term. **$P(\cdot)$ is a share of questions**, not a masa of the model: whether a
+pasaje is recuperado is decided by the recuperador, deterministically, per question, so the event
+is about the question and the probability is over the questions the harness receives. That is why
+it is not written $p_\theta$, and it extends Block 2 lesson 1's device (roman words name a set) from
+respuestas to preguntas. Block 2 lesson 4's $P(y_A \succ y_B \mid x)$ is the course's other bare
+$P$; the two never share a page.
 
 ### Block 4 — El puente: de texto a acciones
 

@@ -37,12 +37,14 @@
  * exactly as when the shell returned the overlay instead of them — so the pack checkout button
  * is never clickable behind the pack-booking screen. The bridge stays mounted throughout, or
  * the reschedule state would be thrown away each time a booking screen opens.
+ *
+ * CHAT-GLOBAL-01: the chat FAB is no longer one of the sections — `ChatProvider` (root layout)
+ * mounts it on every page, and it stays up over the booking screens.
  */
 
 import { useTranslations } from "next-intl";
 import { api } from "@/lib/api-client";
 import { useHydrated } from "@/hooks/useClientValue";
-import Chat from "@/components/Chat";
 import { PACK_SIZES, PACK_CONFIG } from "@/constants";
 import { usePrices, usePackValidityDays, usePricesSyncing } from "@/components/pricing/PricesProvider";
 import SessionCard from "./SessionCard";
@@ -288,9 +290,6 @@ export default function InteractiveShell() {
               </div>
             )}
           </section>
-
-          {/* ── Chat assistant ── */}
-          <Chat />
         </>
       )}
     </>
