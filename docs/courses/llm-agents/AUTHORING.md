@@ -188,7 +188,7 @@ this work.
 | Concept | Use | Not |
 |---|---|---|
 | a `(nombre, descripción, esquema)` triple the model may ask the harness to run | `herramienta` | *tool* in prose — the protocol's block names, `tool_use` / `tool_result`, stay in backticks as identifiers; `función` (that is the Python one) |
-| the model's request that a tool be run: one `tool_use` block, with its arguments | `llamada` (a una herramienta) | *tool call*, *function call*, invocación, petición |
+| the model's request that a tool be run: one `tool_use` block, with its arguments | `llamada` (a una herramienta). Blocks 2–3 spent the noun on each time the harness calls the model (lesson 24 counted *llamadas* to retry); from Block 4 lesson 1, which names the switch once, a llamada is the model's, and calls to the model are counted in `turnos`. The verb is unchanged: el harness *llama al modelo*, el modelo *hace llamadas* | *tool call*, *function call*, invocación, petición |
 | what the harness hands back to the model after a call — the `tool_result`, an error included | `observación` | *observation*; resultado (names the block, not what it is to the model); respuesta (reserved for the model's) |
 | what the model returns to one call: a list of content blocks, text or `tool_use` | `respuesta` — from Block 2 lesson 1 the name of $y$ whether it answers or not, replacing Block 1 lesson 9's «continuación» as the term (the name says what $y$ is asked for, not whether it gets there) | *response*, salida, *completion* — the first course's `genera` completed text; here the model answers |
 | one model call and everything the harness does until the next | `turno` | iteración, ronda, paso — `paso` is the first course's forward pass as a function, and Block 1 here inherits it |

@@ -39,7 +39,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (1/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1393,3 +1393,37 @@ Approved by Gustavo at review:
   four wrong variants each fail their own test (CPython); `q-cuantas-llamadas` answered right and
   wrong in the browser, the other two not confirmed; no horizontal page scroll at 360 px (the 691 px
   display scrolls in its own box, also on desktop). Not on a phone.
+
+**COURSE-C2-P1-04** — In progress (started 2026-10-24). Lesson 25 `de-chat-a-agente` authored on
+the lesson-24 branch, the block's first. 1 834 words, **no display equation** (the opening says the
+block introduces no mathematics and why: what it fixes are a program's guarantees, written as a
+firma, an algorithm and its invariants), no widget (the block md assigns none), 1 cell (45 lines),
+4 quiz, no challenge, 3 readings (Russell & Norvig ch. 2 / where *agente* and *entorno* come from,
+ReAct 2022, Schluntz & Zhang 2024 / workflows vs agents; URLs checked). Toolformer and function
+calling are left to lesson 26. `minutes: 25` (lint ≈22). Runs on the **scripted model**, and the
+lesson restates why in one clause before the cell. Approved by Gustavo at review:
+- **The content:** a trace in prose (a shopping list and a recipe, four turnos: read, read,
+  rewrite, text), then a figure (`agente-piezas.svg`, hand-written, 360 wide: modelo, harness,
+  entorno, and no arrow from the model to the files); the definitions of entorno, herramienta,
+  llamada, observación, turno and agente; three invariants (the model executes nothing, sees only
+  the mensajes, and only the harness touches the entorno, through a herramienta); and the line
+  between lesson 24's assistant (the harness fixes the sequence) and an agent (the model chooses
+  the next llamada, so the number of turnos is unknown in advance).
+- **The cell:** one guion, two harness. The chat one shows the user the JSON request and
+  `lista.txt` is unchanged; the agent one executes it and the file changes. The `for` gives a
+  fixed four turnos, and the prose names its three defects as later lessons (the harness guesses
+  what is a request, the fixed count, `KeyError` instead of an observación) without pre-empting
+  the loop's pseudocode, which stays lesson 27's.
+- **Applied after review:** the delta §4 `llamada` row now records the collision with Blocks 2–3's
+  use of the noun for a call to the model, which the lesson names once (calls to the model are
+  counted in turnos); `NOTATION.md`'s Block 4 section records the lesson's provisional encoding
+  (JSON in the text, observations as usuario mensajes, the `{"ruta": "contenido"}` dict with
+  `leer` / `escribir`) and that lesson 26 replaces it with `tool_use` / `tool_result` blocks,
+  mensajes staying `(rol, contenido)` tuples until then.
+- **Lesson 24's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 26 (`llamar-herramientas`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors; the cell runs in the Browser pane on `pnpm start` with the CPython prototype's output;
+  `q-cuantos-turnos` answered wrong in the browser (rejected, explanation shown), the other three
+  not confirmed; no horizontal page scroll at 360 px, the figure renders at 328 px with no label
+  clipped. Not on a phone.

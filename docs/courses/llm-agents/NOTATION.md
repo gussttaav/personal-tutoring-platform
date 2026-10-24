@@ -496,6 +496,16 @@ No new mathematics, and the block's first lesson says so in its opening. What th
 never inside `$…$`. (It was the type count in the first course; there is no page on which the two
 could meet, and a symbol that never enters maths is not a symbol.)
 
+**The block's first lesson writes a llamada as JSON inside the text** (`COURSE-C2-P1-04`, lesson
+25): `{"pide": "leer", "ruta": …}` / `{"pide": "escribir", "ruta": …, "contenido": …}`, the tools
+described in the prompt de sistema with `herramientas` still empty, and each observación sent back
+as a `("usuario", "Observación: …")` mensaje — the ReAct-era form, called provisional in the lesson,
+whose defects (the harness guesses what is a request, nothing ties an observación to its llamada)
+are the next lesson's subject. Its entorno is already the `{"ruta": "contenido"}` dict, with `leer`
+and `escribir` only; lesson 26 gives it its four tools and their contracts, and moves llamadas and
+observaciones into `tool_use` / `tool_result` blocks. Until it does, mensajes stay Block 2's
+`(rol, contenido)` tuples.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the

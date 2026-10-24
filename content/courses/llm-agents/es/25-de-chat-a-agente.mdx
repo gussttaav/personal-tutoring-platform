@@ -1,0 +1,299 @@
+---
+slug: de-chat-a-agente
+title: "Del chat al agente: la mitad que falta"
+block: 4
+order: 1
+minutes: 25
+summary: "Un agente es un modelo con un entorno, unas herramientas y un harness que ejecuta lo que el modelo pide y le enseña lo que ha pasado. La lección pone nombre a cada pieza, fija lo que el modelo no hace nunca y corre el mismo modelo guionizado con dos harness: uno contesta y el otro cambia un fichero."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-quien-escribe
+    type: single
+    prompt: 'Al final de la celda, <W>lista.txt</W> tiene huevos y cebolla. ¿Qué pieza los escribió?'
+    options:
+      - { id: a, text: 'El harness, con `ejecutar`, cuando la tercera respuesta lo pidió. El modelo escribió el JSON que lo pedía, y nada más.' }
+      - { id: b, text: 'El modelo, en su tercera respuesta: el JSON con la lista nueva es la escritura.' }
+      - { id: c, text: 'El usuario, al leer la respuesta final.' }
+      - { id: d, text: 'El guion, que ya llevaba escrita la lista nueva.' }
+    answer: a
+    explanation: 'La (a). La (b) es justo la confusión que la lección quiere evitar: en el chat, ese mismo modelo con ese mismo guion no cambió nada, porque nadie ejecutó lo que pedía. La (d) mezcla dos cosas. El guion fija qué responde el modelo, no qué hay en el entorno, y si el harness no ejecuta la llamada la lista se queda como estaba.'
+    hint: 'Compara las dos mitades de la celda: el modelo y el guion son los mismos.'
+  - id: q-lo-que-sabe
+    type: boolean
+    prompt: 'Cuando el modelo guionizado devuelve <W>\{"pide": "leer", "ruta": "receta.txt"\}</W>, ya sabe qué ingredientes lleva la tortilla.'
+    answer: false
+    explanation: 'Falso. En ese momento nadie ha leído nada: la respuesta es una petición. El harness lee el fichero después, y lo que dice entra en los mensajes del turno siguiente como una observación. Es el segundo invariante: el modelo sólo sabe del entorno lo que le ha llegado en los mensajes, y sólo desde el turno en que le llega.'
+  - id: q-quien-elige
+    type: single
+    prompt: 'En el asistente del proyecto anterior, ¿quién decidía qué pasajes leía el modelo, y cuándo?'
+    options:
+      - { id: a, text: 'El harness, antes de llamar al modelo: el recuperador los elegía con la pregunta, una sola vez, en un orden escrito en el código.' }
+      - { id: b, text: 'El modelo, que pedía los pasajes que le hacían falta.' }
+      - { id: c, text: 'El modelo, al citar en su respuesta el número de un pasaje.' }
+      - { id: d, text: 'Nadie: entraban en el prompt todos los pasajes de la novela.' }
+    answer: a
+    explanation: 'La (a), y es la diferencia con un agente. Allí el modelo rellenaba un hueco de una secuencia fija. En la traza, la lectura de la lista la pide el modelo después de haber visto la receta, y ningún recuperador puede tomar esa decisión antes de llamar al modelo, porque depende de una observación. La (c) confunde citar con pedir: el pasaje citado ya estaba en el prompt. La (d) olvida el recuperador, que dejaba entrar como mucho $k = 3$.'
+  - id: q-cuantos-turnos
+    type: numeric
+    prompt: 'Un usuario pide <W>Cambia 2025 por 2026 en las notas de la carpeta notas.</W> El agente tiene tres herramientas: listar una carpeta, leer un fichero y reescribirlo. Su modelo hace una llamada por respuesta: lista la carpeta, que tiene tres ficheros, lee cada uno, reescribe cada uno y termina con un texto. ¿Cuántos turnos da el harness?'
+    answer: 8
+    tolerance: 0
+    explanation: 'Ocho: uno para listar, tres lecturas, tres escrituras y el texto final, que también es un turno aunque no pida nada. Fíjate en que el número depende de una observación. Hasta que no ejecuta la primera llamada y ve el contenido de la carpeta, el harness no sabe que hay tres ficheros, y con treinta serían 62 turnos. Por eso un harness no puede dar un número fijo de turnos, como hace la celda.'
+    hint: 'Cada respuesta del modelo es un turno, la última también.'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Artificial Intelligence: A Modern Approach'
+    authors: 'Russell y Norvig'
+    year: '2020'
+    venue: '4.ª edición, capítulo 2'
+    lang: en
+    url: 'https://aima.cs.berkeley.edu/'
+    note: 'De aquí vienen las dos palabras: un agente percibe su entorno y actúa sobre él. El capítulo 2 las define antes de cualquier algoritmo, y las piezas de esta lección son esa definición con un modelo de lenguaje dentro.'
+  - kind: paper
+    title: 'ReAct: Synergizing Reasoning and Acting in Language Models'
+    authors: 'Yao, Zhao, Yu, Du, Shafran, Narasimhan y Cao'
+    year: '2022'
+    venue: 'ICLR 2023 · arXiv:2210.03629'
+    lang: en
+    url: 'https://arxiv.org/abs/2210.03629'
+    note: 'El modelo escribe en el texto lo que piensa y la acción que pide, y el programa le pega detrás la observación: el formato de la celda, con sus mismos defectos, en el paper que lo hizo habitual.'
+  - kind: blog
+    title: 'Building effective agents'
+    authors: 'Schluntz y Zhang'
+    year: '2024'
+    venue: 'Anthropic'
+    lang: en
+    url: 'https://www.anthropic.com/engineering/building-effective-agents'
+    note: 'Separa los flujos de trabajo, donde el código fija en qué orden se llama al modelo, de los agentes, donde lo decide el modelo. Es la línea entre el asistente del bloque anterior y esta lección, contada por quien construye agentes.'
+---
+
+{/* COURSE-C2-P1-04 — Bloque 4, lección 1. La celda corre sobre el modelo guionizado (cargado de
+    guionizado.py) y no carga la red. Sin ninguna ecuación aparte, a propósito: el bloque no
+    introduce matemáticas, y el primer párrafo lo dice. */}
+
+<Leccion slug="proyecto-asistente">El proyecto del bloque anterior</Leccion> cerró con un
+asistente sobre *Marianela* que recupera pasajes, responde en un JSON que el *harness* comprueba y
+se mide prueba a prueba. Lo que entrega, por mucho que acierte, es un texto que lee una persona. Un
+agente de programación trabaja de otra manera: abre un fichero, lo cambia, ejecuta las pruebas, lee
+el error y lo vuelve a intentar, y cuando por fin contesta, el repositorio ya no es el que era. De
+lo primero a lo segundo, del chat al agente, los cursos suelen pasar como si no hubiera nada que
+explicar. Este bloque lo explica, y sin matemáticas nuevas: no tiene ni una ecuación aparte, porque
+lo que fija son las garantías de un programa, y eso se escribe con una firma, un algoritmo y sus
+invariantes.
+
+La explicación corriente es que al agente «se le dan herramientas», como si fueran una capacidad
+del modelo. No lo son. <Leccion slug="salida-estructurada">La lección sobre la salida
+estructurada</Leccion> consiguió que un modelo escribiera un JSON válido, y un JSON que dice «manda
+este correo» no manda nada: es texto, como cualquier otra respuesta. Lo manda un programa que lee
+ese JSON, hace lo que pide y después le pasa al modelo lo que ha salido. Ese programa no es un
+detalle de la instalación. Es la mitad del agente, y la pregunta de esta lección es de qué piezas
+está hecho y qué tiene que prometer cada una.
+
+Mira un agente pequeño trabajar, turno a turno, antes de nombrar nada. Hay dos ficheros:
+<W>receta.txt</W>, que dice <W>Tortilla: huevos, patatas, cebolla.</W>, y <W>lista.txt</W>, la
+lista de la compra, con <W>pan, leche, patatas</W>. El usuario pide <W>Apunta en lista.txt lo que
+me falta para receta.txt.</W> El programa que rodea al modelo le pasa ese pedido bajo un *prompt*
+de sistema que le explica cómo pedir que se lea o se reescriba un fichero (con un JSON) y que, al
+terminar, conteste en texto.
+
+1. El modelo no ha visto ningún fichero, y su primera respuesta lo reconoce a su manera:
+   <W>\{"pide": "leer", "ruta": "receta.txt"\}</W>. Todavía no se ha leído nada. El programa lee
+   el fichero y añade a la conversación esa respuesta y lo que decía la receta.
+2. Con la receta delante, el modelo pide leer <W>lista.txt</W>. El programa la lee y la añade.
+3. Ahora sabe qué hay y qué falta, y pide reescribir la lista entera, con
+   <W>pan, leche, patatas, huevos, cebolla</W>. El programa la escribe. Es la primera vez que
+   algo cambia fuera de la conversación.
+4. La cuarta respuesta no pide nada: <W>Faltaban huevos y cebolla, y ya están apuntados en
+   lista.txt.</W> El programa se la da al usuario y para.
+
+Cuatro veces el mismo modelo, y ni una vez tocó un fichero. Todo lo que supo de ellos le llegó
+escrito en la conversación, porque lo había pedido. El orden lo eligió él, y ningún código decía
+«primero la receta». Y la tercera respuesta reescribe la lista entera, lo que sólo es seguro porque
+la segunda la había leído. Un modelo que escribiera sin leer habría borrado el pan y la leche sin
+enterarse. Lo que no ve, lo puede destruir.
+
+<Figure
+  src="/courses/llm-agents/agente-piezas.svg"
+  alt="Tres cajas apiladas: arriba el modelo, en medio el harness, abajo el entorno con sus dos ficheros. Entre el modelo y el harness bajan las respuestas y suben los mensajes con las observaciones; entre el harness y el entorno bajan las herramientas y sube lo que devuelven. A la izquierda del harness, el usuario, con el pedido que entra y el texto final que sale. Entre el modelo y el entorno no hay ninguna flecha."
+  caption="El modelo sólo cruza mensajes con el harness, y el entorno sólo lo tocan las herramientas que el harness ejecuta. Ninguna flecha une el modelo con los ficheros."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Un agente es un modelo más lo que lo rodea: un entorno que sólo tocan las herramientas, y un
+harness que ejecuta lo que el modelo pide, le enseña lo que ha pasado y lo vuelve a llamar. El
+modelo no cambia, sigue devolviendo texto, y la mitad que actúa es código tuyo.
+</Callout>
+
+## Las piezas de un agente
+
+El **entorno** es el estado sobre el que trabaja el agente: los ficheros de la traza, un
+repositorio, un calendario. Dura de un turno al siguiente, y el modelo ni lo lee ni lo escribe. Una
+**herramienta** es una operación sobre el entorno que el harness sabe ejecutar, con su nombre y sus
+argumentos: leer una ruta, reescribirla con un contenido. Una **llamada** es la parte de una
+respuesta que pide ejecutar una herramienta con unos argumentos concretos, y una **observación** es
+lo que el harness le devuelve al modelo después, dentro de los mensajes de la vez siguiente. Un
+**turno** es una vez que el harness llama al modelo, más todo lo que hace con la respuesta hasta
+llamarlo otra vez. La traza tiene cuatro.
+
+Una palabra cambia de sentido aquí, y conviene verlo una vez. Hasta ahora el curso llamaba
+«llamada» a cada vez que el harness llama al modelo, y el asistente del proyecto contaba las suyas
+para reintentar. Desde esta lección una llamada la hace el modelo, a una herramienta, y las veces
+que el harness llama al modelo se cuentan en turnos. El verbo no cambia: el harness llama al
+modelo, y el modelo hace llamadas.
+
+El harness tiene nombre desde que aplicaba la plantilla de chat, y en el bloque anterior además
+comprobaba y reintentaba. Aquí crece: ejecuta las llamadas, decide cuáles se ejecutan y vuelve a
+llamar al modelo hasta que la respuesta no pide nada. Un **agente** es todo eso junto, un harness
+con un modelo detrás, trabajando sobre un entorno.
+
+La firma del modelo no cambia. Es la que el curso mantiene desde el bloque anterior,
+`modelo(mensajes, herramientas) -> respuesta`, y lo nuevo es lo que llevará `herramientas`: la
+descripción de lo que el modelo puede pedir. En la celda de esta lección aún va vacío, y esa
+descripción viaja en el prompt de sistema, como en los primeros agentes. Cómo se describe una
+herramienta y qué forma tiene una llamada es la lección siguiente.
+
+### Lo que el modelo no hace nunca
+
+Tres invariantes, que valen en cada turno de cualquier agente del curso, de este bloque al último.
+
+Primero, el modelo no ejecuta nada. Su respuesta es una petición, y hasta que el harness la
+ejecuta, el entorno es el mismo. Por eso el harness puede negarse: ejecutar o no una llamada es una
+decisión suya, y la toma el permiso, en una lección posterior de este bloque.
+
+Segundo, el modelo sólo ve los mensajes. Todo lo que sabe del entorno le llegó como una
+observación, y lo que no ha pedido no existe para él. Es lo que hizo segura la tercera respuesta de
+la traza, y lo que vuelve peligrosa una que escriba sin haber leído.
+
+Tercero, sólo el harness toca el entorno, y sólo a través de una herramienta. Cada garantía que
+quieras dar (que nada se escribe fuera de una carpeta, que un error no lo rompe todo, que lo que
+dice un fichero no se obedece como una orden) tiene un único sitio donde ponerla, y ese sitio es
+código tuyo, que puedes probar, y no los pesos de nadie.
+
+Los tres juntos fijan el orden de cada turno: el modelo pide, el harness ejecuta, el modelo ve.
+Una frase como «la herramienta le devuelve el fichero al modelo» se salta el paso del medio, y es
+en ese paso donde se decide todo.
+
+### Quién decide qué viene después
+
+El asistente del proyecto también leía antes de responder, y la diferencia con la traza está en
+quién elegía qué leer. Allí el harness recuperaba los pasajes antes de llamar al modelo, con la
+pregunta y nada más, y la secuencia (recuperar, montar, llamar, comprobar) estaba escrita en su
+código, igual para todas las preguntas. El modelo rellenaba un hueco. En la traza, la secuencia no
+está escrita en ningún sitio hasta que el agente corre. El modelo elige qué herramienta pide y
+cuándo, según lo que ha visto en los turnos anteriores, y podría haber leído la lista antes que la
+receta, o pedido una tercera lectura.
+
+Esa es la línea entre un asistente y un agente, y tiene dos consecuencias. La primera es que un
+harness no sabe de antemano cuántos turnos va a dar: en la traza fueron cuatro, y con una carpeta
+de diez recetas podrían ser veinte. Necesita una regla para parar, que es parte del contrato del
+bucle, dos lecciones más adelante. La segunda es que el trabajo de diseño cambia de sitio. En el
+asistente decidías la secuencia. En un agente la decide el modelo, y lo que tú decides es qué puede
+hacer cada turno.
+
+## El mismo modelo, con dos harness
+
+La celda corre sobre el modelo guionizado, como todo el bloque, hasta que el bloque siguiente ponga
+en su sitio un modelo local sin tocar nada más. Con respuestas escritas de antemano, cada ejecución
+repite la anterior, un desafío puede comprobar tu harness contra él y lo que falla es tu código,
+nunca el azar de un modelo. Las cuatro respuestas de la traza las he escrito yo. El guion dice, en
+cada turno, qué mensajes espera recibir el modelo, observaciones incluidas, y si recibe otros, falla.
+
+La celda le da el mismo guion a dos harness. El primero es un chat: llama al modelo una vez y le
+enseña al usuario lo que vuelve. El segundo ejecuta cada llamada con `ejecutar`, añade la respuesta
+y la observación a los mensajes (la observación, de momento, como un mensaje del usuario) y vuelve
+a llamar, cuatro turnos, porque sé cuántos he escrito. El entorno es un diccionario de rutas y
+contenidos, sin ningún fichero de verdad detrás.
+
+<PyCell code={`
+import json
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())    # ModeloGuionizado
+
+SISTEMA = ("Trabajas con ficheros del usuario que no ves. Para leer uno, responde sólo "
+           '{"pide": "leer", "ruta": "…"}, y para reescribirlo entero, {"pide": "escribir", '
+           '"ruta": "…", "contenido": "…"}. Cuando acabes, responde en texto.')
+INICIO = [("sistema", SISTEMA), ("usuario", "Apunta en lista.txt lo que me falta para receta.txt.")]
+ENTORNO = {"lista.txt": "pan, leche, patatas", "receta.txt": "Tortilla: huevos, patatas, cebolla."}
+RESPUESTAS = [  # las cuatro respuestas del modelo guionizado: las he escrito yo
+    '{"pide": "leer", "ruta": "receta.txt"}',
+    '{"pide": "leer", "ruta": "lista.txt"}',
+    '{"pide": "escribir", "ruta": "lista.txt", "contenido": "pan, leche, patatas, huevos, cebolla"}',
+    "Faltaban huevos y cebolla, y ya están apuntados en lista.txt."]
+VISTO = ["Tortilla: huevos, patatas, cebolla.", "pan, leche, patatas", "escrito", ""]
+guion, M = [], INICIO                    # el guion: los mensajes que espera en cada turno
+for r, v in zip(RESPUESTAS, VISTO):
+    guion, M = guion + [(M, r)], M + [("asistente", r), ("usuario", "Observación: " + v)]
+
+def peticion(r):                                     # lo que pide r, o None si es texto
+    try:
+        p = json.loads(r)
+    except ValueError:
+        return None
+    return p if isinstance(p, dict) and "pide" in p else None
+
+def ejecutar(p, entorno):                            # el harness toca el entorno; el modelo, no
+    if p["pide"] == "leer":
+        return entorno[p["ruta"]]
+    entorno[p["ruta"]] = p["contenido"]
+    return "escrito"
+
+print("chat     ->", ModeloGuionizado(guion)(INICIO))       # 1. un chat: un turno, y contesta
+print("lista.txt:", ENTORNO["lista.txt"], "\\n")
+modelo, entorno, M = ModeloGuionizado(guion), dict(ENTORNO), INICIO
+for turno in range(1, 5):                            # 2. un agente: los cuatro turnos del guion
+    r = modelo(M)
+    p = peticion(r)
+    if p is None:
+        print("turno %d  -> al usuario: %s" % (turno, r))
+        break
+    v = ejecutar(p, entorno)
+    print("turno %d  -> %s %s · observación: %s" % (turno, p["pide"], p["ruta"], v))
+    M = M + [("asistente", r), ("usuario", "Observación: " + v)]
+print("lista.txt:", entorno["lista.txt"])
+`} />
+
+El chat devuelve la primera respuesta tal cual, y quien la recibe lee un JSON que pide abrir un
+fichero. El modelo ha hecho su parte, nadie ha hecho la siguiente, y <W>lista.txt</W> sigue sin
+huevos. El agente, con las mismas cuatro respuestas, cambia el fichero. Entre los dos sólo hay
+`peticion`, `ejecutar` y el `for` que vuelve a llamar: unas veinte líneas.
+
+Esas veinte líneas tienen tres defectos, y cada uno ocupa una lección de este bloque. `peticion`
+adivina: una respuesta que le explicara al usuario cómo se pide un fichero, con el JSON de ejemplo
+dentro, se ejecutaría. El `for` da cuatro turnos porque yo sé cuántos hay, y un harness no lo sabe.
+Y `ejecutar`, con una ruta que no existe, lanza un `KeyError` que para el programa en lugar de
+contárselo al modelo. Cámbialo tú: pide <W>recetas.txt</W> en la primera respuesta, y mira dónde se
+rompe y quién se entera.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: quién toca el entorno, qué sabe el modelo cuando pide algo, quién elegía en el
+proyecto anterior y cuántos turnos cuesta una tarea.
+
+<Quiz id="q-quien-escribe" />
+
+<Quiz id="q-lo-que-sabe" />
+
+<Quiz id="q-quien-elige" />
+
+<Quiz id="q-cuantos-turnos" />
+
+---
+
+La celda funciona porque el modelo escribió cada llamada tal como el prompt de sistema le pedía, y
+porque ninguna otra respuesta se parecía a una. Nada de eso está garantizado. Un modelo de verdad
+puede pedir una herramienta que no existe, olvidar un argumento o poner un número donde va una
+ruta, y la llamada viaja mezclada con el texto, sin nada que diga dónde empieza la petición ni a
+qué llamada responde cada observación.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug llamar-herramientas), envolver «La lección siguiente, sobre llamar herramientas» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, sobre llamar herramientas, saca la llamada del texto. Cada herramienta se
+declara con un nombre, una descripción y un esquema de sus argumentos, y la llamada y su
+observación pasan a ser bloques propios, unidos por un identificador. Es una salida estructurada
+como las del bloque anterior, con una diferencia que lo cambia todo: lo que el modelo escribe ahí,
+el harness lo ejecuta.
