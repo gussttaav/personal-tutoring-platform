@@ -1,0 +1,687 @@
+---
+slug: cuando-no-hace-falta-buscar
+title: "CAG: cuándo no hace falta buscar"
+date: "2026-10-28"
+minutes: 24
+summary: "Un asistente con buscador cita la regla general de reembolsos y se equivoca, porque la regla de su plan estaba en un fragmento que no encontró. Qué es la generación aumentada por caché (CAG), cómo la caché KV hace barato darle al modelo todos los documentos, qué midió el artículo que le puso nombre, dónde se rompe y cuándo conviene en lugar de buscar."
+draft: false
+reading:
+  - kind: paper
+    title: "Don't Do RAG: When Cache-Augmented Generation is All You Need for Knowledge Tasks"
+    authors: "Brian J. Chan, Chao-Ting Chen, Jui-Hung Cheng y Hen-Hsen Huang"
+    year: "2024"
+    venue: "WWW '25 Companion"
+    lang: en
+    url: "https://arxiv.org/abs/2412.15605"
+    note: "El artículo que puso el nombre. Cinco páginas: la sección 3 es el método entero, y las tablas 2 y 3 se leen mejor juntas. La segunda enseña que la caché hace viable leerlo todo, no más rápido que un buscador sencillo."
+  - kind: paper
+    title: "Efficient Memory Management for Large Language Model Serving with PagedAttention"
+    authors: "Woosuk Kwon, Zhuohan Li, Siyuan Zhuang y otros"
+    year: "2023"
+    venue: "SOSP 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2309.06180"
+    note: "El artículo de vLLM. Guarda la caché KV en bloques, como la memoria virtual de un sistema operativo, y de ahí sale que varias peticiones puedan compartir los bloques de un mismo comienzo sin copiarlos."
+  - kind: paper
+    title: "SGLang: Efficient Execution of Structured Language Model Programs"
+    authors: "Lianmin Zheng, Liangsheng Yin, Zhiqiang Xie y otros"
+    year: "2023"
+    venue: "NeurIPS 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2312.07104"
+    note: "RadixAttention: todos los comienzos de prompt que ha visto el servidor, organizados en un árbol, para reutilizar la caché de cualquiera de ellos sin que nadie lo pida. Es la versión automática de lo que CAG hace a mano."
+  - kind: paper
+    title: "Prompt Cache: Modular Attention Reuse for Low-Latency Inference"
+    authors: "In Gim, Guojun Chen, Seung-seob Lee y otros"
+    year: "2023"
+    venue: "MLSys 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2311.04934"
+    note: "Un año antes que CAG: trozos de prompt que se repiten, declarados como módulos con su caché precalculada. Lo interesante es cómo resuelve que un módulo pueda aparecer en distintas posiciones del prompt."
+  - kind: paper
+    title: "Lost in the Middle: How Language Models Use Long Contexts"
+    authors: "Nelson Liu, Kevin Lin, John Hewitt y otros"
+    year: "2023"
+    venue: "TACL"
+    lang: en
+    url: "https://arxiv.org/abs/2307.03172"
+    note: "La curva en U: los modelos usan bien lo que está al principio y al final del contexto y mal lo que está en medio. Con la figura 1 se entiende por qué tener el dato en el contexto no basta."
+  - kind: paper
+    title: "RULER: What's the Real Context Size of Your Long-Context Language Models?"
+    authors: "Cheng-Ping Hsieh, Simeng Sun, Samuel Kriman y otros"
+    year: "2024"
+    venue: "COLM 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2404.06654"
+    note: "Diecisiete modelos que anuncian 32 000 tokens o más, medidos con tareas más difíciles que encontrar una frase escondida. Sólo la mitad aguanta a 32 000. Es el origen de hablar de contexto efectivo y no nominal."
+  - kind: paper
+    title: "NoLiMa: Long-Context Evaluation Beyond Literal Matching"
+    authors: "Ali Modarressi, Hanieh Deilamsalehy, Franck Dernoncourt y otros"
+    year: "2025"
+    venue: "ICML 2025"
+    lang: en
+    url: "https://arxiv.org/abs/2502.05167"
+    note: "Preguntas cuya respuesta no comparte palabras con la pregunta, como el apartado de devoluciones de un plan. A 32 000 tokens, once de trece modelos caen por debajo de la mitad de lo que aciertan con textos cortos."
+  - kind: paper
+    title: "Retrieval Augmented Generation or Long-Context LLMs? A Comprehensive Study and Hybrid Approach"
+    authors: "Zhuowan Li, Cheng Li, Mingyang Zhang, Qiaozhu Mei y Michael Bendersky"
+    year: "2024"
+    venue: "EMNLP 2024 Industry"
+    lang: en
+    url: "https://arxiv.org/abs/2407.16833"
+    note: "La comparación entre contexto largo y RAG que hay que leer antes que la de CAG: el contexto largo gana en media, RAG cuesta mucho menos, y el 63 % de las veces responden lo mismo. Self-Route aprovecha eso."
+  - kind: paper
+    title: "CacheBlend: Fast Large Language Model Serving for RAG with Cached Knowledge Fusion"
+    authors: "Jiayi Yao, Hanchen Li, Yuhan Liu y otros"
+    year: "2024"
+    venue: "EuroSys 2025"
+    lang: en
+    url: "https://arxiv.org/abs/2405.16444"
+    note: "Cómo reutilizar la caché de fragmentos que no están al principio del prompt. La sección 3 explica por qué pegar cachés calculadas por separado da respuestas peores, y qué pocos tokens hay que recalcular para arreglarlo."
+  - kind: blog
+    title: "Context Engineering for AI Agents: Lessons from Building Manus"
+    authors: "Yichao 'Peak' Ji"
+    year: "2025"
+    venue: "manus.im"
+    lang: en
+    url: "https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus"
+    note: "La caché vista desde un agente en producción: la proporción de tokens leídos de caché como la métrica que más importa, y las reglas prácticas para no romperla, empezando por no poner la hora al principio del prompt."
+areas: ["ia"]
+cover: "/blog/cuando-no-hace-falta-buscar/prompt-en-capas.svg"
+tags: ["rag", "llm", "rendimiento"]
+aiImages: true
+---
+
+{/*
+  BLOG-20 — CAG: cuándo no hace falta buscar.
+
+  Tesis: CAG (Cache-Augmented Generation) no es una variante del RAG ni su sustituto. Es la
+  opción de siempre, darle al modelo todo el contexto, en el momento en que la caché de prefijos
+  la volvió barata. La pregunta que deja no es buscar o no buscar, sino qué parte de lo que sabe
+  un asistente es pequeña y estable (va delante, entera y en caché) y qué parte cambia o no cabe
+  (va detrás de una búsqueda). La figura final (prompt-en-capas) dibuja eso para Albarán.
+
+  El ejemplo es Albarán, la empresa INVENTADA de BLOG-07 y BLOG-08, presentada de nuevo desde cero
+  (el artículo no supone que se hayan leído). Números inventados que deben coincidir en el cuerpo y
+  en scripts/figures/cuando-no-hace-falta-buscar/make_svgs.py:
+    - políticas: 40 documentos, unas 60 páginas, 32 000 tokens en cinco grupos: condiciones de
+      los planes Básico, Equipo y Empresa (13 500), facturación y cobros (8 000), privacidad y
+      datos (5 500), acuerdos de nivel de servicio (2 000) y preguntas frecuentes (3 000, cambian
+      cada semana); el resto cambia una o dos veces al mes. Instrucciones del asistente: 1 500;
+      definiciones de herramientas: 800.
+    - equipo de soporte: 25 personas, unas 600 preguntas al día.
+    - la regla: preguntas frecuentes «por lo general, los reembolsos pueden solicitarse en los 14
+      días siguientes al cobro» (la misma frase de BLOG-07); condiciones del plan Equipo, apartado 7
+      «Devoluciones»: «las suscripciones anuales disponen de 30 días naturales desde la fecha del
+      cargo».
+    - RAG de referencia: 4 fragmentos de 500 tokens = 2 000 tokens de conocimiento por pregunta.
+    - documento restringido: márgenes de descuento comercial, sólo para responsables.
+
+  Lo único calculado son las cuentas de coste (unidad: el precio de un token de entrada normal;
+  lectura de caché 0,1; escritura 1,25, las tarifas de Anthropic con vida de 5 minutos y de
+  OpenAI en sus modelos recientes con vida de 30 minutos, octubre de 2026) y el tamaño de la caché
+  KV: Llama 3.1 8B, 32 capas × 8 cabezas de clave y valor × 128 × 2 (clave y valor) × 2 bytes =
+  131 072 B = 128 KiB por token → 32 000 tokens = 4,19 GB; 70B, 80 capas → 320 KiB → 10,5 GB.
+  coste-acumulado sale del generador con esas tarifas.
+
+  Artículo conceptual, como BLOG-07 y BLOG-08: ningún número medido sobre el ejemplo. Los números
+  citados son de las fuentes, leídos en ellas: CAG (Chan et al. v2, tabla 1 tamaños, tabla 2
+  BERTScore, tabla 3 tiempos; ICL 92,0824 s, CAG 2,2631 s, BM25 top-3 0,0008 + 0,6667 s en
+  HotPotQA grande); RULER (17 modelos, la mitad a 32K); NoLiMa (11 de 13 por debajo del 50 % a
+  32K; GPT-4o 99,3 → 69,7); Chroma, Context Rot (18 modelos, julio de 2025); Li et al. (63 %
+  idénticas; Self-Route −65 % de coste con Gemini-1.5-Pro y −39 % con GPT-4o, según su
+  introducción); CacheBlend (2,2–3,3x en tiempo hasta el primer token); KBLaM (más de 10 000
+  tripletas, modelo de 8 000 millones, una A100 de 80 GB); Manus (la frase sobre la tasa de
+  aciertos). Fechas de lanzamiento de la caché: Google, mayo de 2024 (anuncio) y junio (API);
+  Anthropic, 14 de agosto de 2024; OpenAI, 1 de octubre de 2024; Gemini 2.5 implícita, 8 de mayo
+  de 2025.
+
+  Figuras en public/blog/cuando-no-hace-falta-buscar/, generadas por
+  scripts/figures/cuando-no-hace-falta-buscar/make_svgs.py (Python sin dependencias; escribe el
+  .svg y el .en.svg de cada una). El alt de cada <img> es el aria-label del SVG: si cambia uno,
+  cambia el otro.
+*/}
+
+Una empresa de software de facturación, llamémosla Albarán, tiene un asistente interno para su
+equipo de soporte: un modelo de lenguaje que contesta preguntas sobre las políticas de la empresa.
+Alguien del equipo le pregunta:
+
+> ¿Cuántos días tiene un cliente del plan Equipo para pedir el reembolso de una renovación anual?
+
+Y el asistente contesta, con una cita:
+
+> 14 días desde el cobro. *[Preguntas frecuentes sobre reembolsos]*
+
+La cita existe y dice lo que la respuesta dice que dice. Las preguntas frecuentes dicen,
+literalmente, que «por lo general, los reembolsos pueden solicitarse en los 14 días siguientes al
+cobro». Pero las condiciones del plan Equipo, otro de los documentos que el asistente tiene a mano,
+dan 30 días a las suscripciones anuales. La respuesta es falsa, y viene con una fuente que la
+respalda.
+
+El caso es inventado, pero el fallo es de los más corrientes. El asistente sigue el patrón RAG
+(*Retrieval-Augmented Generation*, generación aumentada por recuperación): antes de responder,
+busca en los documentos de la empresa los pocos fragmentos que más se parecen a la pregunta y se
+los pasa al modelo junto con ella. La búsqueda devolvió las preguntas frecuentes, que hablan de
+«reembolsos», de «días» y de «cobro», igual que la pregunta. El párrafo bueno está en el apartado 7
+de las condiciones del plan Equipo, se titula «Devoluciones» y dice que «las suscripciones anuales
+disponen de 30 días naturales desde la fecha del cargo». No menciona el plan, porque eso sólo lo
+hace el título del documento, y no usa la palabra «reembolso». Separado de su documento, ese
+fragmento se parece menos a la pregunta que la regla general, y quedó fuera.
+
+Hay arreglos para esto, y funcionan: buscar también por palabras exactas, añadir a cada fragmento
+una frase que diga de qué documento sale, reordenar los resultados con un segundo modelo. Cada uno
+es una pieza más que construir, medir y mantener. Pero Albarán tiene una salida más sencilla,
+porque sus documentos de políticas son pocos: cuarenta, unas sesenta páginas. Un modelo de lenguaje
+no lee palabras sino *tokens*, trozos de palabra (una página de texto son unos quinientos), y lo
+que cabe en una petición se llama su **ventana de contexto**. Las políticas de Albarán suman unos
+32 000 tokens, y las ventanas de los modelos actuales van de 128 000 a un millón. Caben enteras. Si
+el modelo las lee todas antes de cada pregunta, no hay búsqueda que pueda fallar: el apartado 7 está
+ahí, con el título del plan encima.
+
+La objeción es el precio. El equipo de soporte son 25 personas que hacen unas 600 preguntas al día,
+y cada una pagaría por leer otra vez 32 000 tokens que no han cambiado desde la anterior. Salvo que
+no haga falta leerlos otra vez. Un modelo que acaba de leer un texto guarda un resultado intermedio
+de esa lectura, la **caché KV** (de *key* y *value*, clave y valor en inglés), y si la petición
+siguiente empieza igual, puede saltarse la parte ya leída. En diciembre de 2024, un artículo con un título provocador,
+[*Don't Do RAG*](https://arxiv.org/abs/2412.15605) («no hagas RAG»), le puso nombre a usar eso a
+propósito: **CAG** (*Cache-Augmented Generation*, generación aumentada por caché). Se leen los
+documentos una vez, se guarda la caché, y cada pregunta se responde a partir de ella, sin buscar
+nada.
+
+CAG se suele presentar como otra variante del RAG, o como su sustituto. No es ninguna de las dos
+cosas. Es la opción de siempre, darle al modelo todo el contexto, en el momento en que dejó de ser
+cara. Y la pregunta que plantea no es si buscar o no, sino qué parte de lo que sabe un asistente es
+lo bastante pequeña y estable como para leerla una sola vez, y qué parte tiene que seguir detrás de
+una búsqueda. En Albarán, las políticas pasan la prueba. Las incidencias de soporte, decenas de
+miles y nuevas cada hora, no. Lo que sigue explica cómo funciona la caché que lo hace posible, qué
+midió el artículo, lo que cuesta y en qué casos falla, de qué historia sale la idea y cuándo conviene.
+
+## Tres sitios donde poner lo que el modelo no sabe
+
+Un modelo de lenguaje sabe lo que aprendió al entrenarse, repartido entre sus pesos. No sabe nada
+posterior a la fecha en que se congelaron sus datos, ni nada que no fuese público: las condiciones
+del plan Equipo nunca estuvieron en internet. Hay tres sitios donde ponerle lo que le falta, y CAG
+es una manera nueva de usar el tercero.
+
+| | En los pesos (ajuste fino) | En un índice (RAG) | Todo en el contexto | Todo en el contexto, con caché (CAG) |
+|---|---|---|---|---|
+| Actualizar un documento | reentrenar | reindexar ese documento | editar el texto | editar el texto y recalcular la caché desde ahí |
+| Coste de cada pregunta | el de siempre | proporcional a lo recuperado | proporcional a todo | una fracción de todo |
+| Una búsqueda puede fallar | no hay búsqueda | sí | no | no |
+| Cuánto conocimiento admite | poco y difícil de controlar | casi sin límite | lo que quepa en la ventana | lo que quepa en la ventana |
+
+**Los pesos** son el sitio equivocado para los hechos. El ajuste fino, seguir entrenando el modelo
+con datos propios, enseña bien maneras de hacer: un tono, un formato, el vocabulario de un dominio.
+Para hechos concretos es caro y opaco: cada cambio de política pide otro entrenamiento, y no hay
+forma de comprobar qué ha aprendido el modelo exactamente.
+
+**El índice** es lo que hace el asistente de Albarán. Los documentos se trocean por adelantado en
+fragmentos de unos cientos de palabras, y cada uno se convierte en un vector que representa su
+significado (un *embedding*). En cada pregunta se buscan los pocos trozos cuyo vector está más cerca
+del de la consulta. Cada pregunta paga por lo que recupera, no por todo lo que hay, y el
+índice puede crecer casi sin límite. El precio es que hay una búsqueda en medio, y puede
+fallar, como acaba de hacerlo.
+
+**El contexto** quita la búsqueda: se pega todo en la petición. Tiene dos límites evidentes. Sólo
+vale para lo que cabe en la ventana, y cada pregunta paga por leerlo todo, lo necesite o no. CAG
+ataca el segundo. El primero sigue ahí, y tiene una versión menos evidente que aparecerá más
+adelante: que algo quepa en la ventana no quiere decir que el modelo lo lea bien.
+
+## Qué hace un modelo cuando lee
+
+Para entender qué contiene la caché, y por qué conservarla ahorra tanto, hay que ver cómo procesa
+un modelo un texto antes de responder.
+
+### Dos fases: leer y escribir
+
+Un modelo de lenguaje genera texto de token en token, y cada uno depende de todos los anteriores. Responder a una petición tiene dos fases que se comportan de forma muy distinta.
+
+La primera lee el texto de entrada, y se suele llamar *prefill*. Todos sus tokens se conocen desde
+el principio, así que el modelo los procesa juntos, en una sola pasada, y la fase va limitada por
+la capacidad de cálculo del chip. Su coste crece con la longitud: con un modelo de 8 000 millones
+de parámetros, leer 32 000 tokens son unas $5 \times 10^{14}$ operaciones, más las de la atención,
+que crecen con el cuadrado de la longitud. Mientras dura, el usuario no ve nada: es el tiempo que
+pasa hasta que aparece la primera palabra de la respuesta.
+
+La segunda fase, la **decodificación**, escribe la respuesta. Cada token depende del anterior, así
+que se generan de uno en uno, y para cada uno el chip tiene que leer de memoria todos los parámetros
+del modelo. Esta fase va limitada por la memoria, no por el cálculo. Por qué es así, y por qué eso
+explica que estas cuentas se hagan en GPU, los procesadores de las tarjetas gráficas, lo cuenta con
+detalle [este artículo sobre las GPU](/blog/de-videojuegos-a-llm). Aquí basta con la diferencia:
+leer es caro por la cantidad de cálculo, y escribir, por la cantidad de memoria que hay que
+recorrer.
+
+### La caché KV
+
+La pieza de un modelo de lenguaje que relaciona unos tokens con otros es la **atención**, y se
+repite en cada una de sus capas. En cada capa, cada token produce tres vectores: una consulta, una
+clave y un valor (*query*, *key* y *value*). Para calcular lo que sale de un token, su consulta se
+compara con las claves de todos los tokens anteriores y de él mismo, y el resultado decide cuánto
+pesa el valor de cada uno en la mezcla.
+
+Un token sólo mira hacia atrás. Su clave y su valor dependen de él y de los que vinieron antes, y
+de nada que venga después, así que una vez calculados no cambian. Por eso se guardan: cuando llega
+el token siguiente, las claves y los valores de todos los anteriores ya están en memoria y sólo hay
+que calcular los suyos. Esa memoria es la **caché KV** (de *key* y *value*). Sin ella, escribir
+cada token de la respuesta obligaría a recalcular las claves y los valores de todo el texto
+anterior.
+
+<figure>
+  <img
+    src="/blog/cuando-no-hace-falta-buscar/prefill-decode.svg"
+    alt="Diagrama de las dos fases de la inferencia sobre una fila de tokens. A la izquierda, el prefill: los 32 000 tokens de las políticas y los de la pregunta entran a la vez, en una sola pasada, y de cada token sale, en cada capa, una clave y un valor que se guardan en la caché KV. A la derecha, la decodificación: la respuesta se escribe de token en token; cada token nuevo lee las claves y los valores de todos los anteriores y añade los suyos a la caché."
+    width="760"
+    height="232"
+  />
+  <figcaption>
+    La caché KV crece con cada token leído o escrito. Lo que hace CAG es guardar la parte que
+    corresponde a las políticas y no volver a calcularla nunca, mientras no cambien.
+  </figcaption>
+</figure>
+
+Todos los servidores de modelos usan la caché KV dentro de una petición. La idea de CAG es
+conservarla **entre** peticiones. Y la misma propiedad que la hace posible le pone su condición más
+importante: como la clave y el valor de un token dependen de todo lo anterior, la caché de las
+políticas sólo sirve si ese texto está al principio, idéntico. Si algo cambia
+delante de ellas, aunque sea un carácter, sus claves y valores ya no son los mismos.
+
+### Cuánto ocupa
+
+Por cada token y cada capa, la caché guarda una clave y un valor. La atención no se calcula una vez
+por capa sino varias en paralelo, en lo que se llaman **cabezas**, y cada cabeza tiene su propia
+clave y su propio valor. En Llama 3.1 8B, el modelo abierto de Meta de 8 000 millones de
+parámetros, hay 32 capas; sus 32 cabezas de consulta comparten 8 de clave y valor (un truco
+que reduce la caché a la cuarta parte), y cada una es un vector de 128 números de 2 bytes:
+
+$$
+2 \times 32 \times 8 \times 128 \times 2 = 131\,072 \text{ bytes} = 128 \text{ KiB por token.}
+$$
+
+Las 32 000 de las políticas de Albarán son unos 4,2 GB: la cuarta parte de lo que ocupan los
+propios pesos del modelo, 16 GB en 16 bits. Con Llama 3.1 70B, que tiene 80 capas, son 320 KiB por
+token y 10,5 GB. No es poco, pero se calcula una vez, y guardarlo cuesta mucho menos que volver a
+calcularlo en cada pregunta: se puede dejar en la GPU si se va a usar enseguida, o moverlo a la memoria
+del servidor o a disco si no.
+
+Tiene un coste que no desaparece. En la decodificación, cada token de la respuesta tiene que leer
+los pesos y además toda la caché: 16 GB más 4,2, alrededor de una cuarta parte más de bytes que sin
+las políticas. Con el modelo de 8 000 millones, cada token de la respuesta tarda, más o menos, una
+cuarta parte más. Guardarla ahorra leer las políticas, pero no recorrer sus claves y valores en cada token.
+
+## CAG, paso a paso
+
+El artículo de 2024 divide el método en tres fases. En la primera, que se hace una vez, el modelo
+lee todos los documentos y su caché KV se guarda en memoria o en disco. En la segunda, cada pregunta
+se añade detrás de esa caché y el modelo responde sin buscar nada. En la tercera, la caché, que ha
+crecido con la pregunta y la respuesta, se **recorta** hasta donde acababan los documentos, y queda
+lista para la siguiente consulta sin recalcular nada.
+
+```python
+# Una vez, y cada vez que cambien las políticas
+cache = modelo.leer(politicas)    # prefill de 32 000 tokens → caché KV
+fin = len(cache)
+
+# En cada pregunta
+def responder(pregunta):
+    respuesta = modelo.generar(pregunta, cache)   # la caché crece con la pregunta y la respuesta
+    cache.recortar(fin)                           # vuelve a las políticas, sin recalcular nada
+    return respuesta
+```
+
+El mismo asistente con RAG, en la versión más sencilla, busca los $k$ fragmentos más parecidos a la
+pregunta y monta un prompt con ellos:
+
+```python
+def responder(pregunta, indice, k=4):
+    fragmentos = indice.buscar(embeber(pregunta), k)
+    return modelo(prompt(pregunta, fragmentos))
+```
+
+Lo que desaparece al pasar de uno a otro es todo lo que rodea a `indice.buscar`: el modelo de
+embeddings, el tamaño de los fragmentos, el solape entre ellos, el valor de $k$, el reordenador, la
+base de datos que guarda los vectores. Queda un modelo y un texto. La figura pone los dos sistemas
+uno junto al otro.
+
+<figure>
+  <img
+    src="/blog/cuando-no-hace-falta-buscar/rag-frente-a-cag.svg"
+    alt="Dos diagramas, cada uno en dos carriles: arriba lo que se hace una vez y abajo lo que se hace en cada pregunta. RAG: una vez, documentos, trocear en fragmentos, embeber cada fragmento e índice; en cada pregunta, la pregunta, buscar los k fragmentos más cercanos, montar el prompt con la pregunta y los fragmentos, y el modelo responde. CAG: una vez, los 40 documentos enteros, prefill y caché KV guardada; en cada pregunta, la caché más la pregunta, el modelo responde, y la caché se recorta hasta el final de las políticas."
+    width="760"
+    height="300"
+  />
+  <figcaption>
+    En RAG, lo que se prepara por adelantado es un índice, y cada pregunta lo consulta. En CAG, lo
+    que se prepara es la lectura misma, y cada pregunta empieza donde acabó.
+  </figcaption>
+</figure>
+
+### Lo que midió el artículo
+
+El trabajo es de cuatro investigadores de la Universidad Nacional Chengchi y de la Academia Sinica,
+en Taiwán, y es corto: cinco páginas en las actas complementarias de WWW 2025, la conferencia
+internacional sobre la web. Usaron Llama 3.1 8B, que admite 128 000 tokens, en ocho GPU V100 de
+NVIDIA, un chip de 2017. Lo compararon con dos RAG sobre el mismo modelo: uno que busca por
+palabras con BM25, la fórmula clásica que puntúa un documento según los términos de la pregunta que
+contiene y lo raros que son, y otro que recupera por cercanía de embeddings. Los dos recuperaban 1, 3, 5 o 10 fragmentos.
+
+Las preguntas salen de dos conjuntos públicos. En [SQuAD](https://arxiv.org/abs/1606.05250), la
+respuesta está en un pasaje de un artículo de Wikipedia. En
+[HotPotQA](https://arxiv.org/abs/1809.09600), hacen falta dos párrafos de dos artículos distintos.
+De cada uno armaron tres colecciones de documentos de tamaño creciente: de 21 000 a 85 000 tokens en
+HotPotQA (16, 32 y 64 documentos) y de 21 000 a 50 000 en SQuAD (3, 4 y 7). Midieron la calidad con
+[BERTScore](https://arxiv.org/abs/1904.09675), que compara la respuesta generada con una de
+referencia palabra por palabra a través de sus embeddings, de modo que puntúa alto lo que se le
+parece.
+
+CAG obtiene la mejor puntuación en cinco de los seis casos. En la colección pequeña de HotPotQA
+saca 0,795, frente a 0,768 del mejor RAG. En la grande, la de 85 000 tokens, pierde: 0,741, frente a
+0,754 de BM25 con cinco fragmentos. La distancia se estrecha a medida que crece la colección, y el
+propio artículo recuerda que, aunque Llama 3.1 8B admite 128 000 tokens, su contexto efectivo medido
+es de unos 32 000.
+
+La tabla de tiempos es la más interesante, y se lee mejor que el texto que la comenta. En la
+colección grande de HotPotQA, darle al modelo los 64 documentos sin caché tarda 92 segundos por
+pregunta, casi todo en leerlos. Con la caché precalculada, 2,3 segundos: cuarenta veces menos. Y
+BM25 con tres fragmentos tarda 0,67 segundos, menos de un milisegundo de búsqueda y el resto en
+generar. La caché es lo que hace viable leerlo todo, pero no lo vuelve más rápido que un buscador
+sencillo sobre los mismos documentos.
+
+Hay tres cosas que conviene tener en cuenta al leerlo. Las colecciones son pequeñas, y buscar en 16
+o 64 documentos tampoco es difícil. El modelo es pequeño, y con modelos mayores mejoran los dos
+sistemas. Y BERTScore premia el parecido, no la corrección: «14 días desde el cobro» y «30 días
+desde el cobro» se parecen mucho, palabra por palabra, y sólo una es verdad en Albarán. Diferencias
+de dos o tres centésimas no dicen cuántas respuestas más son correctas. Lo que el artículo
+sostiene, y sus datos respaldan, es más modesto que su título: con una base de conocimiento pequeña,
+darle todo al modelo con la caché precalculada responde igual o mejor que un RAG, sin la
+complejidad del RAG.
+
+## Dos formas de tenerlo
+
+El artículo calcula la caché, la guarda y la recorta a mano, con el código del modelo abierto. Casi
+nadie lo hace así. Hay dos formas de conseguir lo mismo sin escribir esas líneas, según quién
+ejecute el modelo.
+
+### Si el modelo es tuyo
+
+Los servidores de inferencia abiertos, los programas que cargan un modelo y atienden consultas,
+reutilizan la caché entre peticiones sin que se lo pidan. [vLLM](https://docs.vllm.ai/en/latest/design/prefix_caching.html)
+guarda la caché en bloques de 16 tokens, una idea de su
+[artículo de 2023](https://arxiv.org/abs/2309.06180) que imita la memoria virtual de un sistema
+operativo, e identifica cada bloque por un *hash* (una huella numérica) de todo el texto desde el
+principio hasta él. Si una petición nueva empieza igual que otra anterior, sus primeros bloques
+tienen la misma huella y se reutilizan. [SGLang](https://arxiv.org/abs/2312.07104), otro servidor
+abierto, organiza todos los comienzos que ha visto en un árbol para encontrar el más largo que
+coincide.
+
+En Albarán, esto quiere decir que basta con poner las políticas siempre al principio del prompt:
+el servidor hace el resto. Y como los bloques se comparten, veinticinco personas que preguntan a la
+vez usan una sola copia de los 4,2 GB, y cada una sólo añade su pregunta y su respuesta. Si la
+caché no cabe en la GPU, bibliotecas como [LMCache](https://github.com/LMCache/LMCache)
+la mueven a la memoria del servidor o a disco y la traen de vuelta cuando hace falta.
+
+### Si usas el de un proveedor
+
+Con un modelo que se usa a través de la interfaz de programación (API) de un proveedor, la caché no
+se ve ni se guarda: se manda el texto entero en cada petición, y el proveedor reconoce el comienzo
+que ya ha leído. Google lo anunció para Gemini en mayo de 2024, Anthropic lo lanzó para Claude
+[en agosto](https://www.anthropic.com/news/prompt-caching) y OpenAI, en octubre. En octubre de 2026,
+los tres lo hacen por defecto en sus modelos recientes. Con caché, CAG a través de una API es
+exactamente pegar las políticas al principio de cada petición: el ahorro está en que el proveedor
+no las vuelve a leer.
+
+Las condiciones cambian de un proveedor a otro y de un año a otro, pero tienen la misma forma.
+Leer un token de la caché cuesta en torno a la décima parte de uno de entrada normal, y algo menos
+en algunos modelos. Escribirlo, la primera vez, cuesta más que un token normal: un 25 % más
+para entradas que duran unos minutos, el doble o más para las que viven horas. La entrada caduca si
+nadie la usa durante ese tiempo, y cada lectura la renueva. Y hay un mínimo, entre 512 y 4 096
+tokens según el modelo: un comienzo más corto no se guarda.
+
+### La regla del prefijo
+
+Las dos formas comparten la regla que se veía en la caché KV: sólo se reutiliza un **prefijo**,
+el comienzo del texto, idéntico byte a byte. Si cambia un carácter en el tercer documento, todo lo
+que viene detrás del cambio hay que leerlo otra vez. Eso tiene tres consecuencias prácticas.
+
+La primera es que el orden importa. Las políticas de Albarán son cinco grupos de documentos: las
+condiciones de los tres planes (Básico, Equipo y Empresa), 13 500 tokens; facturación y cobros,
+8 000; privacidad y datos, 5 500; los acuerdos de nivel de servicio, 2 000; y las preguntas
+frecuentes, 3 000. Todos cambian una o dos veces al mes, salvo las preguntas frecuentes, que se
+retocan cada semana. Si abren el prompt, cada retoque obliga a releer las 32 000. Si van al final,
+sólo sus 3 000. Lo que menos cambia va delante.
+
+<figure>
+  <img
+    src="/blog/cuando-no-hace-falta-buscar/orden-del-prefijo.svg"
+    alt="Dos barras horizontales con las políticas de Albarán en dos órdenes, cada segmento con su tamaño en tokens. Arriba, las preguntas frecuentes primero, 3 000 tokens que cambian cada semana, seguidas de las condiciones de los planes, facturación, privacidad y acuerdos de nivel de servicio: un cambio en las preguntas frecuentes obliga a recalcular los 32 000 tokens. Abajo, el orden por estabilidad, con las preguntas frecuentes al final: el mismo cambio sólo recalcula sus 3 000 tokens."
+    width="760"
+    height="268"
+  />
+  <figcaption>
+    El mismo cambio, dos costes. Una edición invalida la caché desde el punto donde ocurre hasta el
+    final, así que lo que cambia a menudo va lo más atrás posible.
+  </figcaption>
+</figure>
+
+La segunda es que no puede haber nada variable delante de los documentos. Un caso clásico es poner
+la fecha y la hora al principio de las instrucciones del asistente, para que sepa qué día es: cada
+petición empieza distinto y la caché no se reutiliza nunca. La fecha va detrás de los documentos,
+junto a la pregunta.
+
+La tercera es que el texto tiene que generarse siempre igual. Si los documentos salen de una
+consulta que no garantiza el orden, o se convierten a JSON (un formato de texto para datos) con las
+claves cada vez en otra posición, el prefijo cambia sin que nadie haya tocado nada.
+
+## Lo que cuesta, y dónde se rompe
+
+### Cuánto cuesta cada pregunta
+
+Para comparar sin depender de los precios de un proveedor concreto, conviene contar en una unidad:
+lo que cuesta un token de entrada normal. Sin caché, cada pregunta de Albarán paga 32 000 unidades
+por las políticas. Con caché, la primera paga la escritura, 40 000 (un 25 % más), y cada una de las
+siguientes, 3 200 (la décima parte). El RAG del principio, con cuatro fragmentos de 500 tokens,
+paga 2 000. En todos los casos falta lo que cuesta la pregunta, la respuesta y las instrucciones,
+que es lo mismo para los tres.
+
+<figure>
+  <img
+    src="/blog/cuando-no-hace-falta-buscar/coste-acumulado.svg"
+    alt="Gráfico de líneas del coste acumulado del conocimiento en las primeras 20 preguntas, en tokens de entrada equivalentes. Todo en el contexto sin caché sube 32 000 por pregunta y llega a 640 000. CAG empieza en 40 000 por la escritura de la caché y sube 3 200 por pregunta, hasta 100 800. RAG con cuatro fragmentos sube 2 000 por pregunta, hasta 40 000. CAG queda por debajo de la versión sin caché desde la segunda pregunta, y su pendiente es casi la de RAG."
+    width="760"
+    height="300"
+  />
+  <figcaption>
+    Con caché, leerlo todo deja de costar dieciséis veces lo que leer cuatro fragmentos y pasa a
+    costar algo más de una vez y media. La escritura se paga en cuanto llega la segunda pregunta.
+  </figcaption>
+</figure>
+
+A lo largo de un día, las 600 preguntas llegan con bastante menos de cinco minutos entre una y la
+siguiente, así que la entrada no caduca en horas de trabajo. Si se escribe de nuevo una decena de
+veces, después de la comida o a primera hora, el día cuesta unos 2,3 millones de unidades con caché,
+frente a 19,2 millones sin ella y 1,2 millones con RAG. La caché divide el coste por ocho, y deja
+CAG en el mismo orden de magnitud que RAG. Si el proveedor cobra la lectura a una vigésima parte,
+como algunos modelos de 2026, la diferencia con RAG casi desaparece.
+
+El tiempo cambia de la misma forma. El tiempo hasta la primera palabra deja de depender de las
+32 000 de las políticas: Anthropic anunció, al lanzar su caché, hasta un 85 % menos de espera en
+prompts largos. Lo que no cambia es el coste de la decodificación de la sección anterior: cada
+token de la respuesta sigue leyendo la caché entera.
+
+### Lo que cabe no es lo que se lee
+
+La ventana de contexto de un modelo es lo que admite, no lo que usa bien. En 2023,
+[*Lost in the Middle*](https://arxiv.org/abs/2307.03172) midió que los modelos aprovechan lo que
+está al principio y al final del contexto mejor que lo que queda en medio: en su experimento con
+veinte documentos, GPT-3.5-Turbo acertaba menos con el bueno en el centro que sin
+ninguno. En 2024, [RULER](https://arxiv.org/abs/2404.06654), un banco de pruebas de NVIDIA con
+tareas más difíciles que encontrar una frase escondida, probó diecisiete modelos que anunciaban
+32 000 tokens o más, y sólo la mitad mantenía un rendimiento aceptable a esa longitud.
+
+En 2025, [NoLiMa](https://arxiv.org/abs/2502.05167), otro banco de pruebas, apretó más: preguntas cuya respuesta no
+comparte palabras con la pregunta, que es exactamente el caso del apartado de devoluciones del plan
+Equipo. A 32 000 tokens, once de trece modelos bajaban de la mitad de lo que acertaban con textos
+cortos, y GPT-4o pasaba del 99,3 % al 69,7 %. Ese mismo año, Chroma, la empresa de la base de datos
+vectorial del mismo nombre, publicó un informe sobre
+[lo que llamó *context rot*](https://www.trychroma.com/research/context-rot) (la degradación del
+contexto) con dieciocho modelos, entre ellos GPT-4.1, Claude 4 y Gemini 2.5. Todos empeoraban al
+crecer la entrada, incluso en tareas sencillas, y dos de sus hallazgos tocan de lleno a Albarán. Un
+pasaje parecido al bueno pero equivocado, un distractor, baja la precisión. Y un texto coherente,
+como unas políticas de empresa, perjudica más que esas mismas frases barajadas.
+
+En Albarán, el distractor existe y tiene nombre: las preguntas frecuentes. Con CAG, el «14 días» de
+la regla general sigue en el contexto, a unas páginas del «30 días» del plan Equipo, y el modelo
+tiene que elegir. El RAG falló por no ver el apartado 7. CAG puede fallar viéndolo y quedándose con
+la regla general. Lo que hace es cambiar un fallo de búsqueda por uno de lectura, y el segundo
+depende del modelo, de la longitud y de dónde está cada cosa. Se puede ayudar con las instrucciones
+(«las condiciones de cada plan prevalecen sobre las preguntas frecuentes»), pero la única forma de
+saber si basta es probarlo con preguntas reales, a la longitud real.
+
+### Lo que cambia
+
+CAG sirve para lo que cambia poco. Las políticas de Albarán cambian una o dos veces al mes, y cada
+cambio cuesta una escritura de la caché: nada. Las incidencias de soporte entran cada pocos minutos.
+Meterlas en el prefijo obligaría a reescribirla constantemente, y cada escritura cuesta más que una
+lectura sin caché. Y aunque no cambiasen, las de un año no caben en ninguna
+ventana.
+
+Borrar, en cambio, es fácil, como en RAG y al revés que en los pesos: si un dato tiene que
+desaparecer, se quita del texto y la caché se recalcula desde ese punto.
+
+### Quién puede leer qué
+
+Entre las políticas de Albarán hay un documento con los márgenes de descuento comercial, que sólo
+pueden ver los responsables del equipo. Con RAG, el permiso es un filtro en la búsqueda: cada
+usuario busca sólo en lo que puede leer. Con CAG, el permiso es el prefijo: si un grupo puede leer
+un documento que otro no, cada uno necesita su propio prefijo y su propia caché. Con dos grupos,
+eso no es nada. Si una empresa atiende a cincuenta clientes con contratos propios,
+hacen falta cincuenta cachés, cada una con su escritura y su memoria. Y la tentación de meterlo todo en un
+prefijo común y pedirle al modelo que no le enseñe a nadie lo que no debe es un error: unas
+instrucciones no son un control de acceso.
+
+### Qué miras cuando falla
+
+Un RAG deja rastro. Cada respuesta tiene una lista de fragmentos recuperados, y cuando está mal se
+puede mirar si el fragmento bueno estaba entre ellos: si no estaba, falló la búsqueda, y si estaba,
+la lectura. Con CAG, el modelo lo tiene todo delante en cada pregunta, y cuando falla es siempre la
+lectura. Ayuda pedirle que cite el pasaje exacto en el que se apoya y comprobar, con un programa,
+que esa cita existe en el texto. Y hay una métrica nueva que vigilar: qué parte de los tokens de
+entrada se leen de la caché. Si baja, algo ha empezado a cambiar el prefijo. El equipo de Manus, una
+empresa que construye agentes (modelos que encadenan pasos y usan herramientas por su cuenta),
+escribió en 2025 que es [«la métrica más importante para un agente en
+producción»](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus).
+
+## Entre CAG y RAG
+
+La regla del prefijo deja fuera un caso obvio: reutilizar la caché de los fragmentos que devuelve
+una búsqueda. Si cada fragmento tuviese su caché calculada por adelantado, un RAG podría pegarlas
+en lugar de leer los fragmentos. [Prompt Cache](https://arxiv.org/abs/2311.04934) (2023) ya
+proponía declarar trozos reutilizables de una petición, y [RAGCache](https://arxiv.org/abs/2404.12457)
+(2024), guardar la caché de los documentos más recuperados. El problema es que la caché de un
+fragmento calculada por separado no ha visto lo que tiene delante en el prompt: sus claves y valores
+son los de un texto que empieza ahí, y pegarlas sin más empeora las respuestas.
+[CacheBlend](https://arxiv.org/abs/2405.16444), premiado como mejor artículo en EuroSys 2025, una conferencia de sistemas,
+recalcula sólo los pocos tokens cuya caché cambia más al juntar los fragmentos, y consigue la
+primera palabra entre 2,2 y 3,3 veces antes que leyéndolo todo. [TurboRAG](https://arxiv.org/abs/2410.07590)
+toma el otro camino: ajusta el modelo para que acepte fragmentos calculados por separado.
+
+Más lejos todavía, [KBLaM](https://arxiv.org/abs/2410.10450), de Microsoft (presentado en ICLR 2025, una de las grandes conferencias de
+aprendizaje automático), no guarda
+texto: convierte cada hecho de una base de conocimiento en un par de clave y valor al que el
+modelo atiende con una atención modificada, y mete más de 10 000 hechos en uno de 8 000 millones
+de parámetros, en una sola GPU A100 de 80 GB. Todas estas técnicas son para quien ejecuta su propio
+modelo. Ningún proveedor las ofrece hoy en su API, que sólo reutiliza prefijos.
+
+## De dónde viene y adónde va
+
+En 2020, cuando se publicó el
+[artículo que le dio nombre al RAG](https://arxiv.org/abs/2005.11401), su generador, BART, un modelo de
+lenguaje de Facebook, leía como mucho 1 024 tokens, y GPT-3, el modelo más grande de su momento, 2 048. Meter los documentos en el
+contexto no era una opción. Buscar era la única forma de darle a un modelo conocimiento que no
+estuviese en sus pesos, y el RAG nació de esa restricción tanto como de sus ventajas.
+
+En 2023, las ventanas se multiplicaron: 32 000 tokens en GPT-4 en marzo, 100 000 en Claude en mayo,
+200 000 en Claude 2.1 en noviembre. El mismo año, los servidores aprendieron a administrar la caché
+KV en bloques (vLLM, en septiembre) y a reutilizarla entre peticiones (Prompt Cache en noviembre,
+SGLang en diciembre), y *Lost in the Middle* avisó de que caber no es lo mismo que leerse bien.
+
+En 2024 llegaron el millón de tokens, con Gemini 1.5 en febrero, y la caché de los proveedores,
+entre mayo y octubre. En julio, un grupo de Google DeepMind y la Universidad de Michigan publicó la
+[comparación más citada](https://arxiv.org/abs/2407.16833) entre contexto largo y RAG, con
+Gemini-1.5-Pro, GPT-4o y GPT-3.5-Turbo. Con recursos suficientes, darlo todo ganaba en media; RAG
+costaba mucho menos; y en el 63 % de las preguntas los dos respondían exactamente lo mismo. De ahí
+salió Self-Route: preguntar primero con RAG, dejar que el modelo diga si puede responder con lo
+recuperado y, sólo si no puede, darle el contexto entero. Con Gemini-1.5-Pro reducía el coste un
+65 %, con un resultado comparable. En diciembre, el artículo de CAG le puso nombre a la otra mitad
+del razonamiento: si la caché abarata leerlo todo, quizá no haga falta la primera ronda.
+
+En 2025 la caché dejó de ser algo que se pedía. Google la hizo implícita en Gemini 2.5 en mayo, como
+OpenAI desde el principio, y los agentes la convirtieron en su principal preocupación de coste: un
+agente manda las mismas instrucciones y las mismas definiciones de herramientas en cada paso, y las
+paga a precio de caché o a precio completo según no haya tocado el principio del prompt. La
+expresión que se impuso ese año para todo esto, «ingeniería de contexto», dice mucho: lo importante
+ya no era cómo escribir una petición, sino qué meter en el contexto y en qué orden. En 2026, las
+entradas de caché duran más y las lecturas cuestan menos.
+
+Visto así, CAG no ha cuajado como arquitectura, pero ha ganado como mecanismo. Pocos sistemas se
+llaman a sí mismos CAG, y casi todos lo usan: cada agente de programación lee sus instrucciones de
+la caché, y cada conversación larga es un prefijo que crece. Lo que sí cambió para siempre es el
+estatus de «meterlo todo en el contexto», que pasó de ser la opción ingenua a ser la primera que
+conviene descartar. El propio artículo terminaba proponiendo un sistema mixto, con una base fija en
+la caché y búsqueda sólo para los casos que no cubre, y eso es lo que se está construyendo. Lo que
+queda abierto es lo que limita a CAG hoy: que el contexto efectivo crezca al ritmo del nominal, que
+la caché de fragmentos sueltos llegue a las API, y cómo hacer cachés por usuario sin multiplicar su
+coste.
+
+## Cuándo usar cada uno
+
+Con todo lo anterior, la elección depende de tres cosas del conocimiento, y no del nombre de moda:
+cuánto ocupa, cada cuánto cambia y cuántas preguntas recibe antes de que la caché caduque.
+
+| Si el conocimiento… | En Albarán | Usa |
+|---|---|---|
+| cabe con holgura, cambia poco y recibe muchas preguntas | las políticas | CAG: todo en el prefijo, en orden de estabilidad |
+| cabe, pero se consulta pocas veces | un contrato que alguien revisa una tarde | todo en el contexto; la caché da igual |
+| no cabe, o cambia cada hora | las incidencias de soporte | RAG, o una herramienta que consulte la base de datos de incidencias |
+| tiene partes que no todos pueden leer | los márgenes comerciales | un prefijo por grupo si son pocos; búsqueda con filtro si son muchos |
+| obliga a juntar lo estable con lo que cambia | «¿la incidencia 4812 tiene derecho a reembolso?» | las dos cosas: las políticas en el prefijo y la incidencia por herramienta |
+
+«Cabe con holgura» quiere decir que cabe en la longitud a la que el modelo sigue leyendo bien, no en
+la ventana que anuncia, y eso sólo se sabe probando. Antes de construir nada, toma cincuenta
+preguntas reales y pásalas por los dos sistemas: con todo en el contexto y con tu RAG, al mismo
+modelo. Si responden lo mismo, quédate con el más sencillo de mantener. Si no, mira en cuáles falla
+cada uno, porque fallan por motivos distintos: uno porque no encontró el pasaje, y el otro porque no
+lo leyó bien.
+
+## Qué te llevas
+
+Si te llevas una sola cosa, que sea ésta: **CAG no es una alternativa al RAG, es la decisión de qué
+parte de lo que sabe tu asistente es lo bastante pequeña y estable para leerla una vez.** Esa parte
+va delante, entera y en caché. Lo que cambia o no cabe va detrás, en una búsqueda o en una
+herramienta. Para Albarán, el prompt queda así.
+
+<figure>
+  <img
+    src="/blog/cuando-no-hace-falta-buscar/prompt-en-capas.svg"
+    alt="El prompt del asistente de Albarán como una barra dividida en capas, de izquierda a derecha. Primero, lo que se lee de la caché: las instrucciones del asistente, 1 500 tokens; las definiciones de herramientas, 800; y las políticas en orden de estabilidad, 32 000, con las preguntas frecuentes al final. Una marca señala dónde acaba el prefijo en caché. Después, lo que cambia en cada pregunta: la fecha, la conversación y la pregunta. Debajo, una flecha sale del modelo hacia una herramienta, buscar_incidencia 4812, que consulta la base de datos de incidencias; su resultado se añade al final del prompt, detrás de la pregunta."
+    width="760"
+    height="230"
+  />
+  <figcaption>
+    Lo estable, delante y en caché; lo que cambia, detrás. La incidencia nunca entra en el
+    prefijo: la trae una herramienta cuando la pregunta la necesita.
+  </figcaption>
+</figure>
+
+Y si te llevas tres cosas más, que sean prácticas.
+
+**Mide antes de elegir.** Cuenta los tokens de tu conocimiento estable, cuántas preguntas llegan en
+la vida de una entrada de caché y cada cuánto cambia. Si cabe, recibe muchas preguntas y cambia
+poco, la caché lo vuelve casi tan barato como recuperar fragmentos, y te ahorras el buscador.
+
+**Cuida el prefijo.** Lo más estable delante, lo variable detrás, y el texto generado siempre igual.
+Vigila qué parte de los tokens de entrada se lee de la caché: es el número que avisa de que algo
+ha roto el prefijo.
+
+**No confundas caber con leerse bien.** Que las políticas quepan en la ventana no quiere decir que
+el modelo vaya a elegir la regla del plan antes que la general. CAG cambia los fallos de búsqueda
+por otros de lectura, y los segundos sólo se descubren probando con tus preguntas, a tu longitud.

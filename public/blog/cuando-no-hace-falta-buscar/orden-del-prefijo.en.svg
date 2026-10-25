@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 268" width="760" height="268" role="img"
+ aria-label="Two horizontal bars with Albarán's policies in two orders, each segment labelled with its size in tokens. On top, the FAQ first, 3,000 tokens that change every week, followed by the plan terms, billing, privacy and the service level agreements: a change to the FAQ forces all 32,000 tokens to be recomputed. Below, ordered by stability, with the FAQ last: the same change only recomputes its 3,000 tokens.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+  .br.m { stroke: #4edea3; }
+  .br.w { stroke: #e8a24c; }
+  .br.x { stroke: #ffb4ab; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="hd" x="20.0" y="18.0">FAQ FIRST</text>
+<rect class="bx w" x="61.0" y="70.0" width="58.0" height="24.0" rx="3"/>
+<text class="tx" x="90.0" y="86.0" style="text-anchor:middle">3,000</text>
+<line x1="66.0" y1="53.0" x2="66.0" y2="68.0" stroke="#e8a24c"/>
+<text class="sb w" x="61.0" y="50.0" style="text-anchor:start">FAQ, changes weekly</text>
+<rect class="bx x" x="121.0" y="70.0" width="268.0" height="24.0" rx="3"/>
+<text class="tx" x="255.0" y="86.0" style="text-anchor:middle">13,500</text>
+<text class="sb" x="255.0" y="64.0">Plan terms</text>
+<rect class="bx x" x="391.0" y="70.0" width="158.0" height="24.0" rx="3"/>
+<text class="tx" x="470.0" y="86.0" style="text-anchor:middle">8,000</text>
+<text class="sb" x="470.0" y="64.0">Billing and payments</text>
+<rect class="bx x" x="551.0" y="70.0" width="108.0" height="24.0" rx="3"/>
+<text class="tx" x="605.0" y="86.0" style="text-anchor:middle">5,500</text>
+<text class="sb" x="605.0" y="64.0">Privacy and data</text>
+<rect class="bx x" x="661.0" y="70.0" width="38.0" height="24.0" rx="3"/>
+<text class="tx" x="680.0" y="86.0" style="text-anchor:middle">2,000</text>
+<line x1="680.0" y1="39.0" x2="680.0" y2="68.0" stroke="#3b3b3e"/>
+<text class="sb" x="680.0" y="36.0">Service agreements</text>
+<path class="br x" d="M61.0,105.0 V100.0 H699.0 V105.0"/>
+<text class="tx x" x="380.0" y="118.0" style="text-anchor:middle">recomputed: 32,000 tokens</text>
+<text class="hd" x="20.0" y="142.0">IN ORDER OF STABILITY</text>
+<rect class="bx m" x="61.0" y="194.0" width="268.0" height="24.0" rx="3"/>
+<text class="tx" x="195.0" y="210.0" style="text-anchor:middle">13,500</text>
+<text class="sb" x="195.0" y="188.0">Plan terms</text>
+<rect class="bx m" x="331.0" y="194.0" width="158.0" height="24.0" rx="3"/>
+<text class="tx" x="410.0" y="210.0" style="text-anchor:middle">8,000</text>
+<text class="sb" x="410.0" y="188.0">Billing and payments</text>
+<rect class="bx m" x="491.0" y="194.0" width="108.0" height="24.0" rx="3"/>
+<text class="tx" x="545.0" y="210.0" style="text-anchor:middle">5,500</text>
+<text class="sb" x="545.0" y="188.0">Privacy and data</text>
+<rect class="bx m" x="601.0" y="194.0" width="38.0" height="24.0" rx="3"/>
+<text class="tx" x="620.0" y="210.0" style="text-anchor:middle">2,000</text>
+<line x1="620.0" y1="163.0" x2="620.0" y2="192.0" stroke="#3b3b3e"/>
+<text class="sb" x="620.0" y="160.0">Service agreements</text>
+<rect class="bx w" x="641.0" y="194.0" width="58.0" height="24.0" rx="3"/>
+<text class="tx" x="670.0" y="210.0" style="text-anchor:middle">3,000</text>
+<line x1="646.0" y1="177.0" x2="646.0" y2="192.0" stroke="#e8a24c"/>
+<text class="sb w" x="641.0" y="174.0" style="text-anchor:start">FAQ</text>
+<path class="br x" d="M641.0,229.0 V224.0 H699.0 V229.0"/>
+<text class="tx x" x="670.0" y="242.0" style="text-anchor:middle">recomputed: 3,000 tokens</text>
+<path class="br m" d="M61.0,229.0 V224.0 H639.0 V229.0"/>
+<text class="tx m" x="350.0" y="242.0" style="text-anchor:middle">read from the cache</text>
+</svg>

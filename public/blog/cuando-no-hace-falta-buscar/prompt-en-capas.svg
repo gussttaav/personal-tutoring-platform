@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" width="760" height="230" role="img"
+ aria-label="El prompt del asistente de Albarán como una barra dividida en capas, de izquierda a derecha. Primero, lo que se lee de la caché: las instrucciones del asistente, 1 500 tokens; las definiciones de herramientas, 800; y las políticas en orden de estabilidad, 32 000, con las preguntas frecuentes al final. Una marca señala dónde acaba el prefijo en caché. Después, lo que cambia en cada pregunta: la fecha, la conversación y la pregunta. Debajo, una flecha sale del modelo hacia una herramienta, buscar_incidencia 4812, que consulta la base de datos de incidencias; su resultado se añade al final del prompt, detrás de la pregunta.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+  .br.m { stroke: #4edea3; }
+  .br.w { stroke: #e8a24c; }
+  .br.x { stroke: #ffb4ab; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<path class="br m" d="M20.0,35.0 V30.0 H450.0 V35.0"/>
+<text class="hd" x="235.0" y="22.0" style="text-anchor:middle">SE LEE DE LA CACHÉ</text>
+<rect class="bx m" x="20.0" y="44.0" width="96.0" height="44.0" rx="6"/>
+<text class="lb m" x="68.0" y="64.0">Instrucciones</text>
+<text class="sb" x="68.0" y="78.0">1 500</text>
+<rect class="bx m" x="122.0" y="44.0" width="92.0" height="44.0" rx="6"/>
+<text class="lb m" x="168.0" y="64.0">Herramientas</text>
+<text class="sb" x="168.0" y="78.0">800</text>
+<rect class="bx m" x="220.0" y="44.0" width="230.0" height="44.0" rx="6"/>
+<text class="lb m" x="335.0" y="64.0">Políticas, en orden de estabilidad</text>
+<text class="sb" x="335.0" y="78.0">32 000 · preguntas frecuentes al final</text>
+<line x1="460" y1="34" x2="460" y2="98" stroke="#4edea3" stroke-width="2"/>
+<text class="sb m" x="460.0" y="112.0">fin del prefijo</text>
+<path class="br w" d="M470.0,35.0 V30.0 H748.0 V35.0"/>
+<text class="hd" x="609.0" y="22.0" style="text-anchor:middle">CAMBIA EN CADA PREGUNTA</text>
+<rect class="bx w" x="470.0" y="44.0" width="44.0" height="44.0" rx="6"/>
+<text class="lb w" x="492.0" y="70.0">Fecha</text>
+<rect class="bx w" x="520.0" y="44.0" width="86.0" height="44.0" rx="6"/>
+<text class="lb w" x="563.0" y="70.0">Conversación</text>
+<rect class="bx w" x="612.0" y="44.0" width="62.0" height="44.0" rx="6"/>
+<text class="lb w" x="643.0" y="70.0">Pregunta</text>
+<rect class="bx d" x="680.0" y="44.0" width="68.0" height="44.0" rx="6"/>
+<text class="lb" x="714.0" y="70.0">Resultado</text>
+<rect class="bx " x="250.0" y="160.0" width="110.0" height="40.0" rx="6"/>
+<text class="lb" x="305.0" y="184.0">Modelo</text>
+<path class="ar" d="M305.0,90.0 L305.0,158.0"/>
+<rect class="bx " x="410.0" y="160.0" width="170.0" height="40.0" rx="6"/>
+<text class="mo" x="495.0" y="184.0" style="text-anchor:middle">buscar_incidencia(4812)</text>
+<path class="ar" d="M360.0,180.0 L408.0,180.0"/>
+<text class="sb" x="384.0" y="216.0">la pregunta lo necesita</text>
+<rect class="bx " x="620.0" y="160.0" width="120.0" height="40.0" rx="6"/>
+<text class="lb" x="680.0" y="178.0">Base de datos</text>
+<text class="sb" x="680.0" y="192.0">de incidencias</text>
+<path class="ar" d="M580.0,180.0 L618.0,180.0"/>
+<path class="ar w" d="M690.0,160.0 L690.0,128.0 L714.0,128.0 L714.0,90.0"/>
+<text class="sb w" x="682.0" y="124.0" style="text-anchor:end">se añade al final</text>
+</svg>
