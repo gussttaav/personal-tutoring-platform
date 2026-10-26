@@ -49,7 +49,7 @@ Block 5, and it is why the loop was built first.
 ## Lesson progress
 
 - [x] 25. `de-chat-a-agente`
-- [ ] 26. `llamar-herramientas`
+- [x] 26. `llamar-herramientas`
 - [ ] 27. `el-bucle`
 - [ ] 28. `errores-como-observaciones`
 - [ ] 29. `permisos-y-confianza`

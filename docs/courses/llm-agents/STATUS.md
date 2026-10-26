@@ -39,7 +39,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (1/7) | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (2/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1427,3 +1427,35 @@ lesson restates why in one clause before the cell. Approved by Gustavo at review
   `q-cuantos-turnos` answered wrong in the browser (rejected, explanation shown), the other three
   not confirmed; no horizontal page scroll at 360 px, the figure renders at 328 px with no label
   clipped. Not on a phone.
+
+Lesson 26 `llamar-herramientas` authored on the same branch (2026-10-26). 1 987 words, no display
+equation, no widget (none assigned), 2 cells (44 and 43 lines), 4 quiz, 1 challenge
+(`ch-observaciones`, 8 tests), 4 readings (Toolformer 2023, function calling 2023, Anthropic's
+«Handle tool calls», the JSON Schema `object` reference; URLs checked, the OpenAI one by hand
+because it answers 403 to automated fetches). `minutes: 30` (lint ≈33). Runs on the **scripted
+model**, said before the first cell, with the note that it receives `herramientas` and does not read
+it. Approved by Gustavo at review:
+- **The content:** a herramienta is the triple the model reads, and the Python function behind it is
+  the harness's; the contracts of `leer`, `escribir`, `listar`, `buscar` over the
+  `{"ruta": "contenido"}` dict; the `text` / `tool_use` / `tool_result` bloques, four rules and the
+  invariant that no llamada is left without its observación when the model is called; the exact
+  schema check (declared name, object input, `required`, no field outside `properties`, types), why a
+  harness checks even when the model writes JSON well (the máscara needs the logits), and that the
+  esquema sees form, not intent.
+- **The cells:** cell 1 runs three malformed calls with no check (unknown tool → `KeyError`, missing
+  route → `TypeError`, a route of `3` that succeeds and breaks the next `listar`); cell 2 is the
+  opening trace with bloques (two llamadas in turno 1, `t1` and `t2`), a fixed three-turno `for`.
+- **The challenge:** `observaciones(respuesta, entorno)`, the pairing plus the schema check; the
+  first test is a conversation the modelo guionizado grades. An invalid llamada raises `ValueError`
+  for now, tested only on responses where it is the only llamada, so lesson 28 does not contradict it.
+- **Applied after review:** the delta §4 `bloque` (de contenido) row, with the collision against
+  «bloque 4» named; `NOTATION.md`'s Block 4 section records the encoding from lesson 26 on.
+  Proposed for lesson 27: a frozen `public/courses/llm-agents/entorno.py` (like `guionizado.py`) for
+  the cells of lessons 27–31.
+- **Lesson 25's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 27 (`el-bucle`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green; both cells run in
+  the Browser pane on `pnpm start` with the CPython prototype's output; the challenge's starter fails
+  8/8 and the reference solution passes 8/8 in Pyodide, six wrong variants each fail their own test
+  (CPython); `q-que-para-el-esquema` answered right in the browser, the other three not confirmed; no
+  horizontal page scroll at 360 px (the tools table scrolls in its own box). Not on a phone.
