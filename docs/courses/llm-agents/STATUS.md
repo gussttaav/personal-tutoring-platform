@@ -39,7 +39,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (2/7) | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (3/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1459,3 +1459,42 @@ it. Approved by Gustavo at review:
   8/8 and the reference solution passes 8/8 in Pyodide, six wrong variants each fail their own test
   (CPython); `q-que-para-el-esquema` answered right in the browser, the other three not confirmed; no
   horizontal page scroll at 360 px (the tools table scrolls in its own box). Not on a phone.
+
+Lesson 27 `el-bucle` authored on its own branch (2026-10-26). 1 634 words, no display equation,
+1 widget (`agent-loop-trace`, built in this lesson), 2 cells (40 and 16 lines), 5 quiz, 1 challenge
+(`ch-bucle`, 8 tests), 2 readings (WebGPT 2021; Anthropic's «Stop reasons and fallback»; URLs
+checked). `minutes: 30` (lint ≈33). Runs on the **scripted model**, said before the first cell.
+Approved by Gustavo at review:
+- **The content:** the widget's trace (a user asks for what is missing for the recipes: list the
+  folder, three reads in one respuesta, rewrite the list, text; four turnos, the number fixed by the
+  first observación); the bucle's pseudocode, written once here; three ways to stop (no `tool_use`,
+  decided by the model; the tope, decided by the harness, which does not undo what ran; a cut
+  respuesta, `stop_reason` `max_tokens`, which `modelo` raises on); three invariants (the model sees
+  only M; no llamada without its observación, also on leaving by the tope; M only grows, turno $n$
+  sees $2n$ mensajes).
+- **The pseudocode deviates from this block md's sketch** in two places, approved: the observaciones
+  of a turno enter M as one usuario mensaje (lesson 26's rule 3), and the bucle returns a motivo,
+  `fin` or `tope`; the code returns `(motivo, texto, M)`.
+- **The cells:** cell 1 writes `ejecutar` and the bucle without a tope (`while True`) and prints M;
+  cell 2 counts the mensajes per turno (`[2, 4, 6, 8]`) and runs a twelve-respuesta stuck guion that
+  ends only because the script runs out. The challenge adds the tope, the lesson 26 split.
+- **New asset:** `public/courses/llm-agents/entorno.py`, lesson 26's entorno, herramientas, bloques,
+  `muestra` and `incumple`, plus `guion_de`; checked verbatim against lesson 26 by
+  `llm-agents-assets.test.ts`; Spanish-bound in `corpora.ts` with the widget.
+- **The widget:** `math/agent-trace.ts` runs the bucle over a scripted conversation with
+  `entorno.py`'s tool semantics and returns the steps; `__tests__/agent-trace.test.ts` checks the
+  invariants (prefix under smaller topes, every llamada answered at every call, `2n`) and the
+  lesson's numbers and text; `nlp/AgentLoopTrace.tsx` steps through it with a «lo que ve el modelo»
+  toggle and a tope picker (2, 3, 4, 10); strings under `courses.widgets.agent-loop-trace`.
+- **Applied after review:** delta §4 rows `bucle`, `tope` (de turnos), `stop_reason`;
+  `NOTATION.md`'s Block 4 section records the bucle's signature and return, the `max_tokens` rule
+  for Block 5's adapter, and `entorno.py`.
+- **Lesson 26's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 28 (`errores-como-observaciones`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green; both cells run in
+  the Browser pane on `pnpm start` with the CPython prototype's output; the challenge's starter fails
+  8/8 and the solution passes 8/8 in Pyodide, the loop without observaciones fails its named test
+  there, eight wrong variants each fail their own test (CPython); the widget steps to `fin` (18 steps)
+  and with tope 3 to `tope` (16 steps, 8 mensajes); `q-mensajes-al-final` answered in the browser,
+  the other four not confirmed; no horizontal page scroll at 375 px, no widget line overflows. Not on
+  a phone.

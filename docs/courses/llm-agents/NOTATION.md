@@ -519,6 +519,21 @@ convention, which the modelo guionizado checks because it compares whole mensaje
 fails its esquema is not executed, and until lesson 28 the harness raises `ValueError`: provisional,
 like lesson 25's `KeyError`, and lesson 28 turns both into an observación with `is_error`.
 
+**From lesson 27 on, the bucle is one function and its state is `M`** (`COURSE-C2-P1-04`,
+lesson 27). Its pseudocode is written once, in that lesson, and later lessons cite it: `M` starts
+as a copy of the two opening mensajes, each turno appends `("asistente", r)` and, if `r` has any
+`tool_use`, one `("usuario", [...])` with a `tool_result` per llamada, in order. The code's
+signature is `bucle(modelo, inicio, entorno, tope) -> (motivo, texto, M)`, with `motivo` `"fin"`
+(the respuesta asked for nothing; `texto` is its text bloques joined by a space) or `"tope"`
+(`texto` is `None`, and the last turno's llamadas have run and been answered, so `M` never ends on
+an unanswered `tool_use`). Turno $n$ hands the model $2n$ mensajes. A respuesta cut by the
+reserva (the protocol's `stop_reason` `max_tokens`) is `modelo`'s to report: it raises instead of
+returning, so Block 5's adapter does the same and the bucle does not change. The cells load the
+entorno, the four herramientas, `texto` / `llamada` / `resultado` / `muestra`, `incumple` and
+`guion_de` from the frozen `public/courses/llm-agents/entorno.py` (lesson 26's code, checked
+character for character by `llm-agents-assets.test.ts`), with `exec(open_url(…))`, like
+`guionizado.py`.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the

@@ -1,0 +1,208 @@
+/*
+ * COURSE-C2-P1-04 — `math/agent-trace.ts`, checked two independent ways, as AUTHORING §7 asks
+ * of a widget's maths:
+ *
+ *   1. THE LOOP'S CONTRACT — on the preset and on hand-made conversations: the model is called
+ *      at most tope times; at every call, no llamada in M is without its observación; a turno
+ *      that asks adds exactly two mensajes, however many llamadas it makes; M only grows, so
+ *      the M of a run with a smaller tope is a prefix of the full one; the loop ends on the
+ *      first respuesta with no tool_use, and a tope that is reached still leaves every llamada
+ *      answered.
+ *   2. THE LESSON'S NUMBERS — what the first cell of «El bucle» prints, and the preset held to
+ *      the frozen entorno.py and to the cell's text.
+ */
+
+import fs from "node:fs";
+import path from "node:path";
+
+import {
+  blockLine,
+  pyJson,
+  runTool,
+  traceLoop,
+  type Block,
+  type Conversation,
+  type Message,
+  type ToolUse,
+} from "../agent-trace";
+import { AGENT_TRACE_PRESETS, ENTORNO_BLOQUE_4, TOPES } from "../agent-trace-presets";
+
+const P = AGENT_TRACE_PRESETS.bucle;
+const ids = (bs: readonly Block[]) =>
+  bs.flatMap((b) => (b.type === "tool_use" ? [b.id] : b.type === "tool_result" ? [b.tool_use_id] : []));
+const blocks = (m: Message) => (typeof m.content === "string" ? [] : m.content);
+
+/** Every tool_use in `ms` is answered by a tool_result with its id in the very next mensaje. */
+function everyCallAnswered(ms: readonly Message[]): boolean {
+  return ms.every((m, i) => {
+    const calls = blocks(m).filter((b) => b.type === "tool_use");
+    if (calls.length === 0) return true;
+    const next = ms[i + 1];
+    return next !== undefined && next.role === "usuario" && JSON.stringify(ids(blocks(next))) === JSON.stringify(ids(calls));
+  });
+}
+
+const call = (id: string, name: string, input: Record<string, string>): ToolUse => ({ type: "tool_use", id, name, input });
+
+describe("agent-trace — the herramientas, with entorno.py's semantics", () => {
+  const E = ENTORNO_BLOQUE_4;
+
+  it("leer returns the whole file and changes nothing", () => {
+    const run = runTool(E, call("a", "leer", { ruta: "lista.txt" }));
+    expect(run.content).toBe("pan, leche, patatas");
+    expect(run.entorno).toBe(E);
+  });
+
+  it("escribir replaces the file and counts code points, as Python's len does", () => {
+    const run = runTool(E, call("a", "escribir", { ruta: "notas.txt", contenido: "Sábado: ñu" }));
+    expect(run.content).toBe("escritos 10 caracteres en notas.txt");
+    expect(run.entorno["notas.txt"]).toBe("Sábado: ñu");
+    expect(E["notas.txt"]).toBe("El sábado vienen cuatro a cenar.");
+  });
+
+  it("listar sorts the routes; an empty carpeta lists them all", () => {
+    expect(runTool(E, call("a", "listar", { carpeta: "recetas/" })).content).toBe(
+      "recetas/gazpacho.txt\nrecetas/tortilla.txt",
+    );
+    expect(runTool(E, call("a", "listar", { carpeta: "" })).content.split("\n")).toHaveLength(4);
+  });
+
+  it("buscar gives every line with the pattern, with its route, in route order", () => {
+    expect(runTool(E, call("a", "buscar", { patron: "patatas" })).content).toBe(
+      "lista.txt: pan, leche, patatas\nrecetas/tortilla.txt: Tortilla: huevos, patatas, cebolla.",
+    );
+  });
+
+  it("throws on what a guion's author would not write: a missing file, an unknown tool", () => {
+    expect(() => runTool(E, call("a", "leer", { ruta: "recetas.txt" }))).toThrow();
+    expect(() => runTool(E, call("a", "borrar", { ruta: "lista.txt" }))).toThrow();
+  });
+});
+
+describe("agent-trace — the loop's contract", () => {
+  const full = traceLoop(P, 10);
+
+  it("ends on the first respuesta with no tool_use, and returns its text", () => {
+    expect(full.motivo).toBe("fin");
+    expect(full.turnos).toBe(4);
+    expect(full.texto).toBe("He añadido a lista.txt tomates, pepino, pimiento, ajo, huevos y cebolla.");
+    expect(full.steps[full.steps.length - 1].kind).toBe("fin");
+  });
+
+  it("calls the model with every llamada in M answered", () => {
+    for (const s of full.steps.filter((s) => s.kind === "llamar")) {
+      expect(everyCallAnswered(full.mensajes.slice(0, s.visto))).toBe(true);
+    }
+    expect(everyCallAnswered(full.mensajes)).toBe(true);
+  });
+
+  it("adds two mensajes per turno that asks, however many llamadas it makes: call n sees 2n", () => {
+    const seen = full.steps.filter((s) => s.kind === "llamar").map((s) => s.visto);
+    expect(seen).toEqual([2, 4, 6, 8]);
+    expect(full.mensajes).toHaveLength(9);
+  });
+
+  it("only appends: a run with a smaller tope is a prefix of the full one", () => {
+    for (let tope = 1; tope <= 4; tope++) {
+      const short = traceLoop(P, tope);
+      expect(full.mensajes.slice(0, short.mensajes.length)).toEqual(short.mensajes);
+    }
+  });
+
+  it("steps' mensaje counts never fall, and change only where the loop appends", () => {
+    const counts = full.steps.map((s) => s.mensajes);
+    counts.slice(1).forEach((c, i) => expect(c).toBeGreaterThanOrEqual(counts[i]));
+    full.steps.forEach((s, i) => {
+      if (i === 0) return;
+      const grew = s.mensajes > full.steps[i - 1].mensajes;
+      expect(grew).toBe(s.kind === "responder" || s.kind === "observar");
+    });
+  });
+
+  it("stops at the tope with every llamada answered, and only makes tope calls", () => {
+    for (const tope of [1, 2, 3]) {
+      const t = traceLoop(P, tope);
+      expect(t.motivo).toBe("tope");
+      expect(t.texto).toBeNull();
+      expect(t.steps.filter((s) => s.kind === "llamar")).toHaveLength(tope);
+      expect(t.mensajes).toHaveLength(2 + 2 * tope);
+      expect(everyCallAnswered(t.mensajes)).toBe(true);
+    }
+    // A tope exactly the turnos the guion needs is enough.
+    expect(traceLoop(P, 4).motivo).toBe("fin");
+  });
+
+  it("throws when the guion runs out before the tope, as the modelo guionizado does", () => {
+    const endless: Conversation = {
+      entorno: ENTORNO_BLOQUE_4,
+      inicio: P.inicio,
+      respuestas: [[call("t1", "listar", { carpeta: "" })], [call("t2", "listar", { carpeta: "" })]],
+    };
+    expect(() => traceLoop(endless, 5)).toThrow(/se acabó en el turno 2/);
+    expect(traceLoop(endless, 2).motivo).toBe("tope");
+  });
+});
+
+describe("agent-trace — the numbers «El bucle» reads", () => {
+  const full = traceLoop(P, 10);
+
+  it("runs five llamadas in four turnos, three of them in one respuesta", () => {
+    expect(full.llamadas).toBe(5);
+    expect(full.steps.filter((s) => s.kind === "ejecutar" && s.turno === 2)).toHaveLength(3);
+  });
+
+  it("changes only lista.txt, in turno 3, to the list the cell prints", () => {
+    const writes = full.steps.filter((s) => s.cambia !== undefined);
+    expect(writes.map((s) => [s.turno, s.cambia])).toEqual([[3, "lista.txt"]]);
+    const last = full.steps[full.steps.length - 1].entorno;
+    expect(last["lista.txt"]).toBe("pan, leche, patatas, tomates, pepino, pimiento, ajo, huevos, cebolla");
+    expect(Object.keys(last)).toHaveLength(4);
+  });
+
+  it("prints each bloque as the cell's `muestra` does", () => {
+    const lines = full.mensajes.slice(2).flatMap((m) => blocks(m).map((b) => blockLine(b).text));
+    expect(lines).toEqual([
+      "Miro qué recetas hay.",
+      't1 listar {"carpeta": "recetas/"}',
+      "t1 recetas/gazpacho.txt / recetas/tortilla.txt",
+      't2 leer {"ruta": "recetas/gazpacho.txt"}',
+      't3 leer {"ruta": "recetas/tortilla.txt"}',
+      't4 leer {"ruta": "lista.txt"}',
+      "t2 Gazpacho: tomates, pepino, pimiento, ajo.",
+      "t3 Tortilla: huevos, patatas, cebolla.",
+      "t4 pan, leche, patatas",
+      't5 escribir {"ruta": "lista.txt", "contenido": "pan, leche, patatas, tomates, pepino, pimiento, ajo, huevos, cebolla"}',
+      "t5 escritos 68 caracteres en lista.txt",
+      "He añadido a lista.txt tomates, pepino, pimiento, ajo, huevos y cebolla.",
+    ]);
+    expect(pyJson({ ruta: "ñ.txt" })).toBe('{"ruta": "ñ.txt"}');
+  });
+
+  it("offers a tope that ends the preset early and one that does not", () => {
+    expect(TOPES.some((t) => traceLoop(P, t).motivo === "tope")).toBe(true);
+    expect(TOPES.some((t) => traceLoop(P, t).motivo === "fin")).toBe(true);
+  });
+});
+
+describe("agent-trace — the preset is the asset and the cell", () => {
+  const root = process.cwd();
+
+  it("uses entorno.py's ENTORNO", () => {
+    const src = fs.readFileSync(path.join(root, "public", "courses", "llm-agents", "entorno.py"), "utf8");
+    const start = src.indexOf("ENTORNO = ") + "ENTORNO = ".length;
+    const literal = src.slice(start, src.indexOf("}", start) + 1);
+    expect(JSON.parse(literal)).toEqual(ENTORNO_BLOQUE_4);
+  });
+
+  it("writes the lesson's opening mensajes and respuestas, word for word", () => {
+    const mdx = fs.readFileSync(path.join(root, "content", "courses", "llm-agents", "es", "27-el-bucle.mdx"), "utf8");
+    for (const m of P.inicio) expect(mdx).toContain(JSON.stringify(m.content));
+    for (const r of P.respuestas) {
+      for (const b of r) {
+        if (b.type === "text") expect(mdx).toContain(`texto(${JSON.stringify(b.text)})`);
+        if (b.type === "tool_use") expect(mdx).toContain(`llamada("${b.id}", "${b.name}"`);
+      }
+    }
+    expect(mdx).toContain('LISTA = "pan, leche, patatas, tomates, pepino, pimiento, ajo, huevos, cebolla"');
+  });
+});

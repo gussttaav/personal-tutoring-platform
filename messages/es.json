@@ -1856,6 +1856,32 @@
         "dropped": "Fuera de la llamada: {parts}.",
         "slider": "Ventana de contexto",
         "sliderValue": "{tokens} tokens"
+      },
+      "agent-loop-trace": {
+        "groupAria": "El bucle del agente paso a paso: la lista de mensajes M, lo que hace el harness en cada paso y el entorno",
+        "steps": {
+          "inicio": "Antes del primer turno, M tiene {n} mensajes: el prompt de sistema y el pedido del usuario.",
+          "llamar": "Turno {turno}. El harness llama al modelo con los {n} mensajes de M, y nada más.",
+          "responder": "Turno {turno}. La respuesta entra entera en M, como mensaje del asistente. {n, plural, =0 {No pide nada.} one {Pide una llamada.} other {Pide # llamadas.}}",
+          "ejecutar": "Turno {turno}. El harness comprueba {id} contra el esquema de {name} y la ejecuta. El entorno no cambia.",
+          "ejecutarCambia": "Turno {turno}. El harness comprueba {id} contra el esquema de {name} y la ejecuta: cambia {ruta}.",
+          "observar": "Turno {turno}. {n, plural, one {La observación entra en M en un mensaje del usuario, con el id de su llamada.} other {Las # observaciones entran en M en un solo mensaje del usuario, cada una con el id de su llamada.}}",
+          "fin": "Turno {turno}. La respuesta no tiene ningún tool_use: el bucle termina y devuelve su texto.",
+          "tope": "Se ha llegado al tope: {tope} turnos, y el modelo sigue pidiendo. El bucle para sin nada que contestar al usuario, y el entorno se queda como esté."
+        },
+        "mTitle": "M: {n} mensajes",
+        "mTitleSeen": "M: {n} mensajes. En su última llamada, el modelo recibió los {visto} primeros",
+        "mAria": "La lista de mensajes M, con {n} mensajes",
+        "stepTitle": "Este paso",
+        "inicioLine": "M = [sistema, usuario]",
+        "callLine": "modelo(M, herramientas), con M de {n} mensajes",
+        "returns": "devuelve fin,",
+        "returnsTope": "devuelve tope: no hay texto que darle al usuario",
+        "entornoTitle": "El entorno",
+        "entornoHidden": "El modelo no ve el entorno. Lo que sabe de él le ha llegado en M, en las observaciones.",
+        "entornoAria": "El entorno: cada fichero con su contenido",
+        "seenToggle": "Lo que ve el modelo",
+        "topeLabel": "Tope de turnos"
       }
     }
   },
