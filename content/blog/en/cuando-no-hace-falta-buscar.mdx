@@ -102,63 +102,61 @@ aiImages: true
 */}
 
 A company that makes invoicing software (call it Albarán) has an internal assistant for its support
-team: a language model that answers questions about the company's policies. Someone on the team
-asks it:
+team: a language model that answers questions about company policy. Someone on the team asks it:
 
 > How many days does a Team plan customer have to ask for a refund on an annual renewal?
 
-And the assistant answers, with a citation:
+The assistant answers, with a citation:
 
 > 14 days from the charge. *[Refunds FAQ]*
 
-The citation exists, and it says what the answer says it says. The FAQ states, word for word, that
+The citation is real, and it says what the answer claims it says. The FAQ states, word for word, that
 "as a rule, refunds can be requested within 14 days of the charge". But the Team plan terms, another
-of the documents the assistant has to hand, give annual subscriptions 30 days. The answer is wrong,
-and it comes with a source that backs it up.
+document the assistant has access to, give annual subscriptions 30 days. The answer is wrong, and it
+comes with a source that appears to back it up.
 
-The case is invented, but the failure is one of the most common there is. The assistant follows the
+The case is invented, but the failure is among the most common there is. The assistant follows the
 RAG pattern (*Retrieval-Augmented Generation*): before answering, it searches the company's
-documents for the few fragments that look most like the question and passes them to the model along
+documents for the few fragments that look most like the question and hands them to the model along
 with it. The search returned the FAQ, which talks about "refunds", "days" and "the charge", just as
-the question does. The right paragraph is in section 7 of the Team plan terms. It's headed "Returns"
-and says that "annual subscriptions have 30 calendar days from the date of the charge". It doesn't
-name the plan, because only the document's title does that, and it never uses the word "refund". Cut
-off from its document, that fragment looks less like the question than the general rule does, and it
+the question does. The right paragraph is in section 7 of the Team plan terms, under the heading
+"Returns", and it says that "annual subscriptions have 30 calendar days from the date of the charge".
+It never names the plan (only the document's title does) and never uses the word "refund". Cut off
+from its document, that fragment looks less like the question than the general rule does, so it
 didn't make the cut.
 
-There are fixes for this, and they work: search for exact words as well, add a sentence to every
-fragment saying which document it comes from, rerank the results with a second model. Each one is
-another piece to build, measure and maintain. But Albarán has a simpler way out, because its policy
-documents are few: forty of them, about sixty pages. A language model doesn't read words but
-*tokens*, pieces of words (a page of text is about five hundred), and what fits into one request is
-called its **context window**. Albarán's policies come to about 32,000 tokens, and today's models
-have windows of 128,000 tokens to a million. They fit whole. If the model reads all of them before
-every question, there's no search left to fail: section 7 is right there, with the plan's name above
-it.
+There are fixes for this, and they work: search for exact words as well, prepend a sentence to every
+fragment saying which document it comes from, rerank the results with a second model. But each one is
+another piece to build, measure and maintain, and Albarán has a simpler way out, because it has few
+policy documents: forty of them, about sixty pages. A language model doesn't read words but
+*tokens*, pieces of words (a page of text is about five hundred), and the amount that fits in one
+request is called its **context window**. Albarán's policies come to roughly 32,000 tokens, and
+today's models have windows of 128,000 tokens to a million. They fit whole. If the model reads all of
+them before every question, there's no search left to fail: section 7 is right there, with the plan's
+name above it.
 
-The objection is cost. The support team is 25 people asking about 600 questions a day, and each one
-would pay to reread 32,000 tokens that haven't changed since the last. Unless it doesn't have to
-reread them. A model that has just read a text keeps an intermediate result of that reading, the
-**KV cache** (KV stands for *key* and *value*), and if the next request starts the same way, it can
-skip the part it has already read. In December 2024, a paper with a deliberately provocative title,
-[*Don't Do RAG*](https://arxiv.org/abs/2412.15605), gave a name to using that on purpose: **CAG**
-(*Cache-Augmented Generation*). You read the documents once, keep the cache, and answer each question
-from it, without searching for anything.
+The objection is cost. The support team is 25 people asking about 600 questions a day, and each
+question would pay to reread 32,000 tokens that haven't changed since the last one. Unless it
+doesn't have to reread them. A model that has just read a text keeps an intermediate result of that
+reading, the **KV cache** (KV stands for *key* and *value*), and if the next request starts the same
+way, it can skip the part it has already read. In December 2024, a paper with a deliberately
+provocative title, [*Don't Do RAG*](https://arxiv.org/abs/2412.15605), gave a name to using this on
+purpose: **CAG** (*Cache-Augmented Generation*). You read the documents once, keep the cache, and
+answer every question from it without searching for anything.
 
 CAG is usually presented as another flavour of RAG, or as its replacement. It's neither. It's the
-oldest option there is, giving the model the whole context, at the moment it stopped being
+oldest option there is (give the model the whole context) at the point where it stopped being
 expensive. And the question it raises isn't whether to search, but which part of what an assistant
 knows is small and stable enough to read once, and which part still has to sit behind a search. At
 Albarán, the policies pass that test. The support tickets, tens of thousands of them with new ones
-every hour, don't. What follows explains how the cache that makes this possible works, what the
-paper measured, what it costs and where it fails, the history the idea comes from, and when it pays
-off.
+every hour, don't. What follows covers how the cache that makes this possible works, what the paper
+measured, what it costs and where it breaks, the history the idea comes from, and when it pays off.
 
 ## Three places to put what the model doesn't know
 
-A language model knows what it learned in training, spread across its weights. It knows nothing
-after the date its data was frozen, and nothing that wasn't public: the Team plan terms were never on
-the internet. There are three places to put what it's missing, and CAG is a new way of using the
+A language model knows what it learned in training, spread across its weights. It knows nothing that
+happened after its data was frozen, and nothing that was never public: the Team plan terms were never
+on the internet. There are three places to put what it's missing, and CAG is a new way of using the
 third.
 
 | | In the weights (fine-tuning) | In an index (RAG) | Everything in context | Everything in context, cached (CAG) |
@@ -168,22 +166,22 @@ third.
 | A search can fail | there's no search | yes | no | no |
 | How much knowledge it takes | little, and hard to control | almost unlimited | whatever fits in the window | whatever fits in the window |
 
-**The weights** are the wrong place for facts. Fine-tuning, training the model further on your own
-data, is good at teaching ways of doing things: a tone, a format, a domain's vocabulary. For specific
-facts it's expensive and opaque: every policy change means another training run, and there's no way
-to check exactly what the model has learned.
+**The weights** are the wrong place for facts. Fine-tuning, which means training the model further on
+your own data, is good at teaching ways of doing things: a tone, a format, a domain's vocabulary. For
+specific facts it's expensive and opaque: every policy change means another training run, and there's
+no way to check exactly what the model has learned.
 
-**The index** is what Albarán's assistant does. The documents are split in advance into fragments of
+**The index** is what Albarán's assistant uses. The documents are split in advance into fragments of
 a few hundred words, and each one is turned into a vector that represents its meaning (an
 *embedding*). For every question, you look for the few chunks whose vectors sit closest to the
-query's. Each question pays for what it retrieves, not for everything there is, and the index can
-grow almost without limit. The price is that there's a search in the middle, and it can fail, as it
-just did.
+query's. Each question pays only for what it retrieves, not for everything there is, and the index
+can grow almost without limit. The price is a search in the middle, and a search can fail, as it just
+did.
 
 **The context** removes the search: you paste everything into the request. It has two obvious limits.
-It only works for what fits in the window, and every question pays to read all of it, whether it
-needs to or not. CAG tackles the second. The first remains, and it has a less obvious version that
-comes up later on: fitting in the window doesn't mean the model reads it well.
+It only works for what fits in the window, and every question pays to read all of it whether it needs
+to or not. CAG tackles the second. The first remains, and it has a less obvious version that comes up
+later: fitting in the window doesn't mean the model reads it well.
 
 ## What a model does when it reads
 
@@ -192,36 +190,36 @@ processes a text before it answers.
 
 ### Two phases: reading and writing
 
-A language model generates text one token at a time, and each one depends on all those before it.
-Answering a request has two phases that behave very differently.
+A language model generates text one token at a time, and each token depends on all those before it.
+Answering a request has two phases, and they behave very differently.
 
-The first reads the input, and it's usually called the *prefill*. All of its tokens are known from
-the start, so the model processes them together, in a single pass, and the phase is limited by the
-chip's computing power. Its cost grows with the length: with a model of 8 billion parameters, reading
+The first reads the input and is usually called the *prefill*. All its tokens are known from the
+start, so the model processes them together, in a single pass, and the phase is limited by the
+chip's computing power. Its cost grows with length: for a model with 8 billion parameters, reading
 32,000 tokens takes about $5 \times 10^{14}$ operations, plus those of attention, which grow with the
 square of the length. While it runs, the user sees nothing: it's the wait before the first word of
 the answer appears.
 
 The second phase, **decoding**, writes the answer. Each token depends on the one before, so they're
 generated one at a time, and for each one the chip has to read every parameter of the model from
-memory. This phase is limited by memory, not by computation. Why that is, and why it explains that
-these calculations run on GPUs, the processors in graphics cards, is covered in detail in
+memory. This phase is limited by memory, not by computation. Why that is, and why it explains the use
+of GPUs (the processors in graphics cards) for this work, is covered in detail in
 [this article about GPUs](/blog/de-videojuegos-a-llm). Here the difference is enough: reading is
-expensive because of how much there is to compute, and writing because of how much memory there is
-to get through.
+expensive because of how much there is to compute, and writing because of how much memory has to be
+read.
 
 ### The KV cache
 
 The part of a language model that relates tokens to one another is **attention**, and it's repeated
 in every layer. In each layer, every token produces three vectors: a query, a key and a value. To
-compute a token's output, its query is compared with the keys of every earlier token and its own,
-and the result decides how much each one's value weighs in the mix.
+compute a token's output, its query is compared with the keys of all earlier tokens and its own, and
+the result decides how much each one's value weighs in the mix.
 
 A token only looks backwards. Its key and value depend on itself and on what came before, and on
-nothing that comes after, so once they've been computed they never change. That's why they're kept:
-when the next token arrives, the keys and values of all the earlier ones are already in memory and
-only its own need computing. That memory is the **KV cache**. Without it, writing each token of the
-answer would mean recomputing the keys and values of the whole text before it.
+nothing that comes after, so once computed they never change. That's why they're kept: when the next
+token arrives, the keys and values of all the earlier ones are already in memory, and only its own
+need computing. That memory is the **KV cache**. Without it, writing each token of the answer would
+mean recomputing the keys and values for the whole text before it.
 
 <figure>
   <img
@@ -231,16 +229,16 @@ answer would mean recomputing the keys and values of the whole text before it.
     height="232"
   />
   <figcaption>
-    The KV cache grows with every token read or written. What CAG does is keep the part that belongs
-    to the policies and never compute it again, as long as they don't change.
+    The KV cache grows with every token read or written. CAG keeps the part that belongs to the
+    policies and never recomputes it, as long as they don't change.
   </figcaption>
 </figure>
 
 Every model server uses the KV cache within a request. The idea behind CAG is to keep it **between**
-requests. And the same property that makes this possible sets its most important condition: since a
-token's key and value depend on everything before it, the policies' cache is only valid if that text
-sits at the start, unchanged. If anything changes ahead of them, even a single character, their keys
-and values are no longer the same.
+requests. And the same property that makes this possible also sets its most important condition:
+since a token's key and value depend on everything before it, the policies' cache is only valid if
+that text sits at the start, unchanged. If anything ahead of them changes, even a single character,
+their keys and values are no longer the same.
 
 ### How much room it takes
 
@@ -254,17 +252,16 @@ $$
 2 \times 32 \times 8 \times 128 \times 2 = 131\,072 \text{ bytes} = 128 \text{ KiB per token.}
 $$
 
-Albarán's 32,000 policy tokens come to about 4.2 GB: a quarter of what the model's own weights take
-up, 16 GB at 16 bits. With Llama 3.1 70B, which has 80 layers, it's 320 KiB per token and 10.5 GB.
-That isn't nothing, but it's computed once, and storing it costs far less than recomputing it for
+Albarán's 32,000 policy tokens come to about 4.2 GB, a quarter of what the model's own weights take
+up (16 GB at 16 bits). With Llama 3.1 70B, which has 80 layers, it's 320 KiB per token and 10.5 GB.
+That's not nothing, but it's computed once, and storing it costs far less than recomputing it for
 every question: it can stay on the GPU if it's about to be used, or move to the server's memory or to
 disk if not.
 
-There's one cost that doesn't go away. During decoding, each token of the answer has to read the
-weights and the whole cache as well: 16 GB plus 4.2, roughly a quarter more bytes than without the
-policies. With the 8-billion-parameter model, each token of the answer takes roughly a quarter
-longer. Keeping the cache saves reading the policies, but not going through their keys and values
-for every token.
+One cost doesn't go away. During decoding, each token of the answer has to read the weights and the
+whole cache too: 16 GB plus 4.2, roughly a quarter more bytes than without the policies. With the
+8-billion-parameter model, that makes each token of the answer take about a quarter longer. Keeping
+the cache saves rereading the policies, but not passing over their keys and values for every token.
 
 ## CAG, step by step
 
@@ -272,7 +269,7 @@ The 2024 paper splits the method into three phases. In the first, done once, the
 document and its KV cache is saved in memory or on disk. In the second, each question is appended
 after that cache and the model answers without searching for anything. In the third, the cache,
 which has grown with the question and the answer, is **trimmed** back to where the documents ended,
-ready for the next query without recomputing anything.
+ready for the next query with nothing recomputed.
 
 ```python
 # Once, and again whenever the policies change
@@ -286,7 +283,7 @@ def answer(question):
     return reply
 ```
 
-The same assistant with RAG, in its simplest form, searches for the $k$ fragments most like the
+The same assistant with RAG, in its simplest form, searches for the $k$ fragments most similar to the
 question and builds a prompt from them:
 
 ```python
@@ -295,10 +292,10 @@ def answer(question, index, k=4):
     return model(prompt(question, chunks))
 ```
 
-What disappears going from one to the other is everything around `index.search`: the
-embedding model, the fragment size, the overlap between fragments, the value of $k$, the reranker,
-the database that stores the vectors. What's left is one model and one text. The figure puts the two
-systems side by side.
+Going from one to the other, everything around `index.search` disappears: the embedding model, the
+fragment size, the overlap between fragments, the value of $k$, the reranker, the database that
+stores the vectors. What's left is one model and one text. The figure puts the two systems side by
+side.
 
 <figure>
   <img
@@ -315,74 +312,76 @@ systems side by side.
 
 ### What the paper measured
 
-The work comes from four researchers at National Chengchi University and Academia Sinica, in Taiwan,
-and it's short: five pages in the companion proceedings of WWW 2025, the international conference on
-the web. They used Llama 3.1 8B, which accepts 128,000 tokens, on eight NVIDIA V100 GPUs, a chip from
-2017. They compared it with two RAG systems on the same model: one that searches by words with BM25,
-the classic formula that scores a document by which of the question's terms it contains and how rare
-they are, and another that retrieves by embedding similarity. Both retrieved 1, 3, 5 or 10 fragments.
+The work comes from four researchers at National Chengchi University and Academia Sinica in Taiwan,
+and it's short: five pages in the companion proceedings of WWW 2025, the international web
+conference. They used Llama 3.1 8B, which accepts 128,000 tokens, on eight NVIDIA V100 GPUs, a chip
+from 2017. They compared it with two RAG systems on the same model: one that searches by words with
+BM25, the classic formula that scores a document by which of the question's terms it contains and how
+rare they are, and another that retrieves by embedding similarity. Both retrieved 1, 3, 5 or 10
+fragments.
 
 The questions come from two public datasets. In [SQuAD](https://arxiv.org/abs/1606.05250), the answer
-is in one passage of a Wikipedia article. In [HotPotQA](https://arxiv.org/abs/1809.09600), it takes
-two paragraphs from two different articles. From each they built three document collections of
-growing size: from 21,000 to 85,000 tokens for HotPotQA (16, 32 and 64 documents) and from 21,000 to
-50,000 for SQuAD (3, 4 and 7). They measured quality with [BERTScore](https://arxiv.org/abs/1904.09675),
-which compares the generated answer with a reference answer word by word through their embeddings,
-so it scores highly whatever resembles the reference.
+sits in a single passage of a Wikipedia article. In [HotPotQA](https://arxiv.org/abs/1809.09600), it
+takes two paragraphs from two different articles. From each, the authors built three document
+collections of growing size: from 21,000 to 85,000 tokens for HotPotQA (16, 32 and 64 documents) and
+from 21,000 to 50,000 for SQuAD (3, 4 and 7). They measured quality with
+[BERTScore](https://arxiv.org/abs/1904.09675), which compares the generated answer with a reference
+answer through the embeddings of their words, so it gives a high score to anything that resembles the
+reference.
 
 CAG gets the best score in five of the six cases. On the small HotPotQA collection it scores 0.795,
 against 0.768 for the best RAG. On the large one, the 85,000-token collection, it loses: 0.741,
-against 0.754 for BM25 with five fragments. The gap narrows as the collection grows, and the paper
+against 0.754 for BM25 with five fragments. CAG's lead shrinks as the collection grows, and the paper
 itself points out that, although Llama 3.1 8B accepts 128,000 tokens, its measured effective context
 is about 32,000.
 
-The timing table is the most interesting one, and it reads better than the text that discusses it.
-On the large HotPotQA collection, handing the model all 64 documents without a cache takes 92 seconds
-per question, nearly all of it spent reading them. With the precomputed cache, 2.3 seconds: forty
-times less. And BM25 with three fragments takes 0.67 seconds, under a millisecond of search and the
-rest spent generating. The cache is what makes reading everything feasible, but it doesn't make it
-faster than a simple search over the same documents.
+The timing table is the most interesting part, and it's clearer than the text that discusses it. On
+the large HotPotQA collection, handing the model all 64 documents without a cache takes 92 seconds
+per question, nearly all of it spent reading them. With the precomputed cache, it takes 2.3 seconds:
+forty times less. BM25 with three fragments takes 0.67 seconds: under a millisecond of search, with
+the rest spent generating. The cache is what makes reading everything feasible, but it doesn't make
+it faster than a simple search over the same documents.
 
-There are three things to bear in mind when reading it. The collections are small, and searching 16
-or 64 documents isn't hard either. The model is small, and bigger models improve both systems. And
-BERTScore rewards resemblance, not correctness: "14 days from the charge" and "30 days from the
-charge" look very much alike, word for word, and only one is true at Albarán. Differences of two or
-three hundredths don't tell you how many more answers are right. What the paper claims, and its data
-supports, is more modest than its title: with a small knowledge base, giving the model everything
-with a precomputed cache answers as well as or better than RAG, without RAG's complexity.
+Three caveats to bear in mind. The collections are small, and searching 16 or 64 documents isn't hard
+either. The model is small, and bigger models improve both systems. And BERTScore rewards
+resemblance, not correctness: "14 days from the charge" and "30 days from the charge" look almost
+identical, word for word, and only one is true at Albarán. Differences of two or three hundredths
+don't tell you how many more answers are right. What the paper claims, and its data supports, is more
+modest than its title: with a small knowledge base, giving the model everything with a precomputed
+cache answers as well as or better than RAG, without RAG's complexity.
 
 ## Two ways to get it
 
-The paper computes the cache, stores it and trims it by hand, with the open model's code. Hardly
-anyone does it that way. There are two ways to get the same result without writing those lines,
-depending on who runs the model.
+The paper computes, stores and trims the cache by hand, using the open model's code. Hardly anyone
+does it that way. There are two ways to get the same result without writing those lines, depending
+on who runs the model.
 
 ### If the model is yours
 
 Open-source inference servers, the programs that load a model and serve queries, reuse the cache
 across requests without being asked. [vLLM](https://docs.vllm.ai/en/latest/design/prefix_caching.html)
 stores the cache in blocks of 16 tokens, an idea from its
-[2023 paper](https://arxiv.org/abs/2309.06180) that borrows from an operating system's virtual memory,
+[2023 paper](https://arxiv.org/abs/2309.06180) borrowed from an operating system's virtual memory,
 and identifies each block by a *hash* (a numeric fingerprint) of the whole text from the start up to
-it. If a new request starts the same way as an earlier one, its first blocks have the same
+that block. If a new request starts the same way as an earlier one, its first blocks have the same
 fingerprint and get reused. [SGLang](https://arxiv.org/abs/2312.07104), another open server, keeps
 every opening it has seen in a tree so it can find the longest match.
 
 At Albarán, this means it's enough to always put the policies at the start of the prompt: the server
 does the rest. And because blocks are shared, twenty-five people asking at once use a single copy of
-the 4.2 GB, each adding only their question and answer. If the cache doesn't fit on the GPU, libraries
-such as [LMCache](https://github.com/LMCache/LMCache) move it to the server's memory or to disk and
-bring it back when needed.
+the 4.2 GB, each adding only their own question and answer. If the cache doesn't fit on the GPU,
+libraries such as [LMCache](https://github.com/LMCache/LMCache) move it to the server's memory or to
+disk and bring it back when needed.
 
 ### If you use a provider's
 
-With a model used through a provider's API (application programming interface), you neither see nor
-store the cache: you send the whole text with every request, and the provider recognises the opening
-it has already read. Google announced it for Gemini in May 2024, Anthropic launched it for Claude
-[in August](https://www.anthropic.com/news/prompt-caching) and OpenAI in October. As of October 2026,
-all three do it by default on their recent models. With caching, CAG through an API is exactly
-pasting the policies at the start of every request: the saving lies in the provider not reading them
-again.
+With a model you use through a provider's API (application programming interface), you neither see
+nor store the cache: you send the whole text with every request, and the provider recognises the
+opening it has already read. Google announced the feature for Gemini in May 2024, Anthropic launched
+it for Claude [in August](https://www.anthropic.com/news/prompt-caching) and OpenAI in October. As of
+October 2026, all three do it by default on their recent models. With caching, CAG through an API is
+simply a matter of pasting the policies at the start of every request: the saving comes from the
+provider not reading them again.
 
 The terms vary from provider to provider and from year to year, but they share a shape. Reading a
 token from the cache costs around a tenth of an ordinary input token, and a little less on some
@@ -401,8 +400,8 @@ The first is that order matters. Albarán's policies fall into five groups of do
 the three plans (Basic, Team and Business), 13,500 tokens; billing and payments, 8,000; privacy and
 data, 5,500; the service level agreements, 2,000; and the FAQ, 3,000. All of them change once or
 twice a month, except the FAQ, which gets touched up every week. If it opens the prompt, every
-touch-up forces a reread of all 32,000. If it goes last, only its own 3,000. What changes least goes
-first.
+touch-up forces a reread of all 32,000 tokens. If it goes last, only its own 3,000. What changes
+least goes first.
 
 <figure>
   <img
@@ -417,25 +416,25 @@ first.
   </figcaption>
 </figure>
 
-The second is that nothing variable can come before the documents. A classic case is putting the
+The second is that nothing variable can come before the documents. A classic mistake is putting the
 date and time at the top of the assistant's instructions so it knows what day it is: every request
 then starts differently and the cache is never reused. The date belongs after the documents, next to
 the question.
 
 The third is that the text has to be generated the same way every time. If the documents come from a
 query that doesn't guarantee their order, or are converted to JSON (a text format for data) with the
-keys in a different position each time, the prefix changes without anyone having touched anything.
+keys in a different order each time, the prefix changes without anyone having touched anything.
 
 ## What it costs, and where it breaks
 
 ### What each question costs
 
-To compare without depending on any one provider's prices, it helps to count in a single unit: what
-one ordinary input token costs. Without a cache, every Albarán question pays 32,000 units for the
-policies. With a cache, the first pays for the write, 40,000 (25% more), and each one after that
-pays 3,200 (a tenth). The RAG system from the opening, with four fragments of 500 tokens, pays 2,000.
-In every case this leaves out the question, the answer and the instructions, which cost the same for
-all three.
+To compare without depending on any one provider's prices, it helps to count in a single unit: the
+cost of one ordinary input token. Without a cache, every Albarán question pays 32,000 units for the
+policies. With a cache, the first question pays for the write, 40,000 (25% more), and each one after
+that pays 3,200 (a tenth). The RAG system from the opening, with four fragments of 500 tokens, pays
+2,000. All of these figures leave out the question, the answer and the instructions, which cost the
+same in each case.
 
 <figure>
   <img
@@ -445,20 +444,20 @@ all three.
     height="300"
   />
   <figcaption>
-    With a cache, reading everything no longer costs sixteen times as much as reading four fragments
+    With a cache, reading everything no longer costs sixteen times as much as reading four fragments,
     but a little over one and a half times as much. The write has paid for itself by the second
     question.
   </figcaption>
 </figure>
 
 Over a day, the 600 questions arrive well under five minutes apart, so the entry doesn't expire
-during working hours. If it's written again ten or so times, after lunch or first thing in the
-morning, the day costs about 2.3 million units with a cache, against 19.2 million without it and 1.2
-million with RAG. The cache cuts the cost by a factor of eight and puts CAG in the same order of
-magnitude as RAG. If the provider charges a twentieth for reads, as some 2026 models do, the gap with
-RAG all but disappears.
+during working hours. If it's rewritten ten or so times, after lunch or first thing in the morning,
+the day costs about 2.3 million units with a cache, against 19.2 million without one and 1.2 million
+with RAG. The cache cuts the cost by a factor of eight and puts CAG in the same order of magnitude as
+RAG. If the provider charges a twentieth for reads, as some 2026 models do, the gap with RAG all but
+disappears.
 
-Latency changes in the same way. The wait for the first word no longer depends on the 32,000 policy
+Latency improves in the same way. The wait for the first word no longer depends on the 32,000 policy
 tokens: when Anthropic launched its cache, it announced up to 85% less waiting on long prompts. What
 doesn't change is the decoding cost from the previous section: every token of the answer still reads
 the whole cache.
@@ -466,38 +465,38 @@ the whole cache.
 ### Fitting isn't the same as being read
 
 A model's context window is what it accepts, not what it uses well. In 2023,
-[*Lost in the Middle*](https://arxiv.org/abs/2307.03172) measured that models make better use of what
+[*Lost in the Middle*](https://arxiv.org/abs/2307.03172) found that models make better use of what
 sits at the start and end of the context than of what's left in the middle: in its experiment with
-twenty documents, GPT-3.5-Turbo got fewer answers right with the relevant one in the middle than with
-none at all. In 2024, [RULER](https://arxiv.org/abs/2404.06654), an NVIDIA benchmark with tasks harder
-than finding a hidden sentence, tested seventeen models that advertised 32,000 tokens or more, and
-only half held up acceptably at that length.
+twenty documents, GPT-3.5-Turbo did worse with the relevant one in the middle than with none at all.
+In 2024, [RULER](https://arxiv.org/abs/2404.06654), an NVIDIA benchmark with tasks harder than
+finding a hidden sentence, tested seventeen models that advertised 32,000 tokens or more, and only
+half held up acceptably at that length.
 
 In 2025, [NoLiMa](https://arxiv.org/abs/2502.05167), another benchmark, raised the bar: questions
 whose answer shares no words with the question, which is exactly the case of the Team plan's returns
-clause. At 32,000 tokens, eleven of thirteen models fell below half of what they scored on short
-texts, and GPT-4o dropped from 99.3% to 69.7%. The same year, Chroma, the company behind the vector
+clause. At 32,000 tokens, eleven of thirteen models fell below half of their score on short texts,
+and GPT-4o dropped from 99.3% to 69.7%. The same year, Chroma, the company behind the vector
 database of the same name, published a report on what it called
-[*context rot*](https://www.trychroma.com/research/context-rot) covering eighteen models, among them
+[*context rot*](https://www.trychroma.com/research/context-rot), covering eighteen models, among them
 GPT-4.1, Claude 4 and Gemini 2.5. All of them got worse as the input grew, even on simple tasks, and
 two of its findings hit Albarán squarely. A passage that resembles the right one but is wrong, a
 distractor, lowers accuracy. And a coherent text, like a company's policies, does more harm than the
 same sentences shuffled.
 
 At Albarán, the distractor exists and has a name: the FAQ. With CAG, the general rule's "14 days" is
-still in the context, a few pages from the Team plan's "30 days", and the model has to choose. The
-RAG system failed because it never saw section 7. CAG can fail by seeing it and sticking with the
-general rule. What it does is swap a search failure for a reading failure, and the second depends on
-the model, on the length and on where each thing sits. The instructions can help ("each plan's terms
-take precedence over the FAQ"), but the only way to know whether that's enough is to test it with real
-questions, at the real length.
+still in the context, a few pages from the Team plan's "30 days", and the model has to choose. The RAG
+system failed because it never saw section 7. CAG can fail by seeing it and sticking with the general
+rule. It trades a search failure for a reading failure, and the second depends on the model, the
+length and where each thing sits. The instructions can help ("each plan's terms take precedence over
+the FAQ"), but the only way to know whether that's enough is to test with real questions at the real
+length.
 
 ### What changes
 
 CAG is for things that change little. Albarán's policies change once or twice a month, and each
 change costs one cache write: next to nothing. Support tickets come in every few minutes. Putting
 them in the prefix would mean rewriting it constantly, and every write costs more than an uncached
-read. And even if they didn't change, a year's worth wouldn't fit in any window.
+read. And even if they never changed, a year's worth wouldn't fit in any window.
 
 Deleting, on the other hand, is easy, as it is with RAG and unlike with the weights: if a piece of
 data has to go, you remove it from the text and the cache is recomputed from that point.
@@ -507,59 +506,61 @@ data has to go, you remove it from the text and the cache is recomputed from tha
 Among Albarán's policies is a document with the commercial discount margins, which only team leads
 may see. With RAG, permission is a filter on the search: each user searches only what they're allowed
 to read. With CAG, permission is the prefix: if one group can read a document another can't, each
-needs its own prefix and its own cache. With two groups, that's nothing. If a company serves fifty
-clients with contracts of their own, it needs fifty caches, each with its own write and its own
-memory. And the temptation to put everything in one shared prefix and ask the model not to show
-anyone what they shouldn't see is a mistake: instructions aren't access control.
+needs its own prefix and its own cache. With two groups, that's nothing. But a company serving fifty
+clients with contracts of their own needs fifty caches, each with its own write and its own memory.
+And it would be a mistake to give in to the temptation of putting everything in one shared prefix and
+asking the model not to show anyone what they shouldn't see: instructions aren't access control.
 
-### What you look at when it fails
+### What to look at when it fails
 
-A RAG system leaves a trail. Every answer comes with a list of retrieved fragments, and when the
+A RAG system leaves a trail. Every answer comes with a list of retrieved fragments, and when an
 answer is wrong you can check whether the right fragment was among them: if it wasn't, the search
-failed, and if it was, the reading did. With CAG, the model has everything in front of it for every
-question, and when it fails it's always the reading. It helps to ask it to quote the exact passage it
-relies on and to check, with a program, that the quote exists in the text. And there's a new metric
-to watch: the share of input tokens read from the cache. If it drops, something has started changing
-the prefix. The team at Manus, a company that builds agents (models that chain steps and use tools on
-their own), wrote in 2025 that it's
+failed; if it was, the reading did. With CAG, the model has everything in front of it for every
+question, so when it fails, it's always the reading. It helps to ask the model to quote the exact
+passage it relies on and to check, with a program, that the quote exists in the text. And there's a
+new metric to watch: the share of input tokens read from the cache. If it drops, something has
+started changing the prefix. The team at Manus, a company that builds agents (models that chain steps
+and use tools on their own), wrote in 2025 that it's
 ["the single most important metric for a production-stage AI agent"](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus).
 
 ## Between CAG and RAG
 
 The prefix rule leaves out an obvious case: reusing the cache of the fragments a search returns. If
-each fragment had its cache computed in advance, a RAG system could glue those together instead of
-reading the fragments. [Prompt Cache](https://arxiv.org/abs/2311.04934) (2023) already proposed
-declaring reusable pieces of a request, and [RAGCache](https://arxiv.org/abs/2404.12457) (2024),
-keeping the cache of the most frequently retrieved documents. The problem is that a fragment's cache
-computed on its own hasn't seen what comes before it in the prompt: its keys and values are those of a
-text that starts there, and gluing them together as they are makes the answers worse.
-[CacheBlend](https://arxiv.org/abs/2405.16444), which won best paper at EuroSys 2025, a systems conference, recomputes only
-the few tokens whose cache changes most when the fragments are joined, and gets the first word out 2.2
-to 3.3 times sooner than reading everything. [TurboRAG](https://arxiv.org/abs/2410.07590) takes the
-other route: it fine-tunes the model to accept fragments computed separately.
+each fragment had its cache computed in advance, a RAG system could glue those caches together
+instead of reading the fragments. [Prompt Cache](https://arxiv.org/abs/2311.04934) (2023) already
+proposed declaring reusable pieces of a request, and [RAGCache](https://arxiv.org/abs/2404.12457)
+(2024) proposed keeping the cache of the most frequently retrieved documents. The problem is that a
+fragment's cache, computed on its own, hasn't seen what comes before it in the prompt: its keys and
+values are those of a text that starts right there, and gluing them together as they are makes the
+answers worse. [CacheBlend](https://arxiv.org/abs/2405.16444), which won best paper at EuroSys 2025,
+a systems conference, recomputes only the few tokens whose cache changes most when the fragments are
+joined, and gets the first word out 2.2 to 3.3 times sooner than reading everything.
+[TurboRAG](https://arxiv.org/abs/2410.07590) takes the other route: it fine-tunes the model to accept
+fragments computed separately.
 
-Further out still, [KBLaM](https://arxiv.org/abs/2410.10450), from Microsoft (presented at ICLR 2025, one of the major machine learning
-conferences), doesn't
-store text at all: it turns each fact in a knowledge base into a key-value pair that the model attends
-to through a modified attention, and fits more than 10,000 facts into an 8-billion-parameter model on
-a single 80 GB A100 GPU. All of these techniques are for people who run their own model. No provider
-offers them in its API today; APIs only reuse prefixes.
+Further out still, [KBLaM](https://arxiv.org/abs/2410.10450), from Microsoft (presented at ICLR 2025,
+one of the major machine learning conferences), doesn't store text at all: it turns each fact in a
+knowledge base into a key-value pair that the model attends to through a modified attention, and fits
+more than 10,000 facts into an 8-billion-parameter model on a single 80 GB A100 GPU. All of these
+techniques are for people who run their own model. No provider offers them in its API today; APIs
+only reuse prefixes.
 
 ## Where it came from and where it's going
 
 In 2020, when the [paper that named RAG](https://arxiv.org/abs/2005.11401) came out, its generator,
-BART, a language model from Facebook, read at most 1,024 tokens, and GPT-3, the largest model of its day, 2,048. Putting the documents
-in the context wasn't an option. Searching was the only way to give a model knowledge that wasn't in
-its weights, and RAG was born of that constraint as much as of its own merits.
+BART, a language model from Facebook, read at most 1,024 tokens, and GPT-3, the largest model of its
+day, 2,048. Putting the documents in the context wasn't an option. Searching was the only way to give
+a model knowledge that wasn't in its weights, and RAG was born of that constraint as much as of its
+own merits.
 
 In 2023, windows multiplied: 32,000 tokens for GPT-4 in March, 100,000 for Claude in May, 200,000 for
 Claude 2.1 in November. The same year, servers learned to manage the KV cache in blocks (vLLM, in
 September) and to reuse it across requests (Prompt Cache in November, SGLang in December), and *Lost
 in the Middle* warned that fitting isn't the same as being read well.
 
-In 2024 came the million-token window, with Gemini 1.5 in February, and provider caching, between May
-and October. In July, a group from Google DeepMind and the University of Michigan published the
-[most cited comparison](https://arxiv.org/abs/2407.16833) between long context and RAG, with
+In 2024 came the million-token window, with Gemini 1.5 in February, and provider-side caching, between
+May and October. In July, a group from Google DeepMind and the University of Michigan published the
+[most cited comparison](https://arxiv.org/abs/2407.16833) between long context and RAG, using
 Gemini-1.5-Pro, GPT-4o and GPT-3.5-Turbo. Given enough resources, handing over everything won on
 average; RAG cost far less; and on 63% of the questions the two gave exactly the same answer. That
 led to Self-Route: ask with RAG first, let the model say whether it can answer from what was
@@ -568,21 +569,21 @@ for a comparable result. In December, the CAG paper named the other half of the 
 cache makes reading everything cheap, maybe the first round isn't needed at all.
 
 In 2025, caching stopped being something you had to ask for. Google made it implicit for Gemini 2.5
-in May, as OpenAI's had been from the start, and agents turned it into their main cost concern: an
-agent sends the same instructions and the same tool definitions at every step, and pays for them at
-the cached price or the full price depending on whether the start of the prompt was left alone. The
-phrase that caught on that year for all of this, "context engineering", says a lot: what mattered was
-no longer how to word a request, but what to put in the context and in what order. In 2026, cache
-entries last longer and reads cost less.
+in May, as OpenAI's had been from the start, and agents made it their main cost concern: an agent
+sends the same instructions and the same tool definitions at every step, and pays the cached price or
+the full price depending on whether the start of the prompt was left alone. The phrase that caught on
+that year for all of this, "context engineering", says a lot: what mattered was no longer how to word
+a request, but what to put in the context and in what order. In 2026, cache entries last longer and
+reads cost less.
 
 Seen this way, CAG hasn't taken off as an architecture, but it has won as a mechanism. Few systems
 call themselves CAG, and nearly all of them use it: every coding agent reads its instructions from
 the cache, and every long conversation is a growing prefix. What has changed for good is the standing
-of "put everything in the context", which went from being the naive option to being the first one
-worth ruling out. The paper itself ended by proposing a mixed system, with a fixed base in the cache
-and search only for the cases it doesn't cover, and that's what's being built. What remains open is
-what limits CAG today: whether effective context will grow as fast as nominal context, whether caching
-loose fragments will reach the APIs, and how to keep per-user caches without multiplying their cost.
+of "put everything in the context", which went from the naive option to the first one worth ruling
+out. The paper itself ended by proposing a hybrid system, with a fixed base in the cache and search
+only for the cases it doesn't cover, and that's what's being built. What remains open is what limits
+CAG today: whether effective context will grow as fast as nominal context, whether caching of loose
+fragments will reach the APIs, and how to keep per-user caches without multiplying their cost.
 
 ## When to use which
 
@@ -600,10 +601,10 @@ expires.
 
 "Fits comfortably" means it fits within the length at which the model still reads well, not within
 the window it advertises, and the only way to know that is to test. Before building anything, take
-fifty real questions and run them through both systems: with everything in context and with your RAG,
-on the same model. If they give the same answers, keep whichever is simpler to maintain. If they
-don't, look at where each one fails, because they fail for different reasons: one because it didn't
-find the passage, the other because it didn't read it properly.
+fifty real questions and run them through both systems on the same model: once with everything in
+context, once with your RAG. If they give the same answers, keep whichever is simpler to maintain. If
+they don't, look at where each one fails, because they fail for different reasons: one because it
+didn't find the passage, the other because it didn't read it properly.
 
 ## What to take away
 
@@ -625,17 +626,17 @@ Albarán, the prompt ends up like this.
   </figcaption>
 </figure>
 
-And if you take away three more, make them practical.
+Three practical points go with it.
 
 **Measure before you choose.** Count the tokens in your stable knowledge, how many questions arrive
 within the life of a cache entry, and how often it changes. If it fits, gets many questions and
 changes little, the cache makes it almost as cheap as retrieving fragments, and you can do without
 the search engine.
 
-**Look after the prefix.** The most stable content first, the variable content after, and the text
-always generated the same way. Watch what share of input tokens is read from the cache: it's the
-number that tells you something has broken the prefix.
+**Look after the prefix.** Put the most stable content first and the variable content after it, and
+always generate the text the same way. Watch what share of input tokens is read from the cache: it's
+the number that tells you something has broken the prefix.
 
 **Don't confuse fitting with being read well.** The policies fitting in the window doesn't mean the
 model will pick the plan's rule over the general one. CAG swaps search failures for reading failures,
-and the latter only show up when you test with your own questions, at your own length.
+and the latter only show up when you test with your own questions at your own length.
