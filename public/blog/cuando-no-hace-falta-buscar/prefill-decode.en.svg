@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 232" width="760" height="232" role="img"
+ aria-label="Diagram of the two phases of inference over a row of tokens. On the left, the prefill: the 32,000 tokens of the policies and those of the question go in together, in a single pass, and every token produces, in every layer, a key and a value that are stored in the KV cache. On the right, decoding: the answer is written one token at a time; each new token reads the keys and values of all the earlier ones and adds its own to the cache.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+  .br.m { stroke: #4edea3; }
+  .br.w { stroke: #e8a24c; }
+  .br.x { stroke: #ffb4ab; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="hd" x="20.0" y="20.0">READ · PREFILL</text>
+<text class="hd" x="520.0" y="20.0">WRITE · DECODE</text>
+<line x1="505" y1="10" x2="505" y2="222" stroke="#3b3b3e" stroke-dasharray="2 4"/>
+<rect class="bx m" x="20.0" y="44.0" width="380.0" height="40.0" rx="6"/>
+<text class="lb m" x="210.0" y="62.0">Albarán's policies</text>
+<text class="sb" x="210.0" y="76.0">32,000 tokens</text>
+<rect class="bx w" x="408.0" y="44.0" width="86.0" height="40.0" rx="6"/>
+<text class="lb w" x="451.0" y="68.0">Question</text>
+<rect class="bx " x="520.0" y="50.0" width="34.0" height="28.0" rx="6"/>
+<text class="mo" x="537.0" y="68.0" style="text-anchor:middle">t1</text>
+<rect class="bx " x="564.0" y="50.0" width="34.0" height="28.0" rx="6"/>
+<text class="mo" x="581.0" y="68.0" style="text-anchor:middle">t2</text>
+<rect class="bx " x="608.0" y="50.0" width="34.0" height="28.0" rx="6"/>
+<text class="mo" x="625.0" y="68.0" style="text-anchor:middle">t3</text>
+<rect class="bx " x="652.0" y="50.0" width="34.0" height="28.0" rx="6"/>
+<text class="mo" x="669.0" y="68.0" style="text-anchor:middle">t4</text>
+<rect class="bx d" x="696.0" y="50.0" width="34.0" height="28.0" rx="6"/>
+<text class="mo" x="713.0" y="68.0" style="text-anchor:middle">…</text>
+<path class="br" d="M20.0,91.0 V96.0 H494.0 V91.0"/>
+<text class="sb" x="257.0" y="112.0">all at once, in a single pass</text>
+<text class="sb" x="630.0" y="112.0">one at a time</text>
+<path class="ar" d="M555.0,64.0 L562.0,64.0"/>
+<path class="ar" d="M599.0,64.0 L606.0,64.0"/>
+<path class="ar" d="M643.0,64.0 L650.0,64.0"/>
+<text class="hd" x="20.0" y="152.0">KV CACHE</text>
+<rect x="20" y="160.0" width="380" height="7" rx="2" fill="rgba(78,222,163,0.55)"/>
+<rect x="408" y="160.0" width="86" height="7" rx="2" fill="rgba(232,162,76,0.55)"/>
+<rect x="520.0" y="160.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.45)"/>
+<rect x="564.0" y="160.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.45)"/>
+<rect x="608.0" y="160.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.45)"/>
+<rect x="652.0" y="160.0" width="34" height="7" rx="2" fill="none" stroke="#86948a" stroke-dasharray="2 2"/>
+<rect x="20" y="169.0" width="380" height="7" rx="2" fill="rgba(78,222,163,0.45)"/>
+<rect x="408" y="169.0" width="86" height="7" rx="2" fill="rgba(232,162,76,0.45)"/>
+<rect x="520.0" y="169.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.37)"/>
+<rect x="564.0" y="169.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.37)"/>
+<rect x="608.0" y="169.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.37)"/>
+<rect x="652.0" y="169.0" width="34" height="7" rx="2" fill="none" stroke="#86948a" stroke-dasharray="2 2"/>
+<rect x="20" y="178.0" width="380" height="7" rx="2" fill="rgba(78,222,163,0.35)"/>
+<rect x="408" y="178.0" width="86" height="7" rx="2" fill="rgba(232,162,76,0.35)"/>
+<rect x="520.0" y="178.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.29)"/>
+<rect x="564.0" y="178.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.29)"/>
+<rect x="608.0" y="178.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.29)"/>
+<rect x="652.0" y="178.0" width="34" height="7" rx="2" fill="none" stroke="#86948a" stroke-dasharray="2 2"/>
+<rect x="20" y="187.0" width="380" height="7" rx="2" fill="rgba(78,222,163,0.25)"/>
+<rect x="408" y="187.0" width="86" height="7" rx="2" fill="rgba(232,162,76,0.25)"/>
+<rect x="520.0" y="187.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.21)"/>
+<rect x="564.0" y="187.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.21)"/>
+<rect x="608.0" y="187.0" width="34" height="7" rx="2" fill="rgba(187,202,191,0.21)"/>
+<rect x="652.0" y="187.0" width="34" height="7" rx="2" fill="none" stroke="#86948a" stroke-dasharray="2 2"/>
+<text class="sb" x="210.0" y="214.0">keys and values of the policies, in every layer</text>
+<text class="sb" x="451.0" y="214.0">of the question</text>
+<text class="sb" x="607.0" y="214.0">one more per token</text>
+<path class="ar m" d="M669.0,78.0 L669.0,146.0 L260.0,146.0 L260.0,158.0"/>
+<text class="tx m" x="268.0" y="140.0">each new token reads every earlier key and value</text>
+<path class="ar m" d="M669.0,146.0 L669.0,158.0"/>
+</svg>

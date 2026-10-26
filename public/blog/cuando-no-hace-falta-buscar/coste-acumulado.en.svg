@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img"
+ aria-label="Line chart of the cumulative cost of the knowledge over the first 20 questions, in equivalent input tokens. Everything in context without a cache climbs 32,000 per question and reaches 640,000. CAG starts at 40,000 for the cache write and climbs 3,200 per question, to 100,800. RAG with four fragments climbs 2,000 per question, to 40,000. CAG drops below the uncached version from the second question on, and its slope is close to RAG's.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+  .br.m { stroke: #4edea3; }
+  .br.w { stroke: #e8a24c; }
+  .br.x { stroke: #ffb4ab; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<line x1="78" y1="254.0" x2="540" y2="254.0" stroke="#2a2a2c"/>
+<text class="sb" x="70.0" y="258.0" style="text-anchor:end">0</text>
+<line x1="78" y1="191.1" x2="540" y2="191.1" stroke="#2a2a2c"/>
+<text class="sb" x="70.0" y="195.1" style="text-anchor:end">200,000</text>
+<line x1="78" y1="128.3" x2="540" y2="128.3" stroke="#2a2a2c"/>
+<text class="sb" x="70.0" y="132.3" style="text-anchor:end">400,000</text>
+<line x1="78" y1="65.4" x2="540" y2="65.4" stroke="#2a2a2c"/>
+<text class="sb" x="70.0" y="69.4" style="text-anchor:end">600,000</text>
+<text class="sb" x="78.0" y="270.0">1</text>
+<text class="sb" x="175.3" y="270.0">5</text>
+<text class="sb" x="296.8" y="270.0">10</text>
+<text class="sb" x="418.4" y="270.0">15</text>
+<text class="sb" x="540.0" y="270.0">20</text>
+<text class="sb" x="309.0" y="286.0">questions</text>
+<text class="sb" x="70.0" y="20.0" style="text-anchor:start">equivalent input tokens, cumulative</text>
+<line x1="78" y1="254" x2="540" y2="254" stroke="#3b3b3e"/>
+<path d="M78.0,243.9 L102.3,233.9 L126.6,223.8 L150.9,213.8 L175.3,203.7 L199.6,193.7 L223.9,183.6 L248.2,173.5 L272.5,163.5 L296.8,153.4 L321.2,143.4 L345.5,133.3 L369.8,123.3 L394.1,113.2 L418.4,103.1 L442.7,93.1 L467.1,83.0 L491.4,73.0 L515.7,62.9 L540.0,52.9" fill="none" stroke="#c47d2b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6 4"/>
+<path d="M78.0,253.4 L102.3,252.7 L126.6,252.1 L150.9,251.5 L175.3,250.9 L199.6,250.2 L223.9,249.6 L248.2,249.0 L272.5,248.3 L296.8,247.7 L321.2,247.1 L345.5,246.5 L369.8,245.8 L394.1,245.2 L418.4,244.6 L442.7,243.9 L467.1,243.3 L491.4,242.7 L515.7,242.1 L540.0,241.4" fill="none" stroke="#5b8ce0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M78.0,241.4 L102.3,240.4 L126.6,239.4 L150.9,238.4 L175.3,237.4 L199.6,236.4 L223.9,235.4 L248.2,234.4 L272.5,233.4 L296.8,232.4 L321.2,231.4 L345.5,230.4 L369.8,229.4 L394.1,228.4 L418.4,227.3 L442.7,226.3 L467.1,225.3 L491.4,224.3 L515.7,223.3 L540.0,222.3" fill="none" stroke="#22a672" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="78.0" cy="243.9" r="4" fill="#c47d2b" stroke="#131315" stroke-width="2"/>
+<circle cx="78.0" cy="241.4" r="4" fill="#22a672" stroke="#131315" stroke-width="2"/>
+<circle cx="102.3" cy="233.9" r="4" fill="#c47d2b" stroke="#131315" stroke-width="2"/>
+<circle cx="102.3" cy="240.4" r="4" fill="#22a672" stroke="#131315" stroke-width="2"/>
+<path class="ar" d="M142.3,188.4 L108.3,232.4"/>
+<text class="tx d" x="146.3" y="184.4" style="text-anchor:start">from question 2 on, CAG costs less</text>
+<rect x="552" y="48.9" width="10" height="3" rx="1.5" fill="#c47d2b"/>
+<text class="tx" x="568.0" y="52.9" style="text-anchor:start">Everything in context, no cache</text>
+<text class="tx d" x="568.0" y="66.9" style="text-anchor:start">640,000</text>
+<rect x="552" y="206.3" width="10" height="3" rx="1.5" fill="#22a672"/>
+<text class="tx" x="568.0" y="210.3" style="text-anchor:start">CAG</text>
+<text class="tx d" x="568.0" y="224.3" style="text-anchor:start">100,800</text>
+<rect x="552" y="243.4" width="10" height="3" rx="1.5" fill="#5b8ce0"/>
+<text class="tx" x="568.0" y="247.4" style="text-anchor:start">RAG, 4 fragments</text>
+<text class="tx d" x="568.0" y="261.4" style="text-anchor:start">40,000</text>
+</svg>
