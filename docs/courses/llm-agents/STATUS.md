@@ -38,8 +38,8 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
-| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | 🔄 (4/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
+| [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (2/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1117,7 +1117,7 @@ confirmed by Gustavo at review:
   stand-in model for the training cells, and through the «before» measurements with the real one;
   the GPU run is Gustavo's. Not on a phone.
 
-**COURSE-C2-P1-03** — In progress (started 2026-10-13). Lesson 18 `el-prompt-es-una-especificacion`
+**COURSE-C2-P1-03** — Done (started 2026-10-13, finished 2026-10-24). Lesson 18 `el-prompt-es-una-especificacion`
 authored on `staging`, the block's first. 1 998 words, 6 display equations, no widget (the block md
 assigns none), **2 cells** (17 + 39 lines; the plan said 1, but as one cell it was 54 lines, and
 AUTHORING §3's fix is the split: the class with a pointer demo, then the specification and the
@@ -1356,3 +1356,106 @@ is the author's. Decisions, confirmed by Gustavo at review:
   starter, an empty submission and an unpaired version each fail with their own message (CPython);
   no horizontal page scroll at 375 px (every wide display scrolls in its own box). Quiz not answered
   in the browser. Not on a phone.
+
+Lesson 24 `proyecto-asistente` authored on its own branch, the block's last. 1 982 words, 5 display
+equations, no widget, 3 cells (37, 44 and 45 lines), 3 quiz, 1 challenge (`ch-asistente`), 3
+readings (Barnett et al. 2024 / seven RAG failure points, Gao et al. 2023 / ALCE, Es et al. 2023 /
+Ragas; arXiv pages checked). `minutes: 35` (lint ≈35, advisory reading-time warning). Runs on the
+**scripted model**, retrieving with TF-IDF over lesson 21's 288 pasajes; no cell loads the network.
+Approved by Gustavo at review:
+- **The contract:** `asistente(modelo, pregunta, k=3, tope=2) -> (respuesta, citado)`, four
+  clauses: retrieve (no pasajes → «no lo sé» without a call), assemble (numbered pasajes; the window
+  only named, via `encajar`, since the scripted model has none), call up to `tope` times keeping the
+  first respuesta that passes the comprobación (a JSON object with exactly `respuesta` and `pasaje`,
+  an int in range or `null` iff «no lo sé»), return the cited pasaje's text or raise.
+- **The formal content:** reintentar as lesson 20's rejection sampling with the comprobación for the
+  gramática and a cap: $(1-\pi)^{\text{tope}}$ and $\mathbb{E}[\text{llamadas}] = (1 - (1-\pi)^{\text{tope}})/\pi$;
+  Jensen (lesson 11's) over the questions, so retries fix random failures, not habitual ones
+  (temperature 0 is the extreme). Measuring by stage: lesson 21's total probability as an identity on
+  the banco's counts, the retriever's ceiling $\text{acierto} \le \text{recuperadas}$, each fallo to
+  the first stage that fails (recuperador, formato, lectura), each conditional rate with its own
+  Wilson $n$.
+- **The cells:** 7 of 12 aciertos (Wilson [0.32, 0.81]), 9 of 12 recuperadas, 7 of 9 given the
+  pasaje; fallos 3 recuperador (two «no lo sé», one invented «Teodoro» exposed by its citation), 1
+  formato, 1 lectura (the piano trace). Every respuesta is the author's, and the lesson says so.
+- **The challenge** completes the cell's one-call `asistente` (retries, the no-call shortcut, raise);
+  each test is a scripted conversation and `modelo.turno` counts calls. Its starter and tests load
+  `guionizado.py` with `open_url`, the first challenge to load an asset; it works in the runner.
+- **Proposed, not yet applied:** `NOTATION.md` rows for $\text{tope}$, $\text{llamadas}$,
+  $\mathbb{E}_x$, $\text{recuperadas}$, $\text{acierto}_{\text{rec}}$ / $\text{acierto}_{\text{no rec}}$
+  and $\pi_\theta(\text{cumple} \mid s, x)$ without ejemplos; delta §4 rows for `reintentar` /
+  `reintento`, `etapa`, `citar` / `citado`.
+- **Lesson 23's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names Block 4's first lesson (`de-chat-a-agente`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (only the reading-time warning), `pnpm build` green with 0 KaTeX
+  errors; all three cells run in the Browser pane on `pnpm start` with the CPython prototype's output;
+  the challenge's solution passes all six tests there and the starter fails each with its message;
+  four wrong variants each fail their own test (CPython); `q-cuantas-llamadas` answered right and
+  wrong in the browser, the other two not confirmed; no horizontal page scroll at 360 px (the 691 px
+  display scrolls in its own box, also on desktop). Not on a phone.
+
+**COURSE-C2-P1-04** — In progress (started 2026-10-24). Lesson 25 `de-chat-a-agente` authored on
+the lesson-24 branch, the block's first. 1 834 words, **no display equation** (the opening says the
+block introduces no mathematics and why: what it fixes are a program's guarantees, written as a
+firma, an algorithm and its invariants), no widget (the block md assigns none), 1 cell (45 lines),
+4 quiz, no challenge, 3 readings (Russell & Norvig ch. 2 / where *agente* and *entorno* come from,
+ReAct 2022, Schluntz & Zhang 2024 / workflows vs agents; URLs checked). Toolformer and function
+calling are left to lesson 26. `minutes: 25` (lint ≈22). Runs on the **scripted model**, and the
+lesson restates why in one clause before the cell. Approved by Gustavo at review:
+- **The content:** a trace in prose (a shopping list and a recipe, four turnos: read, read,
+  rewrite, text), then a figure (`agente-piezas.svg`, hand-written, 360 wide: modelo, harness,
+  entorno, and no arrow from the model to the files); the definitions of entorno, herramienta,
+  llamada, observación, turno and agente; three invariants (the model executes nothing, sees only
+  the mensajes, and only the harness touches the entorno, through a herramienta); and the line
+  between lesson 24's assistant (the harness fixes the sequence) and an agent (the model chooses
+  the next llamada, so the number of turnos is unknown in advance).
+- **The cell:** one guion, two harness. The chat one shows the user the JSON request and
+  `lista.txt` is unchanged; the agent one executes it and the file changes. The `for` gives a
+  fixed four turnos, and the prose names its three defects as later lessons (the harness guesses
+  what is a request, the fixed count, `KeyError` instead of an observación) without pre-empting
+  the loop's pseudocode, which stays lesson 27's.
+- **Applied after review:** the delta §4 `llamada` row now records the collision with Blocks 2–3's
+  use of the noun for a call to the model, which the lesson names once (calls to the model are
+  counted in turnos); `NOTATION.md`'s Block 4 section records the lesson's provisional encoding
+  (JSON in the text, observations as usuario mensajes, the `{"ruta": "contenido"}` dict with
+  `leer` / `escribir`) and that lesson 26 replaces it with `tool_use` / `tool_result` blocks,
+  mensajes staying `(rol, contenido)` tuples until then.
+- **Lesson 24's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 26 (`llamar-herramientas`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green with 0 KaTeX
+  errors; the cell runs in the Browser pane on `pnpm start` with the CPython prototype's output;
+  `q-cuantos-turnos` answered wrong in the browser (rejected, explanation shown), the other three
+  not confirmed; no horizontal page scroll at 360 px, the figure renders at 328 px with no label
+  clipped. Not on a phone.
+
+Lesson 26 `llamar-herramientas` authored on the same branch (2026-10-26). 1 987 words, no display
+equation, no widget (none assigned), 2 cells (44 and 43 lines), 4 quiz, 1 challenge
+(`ch-observaciones`, 8 tests), 4 readings (Toolformer 2023, function calling 2023, Anthropic's
+«Handle tool calls», the JSON Schema `object` reference; URLs checked, the OpenAI one by hand
+because it answers 403 to automated fetches). `minutes: 30` (lint ≈33). Runs on the **scripted
+model**, said before the first cell, with the note that it receives `herramientas` and does not read
+it. Approved by Gustavo at review:
+- **The content:** a herramienta is the triple the model reads, and the Python function behind it is
+  the harness's; the contracts of `leer`, `escribir`, `listar`, `buscar` over the
+  `{"ruta": "contenido"}` dict; the `text` / `tool_use` / `tool_result` bloques, four rules and the
+  invariant that no llamada is left without its observación when the model is called; the exact
+  schema check (declared name, object input, `required`, no field outside `properties`, types), why a
+  harness checks even when the model writes JSON well (the máscara needs the logits), and that the
+  esquema sees form, not intent.
+- **The cells:** cell 1 runs three malformed calls with no check (unknown tool → `KeyError`, missing
+  route → `TypeError`, a route of `3` that succeeds and breaks the next `listar`); cell 2 is the
+  opening trace with bloques (two llamadas in turno 1, `t1` and `t2`), a fixed three-turno `for`.
+- **The challenge:** `observaciones(respuesta, entorno)`, the pairing plus the schema check; the
+  first test is a conversation the modelo guionizado grades. An invalid llamada raises `ValueError`
+  for now, tested only on responses where it is the only llamada, so lesson 28 does not contradict it.
+- **Applied after review:** the delta §4 `bloque` (de contenido) row, with the collision against
+  «bloque 4» named; `NOTATION.md`'s Block 4 section records the encoding from lesson 26 on.
+  Proposed for lesson 27: a frozen `public/courses/llm-agents/entorno.py` (like `guionizado.py`) for
+  the cells of lessons 27–31.
+- **Lesson 25's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 27 (`el-bucle`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green; both cells run in
+  the Browser pane on `pnpm start` with the CPython prototype's output; the challenge's starter fails
+  8/8 and the reference solution passes 8/8 in Pyodide, six wrong variants each fail their own test
+  (CPython); `q-que-para-el-esquema` answered right in the browser, the other three not confirmed; no
+  horizontal page scroll at 360 px (the tools table scrolls in its own box). Not on a phone.

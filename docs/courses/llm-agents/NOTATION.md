@@ -496,6 +496,29 @@ No new mathematics, and the block's first lesson says so in its opening. What th
 never inside `$…$`. (It was the type count in the first course; there is no page on which the two
 could meet, and a symbol that never enters maths is not a symbol.)
 
+**The block's first lesson writes a llamada as JSON inside the text** (`COURSE-C2-P1-04`, lesson
+25): `{"pide": "leer", "ruta": …}` / `{"pide": "escribir", "ruta": …, "contenido": …}`, the tools
+described in the prompt de sistema with `herramientas` still empty, and each observación sent back
+as a `("usuario", "Observación: …")` mensaje — the ReAct-era form, called provisional in the lesson,
+whose defects (the harness guesses what is a request, nothing ties an observación to its llamada)
+are the next lesson's subject. Its entorno is already the `{"ruta": "contenido"}` dict, with `leer`
+and `escribir` only; lesson 26 gives it its four tools and their contracts, and moves llamadas and
+observaciones into `tool_use` / `tool_result` blocks. Until it does, mensajes stay Block 2's
+`(rol, contenido)` tuples.
+
+**From lesson 26 on, a mensaje is still a `(rol, contenido)` tuple, and the contenido is a string or
+a list of bloques de contenido** (`COURSE-C2-P1-04`, lesson 26). The bloques and the herramientas
+use the protocol's English keys, because they are what Block 5 sends over the wire:
+`{"type": "text", "text": …}`, `{"type": "tool_use", "id": …, "name": …, "input": {…}}`,
+`{"type": "tool_result", "tool_use_id": …, "content": …, "is_error": …}`, and a herramienta is
+`{"name": …, "description": …, "input_schema": …}`. Roles stay Spanish (`sistema`, `usuario`,
+`asistente`), so Block 5's adapter translates the roles and nothing else. A respuesta is a list of
+bloques; the observaciones of one turno go in the next `usuario` mensaje, one `tool_result` per
+`tool_use`, in the order of the llamadas (the id is what ties them; the order is the harness's
+convention, which the modelo guionizado checks because it compares whole mensajes). A llamada that
+fails its esquema is not executed, and until lesson 28 the harness raises `ValueError`: provisional,
+like lesson 25's `KeyError`, and lesson 28 turns both into an observación with `is_error`.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the

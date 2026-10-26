@@ -1,0 +1,619 @@
+---
+slug: llamar-herramientas
+title: "Llamar herramientas: salida estructurada con consecuencias"
+block: 4
+order: 2
+minutes: 30
+summary: "Una herramienta es lo que el modelo lee de ella: un nombre, una descripción y un esquema. La llamada y la observación pasan a ser bloques unidos por un identificador, y el harness comprueba cada llamada contra su esquema antes de ejecutarla, porque aquí una salida mal formada no se reintenta: se ejecuta."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-sabe-el-modelo
+    type: single
+    prompt: 'En la segunda celda, ¿qué sabe el modelo de la herramienta `escribir`?'
+    options:
+      - { id: a, text: 'Su nombre, su descripción y su esquema: lo que pone su entrada de `HERRAMIENTAS`.' }
+      - { id: b, text: 'Eso y el código de la función `escribir`, para saber qué hace de verdad.' }
+      - { id: c, text: 'Sólo su nombre. La descripción es para quien lee el programa.' }
+      - { id: d, text: 'Lo que hay en <W>notas.txt</W>, porque la herramienta lo lee y lo escribe.' }
+    answer: a
+    explanation: 'La (a). La función es del harness y no viaja nunca al modelo. Si la descripción dijera que `escribir` añade al final del fichero, el modelo la creería: en el turno 2 mandaría sólo la línea de las patatas, y la nota de la cena desaparecería sin que la llamada tuviera nada mal. La (d) es el segundo invariante de la lección anterior: de <W>notas.txt</W> el modelo sabe lo que le llegó en una observación, y sólo desde que le llegó.'
+  - id: q-que-para-el-esquema
+    type: multi
+    prompt: 'Con las cuatro herramientas de la lección, ¿cuáles de estas llamadas no pasan la comprobación del esquema?'
+    options:
+      - { id: a, text: '`leer` con `{"ruta": "notas.txt", "linea": "2"}`' }
+      - { id: b, text: '`escribir` con `{"ruta": "notas.txt", "contenido": ""}`' }
+      - { id: c, text: '`buscar` con `{"patron": 3}`' }
+      - { id: d, text: '`listar` con `{}`' }
+      - { id: e, text: '`leer` con `{"ruta": "recetas/salmorejo.txt"}`' }
+    answer: [a, c, d]
+    explanation: 'La (a) trae un campo que no está en `properties`, la (c) un número donde va texto y a la (d) le falta `carpeta`, que está en `required`. Las otras dos cumplen, y es lo interesante. La (b) deja <W>notas.txt</W> vacío: el esquema mira la forma, no si la llamada debe ejecutarse. La (e) pide un fichero que no existe, y el esquema no sabe qué hay en el entorno; esa llamada fallará al ejecutarse, y qué hace entonces el harness es la lección sobre los errores.'
+    hint: 'El esquema sólo ve la llamada: sus campos y los tipos de sus valores.'
+  - id: q-dos-llamadas
+    type: single
+    prompt: 'La respuesta del modelo trae tres bloques: un texto, un `tool_use` de id <W>a7</W> que lee un fichero y otro de id <W>b2</W> que lista una carpeta. ¿Qué manda el harness antes de volver a llamar al modelo?'
+    options:
+      - { id: a, text: 'La respuesta entera y, detrás, un mensaje de rol usuario con dos `tool_result`, uno para <W>a7</W> y otro para <W>b2</W>.' }
+      - { id: b, text: 'La respuesta y un mensaje con el `tool_result` de <W>a7</W>; después llama al modelo, y en el turno siguiente manda el de <W>b2</W>.' }
+      - { id: c, text: 'Un mensaje con tres bloques: el texto de la respuesta, devuelto, y los dos `tool_result`.' }
+      - { id: d, text: 'La respuesta y un solo `tool_result` que junta lo que devolvieron las dos herramientas.' }
+    answer: a
+    explanation: 'La (a). La (b) llama al modelo con <W>b2</W> sin observación, que es justo lo que prohíbe la cuarta regla, y un protocolo de verdad rechaza esa petición. La (c) confunde de quién es el texto: lo escribió el modelo, y ya está en la conversación porque la respuesta entra entera. La (d) rompe lo que el identificador garantiza, que cada observación dice a qué llamada contesta.'
+  - id: q-forzar-ajeno
+    type: single
+    prompt: 'Tu harness llama a un modelo que sirve otra empresa y le pasa las herramientas con sus esquemas. ¿Puede garantizar, con la máscara de la generación restringida, que cada llamada cumple su esquema?'
+    options:
+      - { id: a, text: 'No. La máscara actúa sobre los logits antes de cada sorteo, y los logits sólo los tiene quien sirve el modelo. Puede aplicarla él, si lo ofrece; tu harness sólo puede comprobar lo que llega.' }
+      - { id: b, text: 'Sí: al mandar los esquemas en `herramientas`, la máscara se aplica sola.' }
+      - { id: c, text: 'Sí, si comprueba la respuesta token a token a medida que llega.' }
+      - { id: d, text: 'No hace falta: con el esquema bien escrito en la descripción, el modelo ya no se equivoca.' }
+    answer: a
+    explanation: 'La (a). Es la diferencia entre pedir y forzar de la lección sobre la salida estructurada. La (c) mira cada token cuando ya está sorteado, y eso es comprobar tarde, no forzar: la máscara decide antes del sorteo qué tokens pueden salir. La (d) es pedir, que funciona casi siempre y no garantiza nada. Y aunque quien sirve el modelo fuerce el esquema, tu harness comprueba igual: lo que ejecuta es responsabilidad suya.'
+challenges:
+  - id: ch-observaciones
+    prompt: |
+      La segunda celda ejecuta las llamadas sin comprobar nada, porque las del guion cumplen. Escribe la parte del turno que le toca al harness, con la comprobación: `observaciones(respuesta, entorno)` recibe la respuesta del modelo, una lista de bloques, y devuelve la lista de bloques `tool_result` del mensaje siguiente. Las funciones, `HERRAMIENTAS` y las que fabrican bloques están en el código de partida.
+
+      - Un `tool_result` por cada `tool_use`, en el orden de las llamadas, con su `id` como `tool_use_id`, lo que devuelve la función como `content` e `is_error` a `False`.
+      - Los bloques de texto no se ejecutan nunca. Una respuesta sin llamadas devuelve `[]`.
+      - Antes de ejecutar una llamada, compruébala contra su herramienta en `HERRAMIENTAS`: el nombre está declarado, `input` es un diccionario, no falta ningún campo de `required`, no sobra ninguno fuera de `properties` y cada valor es del tipo que dice su campo. Si no cumple, lanza `ValueError` *sin ejecutarla*.
+
+      La primera prueba es una conversación con el modelo guionizado, que falla si tus observaciones no son las que espera.
+    starter: |
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+
+      ENTORNO = {"lista.txt": "pan, leche, patatas", "notas.txt": "El sábado vienen cuatro a cenar.",
+                 "recetas/tortilla.txt": "Tortilla: huevos, patatas, cebolla."}
+
+      def leer(entorno, ruta):
+          return entorno[ruta]
+      def escribir(entorno, ruta, contenido):
+          entorno[ruta] = contenido
+          return "escritos %d caracteres en %s" % (len(contenido), ruta)
+      def listar(entorno, carpeta):
+          return "\n".join(r for r in sorted(entorno) if r.startswith(carpeta))
+      def buscar(entorno, patron):
+          return "\n".join("%s: %s" % (r, linea) for r in sorted(entorno)
+                           for linea in entorno[r].split("\n") if patron in linea)
+      FUNCIONES = {"leer": leer, "escribir": escribir, "listar": listar, "buscar": buscar}
+
+      def objeto(**campos):
+          return {"type": "object", "required": list(campos), "additionalProperties": False,
+                  "properties": {c: {"type": "string", "description": d} for c, d in campos.items()}}
+      HERRAMIENTAS = [
+          {"name": "leer", "description": "Devuelve el contenido entero de un fichero.",
+           "input_schema": objeto(ruta="la ruta del fichero")},
+          {"name": "escribir", "description": "Sustituye el contenido entero de un fichero, o lo "
+           "crea si no existe. Lo que tuviera se pierde.",
+           "input_schema": objeto(ruta="la ruta del fichero", contenido="el contenido nuevo, entero")},
+          {"name": "listar", "description": "Las rutas que empiezan por carpeta, una por línea.",
+           "input_schema": objeto(carpeta="un principio de ruta, como recetas/; vacío, todas")},
+          {"name": "buscar", "description": "Las líneas que contienen patron tal cual, con su ruta.",
+           "input_schema": objeto(patron="el texto que buscar")}]
+
+      def texto(t):
+          return {"type": "text", "text": t}
+      def llamada(id, nombre, **argumentos):
+          return {"type": "tool_use", "id": id, "name": nombre, "input": argumentos}
+      def resultado(id, contenido):
+          return {"type": "tool_result", "tool_use_id": id, "content": contenido, "is_error": False}
+
+      def observaciones(respuesta, entorno):
+          """Los tool_result del mensaje siguiente: uno por llamada, comprobada antes de ejecutarla."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "una conversación entera: el modelo guionizado acepta tus observaciones"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          def tr(i, c):
+              return {"type": "tool_result", "tool_use_id": i, "content": c, "is_error": False}
+          E = {"lista.txt": "pan, leche, patatas", "notas.txt": "El sábado vienen cuatro a cenar.",
+               "recetas/tortilla.txt": "Tortilla: huevos, patatas, cebolla."}
+          N = "El sábado vienen cuatro a cenar.\nLlevan patatas: tortilla."
+          inicio = [("sistema", "Trabajas con ficheros."), ("usuario", "Apunta qué recetas llevan patatas.")]
+          rs = [[{"type": "text", "text": "Busco y leo."},
+                 {"type": "tool_use", "id": "t1", "name": "buscar", "input": {"patron": "patatas"}},
+                 {"type": "tool_use", "id": "t2", "name": "leer", "input": {"ruta": "notas.txt"}}],
+                [{"type": "tool_use", "id": "t3", "name": "escribir", "input": {"ruta": "notas.txt", "contenido": N}}],
+                [{"type": "text", "text": "Hecho."}]]
+          vs = [[tr("t1", "lista.txt: pan, leche, patatas\nrecetas/tortilla.txt: Tortilla: huevos, patatas, cebolla."),
+                 tr("t2", "El sábado vienen cuatro a cenar.")],
+                [tr("t3", "escritos 58 caracteres en notas.txt")], None]
+          guion, m = [], inicio
+          for r, v in zip(rs, vs):
+              guion, m = guion + [(m, r)], m + [("asistente", r), ("usuario", v)]
+          modelo, entorno, m = ModeloGuionizado(guion), dict(E), inicio
+          for turno in range(3):
+              try:
+                  r = modelo(m)
+              except ValueError as e:
+                  raise AssertionError('el modelo guionizado no reconoce tus observaciones del turno %d (%s): '
+                                       'un tool_result por llamada, en el orden de las llamadas, con su id, el '
+                                       'texto que devuelve la herramienta y is_error False' % (turno, e))
+              obs = observaciones(r, entorno)
+              assert obs is not None, 'observaciones no devuelve nada: falta el return'
+              m = m + [("asistente", r)]
+              if not obs:
+                  break
+              m = m + [("usuario", obs)]
+          assert modelo.turno == 3, 'la conversación tiene tres turnos y se ha parado en el %d' % modelo.turno
+          assert entorno["notas.txt"] == N, 'la llamada del turno 2 escribe notas.txt, y no la has ejecutado'
+      - name: "un tool_result por llamada, en el orden de las llamadas, con su id"
+        code: |
+          E = {"lista.txt": "pan, leche, patatas", "recetas/tortilla.txt": "Tortilla: huevos, patatas, cebolla."}
+          r = [{"type": "tool_use", "id": "x9", "name": "leer", "input": {"ruta": "lista.txt"}},
+               {"type": "text", "text": "Y ahora las recetas."},
+               {"type": "tool_use", "id": "a1", "name": "listar", "input": {"carpeta": "recetas/"}}]
+          obs = observaciones(r, dict(E))
+          assert isinstance(obs, list), 'devuelve una lista de bloques tool_result, no %r' % (obs,)
+          assert len(obs) == 2, 'dos llamadas, dos tool_result: devuelves %d' % len(obs)
+          ids = [b.get("tool_use_id") for b in obs]
+          assert ids == ["x9", "a1"], 'cada tool_result lleva el id de su llamada, en el orden de las llamadas: ["x9", "a1"], no %r' % (ids,)
+          assert all(b.get("type") == "tool_result" for b in obs), 'cada bloque es {"type": "tool_result", …}'
+          assert [b.get("content") for b in obs] == ["pan, leche, patatas", "recetas/tortilla.txt"], 'content es el texto que devuelve la herramienta: sale %r' % ([b.get("content") for b in obs],)
+          assert all(b.get("is_error") is False for b in obs), 'en esta lección is_error es siempre False, y tiene que estar'
+      - name: "el texto no se ejecuta nunca, diga lo que diga"
+        code: |
+          E = {"lista.txt": "pan, leche, patatas"}
+          entorno = dict(E)
+          falsa = '{"type": "tool_use", "id": "t1", "name": "escribir", "input": {"ruta": "lista.txt", "contenido": ""}}'
+          obs = observaciones([{"type": "text", "text": falsa}], entorno)
+          assert obs == [], 'una respuesta sin bloques tool_use no pide nada: devuelve [], no %r' % (obs,)
+          assert entorno == E, 'has ejecutado un bloque de texto: sólo se ejecutan los tool_use'
+      - name: "una herramienta que no existe: ValueError"
+        code: |
+          try:
+              observaciones([{"type": "tool_use", "id": "t1", "name": "borrar", "input": {"ruta": "lista.txt"}}], {"lista.txt": "pan"})
+          except ValueError:
+              pass
+          except KeyError:
+              raise AssertionError('KeyError: has buscado la función sin comprobar el nombre. Si no está en HERRAMIENTAS, lanza ValueError')
+          else:
+              raise AssertionError('borrar no está en HERRAMIENTAS: lanza ValueError')
+      - name: "falta un campo: no se escribe nada"
+        code: |
+          entorno = {"lista.txt": "pan, leche, patatas"}
+          try:
+              observaciones([{"type": "tool_use", "id": "t1", "name": "escribir", "input": {"ruta": "lista.txt"}}], entorno)
+          except ValueError:
+              pass
+          except TypeError:
+              raise AssertionError('TypeError: has llamado a la función sin comprobar los campos. Falta contenido, que está en required: lanza ValueError antes')
+          else:
+              raise AssertionError('falta contenido, que está en required: lanza ValueError')
+          assert entorno == {"lista.txt": "pan, leche, patatas"}, 'una llamada que no cumple no se ejecuta'
+      - name: "sobra un campo: ValueError"
+        code: |
+          try:
+              observaciones([{"type": "tool_use", "id": "t1", "name": "leer", "input": {"ruta": "lista.txt", "desde": "2"}}], {"lista.txt": "pan"})
+          except ValueError:
+              pass
+          except TypeError:
+              raise AssertionError('TypeError: has llamado a la función sin comprobar los campos. desde no está en properties: lanza ValueError antes')
+          else:
+              raise AssertionError('desde no está en properties, y additionalProperties es False: lanza ValueError')
+      - name: "un número donde va una ruta: no se crea nada"
+        code: |
+          entorno = {"lista.txt": "pan, leche, patatas"}
+          try:
+              observaciones([{"type": "tool_use", "id": "t1", "name": "escribir", "input": {"ruta": 3, "contenido": "huevos"}}], entorno)
+          except ValueError:
+              pass
+          else:
+              raise AssertionError('ruta es de tipo string en el esquema y llega un 3: lanza ValueError. Ahora el entorno tiene %r' % (sorted(entorno, key=str),))
+          assert entorno == {"lista.txt": "pan, leche, patatas"}, 'has escrito un fichero llamado 3: compruébalo antes de ejecutar'
+      - name: "un input que no es un objeto: ValueError"
+        code: |
+          try:
+              observaciones([{"type": "tool_use", "id": "t1", "name": "leer", "input": "lista.txt"}], {"lista.txt": "pan"})
+          except ValueError:
+              pass
+          except (TypeError, AttributeError) as e:
+              raise AssertionError('%s: input no es un diccionario, y eso también se comprueba antes. Lanza ValueError' % type(e).__name__)
+          else:
+              raise AssertionError('input es la cadena "lista.txt", no un objeto: lanza ValueError')
+    solution: |
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+
+      ENTORNO = {"lista.txt": "pan, leche, patatas", "notas.txt": "El sábado vienen cuatro a cenar.",
+                 "recetas/tortilla.txt": "Tortilla: huevos, patatas, cebolla."}
+
+      def leer(entorno, ruta):
+          return entorno[ruta]
+      def escribir(entorno, ruta, contenido):
+          entorno[ruta] = contenido
+          return "escritos %d caracteres en %s" % (len(contenido), ruta)
+      def listar(entorno, carpeta):
+          return "\n".join(r for r in sorted(entorno) if r.startswith(carpeta))
+      def buscar(entorno, patron):
+          return "\n".join("%s: %s" % (r, linea) for r in sorted(entorno)
+                           for linea in entorno[r].split("\n") if patron in linea)
+      FUNCIONES = {"leer": leer, "escribir": escribir, "listar": listar, "buscar": buscar}
+
+      def objeto(**campos):
+          return {"type": "object", "required": list(campos), "additionalProperties": False,
+                  "properties": {c: {"type": "string", "description": d} for c, d in campos.items()}}
+      HERRAMIENTAS = [
+          {"name": "leer", "description": "Devuelve el contenido entero de un fichero.",
+           "input_schema": objeto(ruta="la ruta del fichero")},
+          {"name": "escribir", "description": "Sustituye el contenido entero de un fichero, o lo "
+           "crea si no existe. Lo que tuviera se pierde.",
+           "input_schema": objeto(ruta="la ruta del fichero", contenido="el contenido nuevo, entero")},
+          {"name": "listar", "description": "Las rutas que empiezan por carpeta, una por línea.",
+           "input_schema": objeto(carpeta="un principio de ruta, como recetas/; vacío, todas")},
+          {"name": "buscar", "description": "Las líneas que contienen patron tal cual, con su ruta.",
+           "input_schema": objeto(patron="el texto que buscar")}]
+
+      def texto(t):
+          return {"type": "text", "text": t}
+      def llamada(id, nombre, **argumentos):
+          return {"type": "tool_use", "id": id, "name": nombre, "input": argumentos}
+      def resultado(id, contenido):
+          return {"type": "tool_result", "tool_use_id": id, "content": contenido, "is_error": False}
+
+      TIPOS = {"string": str, "integer": int, "boolean": bool}
+
+      def incumple(b):
+          """Por qué no se puede ejecutar la llamada b, o None si cumple su esquema."""
+          h = next((h for h in HERRAMIENTAS if h["name"] == b["name"]), None)
+          if h is None:
+              return "no hay ninguna herramienta %r" % b["name"]
+          esquema, argumentos = h["input_schema"], b["input"]
+          if not isinstance(argumentos, dict):
+              return "input no es un objeto"
+          for campo in esquema["required"]:
+              if campo not in argumentos:
+                  return "falta el campo %r" % campo
+          for campo, valor in argumentos.items():
+              if campo not in esquema["properties"]:
+                  return "sobra el campo %r" % campo
+              tipo = esquema["properties"][campo]["type"]
+              if type(valor) is not TIPOS[tipo]:
+                  return "el campo %r no es de tipo %s" % (campo, tipo)
+          return None
+
+      def observaciones(respuesta, entorno):
+          """Los tool_result del mensaje siguiente: uno por llamada, comprobada antes de ejecutarla."""
+          obs = []
+          for b in respuesta:
+              if b["type"] != "tool_use":
+                  continue                                 # el texto no se ejecuta nunca
+              motivo = incumple(b)
+              if motivo is not None:
+                  raise ValueError(motivo)                 # no se ejecuta: lanza antes
+              obs.append(resultado(b["id"], FUNCIONES[b["name"]](entorno, **b["input"])))
+          return obs
+    explanation: 'La comprobación va antes de la ejecución, y no al revés: una llamada mal formada puede no fallar al ejecutarse (el 3 que `escribir` acepta como ruta) y dejar el error para otra herramienta. Por eso `observaciones` busca la herramienta en `HERRAMIENTAS`, que es lo que el modelo leyó, y no en `FUNCIONES`, que es lo que el harness sabe hacer: la llamada se mide contra lo que se le prometió al modelo. El resto es el protocolo, y la primera prueba lo comprueba entero, porque el modelo guionizado compara cada mensaje con el que esperaba. `type(valor) is` y no `isinstance`, para que un `True` no pase por un entero cuando un esquema pida `integer`.'
+reading:
+  - kind: paper
+    title: 'Toolformer: Language Models Can Teach Themselves to Use Tools'
+    authors: 'Schick, Dwivedi-Yu, Dessì, Raileanu, Lomeli, Zettlemoyer, Cancedda y Scialom'
+    year: '2023'
+    venue: 'arXiv:2302.04761'
+    lang: en
+    url: 'https://arxiv.org/abs/2302.04761'
+    note: 'Un modelo que aprende solo dónde insertar una llamada a una calculadora o un buscador, y a usar lo que vuelve. Las llamadas aún van dentro del texto, como en la lección anterior: es el paso justo antes de los bloques.'
+  - kind: blog
+    title: 'Function calling and other API updates'
+    authors: 'OpenAI'
+    year: '2023'
+    venue: 'OpenAI'
+    lang: en
+    url: 'https://openai.com/index/function-calling-and-other-api-updates/'
+    note: 'El anuncio que convirtió las herramientas en parte de la API: funciones descritas con un esquema de JSON y un modelo ajustado para llamarlas. Es el formato de esta lección en su primera versión pública.'
+  - kind: blog
+    title: 'Handle tool calls'
+    authors: 'Anthropic'
+    venue: 'Documentación de la API de Claude'
+    lang: en
+    url: 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls'
+    note: 'Los bloques `tool_use` y `tool_result` de la lección, con las reglas de un protocolo real: la observación va justo después de la llamada y antes que cualquier texto, y qué pasa si no.'
+  - kind: blog
+    title: 'JSON Schema reference: object'
+    authors: 'JSON Schema'
+    venue: 'json-schema.org'
+    lang: en
+    url: 'https://json-schema.org/understanding-json-schema/reference/object'
+    note: '`properties`, `required` y `additionalProperties`, las tres palabras del esquema que comprueba el desafío, con ejemplos que pasan y que no. El resto de la referencia es lo que un esquema de verdad puede pedir además.'
+---
+
+{/* COURSE-C2-P1-04 — Bloque 4, lección 2. Las celdas corren sobre el modelo guionizado (cargado
+    de guionizado.py) y no cargan la red. Aquí nacen el entorno de cuatro herramientas (leer,
+    escribir, listar, buscar) sobre un diccionario y los bloques text / tool_use / tool_result:
+    el mismo objeto y el mismo formato hasta el proyecto del bloque. Sin ecuaciones aparte. */}
+
+<Leccion slug="de-chat-a-agente">La lección que separó el chat del agente</Leccion> acabó con
+un *harness* que acierta sin saber por qué. Para decidir si una respuesta pedía algo, la leía como
+JSON y buscaba un campo «pide», y lo que salía de ejecutarla se lo devolvía al modelo como un
+mensaje más del usuario, con un prefijo delante. La petición y la conversación compartían canal, y
+nada en el formato distinguía la una de la otra.
+
+Esta lección le da a la llamada un formato propio, y el formato es la parte fácil: es una salida
+estructurada como las del bloque anterior, que el modelo ya sabe escribir. Lo que cambia es el
+precio de equivocarse. En <Leccion slug="proyecto-asistente">el asistente sobre
+*Marianela*</Leccion>, una respuesta mal formada costaba un reintento. Una llamada mal formada se
+ejecuta, y a veces no falla: escribe donde no debía y deja el error para la herramienta siguiente.
+Así que la pregunta tiene dos mitades. Qué forma debe tener una llamada para que el harness la
+ejecute sin adivinar, y qué tiene que comprobar antes de ejecutarla.
+
+Mira un agente con el formato nuevo antes de nombrar nada. El entorno tiene cuatro ficheros: la
+lista de la compra, una nota que dice <W>El sábado vienen cuatro a cenar.</W> y dos recetas, la de
+la tortilla y la del gazpacho, dentro de <W>recetas/</W>. El usuario pide <W>Apunta en notas.txt qué
+recetas llevan patatas.</W>, y el harness le pasa al modelo, además de los mensajes, la descripción
+de cuatro herramientas: leer, escribir, listar y buscar.
+
+1. La respuesta del modelo ya no es un texto, sino una lista de tres cosas. Una frase,
+   <W>Busco «patatas» y leo las notas.</W>, y dos peticiones separadas, cada una con su etiqueta:
+   <W>t1</W> busca <W>patatas</W> en todos los ficheros y <W>t2</W> lee <W>notas.txt</W>.
+2. El harness no lee la frase. Sabe cuáles son peticiones porque lo dicen ellas, no porque se
+   parezcan a una. Antes de ejecutar cada una mira que la herramienta exista y que los argumentos
+   tengan la forma declarada: buscar quiere un texto en un campo llamado «patron», y lo tiene.
+3. Ejecuta las dos y contesta con un solo mensaje que trae dos resultados, cada uno con la etiqueta
+   de su petición. A <W>t1</W>, dos líneas: la de la tortilla y la de la lista de la compra, que
+   también dice patatas. A <W>t2</W>, la nota de la cena.
+4. Con los dos delante, el modelo pide una sola cosa, <W>t3</W>: reescribir la nota con la línea
+   de la cena y otra que dice que la tortilla lleva patatas. La lista de la compra no es una
+   receta, y no la apunta. El harness comprueba, escribe y contesta a <W>t3</W>.
+5. La última respuesta es sólo una frase. No hay nada que ejecutar, y el harness para.
+
+Fíjate en lo que ya no hace falta adivinar. Las etiquetas atan cada resultado a su petición aunque
+lleguen dos a la vez, y la frase del primer turno podría contener un JSON entero sin que nadie lo
+ejecutara. Y fíjate en de dónde sacó el modelo lo que hizo bien en el cuarto turno. Leyó la nota
+antes de reescribirla porque escribir sustituye el fichero entero, y eso no lo ha visto: se lo dijo
+la descripción de la herramienta.
+
+<Callout type="intuition" title="La idea en una frase">
+Una llamada es una salida estructurada con un bloque propio: el nombre de una herramienta, unos
+argumentos que cumplen su esquema y un identificador. El modelo la escribe leyendo una descripción,
+y el harness la comprueba, la ejecuta y contesta con el mismo identificador.
+</Callout>
+
+## Una herramienta, en dos mitades
+
+La lección anterior llamó herramienta a una operación sobre el entorno que el harness sabe
+ejecutar. Con precisión, una **herramienta** es lo que el modelo recibe de esa operación: un triple
+(nombre, descripción, esquema). El nombre es la clave con la que la pedirá. La descripción es una
+especificación, en el sentido de <Leccion slug="el-prompt-es-una-especificacion">la lección que le
+dio ese nombre</Leccion>: texto para el modelo que dice qué hace la operación, qué devuelve y qué
+destruye. El esquema es un esquema de JSON, como en <Leccion slug="salida-estructurada">la salida
+estructurada</Leccion>, y fija qué campos llevan los argumentos y de qué tipo es cada uno. Las
+herramientas viajan en `herramientas`, el argumento de la firma que el bloque anterior dejó vacío,
+con los nombres de campo del protocolo que el bloque siguiente mandará por la red: `name`,
+`description` e `input_schema`.
+
+La otra mitad es la función que hace el trabajo, y esa el modelo no la ve nunca. Es del harness: un
+diccionario que lleva de cada nombre a una función de Python. El modelo trabaja, por tanto, con lo
+que la descripción dice y no con lo que la función hace. Una descripción que miente sobre su función
+es un error que el modelo no puede detectar, porque no tiene otra cosa.
+
+El entorno de este bloque es un diccionario de rutas a contenidos, y sus cuatro herramientas
+prometen esto:
+
+| Herramienta | Argumentos | Devuelve | Cambia el entorno |
+|---|---|---|---|
+| `leer` | `ruta` | el contenido entero del fichero | no |
+| `escribir` | `ruta`, `contenido` | cuántos caracteres ha escrito | sí: sustituye el fichero entero, o lo crea |
+| `listar` | `carpeta` | las rutas que empiezan por `carpeta`, en orden, una por línea | no |
+| `buscar` | `patron` | cada línea que contiene `patron` tal cual, con su ruta delante | no |
+
+Los argumentos son siempre texto, y todos obligatorios. Una carpeta no existe por separado: es el
+principio común de unas rutas, y <W>recetas/</W> es el de dos. Tres herramientas sólo leen; la
+única que escribe destruye lo que hubiera, y por eso su descripción lo dice. Qué pasa cuando
+`leer` recibe una ruta que no existe queda fuera del contrato por ahora, y lo resuelve más adelante
+la lección sobre los errores.
+
+## La llamada y la observación, unidas por un identificador
+
+La respuesta del modelo pasa a ser una lista de **bloques de contenido**. (Desde aquí, un bloque es
+eso, y no una parte del curso como este bloque 4.) Hay tres tipos, y el curso no necesitará más:
+
+```python
+{"type": "text", "text": "Busco «patatas» y leo las notas."}
+{"type": "tool_use", "id": "t1", "name": "buscar", "input": {"patron": "patatas"}}
+{"type": "tool_result", "tool_use_id": "t1", "content": "lista.txt: pan, …", "is_error": False}
+```
+
+Un bloque `tool_use` es una llamada: `id` la identifica, `name` dice qué herramienta e `input` lleva
+los argumentos. Un bloque `tool_result` es una observación: `tool_use_id` dice a qué llamada
+contesta, `content` es lo que devolvió la función e `is_error` dice si cuenta un fallo. Las
+llamadas viajan en la respuesta del modelo. Las observaciones, en un mensaje de rol `usuario`,
+porque el protocolo no tiene más voces que el sistema, el usuario y el asistente, pero en bloques
+que no son de texto. El identificador lo pone quien sirve el modelo (en las celdas, el guion), y el
+harness lo copia sin inventar nunca uno.
+
+El contrato del harness con el modelo son cuatro reglas, y valen en cada turno:
+
+1. Sólo se ejecutan los bloques `tool_use`. Un bloque de texto no es una petición, diga lo que diga.
+2. La respuesta entra entera en los mensajes, texto incluido, como mensaje del asistente.
+3. Cada `tool_use` recibe exactamente un `tool_result` con su `id`, todos en el mensaje que sigue a
+   la respuesta y antes de cualquier otra cosa en él.
+4. El modelo no se vuelve a llamar hasta que se cumple la regla 3.
+
+Juntas dan el invariante que usará el resto del curso: cuando el harness llama al modelo, ninguna
+llamada de la conversación está sin su observación. Un protocolo de verdad rechaza la petición que
+lo incumple.
+Lo que ata una observación a su llamada es el identificador, no la posición. El harness de las
+celdas escribe las observaciones en el orden de las llamadas de todos modos, y el modelo guionizado
+lo comprueba, porque compara mensajes enteros. En esta lección `is_error` es siempre falso; para qué
+sirve el verdadero lo cuenta la lección sobre los errores.
+
+### Antes de ejecutar, el esquema
+
+Una llamada es una salida estructurada, y la gramática que debe cumplir es el esquema de su
+herramienta. El harness la comprueba antes de ejecutarla, y la comprobación es exacta. Una llamada
+cumple cuando su `name` es el de una herramienta declarada, su `input` es un objeto, tiene cada
+campo de `required`, no tiene ninguno fuera de `properties` (lo prohíbe
+`additionalProperties: false`) y cada valor es del tipo que declara su campo.
+
+Una llamada que no cumple no se ejecuta. Qué le dice entonces el harness al modelo es, otra vez, la
+lección sobre los errores; hasta ella, el harness lanza `ValueError` y el programa se para.
+
+¿Por qué comprobar, si el modelo sabe escribir JSON? Por lo que el bloque anterior separó entre
+pedir y forzar. Los modelos actuales están ajustados para escribir llamadas en este formato y
+aciertan casi siempre, pero eso es pedir. Forzar es la máscara con el esquema como gramática, y la
+máscara actúa sobre los logits, que sólo tiene quien sirve el modelo. Algunos la aplican si se lo
+pides; un harness que llama a un modelo servido por otros no puede, y sólo ve lo que llega. Y aunque
+llegue forzada, comprueba igual, porque lo que ejecuta es responsabilidad suya.
+
+El esquema, en cambio, no ve la intención. Un `escribir` sobre <W>notas.txt</W> cuyo `contenido`
+fuera sólo <W>Llevan patatas: tortilla.</W> cumpliría cada regla y borraría la cena del sábado. La
+comprobación garantiza que la llamada se puede ejecutar. Si se debe ejecutar es otra pregunta, la
+del permiso, que llega más adelante en el bloque.
+
+## Cuatro herramientas y una conversación con bloques
+
+Las dos celdas corren sobre el modelo guionizado, como todo el bloque. Su guion trae las respuestas
+escritas de antemano, ya en bloques, así que recibe `herramientas` y no lo lee; un modelo de verdad
+sabría de cada herramienta exactamente lo que pone ahí. La primera celda escribe el entorno, las cuatro funciones y las cuatro
+herramientas que las describen. Después hace, con las funciones y sin comprobar nada, tres llamadas
+que un modelo podría escribir mal, y una cuarta que no tiene nada de malo.
+
+<PyCell code={`
+import json
+
+ENTORNO = {"lista.txt": "pan, leche, patatas",
+           "notas.txt": "El sábado vienen cuatro a cenar.",
+           "recetas/gazpacho.txt": "Gazpacho: tomates, pepino, pimiento, ajo.",
+           "recetas/tortilla.txt": "Tortilla: huevos, patatas, cebolla."}
+
+def leer(entorno, ruta):                  # las funciones son del harness: el modelo no las ve
+    return entorno[ruta]
+def escribir(entorno, ruta, contenido):
+    entorno[ruta] = contenido
+    return "escritos %d caracteres en %s" % (len(contenido), ruta)
+def listar(entorno, carpeta):
+    return "\\n".join(r for r in sorted(entorno) if r.startswith(carpeta))
+def buscar(entorno, patron):
+    return "\\n".join("%s: %s" % (r, linea) for r in sorted(entorno)
+                     for linea in entorno[r].split("\\n") if patron in linea)
+FUNCIONES = {"leer": leer, "escribir": escribir, "listar": listar, "buscar": buscar}
+
+def objeto(**campos):                     # un esquema: estos campos, de texto y obligatorios
+    return {"type": "object", "required": list(campos), "additionalProperties": False,
+            "properties": {c: {"type": "string", "description": d} for c, d in campos.items()}}
+HERRAMIENTAS = [                          # lo que lee el modelo: nombre, descripción, esquema
+    {"name": "leer", "description": "Devuelve el contenido entero de un fichero.",
+     "input_schema": objeto(ruta="la ruta del fichero")},
+    {"name": "escribir", "description": "Sustituye el contenido entero de un fichero, o lo "
+     "crea si no existe. Lo que tuviera se pierde.",
+     "input_schema": objeto(ruta="la ruta del fichero", contenido="el contenido nuevo, entero")},
+    {"name": "listar", "description": "Las rutas que empiezan por carpeta, una por línea.",
+     "input_schema": objeto(carpeta="un principio de ruta, como recetas/; vacío, todas")},
+    {"name": "buscar", "description": "Las líneas que contienen patron tal cual, con su ruta.",
+     "input_schema": objeto(patron="el texto que buscar")}]
+
+print(json.dumps(HERRAMIENTAS[0], ensure_ascii=False, indent=1), "\\n")
+entorno = dict(ENTORNO)
+print(buscar(entorno, "patatas"), "\\n")
+for nombre, argumentos in [("borrar", {"ruta": "notas.txt"}),     # no hay tal herramienta
+                           ("leer", {}),                           # falta la ruta
+                           ("escribir", {"ruta": 3, "contenido": "huevos"}),  # 3 no es ruta
+                           ("listar", {"carpeta": ""})]:
+    try:
+        print(nombre, "->", FUNCIONES[nombre](entorno, **argumentos))
+    except Exception as e:
+        print(nombre, "->", type(e).__name__ + ":", e)
+`} />
+
+La herramienta que no existe es un `KeyError` del diccionario de funciones, y la ruta que falta,
+un `TypeError`: las dos paran el programa con un mensaje que habla de Python y no de la llamada. La tercera es la peor,
+porque no falla. `escribir` acepta un 3 como ruta y crea un fichero que se llama 3. El error
+aparece en la llamada siguiente, la de `listar`, que no puede ordenar un número entre rutas, y nada
+en su mensaje apunta a la escritura que lo causó. El esquema habría parado las tres antes de tocar
+nada.
+
+La segunda celda es la traza del principio, con un harness que sigue las cuatro reglas. No
+comprueba nada, porque las llamadas del guion las he escrito yo y cumplen, y da tres turnos como
+mucho porque sé cuántos hay. La comprobación es el desafío de abajo.
+
+<PyCell code={`
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())    # ModeloGuionizado
+# Necesita la celda anterior: ENTORNO, las cuatro funciones, FUNCIONES y HERRAMIENTAS.
+
+def texto(t):
+    return {"type": "text", "text": t}
+def llamada(id, nombre, **argumentos):
+    return {"type": "tool_use", "id": id, "name": nombre, "input": argumentos}
+def resultado(id, contenido):
+    return {"type": "tool_result", "tool_use_id": id, "content": contenido, "is_error": False}
+
+NOTAS = "El sábado vienen cuatro a cenar.\\nLlevan patatas: tortilla."
+INICIO = [("sistema", "Trabajas con los ficheros del usuario mediante tus herramientas."),
+          ("usuario", "Apunta en notas.txt qué recetas llevan patatas.")]
+RESPUESTAS = [  # las tres respuestas del modelo guionizado: las he escrito yo
+    [texto("Busco «patatas» y leo las notas."), llamada("t1", "buscar", patron="patatas"),
+                                                llamada("t2", "leer", ruta="notas.txt")],
+    [llamada("t3", "escribir", ruta="notas.txt", contenido=NOTAS)],
+    [texto("Hecho: he añadido a notas.txt que la tortilla lleva patatas.")]]
+VISTO = [[resultado("t1", buscar(ENTORNO, "patatas")), resultado("t2", ENTORNO["notas.txt"])],
+         [resultado("t3", "escritos %d caracteres en notas.txt" % len(NOTAS))], None]
+guion, M = [], INICIO                  # el guion: los mensajes que espera en cada turno
+for r, v in zip(RESPUESTAS, VISTO):
+    guion, M = guion + [(M, r)], M + [("asistente", r), ("usuario", v)]
+
+def muestra(b):                                      # un bloque, en una línea
+    if b["type"] == "text":
+        return "text         " + b["text"]
+    if b["type"] == "tool_use":
+        return "tool_use     %s %s %s" % (b["id"], b["name"], json.dumps(b["input"], ensure_ascii=False))
+    return "tool_result  %s %s" % (b["tool_use_id"], b["content"].replace("\\n", " / "))
+
+modelo, entorno, M = ModeloGuionizado(guion), dict(ENTORNO), INICIO
+for turno in range(1, 4):                            # tres turnos: sé cuántos he escrito
+    r = modelo(M, HERRAMIENTAS)                      # una lista de bloques
+    obs = [resultado(b["id"], FUNCIONES[b["name"]](entorno, **b["input"]))
+           for b in r if b["type"] == "tool_use"]    # sólo se ejecutan los tool_use
+    print("\\n".join("turno %d  %s" % (turno, muestra(b)) for b in r + obs))
+    M = M + [("asistente", r)]                       # la respuesta entra entera
+    if not obs:
+        break
+    M = M + [("usuario", obs)]                       # una observación por llamada, con su id
+print("\\nnotas.txt:", entorno["notas.txt"])
+`} />
+
+Mira el turno 1: dos `tool_use` en una respuesta y dos `tool_result` en el mensaje siguiente, cada
+uno con el `id` de su llamada. El texto del principio se queda en la conversación, para que el
+modelo lea en el turno 2 lo que dijo, y no se ejecuta. Cámbialo tú: en la línea que fabrica las
+observaciones, pon `"t1"` en lugar de `b["id"]`, y mira en qué turno se queja el modelo guionizado.
+Un protocolo de verdad también rechazaría la conversación, porque <W>t2</W> se queda sin su
+observación.
+
+## Comprueba tu intuición
+
+Cuatro preguntas (qué sabe el modelo de una herramienta, qué para el esquema, cómo se contesta a
+dos llamadas y quién puede forzar un esquema) y un desafío: la comprobación que la segunda celda se
+salta.
+
+<Quiz id="q-que-sabe-el-modelo" />
+
+<Quiz id="q-que-para-el-esquema" />
+
+<Quiz id="q-dos-llamadas" />
+
+<Quiz id="q-forzar-ajeno" />
+
+<CodeChallenge id="ch-observaciones" />
+
+---
+
+La conversación de la celda ya tiene la forma que tendrá en el resto del curso: el modelo pide en
+bloques, y el harness comprueba, ejecuta y contesta a cada llamada por su identificador. Lo que la
+sostiene sigue siendo un `for` que da tres vueltas porque yo sé que el guion tiene tres respuestas,
+y que entre una vuelta y la siguiente no se pregunta nada. Un harness que no conoce el guion tiene
+que saber cuándo ha terminado el modelo, qué hace si no termina nunca y qué ve el modelo en cada
+llamada.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug el-bucle), envolver «La lección siguiente, sobre el bucle» en su Leccion slug=…; el lint
+    falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, sobre el bucle, escribe ese `for` como un algoritmo con su contrato: las
+condiciones con las que para, el tope de vueltas y lo que guarda en cada una. Todas las piezas que
+entran en él están ya en esta lección.

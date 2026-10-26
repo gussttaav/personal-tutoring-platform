@@ -1,0 +1,565 @@
+---
+slug: proyecto-asistente
+title: "Proyecto: un asistente que recupera, responde en formato y se mide"
+block: 3
+order: 7
+minutes: 35
+summary: "El proyecto del bloque: un asistente sobre Marianela que recupera pasajes, responde en un JSON que cita el pasaje y que el harness comprueba, reintenta cuando no cumple y se mide etapa por etapa. La lección escribe su contrato, deriva qué compra un reintento y por qué compra menos cuando los fallos se repiten en los mismos casos, y reparte los fallos de un banco de pruebas entre el recuperador, el formato y la lectura."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-cuantas-llamadas
+    type: numeric
+    prompt: 'Un modelo cumple la especificación en el 80 % de sus llamadas, cada una un sorteo aparte. Con un tope de tres llamadas, ¿cuántas hace el asistente de media? Dos decimales.'
+    answer: 1.24
+    tolerance: 0.005
+    explanation: 'La primera se hace siempre, la segunda si la primera falla ($0.2$) y la tercera si fallan las dos ($0.04$): $1 + 0.2 + 0.04 = 1.24$, que es $(1 - 0.2^{3})/0.8$. El asistente se queda sin respuesta en $0.2^{3} = 0.008$ de las preguntas, y nunca hace más de tres llamadas, aunque sin tope la media sería $1/0.8 = 1.25$: el tope casi no cambia el coste medio y sí el peor.'
+    hint: 'La llamada $i$ se hace sólo si fallaron las $i - 1$ anteriores.'
+  - id: q-fallos-de-costumbre
+    type: single
+    prompt: 'Dos modelos cumplen la especificación en el 90 % de las llamadas. Con el primero, cada pregunta cumple con probabilidad $0.9$ en cada llamada. Con el segundo, hay un 10 % de preguntas en las que no cumple nunca y en las demás cumple siempre. Con un tope de dos llamadas, ¿en qué fracción de las preguntas se queda sin respuesta cada asistente?'
+    options:
+      - { id: a, text: '$0.01$ con el primero y $0.10$ con el segundo.' }
+      - { id: b, text: '$0.01$ con los dos: la media de cumplir es la misma.' }
+      - { id: c, text: '$0.10$ con los dos: el reintento no cambia nada.' }
+      - { id: d, text: '$0.01$ con el segundo y $0.10$ con el primero.' }
+    answer: a
+    explanation: 'Con el primero, $0.1^{2} = 0.01$. Con el segundo, la pregunta que falla una vez falla siempre, y el reintento sólo repite el fallo: $0.10$, con cualquier tope. Es la desigualdad de la lección con sus dos extremos. La (b) supone que todas las preguntas son iguales, que es justo lo que la desigualdad dice que no puedes suponer. Un modelo con temperatura 0 es el segundo caso llevado al límite: con los mismos mensajes da la misma respuesta, y reintentar no compra nada.'
+    hint: '¿Qué pasa en la segunda llamada a una pregunta en la que el segundo modelo ha fallado la primera?'
+  - id: q-el-techo
+    type: numeric
+    prompt: 'En tu banco, el pasaje que responde llega entre los $k$ en el 60 % de las pruebas, y con él delante el asistente acierta el 92 %. Cuando no llega, responde «no lo sé», como pide la especificación. Cambias el modelo por uno que lee sin fallar. ¿Qué tasa de acierto puedes esperar? Dos decimales.'
+    answer: 0.6
+    tolerance: 0.005
+    explanation: 'Antes, $0.6 \cdot 0.92 = 0.552$. Con un lector perfecto, $0.6 \cdot 1 + 0.4 \cdot 0 = 0.60$: el recuperador pone el techo, y el modelo nuevo sólo gana 4.8 puntos. Los 40 que faltan son del recuperador. Las únicas maneras de pasar de ahí son traer el pasaje más a menudo (otro recuperador, un $k$ mayor, que cuesta ventana) o dejar que el modelo responda con lo que sabe, que la especificación prohíbe porque esa respuesta no tiene pasaje que citar.'
+    hint: 'Escribe el acierto con las dos etapas: qué fracción llega y qué acierta en cada grupo.'
+challenges:
+  - id: ch-asistente
+    prompt: |
+      El `asistente` de las celdas llama una vez y, si la respuesta no cumple, lanza un error. Implementa el contrato entero: `asistente(modelo, pregunta, pasajes, tope=2)`, que recibe los pasajes que trajo el recuperador, del mejor al peor, para que las pruebas no dependan de la novela. `montar` y `cumple` son los de la celda y están en el código de partida.
+
+      - Sin pasajes, devuelve `("no lo sé", None)` **sin llamar al modelo**.
+      - Si no, llama a `modelo(montar(pregunta, pasajes))` como mucho `tope` veces, siempre con los mismos mensajes, y se queda con la primera respuesta que pasa `cumple`.
+      - Devuelve la tupla `(respuesta, citado)`, donde `citado` es el **texto** del pasaje citado, o `None` si el modelo no citó ninguno.
+      - Si ninguna de las `tope` respuestas cumple, lanza `ValueError`: el asistente nunca devuelve una respuesta que no ha pasado la comprobación.
+
+      Las pruebas son conversaciones con el modelo guionizado: un guion por cláusula, y `modelo.turno` dice cuántas llamadas has hecho.
+    starter: |
+      import json
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+
+      SISTEMA = ("Respondes preguntas sobre la novela Marianela sólo con los pasajes numerados que "
+                 "acompañan a cada una. Responde sólo con un objeto JSON de dos campos: «respuesta», "
+                 "lo más breve posible, y «pasaje», el número del pasaje donde la has leído. Si "
+                 'ninguno la responde: {"respuesta": "no lo sé", "pasaje": null}')
+
+      def montar(pregunta, pasajes):
+          """El prompt de sistema y un mensaje del usuario: los pasajes numerados y la pregunta."""
+          texto = "".join("[%d] %s\n" % (i + 1, p) for i, p in enumerate(pasajes))
+          return [("sistema", SISTEMA), ("usuario", texto + "Pregunta: " + pregunta)]
+
+      def cumple(y, m):
+          """La comprobación: el objeto leído si la respuesta y tiene la forma, None si no."""
+          try:
+              r = json.loads(y)
+          except ValueError:
+              return None
+          if not isinstance(r, dict) or set(r) != {"respuesta", "pasaje"}:
+              return None
+          texto, n = r["respuesta"], r["pasaje"]
+          if not isinstance(texto, str) or not texto:
+              return None
+          if n is None:
+              return r if texto == "no lo sé" else None
+          if type(n) is not int or not 1 <= n <= m or texto == "no lo sé":
+              return None
+          return r
+
+      def asistente(modelo, pregunta, pasajes, tope=2):
+          """La primera respuesta que cumple, con el pasaje citado; como mucho tope llamadas."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "una respuesta que cumple: una sola llamada"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          P = ["La Nela vive con los Centeno.", "Es la señorita Sofía, que toca.", "Calló el piano."]
+          m = [("sistema", SISTEMA), ("usuario", "[1] %s\n[2] %s\n[3] %s\nPregunta: ¿Quién toca?" % tuple(P))]
+          modelo = ModeloGuionizado([(m, '{"respuesta": "Sofía", "pasaje": 2}')] * 2)
+          r = asistente(modelo, "¿Quién toca?", P)
+          assert r is not None, 'asistente no devuelve nada: falta el return'
+          assert r[0] == "Sofía", 'la respuesta del modelo cumple: devuélvela, «Sofía». Sale %r' % (r,)
+          assert modelo.turno == 1, 'la primera respuesta ya cumple: una llamada, no %d' % modelo.turno
+      - name: "devuelve el texto del pasaje citado, no su número"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          P = ["La Nela vive con los Centeno.", "Es la señorita Sofía, que toca.", "Calló el piano."]
+          m = [("sistema", SISTEMA), ("usuario", "[1] %s\n[2] %s\n[3] %s\nPregunta: ¿Quién toca?" % tuple(P))]
+          r = asistente(ModeloGuionizado([(m, '{"respuesta": "Sofía", "pasaje": 2}')]), "¿Quién toca?", P)
+          assert r == ("Sofía", P[1]), 'el pasaje 2 es el segundo de la lista, P[1], numerado desde 1: devuelve su texto, %r. Sale %r' % (P[1], r)
+      - name: "reintenta con los mismos mensajes"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          P = ["La Nela vive con los Centeno.", "Es la señorita Sofía, que toca."]
+          m = [("sistema", SISTEMA), ("usuario", "[1] %s\n[2] %s\nPregunta: ¿Quién toca?" % tuple(P))]
+          modelo = ModeloGuionizado([(m, '{"respuesta": "Sofía", "pasaje": 3}'),
+                                     (m, '{"respuesta": "Sofía", "pasaje": 2}')])
+          r = asistente(modelo, "¿Quién toca?", P)
+          assert r == ("Sofía", P[1]), 'la primera respuesta cita un pasaje 3 que no existe y no cumple; la segunda sí: devuélvela. Sale %r' % (r,)
+          assert modelo.turno == 2, 'una llamada que no cumple y otra que sí: dos llamadas, no %d' % modelo.turno
+      - name: "como mucho tope llamadas, y nunca una que no cumple"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          P = ["La Nela vive con los Centeno."]
+          m = [("sistema", SISTEMA), ("usuario", "[1] %s\nPregunta: ¿Con quién vive?" % P[0])]
+          guion = [(m, 'Con los Centeno.'), (m, '{"respuesta": "los Centeno"}'),
+                   (m, '{"respuesta": "los Centeno", "pasaje": 1}')]
+          modelo = ModeloGuionizado(guion)
+          try:
+              r = asistente(modelo, "¿Con quién vive?", P, tope=2)
+          except ValueError:
+              r = "ValueError"
+          assert r == "ValueError", 'con tope=2, las dos respuestas que tocan no cumplen: lanza ValueError en vez de devolver %r' % (r,)
+          assert modelo.turno == 2, 'con tope=2, dos llamadas y ni una más: has hecho %d' % modelo.turno
+          r = asistente(ModeloGuionizado(guion), "¿Con quién vive?", P, tope=3)
+          assert r == ("los Centeno", P[0]), 'con tope=3, la tercera cumple: devuélvela. Sale %r' % (r,)
+      - name: "sin pasajes, ninguna llamada"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          modelo = ModeloGuionizado([])          # un guion vacío: cualquier llamada falla
+          try:
+              r = asistente(modelo, "Who wrote Hamlet?", [])
+          except RuntimeError:
+              raise AssertionError('sin pasajes has llamado al modelo: el harness puede decir «no lo sé» sin gastar una llamada')
+          assert r == ("no lo sé", None), 'sin pasajes, devuelve ("no lo sé", None). Sale %r' % (r,)
+      - name: "un «no lo sé» del modelo cumple"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          P = ["Calló el piano."]
+          m = [("sistema", SISTEMA), ("usuario", "[1] %s\nPregunta: ¿Quién es Golfín?" % P[0])]
+          modelo = ModeloGuionizado([(m, '{"respuesta": "no lo sé", "pasaje": null}')])
+          r = asistente(modelo, "¿Quién es Golfín?", P)
+          assert r == ("no lo sé", None), 'el modelo dice que no lo sabe, sin pasaje, y eso cumple: devuelve ("no lo sé", None). Sale %r' % (r,)
+    solution: |
+      import json
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+
+      SISTEMA = ("Respondes preguntas sobre la novela Marianela sólo con los pasajes numerados que "
+                 "acompañan a cada una. Responde sólo con un objeto JSON de dos campos: «respuesta», "
+                 "lo más breve posible, y «pasaje», el número del pasaje donde la has leído. Si "
+                 'ninguno la responde: {"respuesta": "no lo sé", "pasaje": null}')
+
+      def montar(pregunta, pasajes):
+          """El prompt de sistema y un mensaje del usuario: los pasajes numerados y la pregunta."""
+          texto = "".join("[%d] %s\n" % (i + 1, p) for i, p in enumerate(pasajes))
+          return [("sistema", SISTEMA), ("usuario", texto + "Pregunta: " + pregunta)]
+
+      def cumple(y, m):
+          """La comprobación: el objeto leído si la respuesta y tiene la forma, None si no."""
+          try:
+              r = json.loads(y)
+          except ValueError:
+              return None
+          if not isinstance(r, dict) or set(r) != {"respuesta", "pasaje"}:
+              return None
+          texto, n = r["respuesta"], r["pasaje"]
+          if not isinstance(texto, str) or not texto:
+              return None
+          if n is None:
+              return r if texto == "no lo sé" else None
+          if type(n) is not int or not 1 <= n <= m or texto == "no lo sé":
+              return None
+          return r
+
+      def asistente(modelo, pregunta, pasajes, tope=2):
+          """La primera respuesta que cumple, con el pasaje citado; como mucho tope llamadas."""
+          if not pasajes:
+              return "no lo sé", None                     # nada que leer: no hace falta llamar
+          mensajes = montar(pregunta, pasajes)
+          for _ in range(tope):
+              r = cumple(modelo(mensajes), len(pasajes))
+              if r is not None:
+                  n = r["pasaje"]
+                  return r["respuesta"], None if n is None else pasajes[n - 1]
+          raise ValueError("ninguna de las %d respuestas cumple la especificación" % tope)
+    explanation: 'El bucle es corto; lo que importa es lo que garantiza. Ninguna salida del asistente esquiva `cumple`: o devuelve una respuesta que la ha pasado, o el «no lo sé» que escribe el propio harness, o lanza. Sale del bucle en la primera que cumple, así que nunca gasta una llamada de más, y el `for` le pone el tope. Y cada prueba de las de arriba es una conversación guionizada: el modelo guionizado falla si tus mensajes no son los que esperaba y `modelo.turno` cuenta tus llamadas, así que el contrato se comprueba cláusula a cláusula, sin ningún modelo de verdad. Eso es lo que compra que el modelo sea un guion.'
+reading:
+  - kind: paper
+    title: 'Seven Failure Points When Engineering a Retrieval Augmented Generation System'
+    authors: 'Barnett, Kurniawan, Thudumu, Brannelly y Abdelrazek'
+    year: '2024'
+    venue: 'arXiv:2401.05856'
+    lang: en
+    url: 'https://arxiv.org/abs/2401.05856'
+    note: 'Siete maneras de fallar de un asistente con recuperación, sacadas de tres sistemas reales. Tres son las etapas de esta lección: el pasaje que no llega entre los primeros, el dato que el modelo no extrae y el formato equivocado.'
+  - kind: paper
+    title: 'Enabling Large Language Models to Generate Text with Citations'
+    authors: 'Gao, Yen, Yu y Chen'
+    year: '2023'
+    venue: 'EMNLP 2023 · arXiv:2305.14627'
+    lang: en
+    url: 'https://arxiv.org/abs/2305.14627'
+    note: 'Respuestas que citan sus pasajes, medidas en dos cosas por separado: si aciertan y si lo citado las respalda. En uno de sus bancos, hasta los mejores modelos dejan la mitad de las respuestas sin respaldo completo.'
+  - kind: paper
+    title: 'Ragas: Automated Evaluation of Retrieval Augmented Generation'
+    authors: 'Es, James, Espinosa-Anke y Schockaert'
+    year: '2023'
+    venue: 'arXiv:2309.15217'
+    lang: en
+    url: 'https://arxiv.org/abs/2309.15217'
+    note: 'Cómo medir por etapas sin respuestas esperadas: si los pasajes recuperados vienen al caso y si la respuesta se apoya en ellos, con un modelo como juez. La alternativa a esta lección cuando no tienes un banco etiquetado.'
+---
+
+{/* COURSE-C2-P1-03 — Bloque 3, lección 7, el proyecto. Las tres celdas corren sobre el modelo
+    guionizado (cargado de guionizado.py) y recuperan con TF-IDF; no cargan la red. */}
+
+<Leccion slug="evaluar">La lección sobre evaluar</Leccion> dejó un banco de pruebas y un intervalo,
+pero lo que midió fueron respuestas escritas una a una, sin recuperador delante ni comprobación
+detrás. Ese harness no existía. Sus piezas sí: el recuperador de TF-IDF (*term frequency–inverse
+document frequency*), la especificación con su comprobación, la ventana con su presupuesto. Cada
+una salió de su lección con un contrato propio, y ninguno dice qué pasa cuando la salida de una es
+la entrada de otra: qué hace la comprobación con un pasaje citado que no estaba en el *prompt*, o
+qué hace el *harness* si el recuperador no trae nada.
+
+Y cuando el asistente entero falla una prueba, el número baja sin decir de quién es el fallo. Si el
+pasaje no llegó, ningún modelo mejor lo arregla. Si llegó y el modelo lo leyó mal, ningún
+recuperador mejor. ¿Qué tiene que prometer un asistente que recupera, responde en un formato y se
+mide, y cómo se reparte entre sus piezas lo que falla?
+
+Sigue una pregunta por el asistente que construye esta lección: <W>¿Quién toca el piano?</W> El
+recuperador trae tres pasajes de *Marianela*. El primero, <W>Quién sabe, quién sabe, amigo
+mío....</W>, sólo comparte con ella <W>quién</W>, pero lo repite. El segundo es <W>—Es la señorita
+Sofía, que toca—afirmó María.</W>, y el tercero, <W>Calló el piano, como un ave cantora…</W> El
+harness los numera, los pone delante de la pregunta, bajo un prompt de sistema que pide un objeto
+JSON (*JavaScript Object Notation*) con la respuesta y el número del pasaje donde la ha leído, y
+llama al modelo. Vuelve <W>\{"respuesta": "María", "pasaje": 2\}</W>.
+
+La comprobación lo lee: es JSON, tiene los dos campos y el 2 es uno de los pasajes que había.
+Cumple, y el harness lo devuelve con el texto del pasaje 2 al lado. El evaluador lo compara con la
+respuesta esperada, <W>Sofía</W>, y es un fallo. Mira de quién. El pasaje llegó, la forma era la
+pedida y lo citado dice la respuesta correcta: falló la lectura, porque <W>afirmó María</W> no
+dice quién toca. La cita es lo que deja verlo sin abrir la novela.
+
+<Callout type="intuition" title="La idea en una frase">
+Un asistente es una cadena de piezas con contrato, y cada fallo es de la primera que falla. La
+cita hace que la respuesta se pueda revisar, el reintento arregla los fallos de azar y no los de
+costumbre, y medir etapa por etapa dice qué pieza mejorar, mientras el recuperador pone el techo a
+todo lo demás.
+</Callout>
+
+## El contrato del asistente
+
+La firma es `asistente(modelo, pregunta, k=3, tope=2) -> (respuesta, citado)`, y el contrato, por
+orden:
+
+1. Recupera con TF-IDF como mucho $k$ pasajes de coseno positivo con la pregunta, del mejor al
+   peor. Si no hay ninguno, devuelve <W>no lo sé</W> sin llamar al modelo: no hay nada que leer, y
+   decir que no lo sabe no necesita al modelo.
+2. Monta una llamada: el prompt de sistema con la especificación y un mensaje del usuario con los
+   pasajes, numerados desde 1, y la pregunta al final. Si no cabe en la ventana, descarta pasajes
+   del peor, con la regla de `encajar`.
+3. Llama al modelo con esos mensajes, como mucho $\text{tope}$ veces, y se queda con la primera
+   respuesta que cumple: un objeto JSON con exactamente dos campos, `respuesta`, un texto no vacío,
+   y `pasaje`, un entero entre 1 y el número de pasajes, o `null` si, y sólo si, la respuesta es
+   <W>no lo sé</W>.
+4. Devuelve la respuesta y el texto del pasaje citado. Si ninguna llamada cumple, lanza un error.
+
+Los invariantes salen de ahí. Lo que devuelve ha pasado siempre la comprobación, o lo ha escrito el
+harness. Nunca hace más de $\text{tope}$ llamadas. Y el pasaje citado es uno que el modelo tenía
+delante, así que cualquiera puede ir a mirar si dice lo que la respuesta dice. Lo que el contrato no
+promete es que lo diga: una cita válida puede respaldar una respuesta falsa, y eso lo decide el
+evaluador.
+
+La cláusula 3 pide la forma al modelo y la comprueba después. Con un modelo cuyos logits controlas,
+la máscara de <Leccion slug="salida-estructurada">la lección sobre la salida estructurada</Leccion>
+la garantizaría en cada respuesta. El modelo guionizado devuelve texto, como uno servido por otros,
+y lo que le queda al harness es comprobar y volver a llamar.
+
+### Reintentar compra contra el azar
+
+**Reintentar** es volver a llamar al modelo con los mismos mensajes cuando su respuesta no cumple.
+Escribamos $\pi_\theta(\text{cumple} \mid s, x)$ para la probabilidad de cumplir de una llamada,
+como en <Leccion slug="el-prompt-es-una-especificacion">la lección sobre la especificación</Leccion>,
+sin ejemplos y con $x$ el mensaje del usuario, pasajes y pregunta juntos. Si cada llamada es un
+sorteo aparte, las $\text{tope}$ llamadas fallan todas con probabilidad
+
+$$
+\bigl(1 - \pi_\theta(\text{cumple} \mid s, x)\bigr)^{\text{tope}}.
+$$
+
+Es el muestreo por rechazo de la lección sobre la salida estructurada, con la comprobación en el
+lugar de la gramática y un máximo de intentos. Hereda su virtud: la respuesta aceptada es un sorteo
+de la distribución condicionada a cumplir, sin la deformación de la máscara. Y hereda su coste, que
+el tope corta. La llamada $i$ se hace sólo si fallaron las $i - 1$ anteriores, así que
+
+$$
+\mathbb{E}[\text{llamadas}] = \sum_{i=1}^{\text{tope}} \bigl(1 - \pi_\theta(\text{cumple} \mid s, x)\bigr)^{i-1} = \frac{1 - \bigl(1 - \pi_\theta(\text{cumple} \mid s, x)\bigr)^{\text{tope}}}{\pi_\theta(\text{cumple} \mid s, x)},
+$$
+
+la serie geométrica de aquella lección, cortada en $\text{tope}$ términos. A un modelo que cumple 9
+veces de cada 10, un tope de dos le deja sin respuesta una pregunta de cada cien, por 1.1 llamadas
+de media. Al mini-GPT, que escribía un JSON válido con probabilidad $8.1 \times 10^{-63}$, ningún
+tope lo salva.
+
+La cuenta es de una pregunta. Sobre todas las que recibe el harness, la probabilidad de cumplir
+cambia de una a otra, y la fracción que se queda sin respuesta es la media de las probabilidades de
+fallar todas. Elevar a $\text{tope}$ es convexo en $[0, 1]$, y la desigualdad de Jensen de
+<Leccion slug="plantilla-de-chat">la lección sobre la plantilla</Leccion> da
+
+$$
+\mathbb{E}_x\Bigl[\bigl(1 - \pi_\theta(\text{cumple} \mid s, x)\bigr)^{\text{tope}}\Bigr] \ge \Bigl(1 - \mathbb{E}_x\bigl[\pi_\theta(\text{cumple} \mid s, x)\bigr]\Bigr)^{\text{tope}},
+$$
+
+donde $\mathbb{E}_x$ es la media sobre las preguntas, con igualdad sólo si todas cumplen con la
+misma probabilidad. Lo que reintentar promete con la media es una cota optimista. Si un modelo
+cumple el 90 % de las veces porque falla un poco en todas, un tope de dos deja un 1 % sin
+respuesta; si es porque un 10 % de las preguntas lo hacen fallar siempre, deja ese 10 % con
+cualquier tope. Con temperatura 0 todas son del segundo tipo: los mismos mensajes dan la misma
+respuesta. Reintentar arregla los fallos de azar, no los de costumbre.
+
+## Medir etapa por etapa
+
+El evaluador de la lección anterior da un 1 o un 0 por prueba. Para repartir los fallos, el banco
+tiene que saber una cosa más de cada prueba: qué pasaje la responde. Con eso, cada prueba pasa por
+tres etapas en orden. ¿Llegó el pasaje entre los $k$? Se sabe sin llamar al modelo. ¿Cumplió la
+respuesta? Lo dice la comprobación. ¿Acertó? Lo dice el evaluador. Un fallo es de la primera etapa
+que falla: del recuperador, del formato o de la lectura.
+
+Llamemos $\text{recuperadas}$ a la fracción de pruebas cuyo pasaje llegó, y
+$\text{acierto}_{\text{rec}}$ y $\text{acierto}_{\text{no rec}}$ a la tasa de acierto
+(*accuracy*) dentro de cada grupo. Contando las mismas pruebas de dos maneras,
+
+$$
+\text{acierto} = \text{recuperadas} \cdot \text{acierto}_{\text{rec}} + (1 - \text{recuperadas}) \cdot \text{acierto}_{\text{no rec}},
+$$
+
+que es la probabilidad total de <Leccion slug="recuperacion">la lección sobre recuperación</Leccion>
+con las fracciones del banco en lugar de las probabilidades. Aquí no aproxima nada, es una
+identidad. La especificación le prohíbe al modelo responder sin pasaje: tiene que decir <W>no lo
+sé</W>, que no acierta ninguna prueba con respuesta. Si la obedece,
+$\text{acierto}_{\text{no rec}} = 0$, y
+
+$$
+\text{acierto} = \text{recuperadas} \cdot \text{acierto}_{\text{rec}} \le \text{recuperadas}.
+$$
+
+El recuperador pone el techo. Un modelo que lea sin fallar lleva el acierto hasta
+$\text{recuperadas}$ y no más, igual que en la lección sobre la especificación un prompt perfecto
+no pasaba de lo que el modelo sabía hacer.
+
+Dos cuidados. Cada fracción se mide sobre su grupo, no sobre el banco: $\text{acierto}_{\text{rec}}$
+sale de las pruebas recuperadas, y su intervalo de Wilson es el de ese $n$, más pequeño. Cuantas
+más etapas separas, menos pruebas le quedan a cada una. Y dos fallos del recuperador valen 0 los
+dos aunque no se parezcan: <W>no lo sé</W> es la especificación cumplida, y un nombre inventado
+con un pasaje citado que no lo dice es justo lo que el harness quería evitar. La cita permite
+contarlos aparte.
+
+## El asistente, sobre el modelo guionizado
+
+Las tres celdas corren sobre el modelo guionizado de la lección sobre la especificación, y
+recuperan con TF-IDF sobre los 288 pasajes de la lección sobre recuperación; no cargan la red.
+Todas las respuestas del modelo las he escrito yo, así que los números miden tu harness y tu
+manera de medir, no a ningún modelo. La ventana no aparece: el modelo guionizado no tiene, y
+tres pasajes caben en la de cualquier modelo de verdad. La primera celda monta el recuperador con
+el mínimo del desafío de aquella lección.
+
+<PyCell packages={["numpy"]} code={`
+import json, math, re
+import numpy as np
+from collections import Counter
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, lección 18
+exec(open_url("/courses/llm-agents/bpe.py").read())          # codificar, quitar_cabecera
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+lineas = [l for l in texto.split("\\n") if l.strip()]
+tres = lineas[:lineas.index("La familia de piedra")]      # los tres primeros capítulos
+frases = [f for l in tres for f in re.split(r"(?<=[.?!…])(?<! D\\.)\\s+", l)]
+PASAJES = [f for f in frases if len(f.split()) >= 6 and len(codificar(f, F)) <= 64]
+
+def palabras(t):
+    return re.findall(r"\\w+", t.lower())
+
+DF = Counter(w for p in PASAJES for w in set(palabras(p)))
+COL = {w: i for i, w in enumerate(DF)}
+def tfidf(t):
+    v = np.zeros(len(COL))
+    for w, n in Counter(palabras(t)).items():
+        if w in COL:
+            v[COL[w]] = n * math.log(len(PASAJES) / DF[w])
+    return v
+D = np.stack([tfidf(p) for p in PASAJES])                  # (pasajes, palabras)
+
+def recuperar(pregunta, k=3, minimo=0.0):
+    """Los textos de, como mucho, k pasajes de coseno mayor que minimo, del mejor al peor."""
+    q = tfidf(pregunta)
+    normas = np.linalg.norm(D, axis=1) * np.linalg.norm(q)
+    cos = np.divide(D @ q, normas, out=np.zeros(len(D)), where=normas > 0)
+    return [PASAJES[i] for i in np.argsort(-cos, kind="stable")[:k] if cos[i] > minimo]
+
+print("%d pasajes" % len(PASAJES))
+for x in ["¿Quién toca el piano?", "Who wrote Hamlet?"]:
+    print(x, recuperar(x))
+`} />
+
+La pregunta del piano trae los tres pasajes de la traza. La pregunta en inglés no trae ninguno: no
+comparte ni una palabra con la novela, y por la cláusula 1 el asistente le dirá <W>no lo sé</W>
+sin llamar a nadie.
+
+La segunda celda escribe la especificación, `montar`, la comprobación y un `asistente` que llama
+una sola vez y lanza un error si la respuesta no cumple. El reintento y la cláusula 1 son el
+desafío. Mira tres cosas: el mensaje del usuario tal como lo monta el harness, lo que devuelve el
+asistente en la traza y cuatro respuestas que la comprobación rechaza, cada una por una razón.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: recuperar, ModeloGuionizado.
+SISTEMA = ("Respondes preguntas sobre la novela Marianela sólo con los pasajes numerados que "
+           "acompañan a cada una. Responde sólo con un objeto JSON de dos campos: «respuesta», "
+           "lo más breve posible, y «pasaje», el número del pasaje donde la has leído. Si "
+           'ninguno la responde: {"respuesta": "no lo sé", "pasaje": null}')
+
+def montar(pregunta, pasajes):
+    """El prompt de sistema y un mensaje del usuario: los pasajes numerados y la pregunta."""
+    texto = "".join("[%d] %s\\n" % (i + 1, p) for i, p in enumerate(pasajes))
+    return [("sistema", SISTEMA), ("usuario", texto + "Pregunta: " + pregunta)]
+
+def cumple(y, m):
+    """La comprobación: el objeto leído si la respuesta y tiene la forma, None si no."""
+    try:
+        r = json.loads(y)
+    except ValueError:                                    # no es JSON, o sobra texto
+        return None
+    if not isinstance(r, dict) or set(r) != {"respuesta", "pasaje"}:
+        return None
+    texto, n = r["respuesta"], r["pasaje"]
+    if not isinstance(texto, str) or not texto:
+        return None
+    if n is None:
+        return r if texto == "no lo sé" else None
+    if type(n) is not int or not 1 <= n <= m or texto == "no lo sé":   # True no es un 1
+        return None
+    return r
+
+def asistente(modelo, pregunta, k=3):
+    """Recupera, monta, llama una vez y comprueba. Devuelve la respuesta y el pasaje citado."""
+    pasajes = recuperar(pregunta, k)
+    r = cumple(modelo(montar(pregunta, pasajes)), len(pasajes))
+    if r is None:
+        raise ValueError("la respuesta no cumple la especificación")
+    return r["respuesta"], None if r["pasaje"] is None else pasajes[r["pasaje"] - 1]
+
+x = "¿Quién toca el piano?"
+mensajes = montar(x, recuperar(x))
+print(mensajes[1][1])
+modelo = ModeloGuionizado([(mensajes, '{"respuesta": "María", "pasaje": 2}')])   # la he escrito yo
+print("\\nel asistente devuelve:", asistente(modelo, x))
+for y in ['{"respuesta": "Sofía", "pasaje": 2} Lo dice María.', '{"respuesta": "Sofía", "pasaje": 4}',
+          '{"respuesta": "Sofía", "pasaje": true}', '{"respuesta": "no lo sé", "pasaje": 1}']:
+    print("cumple:", "sí" if cumple(y, 3) else "no", "  ", y)
+`} />
+
+Las cuatro respuestas del final no cumplen, y por razones distintas: texto detrás del JSON, un
+pasaje 4 que no estaba, un `true` donde va un número (en Python, `True == 1`, y por eso la
+comprobación pregunta por el tipo exacto) y un <W>no lo sé</W> que cita un pasaje. Ninguna llegaría
+a quien usa el asistente.
+
+La tercera celda es el banco: las doce preguntas de la lección sobre recuperación, cada una con su
+respuesta esperada y un trozo del pasaje que la responde. El evaluador es una prueba exacta después
+de normalizar, la respuesta esperada palabra a palabra dentro de la respuesta: la forma ya la ha
+comprobado el harness, y al evaluador sólo le queda el dato. La celda reparte los fallos por etapas
+e imprime cada uno con lo que citó.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita las dos celdas anteriores.
+BANCO = [  # pregunta, respuesta esperada, un trozo del pasaje que la responde
+    ("¿Cómo se llamaba la madre de la Nela?", "María Canela", "la señá María Canela"),
+    ("¿Quién es Carlos Golfín?", "ingeniero", "Yo soy hermano de Carlos Golfín"),
+    ("¿Cuántos años tiene la Nela?", "diez y seis", "diez y seis años"),
+    ("¿Qué edad tiene la Nela?", "diez y seis", "diez y seis años"),
+    ("¿Dónde vive Francisco Penáguilas?", "Aldeacorba", "hijo único de D. Francisco"),
+    ("¿Quién es el padre de Pablo?", "Francisco Penáguilas", "hijo único de D. Francisco"),
+    ("¿Qué mineral se agotó en la Terrible?", "calamina", "el mineral de calamina"),
+    ("¿Quién es el lazarillo de Pablo?", "Nela", "es mi lazarillo"),
+    ("¿Es Pablo ciego de nacimiento?", "sí", "Sí, señor, de nacimiento"),
+    ("¿A qué estación llegó Teodoro?", "Villamojada", "la estación de Villamojada"),
+    ("¿Con quién vive la Nela?", "Centeno", "Con el señor Centeno"),
+    ("¿Quién toca el piano?", "Sofía", "la señorita Sofía, que toca")]
+ESCRITAS = [  # lo que responde el modelo guionizado a cada una: lo he escrito yo
+    '{"respuesta": "la señá María Canela", "pasaje": 1}', '{"respuesta": "ingeniero", "pasaje": 2}',
+    '{"respuesta": "diez y seis años", "pasaje": 1}', '{"respuesta": "no lo sé", "pasaje": null}',
+    '{"respuesta": "en Aldeacorba", "pasaje": 1}', '{"respuesta": "Teodoro", "pasaje": 3}',
+    '{"respuesta": "calamina", "pasaje": 1}', '{"respuesta": "la Nela", "pasaje": 2}',
+    '{"respuesta": "sí", "pasaje": 1} Lo dice él.', '{"respuesta": "Villamojada", "pasaje": 1}',
+    '{"respuesta": "no lo sé", "pasaje": null}', '{"respuesta": "María", "pasaje": 2}']
+
+def acierta(y, esperada):                      # la esperada, palabra a palabra, dentro de y
+    return " %s " % " ".join(palabras(esperada)) in " %s " % " ".join(palabras(y))
+def wilson(k, n):
+    a, c = k / n, 1.96 ** 2 / n
+    centro, r = (a + c / 2) / (1 + c), 1.96 * math.sqrt(a * (1 - a) / n + c / (4 * n)) / (1 + c)
+    return "%2d de %2d   Wilson [%.2f, %.2f]" % (k, n, centro - r, centro + r)
+
+modelo = ModeloGuionizado([(montar(x, recuperar(x)), y) for (x, _, _), y in zip(BANCO, ESCRITAS)])
+etapas = []                                    # la primera etapa que falla en cada prueba
+for x, esperada, trozo in BANCO:
+    recuperada = any(trozo in p for p in recuperar(x))
+    try:
+        y, citado = asistente(modelo, x)
+        etapa = "acierta" if acierta(y, esperada) else "lectura" if recuperada else "recuperador"
+    except ValueError:                         # la comprobación la ha rechazado
+        y, citado, etapa = "(no cumple)", None, "formato" if recuperada else "recuperador"
+    etapas.append(etapa)
+    if etapa != "acierta":
+        print("%-11s %s -> %s\\n            citado: %s" % (etapa, x, y, citado))
+n, k_rec = len(BANCO), len(BANCO) - etapas.count("recuperador")
+print("\\nacierto         ", wilson(etapas.count("acierta"), n))
+print("recuperadas     ", wilson(k_rec, n))
+print("acierto | rec   ", wilson(etapas.count("acierta"), k_rec))
+`} />
+
+El asistente acierta 7 de 12, entre 0.32 y 0.81 según Wilson. De los cinco fallos, tres son del
+recuperador, uno del formato y uno de la lectura, el del piano. El techo está en las 9 de 12 que
+llegaron, y con ellas delante el modelo acierta 7 de 9. Los tres fallos del recuperador no son
+iguales: dos veces el modelo dice <W>no lo sé</W>, y una contesta <W>Teodoro</W> al padre de Pablo
+citando un pasaje en el que Teodoro habla y nadie es padre de nadie. La cita lo delata.
+
+Doce pruebas no separan nada con confianza: el intervalo de 7 de 9 va de 0.45 a 0.94. Lo que sí
+dan es una lista corta de fallos, cada uno con su dueño, y aquí la mayoría son del recuperador. Un
+modelo mejor ganaría como mucho las dos pruebas del formato y la lectura. Cámbialo tú: escribe en
+`ESCRITAS` otra respuesta para la pregunta de la edad, una que invente un número citando el pasaje
+2, y mira en qué etapa cae y qué ves al leer lo citado.
+
+## Comprueba tu intuición
+
+Tres preguntas: cuántas llamadas cuesta reintentar, cuándo no sirve y dónde está el techo. Después,
+el contrato entero, comprobado contra el modelo guionizado.
+
+<Quiz id="q-cuantas-llamadas" />
+
+<Quiz id="q-fallos-de-costumbre" />
+
+<Quiz id="q-el-techo" />
+
+<CodeChallenge id="ch-asistente" />
+
+---
+
+El asistente responde, dice de dónde ha sacado la respuesta y sabe cuánto acierta. Pero todo lo que
+produce es texto que alguien lee. Pídele que mueva una cita en tu calendario, como el programa de
+las fechas que abrió este bloque, y lo más que puede hacer es escribir, bien formada, la fecha nueva.
+Moverla le toca a otro programa. Nada de lo que devuelve cambia nada fuera de la conversación.
+
+<Leccion slug="de-chat-a-agente">La lección siguiente, la primera del bloque 4</Leccion>, pone nombre a la mitad que falta: un entorno donde
+lo que el modelo pide se ejecuta, y un harness que decide qué se ejecuta y le enseña al modelo lo
+que ha pasado. El contrato, la comprobación y la medida de este bloque siguen sirviendo. Lo que
+cambia es que una respuesta que cumple la especificación ya puede borrar un fichero.
