@@ -244,3 +244,74 @@ describe("llm-agents assets — the frozen modelo guionizado", () => {
     expect(src).not.toMatch(/^def /m);
   });
 });
+
+/*
+ * COURSE-C2-P1-04 — entorno.py is Block 4 lesson 2's entorno, herramientas and bloques frozen,
+ * the way guionizado.py freezes the modelo guionizado: the lessons from «El bucle» on load it
+ * with one exec line. Lesson 26 is the source of truth, so every piece the asset carries must be
+ * in the lesson, character for character: its two cells, and the solution of its challenge
+ * (`TIPOS` and `incumple`). `guion_de` is the one addition, the cell's three guion lines as a
+ * function, and the asset says so.
+ */
+describe("llm-agents assets — the frozen entorno of Block 4", () => {
+  const src = read("entorno.py");
+  const mdx = fs.readFileSync(
+    path.join(process.cwd(), "content", "courses", "llm-agents", "es", "26-llamar-herramientas.mdx"),
+    "utf8",
+  );
+
+  /** Every PyCell of the lesson as Pyodide runs it: dedented, `\\` unescaped. */
+  function cells(): string[] {
+    const out: string[] = [];
+    let at = 0;
+    for (;;) {
+      const open = mdx.indexOf("<PyCell code={`", at);
+      if (open === -1) return out;
+      const start = open + "<PyCell code={`".length;
+      const end = mdx.indexOf("`} />", start);
+      const lines = mdx.slice(start, end).replace(/^\n/, "").split("\n");
+      const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => l.length - l.trimStart().length));
+      out.push(lines.map((l) => l.slice(indent)).join("\n").replace(/\\\\/g, "\\"));
+      at = end;
+    }
+  }
+
+  /** The challenge's reference solution, as the frontmatter's block scalar holds it. */
+  function solution(): string {
+    const start = mdx.indexOf("    solution: |\n") + "    solution: |\n".length;
+    const end = mdx.indexOf("    explanation:", start);
+    return mdx
+      .slice(start, end)
+      .split("\n")
+      .map((l) => l.slice(6))
+      .join("\n");
+  }
+
+  /** The slice of `text` from the line starting `from` up to (not including) `to`. */
+  const piece = (text: string, from: string, to: string) => text.slice(text.indexOf(from), text.indexOf(to)).trimEnd();
+
+  it("is lesson 26's first cell, from ENTORNO to HERRAMIENTAS", () => {
+    const [first] = cells();
+    expect(src).toContain(piece(first, "ENTORNO = {", "\nprint("));
+  });
+
+  it("is lesson 26's second cell's bloques and `muestra`", () => {
+    const second = cells()[1];
+    expect(src).toContain(piece(second, "def texto(t):", "\nNOTAS ="));
+    expect(src).toContain(piece(second, "def muestra(b):", "\nmodelo, entorno"));
+  });
+
+  it("is lesson 26's challenge solution's schema check", () => {
+    expect(src).toContain(piece(solution(), "TIPOS = {", "\ndef observaciones("));
+  });
+
+  it("imports json and nothing else, and defines exactly the names it promises", () => {
+    expect(src.match(/^(import|from)\s.*$/gm)).toEqual(["import json"]);
+    const defs = (src.match(/^def (\w+)/gm) ?? []).map((d) => d.slice(4));
+    expect(defs).toEqual([
+      "leer", "escribir", "listar", "buscar", "objeto", "texto", "llamada", "resultado", "muestra",
+      "incumple", "guion_de",
+    ]);
+    expect(src.match(/^class /gm)).toBeNull();
+  });
+});

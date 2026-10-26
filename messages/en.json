@@ -1856,6 +1856,32 @@
         "dropped": "Left out of the call: {parts}.",
         "slider": "Context window",
         "sliderValue": "{tokens} tokens"
+      },
+      "agent-loop-trace": {
+        "groupAria": "The agent loop step by step: the messages list M, what the harness does at each step, and the environment",
+        "steps": {
+          "inicio": "Before the first turn, M holds {n} messages: the system prompt and the user's request.",
+          "llamar": "Turn {turno}. The harness calls the model with the {n} messages in M, and nothing else.",
+          "responder": "Turn {turno}. The response goes into M whole, as an assistant message. {n, plural, =0 {It asks for nothing.} one {It makes one call.} other {It makes # calls.}}",
+          "ejecutar": "Turn {turno}. The harness checks {id} against the schema of {name} and runs it. The environment does not change.",
+          "ejecutarCambia": "Turn {turno}. The harness checks {id} against the schema of {name} and runs it: {ruta} changes.",
+          "observar": "Turn {turno}. {n, plural, one {The observation goes into M in a user message, with the id of its call.} other {The # observations go into M in a single user message, each with the id of its call.}}",
+          "fin": "Turn {turno}. The response has no tool_use: the loop ends and returns its text.",
+          "tope": "The cap is reached: {tope} turns, and the model is still asking. The loop stops with nothing to tell the user, and the environment stays as it is."
+        },
+        "mTitle": "M: {n} messages",
+        "mTitleSeen": "M: {n} messages. At its latest call, the model received the first {visto}",
+        "mAria": "The messages list M, with {n} messages",
+        "stepTitle": "This step",
+        "inicioLine": "M = [sistema, usuario]",
+        "callLine": "modelo(M, herramientas), with M of {n} messages",
+        "returns": "returns fin,",
+        "returnsTope": "returns tope: there is no text to give the user",
+        "entornoTitle": "The environment",
+        "entornoHidden": "The model does not see the environment. What it knows of it reached it in M, in the observations.",
+        "entornoAria": "The environment: each file with its contents",
+        "seenToggle": "What the model sees",
+        "topeLabel": "Turn cap"
       }
     }
   },
