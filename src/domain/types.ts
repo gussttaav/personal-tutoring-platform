@@ -173,6 +173,12 @@ export interface ZoomSession {
   durationMinutes:  number;
   sessionType:      SessionType;
   studentJoinedAt?: string | null;
+  /** SESSION-JOIN-01: the student's display name, for the tutor-absent alert. */
+  studentName?:     string;
+  /** SESSION-JOIN-01: first tutor token issue for this session. */
+  tutorJoinedAt?:   string | null;
+  /** SESSION-JOIN-01: the booking's join token, for the tutor-absent alert's classroom link. */
+  joinToken?:       string | null;
 }
 
 export interface AuditEntry {
@@ -213,6 +219,18 @@ export interface ScheduleConfig {
    * cancel/reschedule guards convert this to milliseconds.
    */
   cancelMinNoticeHours: number;
+  /**
+   * SESSION-JOIN-01: how many minutes before a class's start the student may enter
+   * the classroom (the tutor is exempt). Read through `joinOpensAtMs()` in
+   * src/lib/booking-config.ts, which falls back to a default for a cached config
+   * written before the field existed.
+   */
+  joinOpenMinutesBefore: number;
+  /**
+   * SESSION-JOIN-01: minutes after a class's start with the student in the room
+   * and no tutor before the admin is emailed.
+   */
+  tutorAbsentAlertMinutes: number;
   /** How many weeks ahead bookings are allowed. Static for now (not editable). */
   bookingWindowWeeks: number;
 }

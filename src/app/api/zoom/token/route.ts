@@ -14,6 +14,8 @@
  *   ARCH-15: SessionService.issueJoinToken replaces inline lookup + membership check + JWT signing
  *   REFACTOR-R3-P2-02: dedicated `zoomTokenRatelimit` (was borrowing availabilityRatelimit)
  *     and the shared `getClientIp()` helper (was parsing x-forwarded-for inline)
+ *   SESSION-JOIN-01: a student before the classroom opens gets 403 CLASSROOM_NOT_OPEN;
+ *     the response carries `tutorAbsentAlertAt` for the student's tutor-absent alert
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -23,7 +25,7 @@ import { zoomTokenRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
-import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
+import { BookingNotFoundError, ClassroomNotOpenError, UnauthorizedError } from "@/domain/errors";
 import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
 function mapDomainErrorToResponse(
@@ -32,6 +34,10 @@ function mapDomainErrorToResponse(
 ): NextResponse {
   if (err instanceof BookingNotFoundError) {
     return NextResponse.json({ error: err.code }, { status: 404 });
+  }
+  // SESSION-JOIN-01: a student before the classroom opens.
+  if (err instanceof ClassroomNotOpenError) {
+    return NextResponse.json({ error: err.code }, { status: 403 });
   }
   if (err instanceof UnauthorizedError) {
     log("warn", "Unauthorized Zoom token request", { service: "zoom-token", ...ctx });

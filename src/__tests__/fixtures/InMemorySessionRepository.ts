@@ -26,6 +26,22 @@ export class InMemorySessionRepository implements ISessionRepository {
     session.studentJoinedAt = new Date().toISOString();
   }
 
+  // SESSION-JOIN-01
+  async markTutorJoined(eventId: string): Promise<void> {
+    const session = this.sessions.get(eventId);
+    if (!session) return;
+    if (session.tutorJoinedAt) return; // first-join-only
+    session.tutorJoinedAt = new Date().toISOString();
+  }
+
+  private alerted = new Set<string>();
+
+  async claimTutorAbsentAlert(eventId: string): Promise<boolean> {
+    if (!this.sessions.has(eventId) || this.alerted.has(eventId)) return false;
+    this.alerted.add(eventId);
+    return true;
+  }
+
   async appendChatMessage(eventId: string, message: string): Promise<number> {
     const msgs = this.chats.get(eventId) ?? [];
     msgs.push(message);

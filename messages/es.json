@@ -288,7 +288,8 @@
       "cancelConfirmTitle": "¿Cancelar esta sesión?",
       "cancelConfirmBody": "Esta acción no se puede deshacer. Si es de pack, el crédito se devolverá automáticamente.",
       "keepSession": "Mantener",
-      "confirmCancel": "Sí, cancelar"
+      "confirmCancel": "Sí, cancelar",
+      "joinOpensAt": "El aula se abre a las {time}"
     },
     "packStatus": {
       "essentialPack": "Pack Esencial 5h",
@@ -322,7 +323,8 @@
       "zoomShort": "Zoom",
       "emptyTitle": "¿Listo para empezar?",
       "emptyBody": "Aún no tienes clases reservadas. Reserva tu primera sesión y da el primer paso hacia tus objetivos.",
-      "emptyCta": "Reservar una sesión"
+      "emptyCta": "Reservar una sesión",
+      "joinOpensAt": "Disponible desde las {time}"
     },
     "history": {
       "statCompleted": "Completadas",
@@ -841,7 +843,8 @@
       "deletionBlockedActivePack": "No puedes eliminar tu cuenta mientras te queden clases sin usar en un pack activo. Escribe a contacto@gustavoai.dev para solicitar el reembolso.",
       "deletionBlockedCancellableBookings": "No puedes eliminar tu cuenta mientras tengas clases reservadas que aún puedes cancelar. Cancélalas primero.",
       "deletionNotConfirmed": "La confirmación no coincide con el email de tu cuenta.",
-      "userNotFound": "No encontramos tu cuenta."
+      "userNotFound": "No encontramos tu cuenta.",
+      "classroomNotOpen": "El aula todavía no está abierta. Podrás entrar unos minutos antes de la hora de inicio."
     },
     "validation": {
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
@@ -1932,7 +1935,16 @@
       "session2h": "Sesión extendida · 2 horas",
       "pack": "Clase de pack",
       "signIn": "Inicia sesión para acceder a tu sesión.",
-      "continueGoogle": "Continuar con Google"
+      "continueGoogle": "Continuar con Google",
+      "notOpenEyebrow": "Aún no ha empezado",
+      "notOpenTitle": "El aula se abre a las {time}",
+      "notOpenBody": "Tu {session} empieza el {date} a las {start}. Podrás entrar al aula {minutes} minutos antes; esta página se actualizará sola cuando se abra.",
+      "notOpenCountdown": "Se abre en {time}",
+      "goToPersonalArea": "Ir a mi área personal",
+      "unavailableEyebrow": "Enlace no disponible",
+      "unavailableTitle": "Esta clase ya no está disponible",
+      "unavailableBody": "Puede que se haya cancelado, que se haya reprogramado (el email de la nueva reserva trae su propio enlace) o que ya haya terminado. Tus próximas clases están en tu área personal.",
+      "unavailableHelp": "¿Crees que es un error? Escríbeme a contacto@gustavoai.dev"
     },
     "cancelar": {
       "invalidLink": "Enlace de cancelación inválido.",

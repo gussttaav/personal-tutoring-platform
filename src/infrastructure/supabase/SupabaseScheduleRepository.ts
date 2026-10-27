@@ -1,4 +1,4 @@
-import type { IScheduleRepository, ScheduleSettings } from "@/domain/repositories/IScheduleRepository";
+import type { IScheduleRepository, ScheduleSettings, ScheduleSettingsUpdate } from "@/domain/repositories/IScheduleRepository";
 import type { WeeklyHours } from "@/domain/types";
 import { supabase } from "./client";
 
@@ -12,6 +12,8 @@ interface BookingSettingsRow {
   timezone:                string;
   min_notice_hours:        number;
   cancel_min_notice_hours: number;
+  join_open_minutes_before:   number;
+  tutor_absent_alert_minutes: number;
   updated_at:              string;
   updated_by:              string | null;
 }
@@ -43,7 +45,7 @@ export class SupabaseScheduleRepository implements IScheduleRepository {
   async getSettings(): Promise<ScheduleSettings> {
     const { data, error } = await supabase
       .from("booking_settings")
-      .select("timezone, min_notice_hours, cancel_min_notice_hours, updated_at, updated_by")
+      .select("timezone, min_notice_hours, cancel_min_notice_hours, join_open_minutes_before, tutor_absent_alert_minutes, updated_at, updated_by")
       .eq("id", 1)
       .maybeSingle();
     if (error) throw error;
@@ -54,6 +56,8 @@ export class SupabaseScheduleRepository implements IScheduleRepository {
       timezone:             row.timezone,
       minNoticeHours:       row.min_notice_hours,
       cancelMinNoticeHours: row.cancel_min_notice_hours,
+      joinOpenMinutesBefore:   row.join_open_minutes_before,
+      tutorAbsentAlertMinutes: row.tutor_absent_alert_minutes,
       updatedAt:            row.updated_at,
       updatedBy:            row.updated_by,
     };
@@ -83,13 +87,15 @@ export class SupabaseScheduleRepository implements IScheduleRepository {
     }
   }
 
-  async updateSettings(settings: { timezone: string; minNoticeHours: number; cancelMinNoticeHours: number; updatedBy: string }): Promise<void> {
+  async updateSettings(settings: ScheduleSettingsUpdate): Promise<void> {
     const { error } = await supabase
       .from("booking_settings")
       .update({
         timezone:                settings.timezone,
         min_notice_hours:        settings.minNoticeHours,
         cancel_min_notice_hours: settings.cancelMinNoticeHours,
+        join_open_minutes_before:   settings.joinOpenMinutesBefore,
+        tutor_absent_alert_minutes: settings.tutorAbsentAlertMinutes,
         updated_at:              new Date().toISOString(),
         updated_by:              settings.updatedBy,
       })

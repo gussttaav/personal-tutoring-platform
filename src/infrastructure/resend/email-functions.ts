@@ -541,6 +541,49 @@ export async function sendNewBookingNotificationEmail(params: {
   }, params.studentEmail);
 }
 
+// ─── Tutor-absent alert (Gustavo, SESSION-JOIN-01) ─────────────────────────────
+// Sent once per session when the student has been in the classroom past the
+// configured minutes after the start and the tutor hasn't connected.
+
+export async function sendTutorAbsentNotificationEmail(params: {
+  studentEmail: string; studentName: string;
+  sessionLabel: string; startIso: string;
+  minutesLate:  number; joinUrl: string | null;
+}): Promise<void> {
+  const notifyEmail = process.env.NOTIFY_EMAIL;
+  if (!notifyEmail) return;
+
+  const safeName         = escapeHtml(params.studentName);
+  const safeEmail        = escapeHtml(params.studentEmail);
+  const safeSessionLabel = escapeHtml(params.sessionLabel);
+
+  const dateLabel  = formatDateInTz(params.startIso, ADMIN_TZ);
+  const startLabel = formatTimeInTz(params.startIso, ADMIN_TZ);
+
+  await send({
+    to: notifyEmail,
+    subject: `⏰ ${params.studentName} te espera en el aula`,
+    html: `
+      <html><head><style>${STYLES}</style></head><body>
+      <div class="wrap"><div class="card">
+        <h1>Un alumno te espera en el aula</h1>
+        <p><strong>${safeName}</strong> está conectado al aula y tú todavía no,
+          ${params.minutesLate} minutos después del inicio.</p>
+        <div class="label">Alumno</div>
+        <div class="value">${safeName} · ${safeEmail}</div>
+        <div class="label">Sesión</div>
+        <div class="value">${safeSessionLabel}</div>
+        <div class="label">Inicio (Madrid)</div>
+        <div class="value">${dateLabel} · ${startLabel}</div>
+        ${params.joinUrl ? `
+        <div style="margin-top:8px">
+          <a class="meet-btn" href="${params.joinUrl}">Entrar al aula →</a>
+        </div>` : ""}
+      </div></div></body></html>
+    `,
+  }, params.studentEmail);
+}
+
 // ─── Course announcement (bulk, COURSE-P6-02) ─────────────────────────────────
 
 /** Kind → message namespace. Exported so a test can pin the mapping without rendering

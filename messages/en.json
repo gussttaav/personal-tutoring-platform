@@ -288,7 +288,8 @@
       "cancelConfirmTitle": "Cancel this session?",
       "cancelConfirmBody": "This action cannot be undone. If it's a pack class, the credit will be returned automatically.",
       "keepSession": "Keep",
-      "confirmCancel": "Yes, cancel"
+      "confirmCancel": "Yes, cancel",
+      "joinOpensAt": "The classroom opens at {time}"
     },
     "packStatus": {
       "essentialPack": "Essential Pack 5h",
@@ -322,7 +323,8 @@
       "zoomShort": "Zoom",
       "emptyTitle": "Ready to get started?",
       "emptyBody": "You have no classes booked yet. Book your first session and take the first step toward your goals.",
-      "emptyCta": "Book a session"
+      "emptyCta": "Book a session",
+      "joinOpensAt": "Available from {time}"
     },
     "history": {
       "statCompleted": "Completed",
@@ -841,7 +843,8 @@
       "deletionBlockedActivePack": "You cannot delete your account while you have unused classes in an active pack. Write to contacto@gustavoai.dev to request a refund.",
       "deletionBlockedCancellableBookings": "You cannot delete your account while you have booked classes you can still cancel. Cancel them first.",
       "deletionNotConfirmed": "The confirmation does not match your account email.",
-      "userNotFound": "We could not find your account."
+      "userNotFound": "We could not find your account.",
+      "classroomNotOpen": "The classroom isn't open yet. You can enter a few minutes before the start time."
     },
     "validation": {
       "invalidRequest": "The submitted data is not valid. Check the form and try again."
@@ -1932,7 +1935,16 @@
       "session2h": "Extended session · 2 hours",
       "pack": "Pack class",
       "signIn": "Sign in to access your session.",
-      "continueGoogle": "Continue with Google"
+      "continueGoogle": "Continue with Google",
+      "notOpenEyebrow": "Not started yet",
+      "notOpenTitle": "The classroom opens at {time}",
+      "notOpenBody": "Your {session} starts on {date} at {start}. You can enter the classroom {minutes} minutes before; this page will update by itself when it opens.",
+      "notOpenCountdown": "Opens in {time}",
+      "goToPersonalArea": "Go to my personal area",
+      "unavailableEyebrow": "Link unavailable",
+      "unavailableTitle": "This class is no longer available",
+      "unavailableBody": "It may have been cancelled, rescheduled (the new booking's email has its own link) or already finished. Your upcoming classes are in your personal area.",
+      "unavailableHelp": "Think this is a mistake? Write to me at contacto@gustavoai.dev"
     },
     "cancelar": {
       "invalidLink": "Invalid cancellation link.",

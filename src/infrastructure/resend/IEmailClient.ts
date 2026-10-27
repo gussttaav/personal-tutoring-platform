@@ -47,6 +47,17 @@ export interface CancellationNotificationParams {
   startIso:     string;
 }
 
+// SESSION-JOIN-01: admin alert — the student is in the classroom, the tutor isn't.
+export interface TutorAbsentNotificationParams {
+  studentEmail: string;
+  studentName:  string;
+  sessionLabel: string;
+  startIso:     string;
+  minutesLate:  number;
+  /** Classroom link (`/sesion/<joinToken>`), null if the token is unknown. */
+  joinUrl:      string | null;
+}
+
 // CONTENT-FEEDBACK-01: admin notification for a new "report an error" on a
 // lesson or post. Every field is reader-controlled except `pageUrl` (server-derived).
 export interface ContentReportNotificationParams {
@@ -90,6 +101,8 @@ export interface IEmailClient {
   sendCancellationConfirmation(params: CancellationConfirmationParams): Promise<void>;
   sendCancellationNotification(params: CancellationNotificationParams): Promise<void>;
   sendContentReportNotification(params: ContentReportNotificationParams): Promise<void>;
+  /** SESSION-JOIN-01 */
+  sendTutorAbsentNotification(params: TutorAbsentNotificationParams): Promise<void>;
   sendPaymentAuditReport(report: PaymentAuditReport): Promise<void>;
   /** BLOG-15: the dry run's sample — rendered, never sent. */
   renderBlogPostAnnouncement(params: Omit<BlogPostAnnouncementParams, "to">): Promise<{ subject: string; html: string }>;

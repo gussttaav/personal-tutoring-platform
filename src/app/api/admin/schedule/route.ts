@@ -66,6 +66,8 @@ export async function POST(req: NextRequest) {
     timezone:             parsed.data.timezone,
     minNoticeHours:       parsed.data.minNoticeHours,
     cancelMinNoticeHours: parsed.data.cancelMinNoticeHours,
+    joinOpenMinutesBefore:   parsed.data.joinOpenMinutesBefore,
+    tutorAbsentAlertMinutes: parsed.data.tutorAbsentAlertMinutes,
     by:                   session.user.email,
     reason:               parsed.data.reason,
   });

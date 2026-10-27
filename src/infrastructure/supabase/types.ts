@@ -50,24 +50,30 @@ export type Database = {
         Row: {
           cancel_min_notice_hours: number
           id: number
+          join_open_minutes_before: number
           min_notice_hours: number
           timezone: string
+          tutor_absent_alert_minutes: number
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           cancel_min_notice_hours?: number
           id?: number
+          join_open_minutes_before?: number
           min_notice_hours?: number
           timezone?: string
+          tutor_absent_alert_minutes?: number
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           cancel_min_notice_hours?: number
           id?: number
+          join_open_minutes_before?: number
           min_notice_hours?: number
           timezone?: string
+          tutor_absent_alert_minutes?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -853,6 +859,8 @@ export type Database = {
           session_passcode: string
           started_at: string | null
           student_joined_at: string | null
+          tutor_absent_alerted_at: string | null
+          tutor_joined_at: string | null
         }
         Insert: {
           booking_id: string
@@ -865,6 +873,8 @@ export type Database = {
           session_passcode: string
           started_at?: string | null
           student_joined_at?: string | null
+          tutor_absent_alerted_at?: string | null
+          tutor_joined_at?: string | null
         }
         Update: {
           booking_id?: string
@@ -877,6 +887,8 @@ export type Database = {
           session_passcode?: string
           started_at?: string | null
           student_joined_at?: string | null
+          tutor_absent_alerted_at?: string | null
+          tutor_joined_at?: string | null
         }
         Relationships: [
           {

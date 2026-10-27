@@ -53,14 +53,22 @@ export const mobileAuthService = new MobileAuthService(new GoogleIdTokenVerifier
 
 export const creditService = new CreditService(supabaseCreditsRepository, supabaseAuditRepository);
 
-const tutorEmail = process.env.TUTOR_EMAIL ?? "";
-export const sessionService = new SessionService(supabaseSessionRepository, new ZoomClient(), tutorEmail);
-
 // REFACTOR-R3-P3-02: getConfig() reads through the version-keyed Redis config cache.
 export const scheduleService = new ScheduleService(
   supabaseScheduleRepository,
   supabaseAuditRepository,
   redisConfigCache,
+);
+
+// SESSION-JOIN-01: reads the join window + alert delay from the schedule, and
+// emails the tutor-absent alert.
+const tutorEmail = process.env.TUTOR_EMAIL ?? "";
+export const sessionService = new SessionService(
+  supabaseSessionRepository,
+  new ZoomClient(),
+  tutorEmail,
+  scheduleService,
+  new EmailClient(),
 );
 
 export const bookingService = new BookingService(

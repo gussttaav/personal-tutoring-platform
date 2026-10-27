@@ -3,6 +3,7 @@
 // REFACTOR-R4-P3-03: sendPaymentAuditReport.
 // BLOG-15: renderBlogPostAnnouncement / sendBlogPostAnnouncement.
 // COURSE-ANNOUNCE-01: renderCourseAnnouncement / sendCourseAnnouncement.
+// SESSION-JOIN-01: sendTutorAbsentNotification.
 import type { PaymentAuditReport } from "@/domain/types";
 import * as emailLib from "./email-functions";
 import type {
@@ -12,6 +13,7 @@ import type {
   CancellationConfirmationParams,
   CancellationNotificationParams,
   ContentReportNotificationParams,
+  TutorAbsentNotificationParams,
   BlogPostAnnouncementParams,
   CourseAnnouncementParams,
 } from "./IEmailClient";
@@ -36,6 +38,11 @@ export class EmailClient implements IEmailClient {
   // CONTENT-FEEDBACK-01
   sendContentReportNotification(params: ContentReportNotificationParams): Promise<void> {
     return emailLib.sendContentReportNotificationEmail(params);
+  }
+
+  // SESSION-JOIN-01
+  sendTutorAbsentNotification(params: TutorAbsentNotificationParams): Promise<void> {
+    return emailLib.sendTutorAbsentNotificationEmail(params);
   }
 
   // REFACTOR-R4-P3-03

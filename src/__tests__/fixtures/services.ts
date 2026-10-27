@@ -6,7 +6,7 @@ import { BookingService }      from "@/services/BookingService";
 import { PaymentService }      from "@/services/PaymentService";
 import { PricingService }      from "@/services/PricingService";
 import { ScheduleService }     from "@/services/ScheduleService";
-import { SessionService }      from "@/services/SessionService";
+import { SessionService, type IScheduleConfigSource } from "@/services/SessionService";
 import { SubscriptionService } from "@/services/SubscriptionService";
 import { UserService }         from "@/services/UserService";
 import { CourseService }       from "@/services/CourseService";
@@ -229,6 +229,8 @@ export interface SessionServiceDeps {
   sessions:    ISessionRepository;
   zoom:        IZoomClient;
   tutorEmail:  string;
+  schedule:    IScheduleConfigSource; // SESSION-JOIN-01
+  email:       IEmailClient;          // SESSION-JOIN-01
 }
 
 export function buildTestSessionService(
@@ -238,6 +240,10 @@ export function buildTestSessionService(
     overrides.sessions   ?? new InMemorySessionRepository(),
     overrides.zoom       ?? new FakeZoomClient(),
     overrides.tutorEmail ?? "tutor@test.com",
+    overrides.schedule   ?? new ScheduleService(
+      new InMemoryScheduleRepository(), new InMemoryAuditRepository(), new InMemoryConfigCache(),
+    ),
+    overrides.email      ?? new FakeEmailClient(),
   );
 }
 

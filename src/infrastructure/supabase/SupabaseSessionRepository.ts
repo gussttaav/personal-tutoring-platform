@@ -13,6 +13,9 @@
 // collapses that to a single embedded-join round trip; SessionService calls it
 // once per request and threads the id into the *ById methods. The eventId-based
 // chat methods remain as thin wrappers over resolve + *ById.
+//
+// SESSION-JOIN-01: findByEventId also returns tutor_joined_at + the booking's
+// join_token; markTutorJoined / claimTutorAbsentAlert back the tutor-absent alert.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ZoomSession, SessionType } from "@/domain/types";
 import { supabase } from "./client";
@@ -44,7 +47,7 @@ export class SupabaseSessionRepository implements ISessionRepository {
     // Step 1: find booking by calendar_event_id — only confirmed bookings are joinable
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("id, session_type, starts_at, user_id")
+      .select("id, session_type, starts_at, user_id, join_token")
       .eq("calendar_event_id", eventId)
       .eq("status", "confirmed")
       .maybeSingle();
@@ -54,16 +57,16 @@ export class SupabaseSessionRepository implements ISessionRepository {
     // Step 2: find zoom session linked to that booking
     const { data: zs, error: zsErr } = await supabase
       .from("zoom_sessions")
-      .select("session_id, session_name, session_passcode, duration_minutes, student_joined_at")
+      .select("session_id, session_name, session_passcode, duration_minutes, student_joined_at, tutor_joined_at")
       .eq("booking_id", booking.id)
       .maybeSingle();
 
     if (zsErr || !zs) return null;
 
-    // Step 3: get student email
+    // Step 3: get student email (+ name for the SESSION-JOIN-01 alert)
     const { data: user, error: userErr } = await supabase
       .from("users")
-      .select("email")
+      .select("email, name")
       .eq("id", booking.user_id)
       .single();
 
@@ -74,10 +77,13 @@ export class SupabaseSessionRepository implements ISessionRepository {
       sessionName:      zs.session_name,
       sessionPasscode:  zs.session_passcode,
       studentEmail:     user.email,
+      studentName:      user.name ?? "",
       startIso:         booking.starts_at,
       durationMinutes:  zs.duration_minutes,
       sessionType:      booking.session_type as SessionType,
       studentJoinedAt:  zs.student_joined_at ?? null,
+      tutorJoinedAt:    zs.tutor_joined_at ?? null,
+      joinToken:        booking.join_token ?? null,
     };
   }
 
@@ -106,6 +112,37 @@ export class SupabaseSessionRepository implements ISessionRepository {
       .is("student_joined_at", null);
 
     if (error) throw error;
+  }
+
+  // SESSION-JOIN-01: mirrors markStudentJoined for the tutor.
+  async markTutorJoined(eventId: string): Promise<void> {
+    const zoomSessionId = await this.findZoomSessionId(eventId);
+    if (!zoomSessionId) return;
+
+    const { error } = await supabase
+      .from("zoom_sessions")
+      .update({ tutor_joined_at: new Date().toISOString() })
+      .eq("id", zoomSessionId)
+      .is("tutor_joined_at", null);
+
+    if (error) throw error;
+  }
+
+  // SESSION-JOIN-01: compare-and-swap on tutor_absent_alerted_at. The returned row
+  // tells us whether THIS call flipped it, so concurrent reports send one email.
+  async claimTutorAbsentAlert(eventId: string): Promise<boolean> {
+    const zoomSessionId = await this.findZoomSessionId(eventId);
+    if (!zoomSessionId) return false;
+
+    const { data, error } = await supabase
+      .from("zoom_sessions")
+      .update({ tutor_absent_alerted_at: new Date().toISOString() })
+      .eq("id", zoomSessionId)
+      .is("tutor_absent_alerted_at", null)
+      .select("id");
+
+    if (error) throw error;
+    return (data ?? []).length > 0;
   }
 
   // REFACTOR-P3-02: Resolves eventId → zoom_session_id in a single round trip

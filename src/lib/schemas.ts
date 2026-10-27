@@ -172,6 +172,10 @@ export const UpdateScheduleSchema = z
     minNoticeHours:       z.number().int().min(0).max(168),
     // Cancellation window (hours before start). Distinct from minNoticeHours.
     cancelMinNoticeHours: z.number().int().min(0).max(168),
+    // SESSION-JOIN-01: classroom opening (minutes before start) and tutor-absent
+    // alert delay (minutes after start). Ranges mirror the 0028 CHECK constraints.
+    joinOpenMinutesBefore:   z.number().int().min(0).max(1440),
+    tutorAbsentAlertMinutes: z.number().int().min(1).max(120),
     reason:               z.string().min(1).max(500),
   })
   .superRefine((val, ctx) => {
@@ -317,6 +321,12 @@ export const ReviewSchema = z.discriminatedUnion("kind", [
 ]);
 
 export type ReviewInput = z.infer<typeof ReviewSchema>;
+
+// ─── Tutor-absent alert (SESSION-JOIN-01) ─────────────────────────────────────
+
+export const TutorAbsentSchema = z.object({
+  eventId: z.string().min(1).max(256),
+});
 
 // ─── Locale preference ────────────────────────────────────────────────────────
 

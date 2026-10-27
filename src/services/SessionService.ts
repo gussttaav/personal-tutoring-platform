@@ -8,10 +8,35 @@
 // polling. The broadcast is best-effort: failures are logged but never bubble.
 // REFACTOR-P3-04: getChatMessages now enforces the same participant membership
 // check as postChatMessage/issueJoinToken — eventId is not a capability.
+// SESSION-JOIN-01: issueJoinToken refuses a student before the classroom opens
+// (start − booking_settings.join_open_minutes_before; the tutor is exempt), records
+// the tutor's first join, and tells the student's client when it may raise the
+// tutor-absent alert. reportTutorAbsent re-checks everything server-side and
+// emails the admin at most once per session.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IZoomClient } from "@/infrastructure/zoom";
-import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
+import type { IEmailClient } from "@/infrastructure/resend/IEmailClient";
+import type { ScheduleConfig, SessionType } from "@/domain/types";
+import { BookingNotFoundError, ClassroomNotOpenError, UnauthorizedError } from "@/domain/errors";
+import {
+  DEFAULT_TUTOR_ABSENT_ALERT_MINUTES,
+  joinOpensAtMs,
+  tutorAbsentAlertAtMs,
+} from "@/lib/booking-config";
 import { log } from "@/lib/logger";
+
+/** SESSION-JOIN-01: the slice of ScheduleService this service reads. */
+export interface IScheduleConfigSource {
+  getConfig(): Promise<ScheduleConfig>;
+}
+
+// Admin-facing (Spanish) labels for the tutor-absent alert email.
+const SESSION_LABELS: Record<SessionType, string> = {
+  free15min: "Encuentro inicial gratuito · 15 min",
+  session1h: "Sesión individual · 1 hora",
+  session2h: "Sesión individual · 2 horas",
+  pack:      "Clase de pack",
+};
 
 export interface IssueJoinTokenResult {
   token:             string;
@@ -20,13 +45,27 @@ export interface IssueJoinTokenResult {
   startIso:          string;
   durationWithGrace: number;
   expiresAt:         number;
+  /**
+   * SESSION-JOIN-01: when the student's client may report the tutor absent
+   * (ISO, start + tutorAbsentAlertMinutes). Null for the tutor.
+   */
+  tutorAbsentAlertAt: string | null;
 }
+
+export type TutorAbsentOutcome =
+  | "sent"
+  | "too_early"
+  | "session_over"
+  | "tutor_joined"
+  | "already_sent";
 
 export class SessionService {
   constructor(
     private readonly sessions:    ISessionRepository,
     private readonly zoom:        IZoomClient,
     private readonly tutorEmail:  string,
+    private readonly schedule:    IScheduleConfigSource,
+    private readonly email:       IEmailClient,
   ) {}
 
   // Issues a short-lived JWT for a user to join a Zoom session.
@@ -54,6 +93,23 @@ export class SessionService {
         eventId:   params.eventId,
       });
       throw new UnauthorizedError();
+    }
+
+    // SESSION-JOIN-01: the classroom opens N minutes before the start for the
+    // student. Checked before markStudentJoined so an early attempt doesn't
+    // count as attendance. The tutor may enter any time.
+    let alertAt: string | null = null;
+    if (!isTutor) {
+      const config = await this.schedule.getConfig();
+      if (Date.now() < joinOpensAtMs(record.startIso, config)) {
+        log("info", "Zoom token refused: classroom not open yet", {
+          service: "SessionService",
+          email:   params.userEmail,
+          eventId: params.eventId,
+        });
+        throw new ClassroomNotOpenError();
+      }
+      alertAt = new Date(tutorAbsentAlertAtMs(record.startIso, config)).toISOString();
     }
 
     // REFACTOR-P2-05: compute lifetime from session end + 30-min buffer so the
@@ -94,6 +150,17 @@ export class SessionService {
           error:   String(err),
         });
       }
+    } else {
+      // SESSION-JOIN-01: lets reportTutorAbsent tell "tutor never came" apart.
+      try {
+        await this.sessions.markTutorJoined(params.eventId);
+      } catch (err) {
+        log("warn", "Could not record tutor_joined_at", {
+          service: "SessionService",
+          eventId: params.eventId,
+          error:   String(err),
+        });
+      }
     }
 
     return {
@@ -103,7 +170,62 @@ export class SessionService {
       startIso:          record.startIso,
       durationWithGrace: this.zoom.getDurationWithGrace(record.sessionType),
       expiresAt:         Math.floor(Date.now() / 1000) + durationSeconds,
+      tutorAbsentAlertAt: alertAt,
     };
+  }
+
+  // SESSION-JOIN-01: the waiting student's client reports that the tutor hasn't
+  // connected. The client only decides WHEN to ask; every condition is re-checked
+  // here, and the atomic claim makes the email go out at most once per session.
+  async reportTutorAbsent(params: {
+    eventId:   string;
+    userEmail: string;
+  }): Promise<TutorAbsentOutcome> {
+    const record = await this.sessions.findByEventId(params.eventId);
+    if (!record) throw new BookingNotFoundError();
+
+    const isStudent = record.studentEmail
+      ? record.studentEmail.toLowerCase() === params.userEmail.toLowerCase()
+      : false;
+    if (!isStudent) throw new UnauthorizedError();
+
+    const config = await this.schedule.getConfig();
+    const now    = Date.now();
+    if (now < tutorAbsentAlertAtMs(record.startIso, config)) return "too_early";
+
+    const endMs = new Date(record.startIso).getTime()
+      + this.zoom.getDurationWithGrace(record.sessionType) * 60_000;
+    if (now > endMs) return "session_over";
+
+    if (record.tutorJoinedAt) return "tutor_joined";
+
+    if (!(await this.sessions.claimTutorAbsentAlert(params.eventId))) return "already_sent";
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+    try {
+      await this.email.sendTutorAbsentNotification({
+        studentEmail: record.studentEmail,
+        studentName:  record.studentName || record.studentEmail,
+        sessionLabel: SESSION_LABELS[record.sessionType] ?? record.sessionType,
+        startIso:     record.startIso,
+        minutesLate:  config.tutorAbsentAlertMinutes ?? DEFAULT_TUTOR_ABSENT_ALERT_MINUTES,
+        joinUrl:      record.joinToken ? `${baseUrl}/sesion/${record.joinToken}` : null,
+      });
+    } catch (err) {
+      // The claim stays: a retrying client must not turn into an email storm.
+      log("error", "Tutor-absent alert email failed", {
+        service: "SessionService",
+        eventId: params.eventId,
+        error:   String(err),
+      });
+    }
+
+    log("warn", "Tutor-absent alert raised", {
+      service: "SessionService",
+      eventId: params.eventId,
+      email:   params.userEmail,
+    });
+    return "sent";
   }
 
   // Removes the session record so no new JWTs can be issued.

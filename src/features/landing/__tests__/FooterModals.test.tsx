@@ -28,6 +28,8 @@ const SCHEDULE: ScheduleConfig = {
   timezone:             "Europe/Madrid",
   minNoticeHours:       5,
   cancelMinNoticeHours: 6,
+  joinOpenMinutesBefore:   15,
+  tutorAbsentAlertMinutes: 5,
   bookingWindowWeeks:   4,
 };
 
