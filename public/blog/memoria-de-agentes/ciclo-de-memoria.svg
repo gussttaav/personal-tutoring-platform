@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 272" width="760" height="272" role="img"
+ aria-label="El ciclo de una memoria en cuatro decisiones, entre la conversación y el modelo. Escribir: qué se guarda de cada conversación, todo o sólo hechos extraídos o resúmenes. Guardar: en qué forma, fragmentos de texto, hechos sueltos, notas enlazadas, un grafo o varios niveles. Leer: cómo se encuentra lo necesario, por parecido, con recencia e importancia, con un reordenador o con un agente que busca. Lo que se lee entra en el contexto del modelo, que responde, y la respuesta vuelve a la conversación. Mantener actúa sobre lo guardado: añadir, actualizar, borrar o no hacer nada, consolidar y olvidar.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx " x="20.0" y="58.0" width="100.0" height="52.0" rx="6"/>
+<text class="lb" x="70.0" y="88.0">Conversación</text>
+<rect class="bx " x="144.0" y="28.0" width="142.0" height="112.0" rx="6"/>
+<text class="hd" x="215.0" y="48.0" style="text-anchor:middle">ESCRIBIR</text>
+<text class="sb" x="215.0" y="64.0">qué se guarda</text>
+<text class="tx" x="156.0" y="90.0">· todo, tal cual</text>
+<text class="tx" x="156.0" y="104.0">· hechos extraídos</text>
+<text class="tx" x="156.0" y="118.0">· resúmenes</text>
+<rect class="bx m" x="302.0" y="28.0" width="142.0" height="112.0" rx="6"/>
+<text class="hd" x="373.0" y="48.0" style="text-anchor:middle">GUARDAR</text>
+<text class="sb" x="373.0" y="64.0">en qué forma</text>
+<text class="tx" x="314.0" y="90.0">· fragmentos de texto</text>
+<text class="tx" x="314.0" y="104.0">· hechos, notas, grafo</text>
+<text class="tx" x="314.0" y="118.0">· niveles</text>
+<rect class="bx " x="460.0" y="28.0" width="142.0" height="112.0" rx="6"/>
+<text class="hd" x="531.0" y="48.0" style="text-anchor:middle">LEER</text>
+<text class="sb" x="531.0" y="64.0">cómo se encuentra</text>
+<text class="tx" x="472.0" y="90.0">· parecido</text>
+<text class="tx" x="472.0" y="104.0">· + recencia, importancia</text>
+<text class="tx" x="472.0" y="118.0">· reordenador, agente</text>
+<rect class="bx w" x="626.0" y="58.0" width="114.0" height="52.0" rx="6"/>
+<text class="lb w" x="683.0" y="82.0">Modelo</text>
+<text class="sb" x="683.0" y="96.0">lee y responde</text>
+<path class="ar" d="M122.0,84.0 L141.0,84.0"/>
+<path class="ar" d="M288.0,84.0 L300.0,84.0"/>
+<path class="ar" d="M446.0,84.0 L458.0,84.0"/>
+<path class="ar" d="M604.0,84.0 L623.0,84.0"/>
+<rect class="bx d" x="205.0" y="186.0" width="336.0" height="48.0" rx="6"/>
+<text class="hd" x="223.0" y="206.0">MANTENER</text>
+<text class="sb" x="313.0" y="206.0" style="text-anchor:start">sobre lo guardado</text>
+<text class="tx" x="373.0" y="223.0" style="text-anchor:middle">añadir · actualizar · borrar · nada · consolidar · olvidar</text>
+<path class="ar m" d="M364.0,184.0 L364.0,144.0"/>
+<path class="ar m" d="M382.0,144.0 L382.0,184.0"/>
+<path class="ar" d="M683.0,112.0 L683.0,258.0 L70.0,258.0 L70.0,112.0"/>
+<text class="sb" x="675.0" y="252.0" style="text-anchor:end">cada respuesta es otro mensaje</text>
+</svg>

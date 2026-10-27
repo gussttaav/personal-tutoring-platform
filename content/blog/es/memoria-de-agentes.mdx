@@ -1,0 +1,775 @@
+---
+slug: memoria-de-agentes
+title: "Memoria para agentes: qué guardar, cómo leerlo y si hace falta tanto"
+date: "2026-10-31"
+minutes: 27
+summary: "Un asistente con memoria responde que un cliente aún está en plazo de reembolso, citando lo que le contaron en marzo, y olvida lo que le contaron en junio. Para qué necesita memoria un agente, los cuatro tipos que distingue la ciencia cognitiva, cómo funciona por dentro un sistema de memoria, cómo ha evolucionado desde 2023, cómo se mide y por qué un artículo de octubre de 2026 encontró que buscar en las conversaciones tal cual, sin transformarlas, gana a doce sistemas mucho más complejos."
+draft: false
+reading:
+  - kind: paper
+    title: "Is Complex Agentic Memory Always Needed? Naive RAG Is Stronger Than We Thought"
+    authors: "Zhengye Bao, Shengtao Zhang, Haokai Zhang, Shiqi Lou, Muning Wen y Minnan Luo"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2610.30755"
+    note: "El artículo central de éste. Las tablas 3 y 4 son la comparación entera; la sección 5 explica por qué gana el RAG sencillo, y el apéndice E repasa catorce trabajos anteriores cuyo RAG de referencia estaba mal configurado."
+  - kind: paper
+    title: "Cognitive Architectures for Language Agents"
+    authors: "Theodore R. Sumers, Shunyu Yao, Karthik Narasimhan y Thomas L. Griffiths"
+    year: "2023"
+    venue: "TMLR 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2309.02427"
+    note: "CoALA, el marco que trajo a los agentes las memorias de trabajo, episódica, semántica y procedimental. La sección 4.1 las define, y la figura 4 coloca en ellas los agentes de su época."
+  - kind: paper
+    title: "Generative Agents: Interactive Simulacra of Human Behavior"
+    authors: "Joon Sung Park, Joseph C. O'Brien, Carrie J. Cai y otros"
+    year: "2023"
+    venue: "UIST 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2304.03442"
+    note: "Veinticinco agentes en un pueblo inspirado en Los Sims. La sección 4.1 es el primer diseño completo de memoria para agentes: un registro de todo lo observado, una puntuación de recuperación y reflexiones que resumen."
+  - kind: paper
+    title: "MemGPT: Towards LLMs as Operating Systems"
+    authors: "Charles Packer, Sarah Wooders, Kevin Lin y otros"
+    year: "2023"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2310.08560"
+    note: "La memoria del modelo como la de un ordenador: el contexto es la RAM, lo demás es disco, y el propio modelo mueve datos entre los dos con llamadas a funciones. La figura 3 es el sistema entero."
+  - kind: paper
+    title: "Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory"
+    authors: "Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh y Deshraj Yadav"
+    year: "2025"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2504.19413"
+    note: "El diseño de extraer hechos y decidir, para cada uno, si se añade, actualiza, borra o se ignora. La tabla 2 tiene lo que su resumen no dice: darle al modelo la conversación entera acertaba más."
+  - kind: paper
+    title: "LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory"
+    authors: "Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang y Dong Yu"
+    year: "2024"
+    venue: "ICLR 2025"
+    lang: en
+    url: "https://arxiv.org/abs/2410.10813"
+    note: "El banco de pruebas de memoria más usado, y algo más: la sección 4 descompone el diseño de una memoria en decisiones, y la 5 mide cada una. Ya en 2024 concluía que sustituir los mensajes por hechos pierde información."
+  - kind: paper
+    title: "MEME: Multi-entity & Evolving Memory Evaluation"
+    authors: "Seokwon Jung, Alexander Rubinstein, Arnas Uselis, Sangdoo Yun y Seong Joon Oh"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2605.12477"
+    note: "Seis tareas sobre hechos que cambian, incluidas las que dependen de otros hechos. Todos los sistemas probados se hunden en ellas, y la figura principal enseña cuánto cuesta el único que se acerca."
+  - kind: paper
+    title: "When Your Agent Opens the Chat App: Agent-Controlled Search over Raw Chat Logs Rivals Structured Memory"
+    authors: "Ruizhe Li, Licheng Zhang, Benfeng Xu, Mingxuan Du, Zheren Fu y Weidong Chen"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2608.12888"
+    note: "La misma conclusión por otro camino, dos meses antes: un agente que busca por palabras en el historial sin modificar, con controles pensados para chats, supera a las memorias con grafos y árboles."
+  - kind: paper
+    title: "Memory-R1: Enhancing Large Language Model Agents to Manage and Utilize Memories via Reinforcement Learning"
+    authors: "Sikuan Yan, Xiufeng Yang, Zuchao Huang y otros"
+    year: "2025"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2508.19828"
+    note: "La otra respuesta a que las actualizaciones fallen: entrenar con aprendizaje por refuerzo al modelo que decide añadir, actualizar o borrar. La figura 1, con los perros de Andrew, es el fallo en un ejemplo."
+  - kind: blog
+    title: "Claude Memory: A Different Philosophy"
+    authors: "Simon Willison"
+    year: "2025"
+    venue: "simonwillison.net"
+    lang: en
+    url: "https://simonwillison.net/2025/Sep/12/claude-memory/"
+    note: "Las memorias de ChatGPT y de Claude comparadas en una página, a partir de un análisis de cómo funcionan por dentro: una pone un resumen del usuario en cada conversación; la otra busca en los chats cuando hace falta."
+areas: ["ia"]
+cover: "/blog/memoria-de-agentes/dos-memorias.svg"
+tags: ["agentes", "llm", "rag", "evaluacion"]
+aiImages: true
+---
+
+{/*
+  BLOG-21 — Memoria para agentes: qué guardar, cómo leerlo y si hace falta tanto.
+
+  Tesis: la memoria de un agente es un RAG sobre lo que el propio agente ha vivido, con tres
+  diferencias (lo escribe él, crece y cambia), y casi toda la complejidad que se le ha añadido desde
+  2023 consiste en transformar lo vivido en otra cosa antes de saber qué se va a preguntar. Bao et al.
+  (arXiv 2610.30755, 22 oct 2026) midieron que no transformar nada y buscar bien gana en la mayoría de
+  los casos, porque lo que se tira al escribir no se recupera al leer. La estructura sigue ayudando a
+  lectores débiles, al estado que otros sistemas usan y a lo que hay que olvidar.
+
+  El ejemplo es Albarán, la empresa INVENTADA de BLOG-07, BLOG-08 y BLOG-20, presentada de nuevo
+  desde cero. Talleres Ruiz, Lucía y el acuerdo son nuevos e INVENTADOS. Fechas que deben coincidir
+  en el cuerpo y en scripts/figures/memoria-de-agentes/make_svgs.py: acuerdo anotado el 10 de marzo
+  (60 días para el reembolso de la renovación anual), anulado en una conversación del 18 de junio,
+  renovación cobrada el 15 de julio, pregunta el 10 de septiembre. 15 jul + 30 días = 14 ago; + 60 =
+  13 sep. El plan Equipo da 30 días a las suscripciones anuales (BLOG-07). Un año de Lucía: 3
+  conversaciones al día × 3 000 tokens × 220 días laborables ≈ 2 millones de tokens.
+
+  Artículo conceptual, como BLOG-07, BLOG-08 y BLOG-20: ningún número medido sobre el ejemplo. Los
+  números citados son de las fuentes, leídos en ellas:
+    - Bao et al. v1: Raw-RAG = ventanas de 256 tokens con 32 de solape, 128 candidatas, 15 tras
+      reordenar; tablas 3 y 4 (los siete escenarios de la tabla del cuerpo; DeepSeek-V4-Flash en MEME
+      es la única derrota, MemMachine 44,71 frente a 43,19; contexto completo 63,17, +19,98); tabla 1
+      (Mem0 ADD/NONE 67,36 → 69,42; temporal +3,32, dominio abierto +6,94); auditoría de Mem0 (4,39 %
+      de 33 902 decisiones en LoCoMo, 2,46 % de 428 858 en LongMemEval; efectivas 1,90 % y 1,34 %);
+      tabla 2 (MEME con la evidencia exacta: cascada 1,83 % GPT-4o-mini, 82,32 % DeepSeek); tabla 5
+      (sin reordenador −3,92; hechos atómicos −19,62; resumen −5,81; grafo −5,78; un solo elemento
+      −11,73); tabla 6 (305,91 s frente a 9 301,48 s de EverMemOS; siguiente EMem 1 561,97 s, 5,1×);
+      BEAM-1M (0,33 h frente a 26,95 h de Memora; MemOS 3,25 h); tablas 7 y 8 (cobertura y uso, la
+      figura cobertura-y-uso); tabla 9 (caminos completos 62,34 / 56,70 / 9,62); §5.3 (57,54 y 57,46
+      frente a 61,60; sin límite de empaquetado, de 7,58 a 29,38 puntos por debajo).
+    - CoALA §4.1 (definiciones; escribir en la procedimental, lo más arriesgado). Generative Agents
+      §4.1 (25 agentes; recencia con decaimiento 0,995 por hora de juego; importancia 1-10, 2 y 8 en
+      sus ejemplos; los tres pesos a 1; reflexión al pasar de 150). MemGPT §2 (aviso al 70 % de la
+      ventana, vaciado al 100 % de unos mensajes, p. ej. el 50 %, con resumen recursivo). Mem0 tabla 2
+      y §4.4-4.5 (J 66,88 / 68,44; OpenAI 52,90; mejor RAG ≈ 61 con k = 1 o 2; contexto completo
+      72,90 con unos 26 000 tokens y 17,1 s de p95, frente a 1,44 s). LongMemEval (500 preguntas, cinco
+      capacidades, ~115 000 tokens en S, ~1,5 millones en M, caída del 30-60 %; §5.2 rondas mejor que
+      sesiones, hechos como valor pierden salvo multisesión; §5.3 hechos como clave +9,4 % recall,
+      +5,4 % aciertos). LoCoMo (~300 intervenciones, hasta 35 sesiones, 10 conversaciones). MEME
+      (cascada 3 %, ausencia 1 % de media; agente con archivos y Claude Opus 4.7 a ~70× el coste).
+      ReFind (58,2 frente a 53,2 de HippoRAG 2; 93,2 en LongMemEval-S con GPT-5-mini). Memory-R1 (los
+      perros Buddy y Scout).
+    - Productos: ChatGPT, memoria en prueba el 13 feb 2024, para todos el 5 sep 2024, historial de
+      chats el 10 abr 2025. Claude, búsqueda en chats (conversation_search, recent_chats) el 11 ago
+      2025; memoria con resumen editable, Team/Enterprise el 11 sep 2025, Pro/Max el 23 oct 2025;
+      herramienta de memoria de la API (archivos), 29 sep 2025.
+
+  Figuras en public/blog/memoria-de-agentes/, generadas por
+  scripts/figures/memoria-de-agentes/make_svgs.py (Python sin dependencias; escribe el .svg y el
+  .en.svg de cada una). El alt de cada <img> es el aria-label del SVG: si cambia uno, cambia el otro.
+*/}
+
+Una empresa de software de facturación, llamémosla Albarán, tiene un asistente interno para su
+equipo de soporte: un modelo de lenguaje que contesta preguntas sobre los clientes y las políticas
+de la empresa. Desde la primavera tiene memoria. Recuerda lo que cada persona del equipo le ha
+contado en conversaciones anteriores, para que nadie tenga que repetírselo. Lucía, una de las
+personas de soporte, le pregunta el 10 de septiembre:
+
+> Talleres Ruiz pide el reembolso de su renovación anual, cobrada el 15 de julio. ¿Está en plazo?
+
+Y el asistente contesta, con una cita:
+
+> Sí. Talleres Ruiz tiene un acuerdo con comercial que le da 60 días para pedir el reembolso de la
+> renovación anual, así que el plazo acaba el 13 de septiembre. *[Memoria: conversación del 10 de
+> marzo]*
+
+La cita existe y dice lo que la respuesta dice que dice. El 10 de marzo, Lucía le contó exactamente
+eso. Pero el 18 de junio, al final de una conversación larga sobre un fallo al exportar facturas,
+añadió una línea: «Por cierto, lo de los 60 días de Ruiz se acaba: comercial no renueva el acuerdo,
+y desde la renovación de julio vuelven a las condiciones normales». Las condiciones normales del
+plan de Talleres Ruiz, el plan Equipo, dan 30 días a las suscripciones anuales. El plazo venció el 14
+de agosto, y la respuesta es falsa, con una fuente que la respalda.
+
+Nadie borró el mensaje de junio. La memoria lo convirtió en otra cosa. Este asistente no guarda las
+conversaciones: después de cada una, un modelo las lee y extrae hechos cortos, y un segundo paso
+decide si cada hecho nuevo se añade a lo que ya hay, lo corrige, lo borra o no cambia nada. De
+marzo salió «Talleres Ruiz: 60 días de reembolso (acuerdo comercial)». De junio, «Talleres Ruiz vuelve
+a las condiciones normales de su plan». El segundo no contradice al primero palabra por palabra, porque
+no menciona ni los días ni el reembolso, así que se añadió a su lado. Ninguno de los dos lleva fecha.
+En septiembre, la búsqueda de lo que la memoria sabía sobre el reembolso de Talleres Ruiz trajo el
+primero, que habla de reembolsos, y no el segundo, que no.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/dos-memorias.svg"
+    alt="Las mismas tres conversaciones de Lucía con el asistente, guardadas de dos formas. A la izquierda, las conversaciones: el 10 de marzo, Talleres Ruiz tiene 60 días para pedir el reembolso de la renovación anual por un acuerdo con comercial; el 18 de junio, el acuerdo de los 60 días se acaba y desde la renovación de julio vuelven a las condiciones normales; el 10 de septiembre, la pregunta de si el reembolso de la renovación cobrada el 15 de julio está en plazo. Arriba, una memoria de hechos: guarda dos frases sueltas y sin fecha, 60 días por el acuerdo comercial y vuelve a las condiciones normales de su plan; la búsqueda devuelve sólo la primera y la respuesta es sí, hasta el 13 de septiembre, que es falsa. Abajo, el historial en bruto: guarda los mensajes con su fecha; la búsqueda devuelve los de marzo y junio, y la respuesta es no, el plazo de 30 días venció el 14 de agosto, que es la correcta."
+    width="760"
+    height="304"
+  />
+  <figcaption>
+    Lo mismo, guardado de dos maneras. El mensaje de junio menciona «los 60 días» y la renovación;
+    el hecho que se extrajo de él, no. Por eso la búsqueda encuentra el mensaje y no encuentra el
+    hecho.
+  </figcaption>
+</figure>
+
+El caso es inventado, pero el fallo es de los más estudiados. Si las conversaciones se hubiesen
+guardado tal como se escribieron, con su fecha, la misma pregunta habría encontrado el mensaje de
+junio, que habla de «los 60 días de Ruiz» y de la renovación, junto al de marzo, y el modelo habría
+leído los dos en orden. No hace falta mucho razonamiento para ver que el segundo anula al primero.
+
+La memoria de los agentes se suele contar como una escalada. Primero, un modelo que lo olvida todo.
+Después, sistemas que extraen hechos, los actualizan, los organizan en grafos y los consolidan como
+lo haría un cerebro. Cada paso añade una llamada a un modelo que reescribe lo que se dijo, y la
+reescribe antes de que nadie haya hecho ninguna pregunta. En octubre de 2026, un artículo con un
+título provocador, [*Is Complex Agentic Memory Always Needed?*](https://arxiv.org/abs/2610.30755)
+(«¿siempre hace falta una memoria agéntica compleja?»), comparó doce de esos sistemas con la versión
+más ingenua posible: guardar las conversaciones tal cual y buscar en ellas con un buscador corriente.
+La ingenua quedó primera en seis de siete comparaciones.
+
+Lo que sigue explica para qué necesita memoria un agente, qué tipos de memoria hay, cómo funciona por
+dentro un sistema de memoria, cómo ha evolucionado la idea desde 2023, cómo se mide, qué encontró ese
+artículo y dónde la estructura sigue ayudando.
+
+## Lo que un modelo no recuerda
+
+Un modelo de lenguaje no recuerda nada entre una petición y la siguiente. Cada vez que se le pide
+algo, lee un texto y escribe una respuesta, y ahí acaba todo. Cuando un chat parece recordar lo que
+se dijo diez mensajes antes, es porque la aplicación le vuelve a mandar la conversación entera en
+cada turno. El modelo no lee palabras sino *tokens*, trozos de palabra (una página de texto son unos
+quinientos), y lo que cabe en una petición se llama su **ventana de contexto**. Cuando la
+conversación termina, no queda nada, salvo que alguien la haya guardado.
+
+Para un asistente que se usa una vez, eso basta. Para uno que acompaña a un equipo durante meses, no.
+Y menos para un **agente**, un modelo que encadena pasos y usa herramientas por su cuenta para
+completar una tarea, porque sus tareas duran más que una conversación y lo que aprende en una le
+sirve en la siguiente.
+
+La solución obvia es mandarle todo lo anterior en cada petición. Tiene tres problemas. El primero es
+el tamaño: si Lucía tiene tres conversaciones al día de unos 3 000 tokens, en un año de trabajo son
+cerca de dos millones, más de lo que admite la ventana de casi cualquier modelo. El segundo es el
+coste: cada pregunta pagaría por leer todo el historial, lo necesite o no. Y el tercero es que caber
+no es lo mismo que leerse bien. [LongMemEval](https://arxiv.org/abs/2410.10813), el banco de pruebas
+de memoria más usado, comprobó en 2024 que los modelos con ventanas largas acertaban entre un 30 % y
+un 60 % menos cuando leían un historial de unos 115 000 tokens que cuando leían sólo las sesiones
+que contenían la respuesta. Por qué pasa, y cuánto se puede abaratar leerlo todo, lo cuenta
+[este artículo sobre la generación aumentada por caché](/blog/cuando-no-hace-falta-buscar).
+
+Así que el historial se guarda fuera del modelo y, en cada pregunta, se le trae lo que hace falta.
+Eso es una **memoria** para un agente. Y en su mecánica no es más que el patrón RAG
+(*Retrieval-Augmented Generation*, generación aumentada por recuperación): buscar los fragmentos que
+más se parecen a la pregunta y pasárselos al modelo junto con ella, como explica
+[este artículo sobre el RAG y sus variantes](/blog/de-rag-a-rag-agentico). Pero el material es
+distinto del de un RAG sobre documentos, en cuatro cosas.
+
+**Lo escribe el agente.** Los documentos de una empresa los redacta alguien, con títulos y una
+estructura pensada para leerse. La memoria sale de conversaciones: frases a medias, temas mezclados,
+un dato importante en la última línea de una charla sobre otra cosa.
+
+**Crece cada día.** Un corpus de documentos se renueva de vez en cuando. Una memoria suma cada
+conversación, para siempre.
+
+**Cambia.** Una colección de documentos suele guardar la versión vigente de cada uno. Un historial
+guarda todas las versiones de cada hecho, en el orden en que se dijeron: el acuerdo de marzo y su
+final en junio. Saber cuál vale exige saber cuándo se dijo cada cosa.
+
+**Importa quién lo dijo.** No es lo mismo que Lucía cuente algo a que lo diga el propio asistente,
+que puede haberse equivocado. LongMemEval mide por separado las dos cosas.
+
+## Cuatro memorias
+
+En 2023, cuatro investigadores de la Universidad de Princeton propusieron
+[CoALA](https://arxiv.org/abs/2309.02427) (*Cognitive Architectures for Language Agents*), un marco
+para describir agentes construidos sobre modelos de lenguaje. Tomaron de la psicología cognitiva, y
+de las arquitecturas cognitivas que la inteligencia artificial construyó a partir de ella desde los
+años ochenta, cuatro tipos de memoria. Hoy los usa casi todo el mundo.
+
+| Memoria | Qué guarda | En Albarán | Dónde suele vivir |
+|---|---|---|---|
+| De trabajo | lo que está activo ahora | la conversación en curso, el resultado de la última búsqueda | el contexto |
+| Episódica | lo vivido: qué pasó, cuándo, con quién | la conversación del 18 de junio | un almacén externo |
+| Semántica | lo que se sabe del mundo y de uno mismo | «Talleres Ruiz tiene el plan Equipo» | un almacén externo, o los pesos |
+| Procedimental | cómo se hacen las cosas | «antes de responder sobre un reembolso, comprueba el plan del cliente» | los pesos, el código, las instrucciones |
+
+La **memoria de trabajo** es lo que el agente tiene delante en este momento. En un agente sobre un
+modelo de lenguaje es, sobre todo, el contexto de la petición, y es pequeña y cara. La **episódica**
+guarda experiencias concretas, con su momento y sus protagonistas. La **semántica** guarda
+conocimiento general, ya separado de la situación en la que se aprendió. Y la **procedimental**
+guarda maneras de hacer: parte está en los pesos del modelo, aprendida al entrenarse, y parte en el
+código del agente y en sus instrucciones. CoALA advierte de que dejar que un agente reescriba su
+memoria procedimental es lo más arriesgado de las cuatro, porque puede introducir errores o saltarse
+lo que pretendían quienes lo diseñaron.
+
+Hay tres sitios donde poner todo eso: en los pesos, en el contexto o en un almacén externo. Los pesos
+son el sitio equivocado para hechos concretos: cambiarlos exige volver a entrenar, y no hay forma de
+comprobar qué ha aprendido el modelo exactamente. El contexto es la memoria de trabajo, y no da para
+más. Lo demás va a un almacén externo, y ahí está todo el diseño: qué se escribe en él y cómo se lee.
+
+El fallo de Talleres Ruiz tiene un nombre en este vocabulario. La conversación del 18 de junio era
+un episodio, y la memoria la convirtió en un hecho semántico: se quedó con el contenido y tiró el
+momento y la relación con lo que ya sabía. Buena parte de la investigación en memoria para agentes
+trata de esa conversión, de lo episódico a lo semántico, y de cuándo compensa hacerla.
+
+## Escribir, guardar, leer y mantener
+
+Cualquier sistema de memoria, por complejo que sea, toma cuatro decisiones. LongMemEval las describió
+como tres etapas (indexar, recuperar y leer); a eso hay que añadir el mantenimiento, lo que se hace
+con lo guardado a medida que llega información nueva.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/ciclo-de-memoria.svg"
+    alt="El ciclo de una memoria en cuatro decisiones, entre la conversación y el modelo. Escribir: qué se guarda de cada conversación, todo o sólo hechos extraídos o resúmenes. Guardar: en qué forma, fragmentos de texto, hechos sueltos, notas enlazadas, un grafo o varios niveles. Leer: cómo se encuentra lo necesario, por parecido, con recencia e importancia, con un reordenador o con un agente que busca. Lo que se lee entra en el contexto del modelo, que responde, y la respuesta vuelve a la conversación. Mantener actúa sobre lo guardado: añadir, actualizar, borrar o no hacer nada, consolidar y olvidar."
+    width="760"
+    height="272"
+  />
+  <figcaption>
+    Las cuatro decisiones de cualquier memoria. Los sistemas se distinguen por lo que hacen en
+    cada caja, y sobre todo por cuánto trabajo hacen antes de saber qué se va a preguntar.
+  </figcaption>
+</figure>
+
+### Escribir: qué se guarda
+
+La opción más sencilla es guardarlo todo, tal cual. La alternativa es que un modelo lea cada
+conversación y se quede con lo esencial: hechos sueltos, un resumen o una nota con palabras clave.
+Algunos sistemas puntúan además lo que guardan. Los agentes de
+[Generative Agents](https://arxiv.org/abs/2304.03442), el trabajo de Stanford y Google de 2023 que
+abrió el campo, le pedían al modelo que puntuase cada recuerdo de 1 a 10 según su importancia: en sus
+ejemplos, ordenar la habitación sacaba un 2, y pedirle una cita a alguien, un 8.
+
+Extraer tiene ventajas evidentes. Lo guardado ocupa menos, se lee más deprisa y se le puede dar
+estructura. Pero lo que se tira al escribir ya no se puede recuperar al leer, y se tira sin saber qué
+se va a preguntar. Uno de los artículos recientes sobre el tema lo resume diciendo que cada
+transformación es una apuesta que se hace antes de conocer la pregunta. La extracción de junio apostó
+a que lo importante era «vuelve a las condiciones normales», y la pregunta de septiembre necesitaba
+«los 60 días».
+
+### Guardar: en qué forma
+
+Lo escrito puede guardarse como fragmentos de texto, cada uno con su fecha; como hechos sueltos, cada
+uno convertido en un vector que representa su significado (un *embedding*), para buscar por parecido;
+como notas enlazadas entre sí; como un grafo de entidades y relaciones; o en varios niveles, unos
+más a mano que otros. Los grafos que guardan relaciones con fecha, en lugar de borrar las viejas,
+tienen su propio apartado en [este artículo sobre GraphRAG](/blog/cuando-hace-falta-graphrag).
+
+### Leer: cómo se encuentra
+
+Para leer hay que encontrar, y la forma más común es buscar por parecido: convertir la pregunta en un
+embedding y traer los recuerdos más cercanos. Generative Agents añadía dos criterios más. La puntuación de
+cada recuerdo era la suma de tres números entre 0 y 1: lo **reciente** que era (con un decaimiento
+exponencial de 0,995 por cada hora de juego desde la última vez que se recordó), lo **importante**
+que era (la nota de 1 a 10) y lo **relevante** que era para la situación (el parecido entre
+embeddings). Los tres con el mismo peso.
+
+Sobre esa base caben refinamientos. Un **reordenador** (*reranker*) es un segundo modelo que lee la
+pregunta y cada candidato juntos, en lugar de comparar dos vectores calculados por separado, y los
+ordena mejor, a cambio de ser más lento: por eso se le pasan sólo los primeros cien o doscientos. Las
+preguntas con referencias temporales («lo que hablamos la semana pasada») se pueden resolver
+restringiendo la búsqueda a un intervalo de fechas. Y en lugar de buscar siempre de la misma forma,
+se le puede dar al modelo la búsqueda como una herramienta, para que decida cuándo buscar y qué.
+
+### Mantener: actualizar, consolidar y olvidar
+
+Si la memoria guarda hechos, alguien tiene que mantenerlos al día. El diseño más extendido es el de
+[Mem0](https://arxiv.org/abs/2504.19413), una empresa y una biblioteca de código abierto que publicó
+su método en 2025. Después de extraer los hechos de una conversación, busca, para cada uno, los
+recuerdos guardados que más se le parecen, y le pide a un modelo que elija una de cuatro operaciones:
+añadirlo (ADD), actualizar uno existente (UPDATE), borrar uno que el hecho nuevo contradice (DELETE)
+o no hacer nada (NOOP).
+
+```python
+# Pseudocódigo: el mantenimiento al estilo de Mem0
+def guardar(conversacion):
+    for hecho in modelo.extraer_hechos(conversacion):
+        parecidos = memoria.buscar(embeber(hecho))
+        operacion = modelo.decidir(hecho, parecidos)   # ADD, UPDATE, DELETE o NOOP
+        memoria.aplicar(operacion)
+```
+
+Es lo que falló en Albarán. Para borrar o corregir «60 días de reembolso» al leer «vuelve a las
+condiciones normales», el modelo tenía que saber que los 60 días dependían del acuerdo: una relación
+entre dos hechos que no estaba escrita en ninguno de los dos. Sin ella, la operación razonable era
+ADD.
+
+Hay otras dos formas de mantenimiento. **Consolidar** es resumir muchos recuerdos en uno de más alto
+nivel. Generative Agents lo hacía cuando la suma de importancias de lo último que un agente había
+vivido pasaba de 150: entonces generaba **reflexiones** («a Klaus le apasiona la investigación»),
+que se guardaban como un recuerdo más y podían, a su vez, alimentar otras reflexiones. **Olvidar** es
+dejar que los recuerdos pierdan peso con el tiempo:
+[MemoryBank](https://arxiv.org/abs/2305.10250), también de 2023, aplicaba la curva del olvido de
+Ebbinghaus, con recuerdos que se desvanecen salvo que se usen, y se refuerzan cuando se usan. Olvidar
+también es a veces una obligación, cuando alguien pide que se borren sus datos, y eso se complica
+cuando lo que hay que borrar se ha copiado ya en hechos, resúmenes y reflexiones.
+
+## De Smallville a los sistemas operativos de memoria
+
+La memoria para agentes basados en modelos de lenguaje tiene apenas tres años y medio. Lo que sigue es
+su historia en cuatro etapas, con los trabajos que se citan una y otra vez.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/linea-de-tiempo.svg"
+    alt="Línea de tiempo de 2023 a 2026. Encima del eje, los sistemas de memoria: Generative Agents en abril de 2023, MemoryBank en mayo, MemGPT en octubre; Zep en enero de 2025, A-MEM en febrero, Mem0 en abril, MemOS en mayo, Memory-R1 en agosto; ReFind en agosto de 2026 y Raw-RAG en octubre. Debajo, marcos, bancos de pruebas y productos: CoALA en septiembre de 2023; LoCoMo y la memoria de ChatGPT en febrero de 2024, LongMemEval en octubre; MemoryAgentBench en julio de 2025, la búsqueda de chats de Claude en agosto y la herramienta de memoria de la API de Anthropic en septiembre; MEME en mayo de 2026."
+    width="760"
+    height="296"
+  />
+  <figcaption>
+    Tres años y medio de memoria para agentes. Hasta 2025, cada sistema añadía estructura; desde
+    entonces, una parte del campo vuelve a guardar las conversaciones tal cual.
+  </figcaption>
+</figure>
+
+### 2023: las ideas
+
+**Generative Agents** puso en abril veinticinco agentes a vivir en Smallville, un pueblo inspirado en
+el videojuego *Los Sims*. Cada agente tenía un **registro de memoria** (*memory stream*) con todo lo
+que observaba, escrito en lenguaje natural, la puntuación de recencia, importancia y relevancia para
+recuperarlo, y las reflexiones para resumirlo. Casi todo lo que vino después es una variación de
+alguna de esas tres piezas. El mismo año, [Reflexion](https://arxiv.org/abs/2303.11366) guardó como
+memoria episódica las reflexiones de un agente sobre sus propios fallos, para no repetirlos en el
+intento siguiente, y [Voyager](https://arxiv.org/abs/2305.16291), un agente que jugaba a *Minecraft*,
+guardó como memoria procedimental una biblioteca de habilidades: programas que había escrito y le
+habían funcionado.
+
+En octubre, un grupo de la Universidad de California en Berkeley publicó
+[MemGPT](https://arxiv.org/abs/2310.08560), la idea más influyente del año. Trataba el contexto del
+modelo como la memoria principal de un ordenador, la RAM, y el almacén externo como el disco, y le
+daba al propio modelo funciones para mover datos entre los dos. El contexto se dividía en tres
+partes: instrucciones fijas, un bloque de texto que sólo el modelo podía editar, con llamadas a
+funciones, y una cola con los últimos mensajes. Cuando el contexto pasaba del 70 % de la ventana, el
+sistema añadía un aviso de «presión de memoria» para que el modelo guardase lo importante. Al llegar
+al 100 %, sacaba de la cola una parte de los mensajes, por ejemplo la mitad de la ventana, los
+resumía junto con el resumen anterior, y los mandaba a un almacén donde seguían disponibles para
+buscarlos. El proyecto siguió después como empresa, con el nombre de Letta.
+
+### 2024: los productos y los bancos de pruebas
+
+En febrero de 2024, OpenAI empezó a probar una memoria en ChatGPT, que en septiembre llegó a todos
+sus usuarios: el asistente guardaba datos sobre la persona («tiene dos hijos», «prefiere Python») y
+los ponía en el contexto de cada conversación nueva. El mismo febrero se publicó
+[LoCoMo](https://arxiv.org/abs/2402.17753), el primer banco de pruebas de conversaciones largas, y en
+octubre, LongMemEval. Las dos secciones siguientes vuelven sobre ellos.
+
+### 2025: la memoria como capa
+
+En 2025, la memoria se convirtió en una pieza de infraestructura que se compra o se instala, con
+empresas dedicadas. En enero, [Zep](https://arxiv.org/abs/2501.13956) la organizó como un grafo de
+conocimiento con fechas. En febrero, [A-MEM](https://arxiv.org/abs/2502.12110), de la Universidad
+Rutgers, la organizó como un fichero de notas enlazadas al estilo *Zettelkasten*, el método de
+notas de un sociólogo alemán: cada recuerdo nuevo se escribe como una nota con descripción, palabras
+clave y etiquetas, se enlaza con las notas parecidas y puede hacer que éstas se reescriban.
+
+En abril, Mem0 publicó su método de extraer y mantener hechos, y lo midió en LoCoMo. Su tabla
+principal dice más que su resumen. Mem0 acertaba un 66,88 % según un modelo que hacía de juez, frente
+al 52,90 % de la memoria de ChatGPT. Pero darle al modelo la conversación entera, unos 26 000 tokens,
+acertaba un 72,90 %: más que cualquier memoria. Lo que Mem0 ganaba era velocidad y coste. En el
+percentil 95, la respuesta con la conversación entera tardaba 17,1 segundos, y con Mem0, 1,44.
+
+En mayo, MemOS presentó la memoria como un sistema operativo propio, y en agosto,
+[Memory-R1](https://arxiv.org/abs/2508.19828), de la Universidad Ludwig Maximilian de Múnich y otros
+centros, atacó el punto débil del mantenimiento: entrenó con aprendizaje por refuerzo al modelo que
+elige entre añadir, actualizar, borrar o nada, premiándolo cuando la respuesta final era correcta. Su
+ejemplo es el fallo de Talleres Ruiz en pequeño: alguien cuenta que ha adoptado un perro, Buddy, y
+más tarde que ha adoptado otro, Scout. Un modelo sin entrenar lo interpreta como una contradicción:
+borra el primer recuerdo y añade el segundo, y la memoria se queda con un solo perro. El modelo
+entrenado hace una sola actualización: «Andrew ha adoptado dos perros, Buddy y Scout».
+
+Los productos se separaron en dos filosofías. En abril, ChatGPT empezó a consultar también todas las
+conversaciones anteriores, además de los datos guardados. En agosto, Claude, el asistente de
+Anthropic, recibió una memoria opuesta: dos herramientas que el modelo llama cuando cree que le hacen
+falta, una para buscar en las conversaciones anteriores y otra para traer las más recientes, sin
+perfil ni resumen previo y con cada búsqueda visible para quien lo usa. En septiembre llegó también
+una memoria con un resumen que se puede ver y editar, primero para empresas y en octubre para los
+planes individuales de pago. Y a finales de septiembre, Anthropic añadió a su API una herramienta de memoria que
+consiste en archivos: el modelo crea, lee y edita ficheros en un directorio que guarda quien desarrolla
+la aplicación. Los agentes de programación llevaban tiempo haciendo algo parecido, con archivos de
+instrucciones que escriben las personas y, cada vez más, el propio agente: memoria procedimental en
+texto plano.
+
+### 2026: la proliferación, y la vuelta atrás
+
+En 2026 se multiplicaron los sistemas con nombre de sistema operativo, como EverMemOS, MemMachine o
+Memora, cada uno con su estructura y sus resultados. Pero también aparecieron los primeros trabajos
+que preguntaban cuánta de esa estructura hacía falta.
+[ReFind](https://arxiv.org/abs/2608.12888), en agosto, no construía nada: le daba a un agente una
+búsqueda por palabras sobre las conversaciones sin modificar, con controles pensados para chats
+(agrupar por sesión, ampliar el contexto de un resultado, acotar por fechas, no releer lo ya leído).
+Sobre unas 2 800 preguntas de recuperación precisa y de seguimiento de hechos, acertaba un 58,2 %, por
+delante del 53,2 % del mejor sistema con grafos, y en la versión corta de LongMemEval llegaba al
+93,2 %. En octubre llegó
+el artículo de este texto.
+
+El campo se ha movido en dos direcciones a la vez. Una añade estructura: grafos, notas, sistemas
+operativos, mantenimiento aprendido. La otra la quita: las búsquedas de Claude sobre chats sin
+resumir, MemMachine, que conserva el texto original junto a lo que deriva de él, ReFind y el RAG
+ingenuo de octubre. Para saber cuál tiene razón hay que ver primero cómo se mide.
+
+## Cómo se mide una memoria
+
+Un banco de pruebas de memoria es un historial largo de conversaciones y una lista de preguntas
+cuya respuesta está en él. Los cuatro que importan para este artículo miden cosas distintas.
+
+**LoCoMo** (2024), en la versión publicada, tiene diez conversaciones muy largas entre dos personas ficticias, de unas 300
+intervenciones y hasta 35 sesiones cada una. Las escribieron agentes con una personalidad y una
+lista de acontecimientos, y las corrigieron personas para que fuesen coherentes. Las preguntas son de
+un salto (un dato), de varios saltos (combinar datos de sesiones distintas), temporales y de dominio
+abierto. Es el banco de pruebas que más sistemas citan, y también el más fácil: una conversación
+entera cabe en la ventana de cualquier modelo actual.
+
+**LongMemEval** (2024) tiene 500 preguntas, cada una con su propio historial, que miden cinco
+capacidades: extraer un dato, razonar sobre varias sesiones, razonar sobre el tiempo, quedarse con
+la información actualizada cuando algo cambia y abstenerse cuando la respuesta no está. La versión
+corta tiene unos 115 000 tokens por pregunta; la larga, 500 sesiones y cerca de millón y medio. Sus
+autores no se limitaron a medir: probaron cada decisión de diseño de una memoria. Guardar las
+conversaciones por rondas (una pregunta y su respuesta) funcionaba mejor que por sesiones enteras.
+Sustituir los mensajes por resúmenes o hechos extraídos empeoraba las respuestas, por la información
+que se perdía, salvo en las preguntas que cruzan varias sesiones. Y usar los hechos extraídos no como
+contenido sino como **claves** de búsqueda, que apuntan al mensaje original, mejoraba la búsqueda un
+9,4 % y los aciertos un 5,4 %. En 2024, el banco de pruebas más citado ya decía que los hechos
+sirven para encontrar, no para sustituir.
+
+[**MemoryAgentBench**](https://arxiv.org/abs/2507.05257) (2025), de la Universidad de California en
+San Diego, mide cuatro competencias: recuperar con precisión, aprender durante el uso (aplicar
+ejemplos vistos en la conversación, sin cambiar los pesos), entender un texto largo en su conjunto y
+resolver conflictos entre información vieja y nueva.
+
+[**MEME**](https://arxiv.org/abs/2605.12477) (2026), de un grupo con investigadores de KAIST y de la
+Universidad de Tubinga, mide lo que los demás apenas tocaban: hechos que cambian y que dependen unos de
+otros. Tiene seis tareas, y dos son exactamente el caso de Talleres Ruiz. En una **cascada**, un hecho
+cambia y hay que aplicar una regla para deducir el valor nuevo de otro que dependía de él. En una
+**ausencia**, un hecho cambia y hay que reconocer que el valor que dependía de él ya no es fiable,
+aunque nadie haya dicho cuál es el nuevo. Los seis sistemas de memoria que probaron se hundieron: un
+3 % de aciertos de media en las cascadas y un 1 % en las ausencias. Sólo un agente que guardaba la
+memoria en archivos, con Claude Opus 4.7 como modelo, cerraba parte de la distancia, a unas setenta
+veces el coste.
+
+Hay que leer estos números con las precauciones de cualquier banco de pruebas, que se cuentan en
+[este artículo sobre lo que mide de verdad un banco de pruebas](/blog/bancos-de-pruebas). Las
+conversaciones son sintéticas. Muchas respuestas las puntúa otro modelo que hace de juez. Las
+colecciones son pequeñas: LoCoMo son diez conversaciones. Y hay un problema propio de este campo: cada
+sistema publica sus números junto a los de los demás, configurados por él. Cuando Mem0 se comparó con
+un RAG, el RAG recuperaba uno o dos fragmentos por pregunta, y no pasaba del 61 %.
+
+## ¿Hace falta tanta maquinaria?
+
+El artículo que motiva éste es de Zhengye Bao, Shengtao Zhang, Haokai Zhang, Shiqi Lou, Muning Wen y
+Minnan Luo, y se publicó el 22 de octubre de 2026. Su pregunta es la del título: cuándo hace falta la
+complejidad añadida de las memorias agénticas. Para contestarla, montaron la versión más simple que se
+les ocurrió y la llamaron **Raw-RAG**, RAG sobre el historial en bruto.
+
+### El RAG ingenuo, bien hecho
+
+Raw-RAG no usa ningún modelo para escribir. Cada conversación se guarda como texto, con la fecha de
+cada mensaje (y, si hay imágenes, su descripción), se corta en ventanas de 256 tokens que se solapan
+en 32, y cada ventana se convierte en un embedding. Al preguntar, se buscan las 128 ventanas más
+parecidas a la pregunta, un reordenador elige las 15 mejores, y el modelo que responde, al que llaman
+el **lector**, las recibe junto con la pregunta. Es el lector, y no la memoria, el que tiene que
+averiguar qué pasó antes, qué cambió y qué vale ahora.
+
+```python
+# Al guardar: nada que decidir
+def guardar(mensaje, fecha, autor):
+    historial.append(f"[{fecha}] {autor}: {mensaje}")
+    indice.actualizar(ventanas(historial, tokens=256, solape=32))
+
+# Al preguntar
+def recordar(pregunta):
+    candidatas = indice.buscar(embeber(pregunta), k=128)
+    mejores = reordenador.ordenar(pregunta, candidatas)[:15]
+    return modelo(prompt(pregunta, mejores))
+```
+
+Comparado con el pseudocódigo de Mem0, lo que desaparece es todo lo que ocurre al guardar. Lo que se
+añade, frente a muchos RAG de referencia de artículos anteriores, son dos cosas: buscar bastante
+(128 candidatas, no una o dos) y un reordenador. Los autores repasaron catorce trabajos y
+encontraron que varios de sus RAG de referencia cortaban el texto en fragmentos demasiado grandes,
+recuperaban demasiado pocos o no reordenaban.
+
+### Los resultados
+
+Lo compararon con doce sistemas (EverMemOS, MemOS, EMem, SimpleMem, MemU, MemMachine, Mem0, Memora,
+Nemori, MemoryOS, A-MEM y RecMem) en LoCoMo, LongMemEval, MEME y MemoryAgentBench, con varios modelos
+como lector: GPT-4o-mini y GPT-4.1-mini, de OpenAI, y DeepSeek-V4-Flash. En LoCoMo y LongMemEval
+reprodujeron las condiciones de las comparaciones publicadas; en MEME y MemoryAgentBench ejecutaron
+todos los sistemas con el mismo procedimiento.
+
+| Banco de pruebas | Lector | Raw-RAG | Mejor sistema de memoria | Diferencia |
+|---|---|---|---|---|
+| LoCoMo | GPT-4o-mini | 89,07 | MemMachine, 88,12 | +0,95 |
+| LoCoMo | GPT-4.1-mini | 93,70 | EverMemOS, 93,05 | +0,65 |
+| LongMemEval | GPT-4.1-mini | 87,53 | Memora, 87,40 | +0,13 |
+| MEME | GPT-4o-mini | 39,30 | MemMachine, 37,06 | +2,24 |
+| MEME | DeepSeek-V4-Flash | 43,19 | MemMachine, 44,71 | −1,52 |
+| MemoryAgentBench | GPT-4o-mini | 48,32 | Memora, 43,84 | +4,48 |
+| MemoryAgentBench | DeepSeek-V4-Flash | 53,41 | Memora, 47,88 | +5,53 |
+
+Raw-RAG gana en seis de los siete casos. En LoCoMo y LongMemEval por poco, menos de un punto, lo que
+quiere decir que esos dos bancos ya no distinguen bien entre sistemas. En los dos más difíciles, por
+más: hasta cinco puntos y medio en MemoryAgentBench. Y pierde en uno, MEME con DeepSeek, donde además
+darle al lector el historial entero saca casi veinte puntos más que cualquier memoria.
+
+### Por qué gana
+
+Lo más interesante del artículo no es la tabla sino la explicación. Una respuesta correcta exige dos
+cosas: que la memoria le traiga al lector la evidencia suficiente, y que el lector la use bien. Los
+autores midieron las dos por separado. La **cobertura** es el porcentaje de preguntas para las que
+la memoria trae evidencia suficiente para responder. El **uso** es el porcentaje de esas preguntas
+que el lector acierta.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/cobertura-y-uso.svg"
+    alt="Dos gráficos de puntos, uno por banco de pruebas, con un punto por sistema de memoria. El eje horizontal es la cobertura, el porcentaje de preguntas para las que el sistema recupera evidencia suficiente, y el vertical, el uso, el porcentaje de esas preguntas que el lector acierta. En MemoryAgentBench, la cobertura va del 19,07 % de MemU al 45,29 % de Raw-RAG, y el uso, sólo del 80 % de EverMemOS al 89,71 % de EMem; Raw-RAG queda en 84,43 %. En MEME, la cobertura va del 35,69 % de MemU al 76,35 % de Raw-RAG, y el uso, del 65,51 % de Mem0 al 86,55 % de EMem; Raw-RAG queda en 73,76 %. En los dos, Raw-RAG es el punto más a la derecha sin ser el más alto."
+    width="760"
+    height="286"
+  />
+  <figcaption>
+    Los sistemas se distinguen mucho más en lo que encuentran que en cómo lo usan. Raw-RAG no es el
+    que mejor usa la evidencia, pero es el que más veces la tiene.
+  </figcaption>
+</figure>
+
+En MemoryAgentBench, la cobertura de los sistemas va del 19 % al 45 %, y el uso, sólo del 80 % al
+90 %. En MEME, la cobertura varía 41 puntos, y el uso, 21. Los sistemas se diferencian sobre todo en
+si encuentran lo necesario, y Raw-RAG es el que más lo encuentra en los dos. Sus lectores usan la
+evidencia algo peor que los de otros sistemas, quizá porque leen texto en bruto y no hechos limpios,
+pero la tienen más veces, y eso pesa más.
+
+La segunda explicación es la que más se parece a Talleres Ruiz. En MEME, para saber el valor actual
+de algo no basta con encontrar el valor: hace falta el **camino** que lleva a él, el orden de los
+cambios o la regla que une un hecho con otro. Entre las preguntas en las que cada sistema encontraba
+el valor buscado, Raw-RAG traía también el camino completo en el 62,34 %, MemMachine (que también
+conserva el texto original) en el 56,70 %, y MemU, que lo transforma todo, en el 9,62 %. Un hecho
+extraído puede conservar el valor, «60 días», y perder el camino: de dónde venía y qué lo anuló.
+
+La tercera explicación es la más difícil de esquivar. Los autores dieron a cada sistema el mejor
+acceso posible a lo que tenía guardado: eligieron, sabiendo la respuesta, lo más útil de todo su
+almacén, para descartar que el problema fuese la búsqueda. Los dos sistemas que guardan el texto
+original, Raw-RAG y MemMachine, llegaban al 57,54 % y al 57,46 % en MEME, cerca del 61,60 % que
+sacaba el lector con la evidencia original exacta. Los que lo transforman se quedaban, con el mismo
+acceso perfecto y sin límite de espacio, entre 7,58 y 29,38 puntos por debajo. Lo que se pierde al
+escribir no lo recupera ninguna búsqueda.
+
+### Lo que no hacen las actualizaciones
+
+Antes de todo eso, los autores auditaron a Mem0. En LoCoMo, de 33 902 decisiones de escritura, sólo
+el 4,39 % fueron actualizaciones o borrados; en LongMemEval, el 2,46 % de 428 858. Muchas estaban
+repetidas o mal formadas, y las que cambiaban de verdad algún texto guardado eran el 1,90 % y el
+1,34 %. Luego probaron a prohibirlas: convertir cada actualización en un añadido y cada borrado en
+nada. La precisión en LoCoMo subió del 67,36 % al 69,42 %, y no bajó en ninguna categoría. Las
+preguntas temporales ganaron 3,32 puntos. Sin actualizaciones, la memoria guarda todas las versiones,
+y el lector puede ver cuál es la última.
+
+¿Y si al lector le cuesta resolver los cambios? Para comprobarlo le dieron, en MEME, exactamente los
+mensajes que necesitaba, en orden, sin errores de búsqueda. DeepSeek-V4-Flash acertaba el 82,32 % de
+las cascadas y el 91,54 % de las ausencias. GPT-4o-mini, el 1,83 % de las cascadas. Un lector capaz
+resuelve los cambios a partir del texto; uno flojo no, aunque lo tenga delante.
+
+### Lo que no hace la estructura
+
+Sobre el propio Raw-RAG, probaron a añadir lo que añaden los sistemas complejos, sin tocar nada más,
+en MemoryAgentBench. Sustituir las ventanas por hechos atómicos bajó el resultado 19,62 puntos.
+Añadir resúmenes lo bajó 5,81, y ampliar la búsqueda siguiendo un grafo, 5,78. En sentido contrario,
+quitar el reordenador costaba 3,92 puntos, y traer un solo elemento en lugar de quince, 11,73. Lo que
+importa es buscar bien y traer bastante; el tamaño exacto de las ventanas, de 128 a 1 024 tokens, no
+cambiaba nada.
+
+Y luego está el coste. En diez episodios de MEME, preparar la memoria y responder 110 preguntas le
+llevó a Raw-RAG 306 segundos, sin contar la escritura de las respuestas. Al siguiente más rápido,
+EMem, 1 562, cinco veces más. A EverMemOS, 9 301, treinta veces más. Con una conversación de 1 710
+mensajes que se acerca al millón de tokens, guardarla le costó a Raw-RAG 0,33 horas, y a Memora,
+26,95. Escribir con un modelo es caro, y la memoria compleja lo hace con cada mensaje.
+
+## Dónde sí ayuda la estructura
+
+El artículo no dice que las memorias complejas no sirvan, y sus propios datos señalan dónde pueden
+hacerlo.
+
+**Con lectores débiles.** Raw-RAG deja todo el trabajo de reconstruir el estado al lector, y la
+diferencia entre DeepSeek y GPT-4o-mini en las cascadas, del 82 % al 2 %, dice cuánto depende de él.
+Un sistema que mantiene el estado al escribir hace ese trabajo una vez, en lugar de en cada pregunta,
+y puede ayudar a un modelo pequeño. Los autores lo dejan como pregunta abierta.
+
+**En lo que el bruto hace peor.** En LongMemEval, Memora gana a Raw-RAG en las preguntas de
+información actualizada (97,40 frente a 91,03) y en las temporales (89,50 frente a 81,45). Y en las
+tareas de borrado de MEME, en las que alguien pide que se olvide un dato y luego se pregunta por él,
+Raw-RAG queda por detrás de varios sistemas, y es fácil ver por qué: el texto original sigue
+conteniendo lo que se pidió olvidar, y el lector lo encuentra.
+
+**En el estado que usan otros.** Los bancos de pruebas sólo preguntan. Una memoria en producción
+puede tener que darle a otra herramienta el valor vigente de algo, disparar una acción cuando algo
+cambia o borrar de verdad un dato. Para eso hace falta un estado explícito, no un historial que
+interpretar.
+
+**En lo que no se probó.** Las pruebas son conversaciones grabadas, sin agentes que actúen en un
+entorno. No hay memoria procedimental, como la biblioteca de habilidades de Voyager, ni
+historiales de varios años, ni almacenamiento limitado. Un historial en bruto crece sin parar, y cada
+pregunta paga otra vez por razonar sobre él.
+
+**Y en la privacidad.** Guardarlo todo tal cual es guardar también lo que nunca debió guardarse. Los
+autores lo mencionan como límite. Una memoria de hechos puede, al menos en teoría, quedarse sólo con
+lo necesario; un historial en bruto exige decidir aparte qué se conserva, cuánto tiempo y quién lo
+puede leer.
+
+## Lo que viene
+
+Con el artículo de octubre y ReFind, de agosto, empieza a dibujarse un consenso, y tiene cuatro
+partes.
+
+**El RAG ingenuo, bien hecho, es la referencia.** La conclusión del artículo es una exigencia de
+método: cualquier sistema de memoria nuevo debería demostrar que gana a un RAG sobre el historial en
+bruto, con una búsqueda amplia y un reordenador, y explicar qué aporta su complejidad. Hasta ahora,
+varios se comparaban con un RAG que traía uno o dos fragmentos.
+
+**El texto original es la fuente de verdad, y lo derivado, un índice.** Es lo que LongMemEval medía en
+2024 y lo que hacen MemMachine y las búsquedas de Claude: los hechos, los resúmenes y los grafos sirven
+para encontrar, pero cada uno apunta al mensaje del que salió, y el lector lee el mensaje. Así, una
+extracción equivocada hace que algo cueste más de encontrar, pero no lo borra.
+
+**El agente decide cómo buscar.** MemGPT ya le daba al modelo funciones para gestionar su memoria, y
+ReFind y la memoria de Claude le dan una búsqueda sobre el historial. Con modelos cada vez mejores
+usando herramientas, buscar en varias rondas, acotar por fechas o leer la conversación alrededor de un
+resultado son decisiones que el modelo puede tomar en el momento, cuando ya conoce la pregunta. Es la
+misma evolución que llevó del RAG ingenuo al agéntico.
+
+**El estado que manda no va en la memoria.** El acuerdo de Talleres Ruiz no debería haber vivido nunca
+en la memoria de un asistente. Un acuerdo comercial con un cliente es un dato de la empresa, y su
+sitio es el sistema donde se gestionan los clientes, de donde el asistente lo consultaría con una
+herramienta y donde comercial lo habría dado de baja en junio. La memoria es buena para lo que se
+dijo; para lo que es, hay una base de datos.
+
+Queda abierta la pregunta de la escala. Con ventanas de contexto cada vez más largas y la caché que
+abarata releer, darle al modelo el historial entero gana terreno donde cabe, como enseñó el resultado
+de MEME con DeepSeek. Con historiales de años, ninguna ventana basta, y hará falta saber si un índice
+derivado bien hecho, o un mantenimiento aprendido como el de Memory-R1, compensan su coste frente a
+buscar mejor en el texto original. Los bancos de pruebas actuales todavía no son lo bastante largos
+para decirlo.
+
+## Cuándo usar cada una
+
+La elección no depende del nombre del sistema, sino de qué hay que recordar y para qué.
+
+| Si lo que hay que recordar… | En Albarán | Usa |
+|---|---|---|
+| es lo que se dijo en conversaciones | lo que Lucía le ha contado de cada cliente | el historial en bruto, con fecha y autor, una búsqueda amplia y un reordenador |
+| es un estado que otros sistemas también usan | el plan, los cobros, el acuerdo de Talleres Ruiz | su propio sistema, consultado con una herramienta; no la memoria |
+| es una preferencia estable que se aplica siempre | Lucía prefiere respuestas cortas, con el apartado citado | un perfil breve, visible y editable, en las instrucciones |
+| es un procedimiento | cómo se tramita un reembolso | un archivo de instrucciones que alguien revisa |
+| cruza muchas conversaciones | ¿cuántas veces ha salido el fallo de exportación desde julio? | hechos o resúmenes como índice, apuntando a los mensajes originales |
+| tiene que poder olvidarse | un cliente pide que se borren sus datos | borrarlo del historial y de todo lo que se derivó de él |
+
+Antes de construir nada más complejo, conviene hacer la prueba que propone el artículo: toma cincuenta
+preguntas reales, que incluyan cosas que cambiaron con el tiempo, y compara tu memoria con un RAG
+sobre el historial en bruto, con el mismo modelo como lector. Si el RAG acierta lo mismo, quédate con
+él. Si falla, mira por qué: si no encontró el mensaje, el problema es la búsqueda; si lo encontró y
+el lector no lo entendió, el problema es el lector.
+
+## Qué te llevas
+
+Si te llevas una sola cosa, que sea ésta: **una memoria para agentes es un RAG sobre lo que el agente
+ha vivido, y casi toda su complejidad consiste en transformar lo vivido antes de saber qué se va a
+preguntar.** Cada transformación es una apuesta, y en las comparaciones de 2026 la mayoría pierde: lo
+que se tira al escribir no lo recupera ninguna búsqueda. Para Albarán, la memoria queda así.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/memoria-en-capas.svg"
+    alt="La memoria del asistente de Albarán en cuatro capas, de arriba abajo. Primera, las instrucciones y los procedimientos: un archivo de texto que el equipo revisa y que el asistente lee siempre. Segunda, el historial en bruto: todos los mensajes, con fecha y autor, la fuente de verdad, en la que se busca y se reordena. Tercera, un índice derivado: resúmenes y hechos extraídos que sirven para encontrar y apuntan al mensaje original, nunca lo sustituyen. Cuarta, fuera de la memoria: el estado que manda, como los planes, los cobros y los acuerdos comerciales, en sus sistemas, que el asistente consulta con una herramienta. A la derecha, el modelo lee las cuatro."
+    width="760"
+    height="236"
+  />
+  <figcaption>
+    El historial es la fuente de verdad; lo derivado sólo ayuda a encontrar. Y lo que manda, como el
+    acuerdo de Talleres Ruiz, se consulta donde vive, no se recuerda.
+  </figcaption>
+</figure>
+
+Y si te llevas tres cosas más, que sean prácticas.
+
+**Guarda lo que se dijo, con fecha y autor.** Si extraes hechos o resúmenes, úsalos para encontrar
+y haz que apunten al mensaje original. El lector tiene que poder leer qué se dijo y cuándo, porque
+de eso depende saber qué vale ahora.
+
+**Busca bastante y reordena.** La diferencia entre un RAG que pierde y uno que gana estaba en traer
+128 candidatos y quedarse con los 15 mejores, no en uno o dos. Antes de añadir estructura, comprueba
+que la búsqueda trae lo necesario.
+
+**Separa lo que se dijo de lo que es.** Las preferencias y los procedimientos, en texto visible y
+editable. Los datos que gobiernan el negocio, en sus sistemas. La memoria, para todo lo demás.

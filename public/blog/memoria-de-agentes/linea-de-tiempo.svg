@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 296" width="760" height="296" role="img"
+ aria-label="Línea de tiempo de 2023 a 2026. Encima del eje, los sistemas de memoria: Generative Agents en abril de 2023, MemoryBank en mayo, MemGPT en octubre; Zep en enero de 2025, A-MEM en febrero, Mem0 en abril, MemOS en mayo, Memory-R1 en agosto; ReFind en agosto de 2026 y Raw-RAG en octubre. Debajo, marcos, bancos de pruebas y productos: CoALA en septiembre de 2023; LoCoMo y la memoria de ChatGPT en febrero de 2024, LongMemEval en octubre; MemoryAgentBench en julio de 2025, la búsqueda de chats de Claude en agosto y la herramienta de memoria de la API de Anthropic en septiembre; MEME en mayo de 2026.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="20.0" y="18.0">SISTEMAS DE MEMORIA</text>
+<text class="hd" x="20.0" y="286.0">MARCOS, BANCOS DE PRUEBAS Y PRODUCTOS</text>
+<line x1="40" y1="140" x2="730" y2="140" stroke="#86948a" stroke-width="1.5"/>
+<line x1="40.0" y1="135" x2="40.0" y2="145" stroke="#86948a"/>
+<text class="sb" x="44.0" y="156.0" style="text-anchor:start">2023</text>
+<line x1="212.5" y1="135" x2="212.5" y2="145" stroke="#86948a"/>
+<text class="sb" x="216.5" y="156.0" style="text-anchor:start">2024</text>
+<line x1="385.0" y1="135" x2="385.0" y2="145" stroke="#86948a"/>
+<text class="sb" x="389.0" y="156.0" style="text-anchor:start">2025</text>
+<line x1="557.5" y1="135" x2="557.5" y2="145" stroke="#86948a"/>
+<text class="sb" x="561.5" y="156.0" style="text-anchor:start">2026</text>
+<line x1="90.3" y1="140" x2="90.3" y2="70.0" stroke="#3b3b3e"/>
+<text class="tx" x="94.3" y="66.0" style="text-anchor:start">Generative Agents</text>
+<circle cx="90.3" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="104.7" y1="140" x2="104.7" y2="98.0" stroke="#3b3b3e"/>
+<text class="tx" x="108.7" y="94.0" style="text-anchor:start">MemoryBank</text>
+<circle cx="104.7" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="176.6" y1="140" x2="176.6" y2="126.0" stroke="#3b3b3e"/>
+<text class="tx" x="180.6" y="122.0" style="text-anchor:start">MemGPT</text>
+<circle cx="176.6" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="392.2" y1="140" x2="392.2" y2="42.0" stroke="#3b3b3e"/>
+<text class="tx" x="396.2" y="38.0" style="text-anchor:start">Zep</text>
+<circle cx="392.2" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="406.6" y1="140" x2="406.6" y2="70.0" stroke="#3b3b3e"/>
+<text class="tx" x="410.6" y="66.0" style="text-anchor:start">A-MEM</text>
+<circle cx="406.6" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="435.3" y1="140" x2="435.3" y2="98.0" stroke="#3b3b3e"/>
+<text class="tx" x="439.3" y="94.0" style="text-anchor:start">Mem0</text>
+<circle cx="435.3" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="449.7" y1="140" x2="449.7" y2="126.0" stroke="#3b3b3e"/>
+<text class="tx" x="453.7" y="122.0" style="text-anchor:start">MemOS</text>
+<circle cx="449.7" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="492.8" y1="140" x2="492.8" y2="70.0" stroke="#3b3b3e"/>
+<text class="tx" x="496.8" y="66.0" style="text-anchor:start">Memory-R1</text>
+<circle cx="492.8" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="665.3" y1="140" x2="665.3" y2="98.0" stroke="#3b3b3e"/>
+<text class="tx" x="669.3" y="94.0" style="text-anchor:start">ReFind</text>
+<circle cx="665.3" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="694.1" y1="140" x2="694.1" y2="126.0" stroke="#4edea3"/>
+<text class="tx m" x="698.1" y="122.0" style="text-anchor:start">Raw-RAG</text>
+<circle cx="694.1" cy="140" r="3.5" fill="#4edea3" stroke="#131315" stroke-width="2"/>
+<line x1="162.2" y1="140" x2="162.2" y2="163.0" stroke="#3b3b3e"/>
+<text class="tx" x="166.2" y="174.0" style="text-anchor:start">CoALA</text>
+<circle cx="162.2" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="234.1" y1="140" x2="234.1" y2="163.0" stroke="#3b3b3e"/>
+<text class="tx" x="238.1" y="174.0" style="text-anchor:start">LoCoMo</text>
+<circle cx="234.1" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="234.1" y1="140" x2="234.1" y2="191.0" stroke="#3b3b3e"/>
+<text class="tx" x="238.1" y="202.0" style="text-anchor:start">ChatGPT recuerda</text>
+<circle cx="234.1" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="349.1" y1="140" x2="349.1" y2="163.0" stroke="#3b3b3e"/>
+<text class="tx" x="353.1" y="174.0" style="text-anchor:start">LongMemEval</text>
+<circle cx="349.1" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="478.4" y1="140" x2="478.4" y2="247.0" stroke="#3b3b3e"/>
+<text class="tx" x="482.4" y="258.0" style="text-anchor:start">MemoryAgentBench</text>
+<circle cx="478.4" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="492.8" y1="140" x2="492.8" y2="219.0" stroke="#3b3b3e"/>
+<text class="tx" x="496.8" y="230.0" style="text-anchor:start">Claude busca chats</text>
+<circle cx="492.8" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="507.2" y1="140" x2="507.2" y2="191.0" stroke="#3b3b3e"/>
+<text class="tx" x="511.2" y="202.0" style="text-anchor:start">herramienta de memoria</text>
+<circle cx="507.2" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+<line x1="622.2" y1="140" x2="622.2" y2="163.0" stroke="#3b3b3e"/>
+<text class="tx" x="626.2" y="174.0" style="text-anchor:start">MEME</text>
+<circle cx="622.2" cy="140" r="3.5" fill="#bbcabf" stroke="#131315" stroke-width="2"/>
+</svg>

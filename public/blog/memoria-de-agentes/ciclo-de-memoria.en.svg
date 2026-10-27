@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 272" width="760" height="272" role="img"
+ aria-label="The cycle of a memory as four decisions, between the conversation and the model. Write: what to keep from each conversation, everything or only extracted facts or summaries. Store: in what form, text fragments, loose facts, linked notes, a graph or several tiers. Read: how to find what is needed, by similarity, with recency and importance, with a reranker or with an agent that searches. What is read goes into the model's context, the model answers, and the answer goes back into the conversation. Maintain acts on what is stored: add, update, delete or do nothing, consolidate and forget.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx " x="20.0" y="58.0" width="100.0" height="52.0" rx="6"/>
+<text class="lb" x="70.0" y="88.0">Conversation</text>
+<rect class="bx " x="144.0" y="28.0" width="142.0" height="112.0" rx="6"/>
+<text class="hd" x="215.0" y="48.0" style="text-anchor:middle">WRITE</text>
+<text class="sb" x="215.0" y="64.0">what to keep</text>
+<text class="tx" x="156.0" y="90.0">· everything, as is</text>
+<text class="tx" x="156.0" y="104.0">· extracted facts</text>
+<text class="tx" x="156.0" y="118.0">· summaries</text>
+<rect class="bx m" x="302.0" y="28.0" width="142.0" height="112.0" rx="6"/>
+<text class="hd" x="373.0" y="48.0" style="text-anchor:middle">STORE</text>
+<text class="sb" x="373.0" y="64.0">in what form</text>
+<text class="tx" x="314.0" y="90.0">· text fragments</text>
+<text class="tx" x="314.0" y="104.0">· facts, notes, graph</text>
+<text class="tx" x="314.0" y="118.0">· tiers</text>
+<rect class="bx " x="460.0" y="28.0" width="142.0" height="112.0" rx="6"/>
+<text class="hd" x="531.0" y="48.0" style="text-anchor:middle">READ</text>
+<text class="sb" x="531.0" y="64.0">how to find it</text>
+<text class="tx" x="472.0" y="90.0">· similarity</text>
+<text class="tx" x="472.0" y="104.0">· + recency, importance</text>
+<text class="tx" x="472.0" y="118.0">· reranker, agent</text>
+<rect class="bx w" x="626.0" y="58.0" width="114.0" height="52.0" rx="6"/>
+<text class="lb w" x="683.0" y="82.0">Model</text>
+<text class="sb" x="683.0" y="96.0">reads, answers</text>
+<path class="ar" d="M122.0,84.0 L141.0,84.0"/>
+<path class="ar" d="M288.0,84.0 L300.0,84.0"/>
+<path class="ar" d="M446.0,84.0 L458.0,84.0"/>
+<path class="ar" d="M604.0,84.0 L623.0,84.0"/>
+<rect class="bx d" x="205.0" y="186.0" width="336.0" height="48.0" rx="6"/>
+<text class="hd" x="223.0" y="206.0">MAINTAIN</text>
+<text class="sb" x="315.0" y="206.0" style="text-anchor:start">what is stored</text>
+<text class="tx" x="373.0" y="223.0" style="text-anchor:middle">add · update · delete · nothing · consolidate · forget</text>
+<path class="ar m" d="M364.0,184.0 L364.0,144.0"/>
+<path class="ar m" d="M382.0,144.0 L382.0,184.0"/>
+<path class="ar" d="M683.0,112.0 L683.0,258.0 L70.0,258.0 L70.0,112.0"/>
+<text class="sb" x="675.0" y="252.0" style="text-anchor:end">every answer is one more message</text>
+</svg>
