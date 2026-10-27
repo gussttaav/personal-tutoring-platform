@@ -18,6 +18,7 @@ import { getClientIp } from "@/lib/ip-utils";
 import { isValidOrigin } from "@/lib/csrf";
 import { TutorAbsentSchema } from "@/lib/schemas";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
+import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
 import { tracedRoute } from "@/lib/with-request-context";
 
 async function postHandler(req: NextRequest): Promise<NextResponse> {
@@ -47,6 +48,14 @@ async function postHandler(req: NextRequest): Promise<NextResponse> {
     });
     return NextResponse.json({ sent: outcome === "sent", outcome });
   } catch (err) {
+    // Same statuses as /api/zoom/token for the two membership outcomes; the shared
+    // mapper has no entry for them and would answer 400.
+    if (err instanceof BookingNotFoundError) {
+      return NextResponse.json({ error: err.code }, { status: 404 });
+    }
+    if (err instanceof UnauthorizedError) {
+      return NextResponse.json({ error: err.code }, { status: 403 });
+    }
     return mapDomainErrorToResponse(err, { eventId: parsed.data.eventId });
   }
 }
