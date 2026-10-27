@@ -5,6 +5,7 @@
  * them via useTranslations('errors.domain.*') or useTranslations('errors.http.*').
  *
  * REFACTOR-R4-P1-01: INVALID_SLOT + FREE_SESSION_ALREADY_USED (server-side slot validation).
+ * SESSION-JOIN-01: CLASSROOM_NOT_OPEN (a student joining before the classroom opens).
  */
 
 /**
@@ -23,6 +24,7 @@ export const ERROR_CODE_I18N_KEY: Record<string, string> = {
   UNAUTHORIZED:              "errors.domain.unauthorized",
   ALREADY_SUBSCRIBED:        "errors.domain.alreadySubscribed",
   REVIEW_BOOKING_NOT_FOUND:  "errors.domain.reviewBookingNotFound",
+  CLASSROOM_NOT_OPEN:        "errors.domain.classroomNotOpen",          // SESSION-JOIN-01
   PERMANENT_WEBHOOK_ERROR:   "errors.domain.permanentWebhookError",
   INTERNAL_ERROR:            "errors.domain.internalError",
   INVALID_RESCHEDULE_TOKEN:  "errors.domain.invalidRescheduleToken",

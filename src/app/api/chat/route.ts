@@ -19,6 +19,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { buildChatSystemPrompt } from "@/constants/chat-prompt";
 import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
 import { getScheduleConfig } from "@/lib/schedule-config";
+import { DEFAULT_JOIN_OPEN_MINUTES, DEFAULT_TUTOR_ABSENT_ALERT_MINUTES } from "@/lib/booking-config"; // SESSION-JOIN-01
 import { getChatPromptContent } from "@/lib/chat-content";
 import { chatRatelimit, chatRatelimitAnon, chatRatelimitAnonDaily } from "@/lib/ratelimit";
 import { chatService, pricingService, userService } from "@/services";
@@ -153,6 +154,9 @@ async function postHandler(req: NextRequest) {
         ...priceCents,
         packValidityDays,
         cancelHours: schedule.cancelMinNoticeHours,
+        // SESSION-JOIN-01: `??` covers a config cached before migration 0028.
+        joinOpenMinutes:         schedule.joinOpenMinutesBefore ?? DEFAULT_JOIN_OPEN_MINUTES,
+        tutorAbsentAlertMinutes: schedule.tutorAbsentAlertMinutes ?? DEFAULT_TUTOR_ABSENT_ALERT_MINUTES,
       },
       getChatPromptContent(),
     );

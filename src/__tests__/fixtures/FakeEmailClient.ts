@@ -1,6 +1,7 @@
 // TEST-01: Fake IEmailClient for integration tests.
 // REFACTOR-R4-P3-03: sendPaymentAuditReport.
 // COURSE-ANNOUNCE-01: course announcements, same `failFor` contract.
+// SESSION-JOIN-01: tutor-absent alert.
 // BLOG-15: blog post announcements. `failFor` makes the send throw for those addresses, so
 // a bulk-send test can prove one bad address does not cost the rest their email.
 import type { PaymentAuditReport } from "@/domain/types";
@@ -11,6 +12,7 @@ import type {
   CancellationConfirmationParams,
   CancellationNotificationParams,
   ContentReportNotificationParams,
+  TutorAbsentNotificationParams,
   BlogPostAnnouncementParams,
   CourseAnnouncementParams,
 } from "@/infrastructure/resend/IEmailClient";
@@ -21,6 +23,7 @@ type SentEmail =
   | { type: "cancellationConfirmation"; params: CancellationConfirmationParams }
   | { type: "cancellationNotification"; params: CancellationNotificationParams }
   | { type: "contentReportNotification"; params: ContentReportNotificationParams }
+  | { type: "tutorAbsentNotification"; params: TutorAbsentNotificationParams }
   | { type: "paymentAuditReport";       params: PaymentAuditReport }
   | { type: "blogPostAnnouncement";     params: BlogPostAnnouncementParams }
   | { type: "courseAnnouncement";       params: CourseAnnouncementParams };
@@ -48,6 +51,11 @@ export class FakeEmailClient implements IEmailClient {
   // CONTENT-FEEDBACK-01
   async sendContentReportNotification(params: ContentReportNotificationParams): Promise<void> {
     this.sent.push({ type: "contentReportNotification", params });
+  }
+
+  // SESSION-JOIN-01
+  async sendTutorAbsentNotification(params: TutorAbsentNotificationParams): Promise<void> {
+    this.sent.push({ type: "tutorAbsentNotification", params });
   }
 
   // REFACTOR-R4-P3-03

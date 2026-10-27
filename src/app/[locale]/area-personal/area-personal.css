@@ -299,6 +299,17 @@
   flex-wrap: wrap;
 }
 
+/* SESSION-JOIN-01: "the classroom opens at HH:MM" under a disabled join button. */
+.pa-nc__join-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.pa-nc__join-note .material-symbols-outlined { font-size: 16px; }
+
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
 
 .pa-btn {
@@ -361,6 +372,15 @@
   background: rgba(255, 255, 255, 0.03);
 }
 .pa-iconbtn--danger:hover { color: var(--error); border-color: var(--pa-error-border); }
+/* SESSION-JOIN-01: a join button before its classroom opens. */
+.pa-iconbtn:disabled,
+.pa-iconbtn:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--text-muted);
+  border-color: var(--border-variant);
+  background: transparent;
+}
 .pa-iconbtn .material-symbols-outlined { font-size: 19px; }
 
 /* ─── Tabs ──────────────────────────────────────────────────────────────────── */

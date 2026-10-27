@@ -28,6 +28,20 @@ export interface ISessionRepository {
   markStudentJoined(eventId: string): Promise<void>;
 
   /**
+   * SESSION-JOIN-01: records the tutor's first join (tutor_joined_at), with the
+   * same first-write-only IS NULL guard as markStudentJoined. Idempotent.
+   */
+  markTutorJoined(eventId: string): Promise<void>;
+
+  /**
+   * SESSION-JOIN-01: atomically claims the session's one tutor-absent alert
+   * (sets tutor_absent_alerted_at WHERE it IS NULL). Returns true only for the
+   * call that claimed it; false if already claimed or the session is gone.
+   * Throws on a database error (the alert is then not sent).
+   */
+  claimTutorAbsentAlert(eventId: string): Promise<boolean>;
+
+  /**
    * Appends a chat message to the session's message list. Returns the new total
    * message count. Used by the in-session chat feature.
    */

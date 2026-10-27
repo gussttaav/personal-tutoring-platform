@@ -93,6 +93,8 @@ export class ScheduleService {
       timezone:             settings.timezone,
       minNoticeHours:       settings.minNoticeHours,
       cancelMinNoticeHours: settings.cancelMinNoticeHours,
+      joinOpenMinutesBefore:   settings.joinOpenMinutesBefore,
+      tutorAbsentAlertMinutes: settings.tutorAbsentAlertMinutes,
       bookingWindowWeeks:   BOOKING_WINDOW_WEEKS,
     };
   }
@@ -103,13 +105,21 @@ export class ScheduleService {
     timezone:             string;
     minNoticeHours:       number;
     cancelMinNoticeHours: number;
+    joinOpenMinutesBefore:   number;
+    tutorAbsentAlertMinutes: number;
     by:                   string;
     reason:               string;
   }): Promise<void> {
-    const { weeklyHours, timezone, minNoticeHours, cancelMinNoticeHours, by, reason } = params;
+    const {
+      weeklyHours, timezone, minNoticeHours, cancelMinNoticeHours,
+      joinOpenMinutesBefore, tutorAbsentAlertMinutes, by, reason,
+    } = params;
 
     await this.repo.replaceWeeklyHours(weeklyHours);
-    await this.repo.updateSettings({ timezone, minNoticeHours, cancelMinNoticeHours, updatedBy: by });
+    await this.repo.updateSettings({
+      timezone, minNoticeHours, cancelMinNoticeHours,
+      joinOpenMinutesBefore, tutorAbsentAlertMinutes, updatedBy: by,
+    });
 
     // Bump only after the writes land, so a concurrent read can't cache the old
     // config under the new version. Best-effort: if the bump fails the config is
@@ -129,9 +139,14 @@ export class ScheduleService {
       timezone,
       minNoticeHours,
       cancelMinNoticeHours,
+      joinOpenMinutesBefore,
+      tutorAbsentAlertMinutes,
       reason,
     });
 
-    log("info", "Schedule updated", { service: "ScheduleService", timezone, minNoticeHours, cancelMinNoticeHours, by });
+    log("info", "Schedule updated", {
+      service: "ScheduleService", timezone, minNoticeHours, cancelMinNoticeHours,
+      joinOpenMinutesBefore, tutorAbsentAlertMinutes, by,
+    });
   }
 }

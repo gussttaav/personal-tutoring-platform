@@ -22,7 +22,7 @@ export default async function SchedulePage() {
       <PageHeader
         overline="Reservas"
         title="Horarios"
-        subtitle="Edita tus horas de trabajo, la antelación mínima y la zona horaria. Afecta a la disponibilidad al instante."
+        subtitle="Edita tus horas de trabajo, la antelación mínima, el plazo de cancelación, la apertura del aula, el aviso si no te conectas y la zona horaria. Afecta a la disponibilidad al instante."
       />
 
       <Card>

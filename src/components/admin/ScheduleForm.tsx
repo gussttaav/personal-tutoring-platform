@@ -1,7 +1,8 @@
 /**
  * Admin form to edit the booking schedule: per-day working hours with split
- * shifts, minimum advance notice, and timezone. POSTs to /api/admin/schedule and
- * reloads on success. Admin panel is Spanish.
+ * shifts, minimum advance notice, cancellation window, classroom opening and the
+ * tutor-absent alert delay (SESSION-JOIN-01), and timezone. POSTs to
+ * /api/admin/schedule and reloads on success. Admin panel is Spanish.
  *
  * Time dropdowns use 15-minute granularity so existing values like 13:45 / 15:15
  * are representable. A day with its checkbox off (or no blocks) is non-working.
@@ -11,6 +12,7 @@
 import { useState } from "react";
 import type { ScheduleConfig, TimeBlock } from "@/domain/types";
 import { SUPPORTED_TIMEZONES } from "@/lib/timezones";
+import { DEFAULT_JOIN_OPEN_MINUTES, DEFAULT_TUTOR_ABSENT_ALERT_MINUTES } from "@/lib/booking-config";
 
 // Monday-first display order; values are JS day-of-week (0=Sun..6=Sat).
 const DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -64,6 +66,8 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
   const [timezone, setTimezone]         = useState(config.timezone);
   const [minNotice, setMinNotice]       = useState(String(config.minNoticeHours));
   const [cancelNotice, setCancelNotice] = useState(String(config.cancelMinNoticeHours));
+  const [joinOpen, setJoinOpen]         = useState(String(config.joinOpenMinutesBefore ?? DEFAULT_JOIN_OPEN_MINUTES));
+  const [absentAlert, setAbsentAlert]   = useState(String(config.tutorAbsentAlertMinutes ?? DEFAULT_TUTOR_ABSENT_ALERT_MINUTES));
   const [reason, setReason]             = useState("");
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState<string | null>(null);
@@ -140,6 +144,18 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
       return;
     }
 
+    const openMin = parseInt(joinOpen, 10);
+    if (!Number.isInteger(openMin) || openMin < 0 || openMin > 1440) {
+      setError("La apertura del aula debe ser un número de minutos entre 0 y 1440.");
+      return;
+    }
+
+    const alertMin = parseInt(absentAlert, 10);
+    if (!Number.isInteger(alertMin) || alertMin < 1 || alertMin > 120) {
+      setError("El aviso de ausencia debe ser un número de minutos entre 1 y 120.");
+      return;
+    }
+
     const validated = validate();
     if (!validated) return;
 
@@ -153,6 +169,8 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
           timezone,
           minNoticeHours:       notice,
           cancelMinNoticeHours: cancel,
+          joinOpenMinutesBefore:   openMin,
+          tutorAbsentAlertMinutes: alertMin,
           reason:               reason.trim(),
         }),
       });
@@ -268,6 +286,28 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
             step="1"
             value={cancelNotice}
             onChange={(e) => setCancelNotice(e.target.value)}
+          />
+        </label>
+        <label className="schedule-setting">
+          <span>Apertura del aula (minutos antes)</span>
+          <input
+            type="number"
+            min="0"
+            max="1440"
+            step="1"
+            value={joinOpen}
+            onChange={(e) => setJoinOpen(e.target.value)}
+          />
+        </label>
+        <label className="schedule-setting">
+          <span>Aviso si no me conecto (minutos tras el inicio)</span>
+          <input
+            type="number"
+            min="1"
+            max="120"
+            step="1"
+            value={absentAlert}
+            onChange={(e) => setAbsentAlert(e.target.value)}
           />
         </label>
         <label className="schedule-setting">
