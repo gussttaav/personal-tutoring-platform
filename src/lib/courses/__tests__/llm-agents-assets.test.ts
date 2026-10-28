@@ -315,3 +315,41 @@ describe("llm-agents assets — the frozen entorno of Block 4", () => {
     expect(src.match(/^class /gm)).toBeNull();
   });
 });
+
+/*
+ * COURSE-C2-P1-04 — harness.py is Block 4 lesson 4's `leer`, `error`, `ejecutar` and bucle frozen,
+ * the way entorno.py freezes lesson 2's entorno: the lessons from «Permisos y confianza» on load
+ * it with one exec line, after entorno.py. Lesson 28's challenge solution is the source of truth,
+ * so the asset is that solution from `def leer(` to its end, character for character.
+ */
+describe("llm-agents assets — the frozen ejecutar and bucle of Block 4", () => {
+  const src = read("harness.py");
+  const mdx = fs.readFileSync(
+    path.join(process.cwd(), "content", "courses", "llm-agents", "es", "28-errores-como-observaciones.mdx"),
+    "utf8",
+  );
+
+  /** The challenge's reference solution, as the frontmatter's block scalar holds it. */
+  function solution(): string {
+    const start = mdx.indexOf("    solution: |\n") + "    solution: |\n".length;
+    const end = mdx.indexOf("    explanation:", start);
+    return mdx
+      .slice(start, end)
+      .split("\n")
+      .map((l) => l.slice(6))
+      .join("\n");
+  }
+
+  it("is lesson 28's challenge solution, from `def leer(` to the end of the bucle", () => {
+    const fromLeer = (text: string) => text.slice(text.search(/^def leer\(/m)).trimEnd();
+    expect(fromLeer(src)).toBe(fromLeer(solution()));
+  });
+
+  it("imports nothing, loads nothing, and defines exactly leer, error, ejecutar and bucle", () => {
+    expect(src).not.toMatch(/^\s*(import|from)\s/m);
+    expect(src).not.toMatch(/^exec\(/m);
+    const defs = (src.match(/^def (\w+)/gm) ?? []).map((d) => d.slice(4));
+    expect(defs).toEqual(["leer", "error", "ejecutar", "bucle"]);
+    expect(src.match(/^class /gm)).toBeNull();
+  });
+});

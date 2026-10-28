@@ -241,6 +241,11 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "(llamar-herramientas): Spanish routes and contents, Spanish tool names and descriptions, " +
     "and every observación the Block 4 lessons quote is a function of it. The English course " +
     "needs its own entorno.en.py and the lessons' prose rewritten against it.",
+  "courses/llm-agents/harness.py":
+    "The Block 4 ejecutar and bucle, frozen from lesson 4·4 (errores-como-observaciones), " +
+    "which the cells load after entorno.py: its error messages («no se ha ejecutado: …», " +
+    "«no existe el fichero …») are Spanish, and every observación the later Block 4 lessons " +
+    "quote is built from them. The English course needs its own harness.en.py beside entorno.en.py.",
   // COURSE-C2-P0-03 — the llm-agents mini-GPT is trained on this Spanish corpus, and
   // its checkpoint (minigpt.json) and merge table (bpe-merges.json) are functions of it.
   "courses/llm-agents/corpus.txt":

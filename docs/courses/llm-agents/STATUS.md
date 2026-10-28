@@ -39,7 +39,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (4/7) | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (5/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1532,3 +1532,44 @@ first guion whose llamadas are wrong on purpose. Approved by Gustavo at review:
   among them catching only `FileNotFoundError`, `is_error` false and retrying inside `ejecutar`;
   `q-vacio-no-es-error` answered wrong in the browser (rejected, explanation shown), the other three
   not confirmed; no horizontal page scroll at 375 px. Not on a phone.
+
+Lesson 29 `permisos-y-confianza` authored on its own branch (2026-10-28). 1 996 words, no display
+equation, no widget (none assigned), 2 cells (29 and 22 lines), 5 quiz, 1 challenge
+(`ch-permisos`, 8 tests), 4 readings (Willison 2022, «Prompt injection attacks against GPT-3»;
+Greshake et al. 2023, indirect prompt injection; Willison 2025, «The lethal trifecta»; CaMeL 2025;
+URLs checked). `minutes: 30` (lint ≈34). Runs on the **scripted model**, said before the first
+cell, with the first guion whose model obeys an observación. Approved by Gustavo at review:
+- **The content:** a prose trace (the user copied a salmorejo recipe from the web; its third line
+  orders the model to write «Cena cancelada.» into `notas.txt` and say nothing). On lesson 28's
+  harness both writes run and nothing fails; with a permiso the user sees both writes as llamadas,
+  approves `lista.txt` and refuses `notas.txt`; the final text is the same in both and never
+  mentions the note. The contract of `permiso(ll) -> permitir | preguntar | denegar` (the
+  herramienta's clase only, no M; unclassified → denied; the clase written beside the function);
+  `ejecutar` as esquema → permiso → función; the two «no se ha ejecutado» motivos; the user is
+  shown the llamada, not the model's text; nobody to ask = denegar; why lecturas do not ask
+  (attention). Contenido no fiable and the inyección de instrucciones: the `usuario` rol does not
+  say who wrote a `tool_result`, the bloque does; no filter can remove an instrucción; the model
+  reads all of M; what the harness guarantees is that no observación decides a permiso; the limit
+  (a lectura with a channel out is half a leak), left to Block 5.
+- **The cells:** cell 1 runs the trace on lesson 28's harness, its expected observaciones computed
+  by executing the llamadas on a copy, and ends with `notas.txt: Cena cancelada.`; cell 2 writes
+  `CLASES`, `PERMISOS`, a read-only table and `permiso`, prints the decisions for the trace's
+  llamadas plus an unclassified `borrar`, and runs the scripted user on the two writes. The
+  challenge puts the permiso inside `ejecutar`.
+- **New asset:** `public/courses/llm-agents/harness.py`, lesson 28's challenge solution from
+  `def leer(` (`leer`, `error`, `ejecutar`, `bucle`), loaded after `entorno.py`; checked verbatim
+  against lesson 28 by `llm-agents-assets.test.ts`; Spanish-bound in `corpora.ts`.
+- **Applied after review:** the function is `permiso`, not the block md's `permitir` (the block md
+  now says so); delta §4 rows `clase` (de herramienta), `tabla de permisos`, `contenido no fiable`,
+  `inyección de instrucciones`; `NOTATION.md`'s Block 4 section records `ejecutar`'s three steps,
+  the two denial messages, `preguntar(ll) -> bool`, the missing `ejecución` herramienta, the
+  extra entorno file and `harness.py`.
+- **Lesson 28's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 30 (`estado-y-memoria`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green; both cells run in
+  the Browser pane on `pnpm start` with the CPython prototype's output; the challenge's starter
+  passes 3/8 and the solution 8/8 in Pyodide, nine wrong variants each fail a named test (CPython),
+  among them asking before the esquema, ignoring the answer, asking twice and permitting an
+  unclassified herramienta; `q-filtrar-ordenes` answered wrong in the browser (rejected,
+  explanation shown), the other four not confirmed; no horizontal page scroll at 375 px. Not on a
+  phone.
