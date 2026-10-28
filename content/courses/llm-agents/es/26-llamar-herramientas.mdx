@@ -29,7 +29,7 @@ quiz:
       - { id: d, text: '`listar` con `{}`' }
       - { id: e, text: '`leer` con `{"ruta": "recetas/salmorejo.txt"}`' }
     answer: [a, c, d]
-    explanation: 'La (a) trae un campo que no está en `properties`, la (c) un número donde va texto y a la (d) le falta `carpeta`, que está en `required`. Las otras dos cumplen, y es lo interesante. La (b) deja <W>notas.txt</W> vacío: el esquema mira la forma, no si la llamada debe ejecutarse. La (e) pide un fichero que no existe, y el esquema no sabe qué hay en el entorno; esa llamada fallará al ejecutarse, y qué hace entonces el harness es la lección sobre los errores.'
+    explanation: 'La (a) trae un campo que no está en `properties`, la (c) un número donde va texto y a la (d) le falta `carpeta`, que está en `required`. Las otras dos cumplen, y es lo interesante. La (b) deja <W>notas.txt</W> vacío: el esquema mira la forma, no si la llamada debe ejecutarse. La (e) pide un fichero que no existe, y el esquema no sabe qué hay en el entorno; esa llamada fallará al ejecutarse, y qué hace entonces el harness es <Leccion slug="errores-como-observaciones">la lección sobre los errores</Leccion>.'
     hint: 'El esquema sólo ve la llamada: sus campos y los tipos de sus valores.'
   - id: q-dos-llamadas
     type: single
@@ -406,7 +406,7 @@ Los argumentos son siempre texto, y todos obligatorios. Una carpeta no existe po
 principio común de unas rutas, y <W>recetas/</W> es el de dos. Tres herramientas sólo leen; la
 única que escribe destruye lo que hubiera, y por eso su descripción lo dice. Qué pasa cuando
 `leer` recibe una ruta que no existe queda fuera del contrato por ahora, y lo resuelve más adelante
-la lección sobre los errores.
+<Leccion slug="errores-como-observaciones">la lección sobre los errores</Leccion>.
 
 ## La llamada y la observación, unidas por un identificador
 
@@ -441,7 +441,7 @@ lo incumple.
 Lo que ata una observación a su llamada es el identificador, no la posición. El harness de las
 celdas escribe las observaciones en el orden de las llamadas de todos modos, y el modelo guionizado
 lo comprueba, porque compara mensajes enteros. En esta lección `is_error` es siempre falso; para qué
-sirve el verdadero lo cuenta la lección sobre los errores.
+sirve el verdadero lo cuenta <Leccion slug="errores-como-observaciones">la lección sobre los errores</Leccion>.
 
 ### Antes de ejecutar, el esquema
 
@@ -452,7 +452,7 @@ campo de `required`, no tiene ninguno fuera de `properties` (lo prohíbe
 `additionalProperties: false`) y cada valor es del tipo que declara su campo.
 
 Una llamada que no cumple no se ejecuta. Qué le dice entonces el harness al modelo es, otra vez, la
-lección sobre los errores; hasta ella, el harness lanza `ValueError` y el programa se para.
+<Leccion slug="errores-como-observaciones">lección sobre los errores</Leccion>; hasta ella, el harness lanza `ValueError` y el programa se para.
 
 ¿Por qué comprobar, si el modelo sabe escribir JSON? Por lo que el bloque anterior separó entre
 pedir y forzar. Los modelos actuales están ajustados para escribir llamadas en este formato y

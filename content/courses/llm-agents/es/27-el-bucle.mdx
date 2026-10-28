@@ -481,11 +481,7 @@ una llamada que no cumple su esquema, `leer` lanza `KeyError` con una ruta que n
 cualquiera de las dos atraviesa el bucle y para el programa. El usuario recibe un error de Python,
 y el modelo, que podría haber pedido otra ruta, no se entera de nada.
 
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
-    (slug errores-como-observaciones), envolver «La lección siguiente, sobre los errores como
-    observaciones» en su Leccion slug=…; el lint falla con un slug que no resuelve, también
-    dentro de un comentario. */}
-
-La lección siguiente, sobre los errores como observaciones, cambia sólo `ejecutar`: un fallo deja
+<Leccion slug="errores-como-observaciones">La lección siguiente, sobre los errores como
+observaciones</Leccion>, cambia sólo `ejecutar`: un fallo deja
 de ser una excepción y pasa a ser un `tool_result` con `is_error`, que el modelo lee como cualquier
 otra observación. Su guion, por primera vez, trae llamadas equivocadas.

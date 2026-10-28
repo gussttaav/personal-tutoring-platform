@@ -534,6 +534,19 @@ entorno, the four herramientas, `texto` / `llamada` / `resultado` / `muestra`, `
 character for character by `llm-agents-assets.test.ts`), with `exec(open_url(…))`, like
 `guionizado.py`.
 
+**From lesson 28 on, `ejecutar` never raises** (`COURSE-C2-P1-04`, lesson 28). Its firma is
+`ejecutar(ll, entorno) -> tool_result`, always with the llamada's `id`: a llamada that fails its
+esquema is not executed and comes back as `error(id, "no se ha ejecutado: " + motivo)`; one whose
+function raises (any `Exception`) comes back as `error(id, str(e))`, the function called once; one
+that returns is `resultado(id, …)` as before. `error` is `resultado` with `is_error` true. `leer`'s
+contract gains its missing case, `FileNotFoundError("no existe el fichero %r" % ruta)`, changing
+nothing; the other three tools never fail on a llamada that meets its esquema, and an empty result
+(a `buscar` with no match, a `listar` of an empty prefix) is an observación with `is_error` false,
+not an error. The bucle is unchanged; only a failure of `modelo` itself still raises out of it.
+Lesson 28's cells define the new `leer`, `error` and `ejecutar` in place, and `entorno.py` stays
+lesson 26's code: the lesson that first needs them loaded from a file adds them there, checked by
+`llm-agents-assets.test.ts` like the rest.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the
