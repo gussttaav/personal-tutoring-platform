@@ -1,0 +1,508 @@
+---
+slug: errores-como-observaciones
+title: "Errores como observaciones"
+block: 4
+order: 4
+minutes: 30
+summary: "Una llamada que falla deja de ser una excepción que para el programa y vuelve al modelo como una observación marcada con is_error, que dice qué ha fallado. El modelo decide qué hacer con ella, y repetir una llamada es seguro cuando es idempotente o cuando el error dice que no llegó a ejecutarse."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-quien-decide
+    type: single
+    prompt: 'El harness ejecuta `leer` con <W>recetas/salmorejo.txt</W> y la función lanza `FileNotFoundError`. ¿Qué hace el harness?'
+    options:
+      - { id: a, text: 'Devuelve al modelo un `tool_result` con `is_error` verdadero y <W>no existe el fichero ''recetas/salmorejo.txt''</W>, y lo llama en el turno siguiente.' }
+      - { id: b, text: 'Repite la lectura hasta tres veces antes de contárselo al modelo.' }
+      - { id: c, text: 'Lee el fichero de <W>recetas/</W> que más se parece, el del gazpacho, y devuelve su contenido.' }
+      - { id: d, text: 'Para el bucle y le dice al usuario que el fichero no existe.' }
+    answer: a
+    explanation: 'La (a). La (b) repite una llamada que va a fallar igual, porque el entorno no ha cambiado. La (c) le miente al modelo, que creería haber leído el salmorejo y apuntaría en la lista los ingredientes del gazpacho. La (d) le quita la decisión a quien puede tomarla: en la traza, el modelo lista la carpeta y le ofrece al usuario una alternativa, que vale más que un mensaje de error.'
+  - id: q-error-y-acierto
+    type: single
+    prompt: 'Una respuesta trae dos llamadas: <W>a</W> lee un fichero que no existe y <W>b</W> lee <W>lista.txt</W>. ¿Qué mensaje añade el bucle a M?'
+    options:
+      - { id: a, text: 'Uno de rol usuario con dos `tool_result`: un error para <W>a</W> y el contenido de la lista para <W>b</W>, en ese orden.' }
+      - { id: b, text: 'Uno con el error de <W>a</W> y nada más: tras el primer error, el resto del turno no se ejecuta.' }
+      - { id: c, text: 'Uno con el `tool_result` de <W>b</W>. El error de <W>a</W> se le cuenta al usuario.' }
+      - { id: d, text: 'Ninguno: un turno con un error se descarta entero, y el modelo vuelve a recibir los mismos mensajes.' }
+    answer: a
+    explanation: 'La (a). Cada llamada recibe su observación, falle o no, y la de <W>b</W> no depende de la de <W>a</W>. La (b) deja <W>b</W> sin observación, y un protocolo de verdad rechaza esa petición. La (c) le esconde el error al único que puede arreglarlo. La (d) rompe el tercer invariante del bucle, M sólo crece, y el modelo, sin saber que pidió nada, volvería a pedir lo mismo.'
+  - id: q-vacio-no-es-error
+    type: boolean
+    prompt: '`buscar` con el patrón <W>salmorejo</W> devuelve un texto vacío, porque ninguna línea del entorno lo contiene. Su observación debe llevar `is_error` verdadero.'
+    answer: false
+    explanation: 'Falso. `buscar` promete las líneas que contienen el patrón, y que no haya ninguna es una respuesta: la herramienta ha hecho lo que dice su contrato. Un error es que la llamada no haya podido hacerlo. Marcarlo como error le diría al modelo que su llamada estaba mal, y la cambiaría por otra cuando ya tiene lo que buscaba.'
+  - id: q-repetir
+    type: multi
+    prompt: 'Imagina una herramienta `añadir(ruta, contenido)` que pega `contenido` al final del fichero. ¿Tras cuáles de estas observaciones puede el modelo volver a pedir la llamada, corregida si hace falta, sin riesgo de que el contenido acabe dos veces en el fichero?'
+    options:
+      - { id: a, text: 'Un `añadir` cuyo error es <W>no se ha ejecutado: falta el campo ''contenido''</W>.' }
+      - { id: b, text: 'Un `añadir` cuya observación es <W>añadidos 9 caracteres a lista.txt</W>.' }
+      - { id: c, text: 'Un `escribir` del que el modelo no está seguro de que llegara a ejecutarse.' }
+      - { id: d, text: 'Un `añadir` cuyo error es <W>disco lleno</W>, lanzado por la función a mitad de la escritura.' }
+    answer: [a, c]
+    explanation: 'La (a) no llegó a ejecutarse, y su error lo dice. La (c) es idempotente: si ya se ejecutó, la segunda escritura deja lo mismo que la primera. La (b) salió bien, así que repetirla añade el contenido otra vez. La (d) es la peligrosa: un error al ejecutarse dice que la función no terminó, no que no hiciera nada, y antes de repetir el modelo tendría que leer el fichero para saber qué quedó.'
+    hint: 'Pregúntate, para cada una, si la primera llamada pudo cambiar el fichero.'
+challenges:
+  - id: ch-errores
+    prompt: |
+      La primera celda convierte en observación el error del esquema, y la conversación muere en el turno 2, cuando `leer` lanza. Completa `ejecutar(ll, entorno)` para que no lance nunca.
+
+      - Si la llamada no cumple su esquema, lo que ya hace: no la ejecuta y devuelve un error con `"no se ha ejecutado: "` y el motivo.
+      - Si la cumple y la función lanza una excepción, *cualquiera*, devuelve `error(id, str(e))`: `is_error` verdadero y el mensaje de la excepción como contenido.
+      - Si la función devuelve, lo de siempre: `resultado(id, lo que devuelve)`.
+      - La función se llama una vez como mucho. Repetir es decisión del modelo.
+
+      `leer` con su contrato completo, `error` y el bucle de la lección anterior están en el código de partida, y el bucle no se toca. La primera prueba es la conversación de la celda, entera, con el modelo guionizado.
+    starter: |
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+      exec(open_url("/courses/llm-agents/entorno.py").read())      # el entorno y sus herramientas
+
+      def leer(entorno, ruta):
+          if ruta not in entorno:
+              raise FileNotFoundError("no existe el fichero %r" % ruta)
+          return entorno[ruta]
+      FUNCIONES["leer"] = leer
+
+      def error(id, contenido):
+          return {"type": "tool_result", "tool_use_id": id, "content": contenido, "is_error": True}
+
+      def ejecutar(ll, entorno):
+          """Siempre un tool_result, con is_error si la llamada no cumple su esquema o falla al ejecutarse."""
+          motivo = incumple(ll)
+          if motivo is not None:
+              return error(ll["id"], "no se ha ejecutado: " + motivo)
+          # tu código aquí: que un error al ejecutar también vuelva como observación
+          return resultado(ll["id"], FUNCIONES[ll["name"]](entorno, **ll["input"]))
+
+      def bucle(modelo, inicio, entorno, tope):
+          """El de la lección anterior, sin tocar."""
+          M = list(inicio)
+          for turno in range(tope):
+              r = modelo(M, HERRAMIENTAS)
+              M.append(("asistente", r))
+              llamadas = [b for b in r if b["type"] == "tool_use"]
+              if not llamadas:
+                  return "fin", " ".join(b["text"] for b in r if b["type"] == "text"), M
+              M.append(("usuario", [ejecutar(ll, entorno) for ll in llamadas]))
+          return "tope", None, M
+    tests:
+      - name: "una conversación con dos errores: el modelo guionizado acepta cada turno"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          exec(open_url("/courses/llm-agents/entorno.py").read())
+          def tr(i, c, mal=False):
+              return {"type": "tool_result", "tool_use_id": i, "content": c, "is_error": mal}
+          inicio = [("sistema", "Trabajas con ficheros."), ("usuario", "Añade a lista.txt lo que falta para el salmorejo.")]
+          rs = [[texto("Leo la receta y la lista."), llamada("t1", "leer", rutas=["recetas/salmorejo.txt", "lista.txt"])],
+                [llamada("t2", "leer", ruta="recetas/salmorejo.txt"), llamada("t3", "leer", ruta="lista.txt")],
+                [llamada("t4", "listar", carpeta="recetas/")],
+                [texto("No hay receta de salmorejo.")]]
+          vs = [[tr("t1", "no se ha ejecutado: falta el campo 'ruta'", True)],
+                [tr("t2", "no existe el fichero 'recetas/salmorejo.txt'", True), tr("t3", "pan, leche, patatas")],
+                [tr("t4", "recetas/gazpacho.txt\nrecetas/tortilla.txt")], None]
+          modelo, entorno = ModeloGuionizado(guion_de(inicio, rs, vs)), dict(ENTORNO)
+          try:
+              salida = bucle(modelo, inicio, entorno, 10)
+          except ValueError as err:
+              raise AssertionError('el modelo guionizado no reconoce los mensajes del turno %d (%s): cada error vuelve como '
+                                   'un tool_result con is_error True y, de contenido, el mensaje de la excepción' % (modelo.turno, err))
+          except Exception as err:
+              raise AssertionError('%s: %s en el turno %d. ejecutar ha dejado salir la excepción de leer, y el bucle se ha '
+                                   'parado: atrápala y devuélvela como observación' % (type(err).__name__, err, modelo.turno))
+          assert salida is not None and salida[:2] == ("fin", "No hay receta de salmorejo."), 'el guion termina en el turno 4 con un texto: ("fin", "No hay receta de salmorejo.", M), no %r' % (salida and salida[:2],)
+          assert modelo.turno == 4, 'la conversación tiene cuatro turnos y has llamado al modelo %d veces' % modelo.turno
+          assert entorno == ENTORNO, 'en esta conversación nadie escribe, y el entorno ha cambiado'
+      - name: "un fichero que no existe: is_error, y el mensaje de leer"
+        code: |
+          E = {"lista.txt": "pan"}
+          entorno = dict(E)
+          try:
+              obs = ejecutar({"type": "tool_use", "id": "x7", "name": "leer", "input": {"ruta": "nada.txt"}}, entorno)
+          except Exception as err:
+              raise AssertionError('ejecutar lanza %s con una ruta que no existe: tiene que devolver un tool_result' % type(err).__name__)
+          assert isinstance(obs, dict) and obs.get("type") == "tool_result", 'ejecutar devuelve un bloque tool_result, no %r' % (obs,)
+          assert obs.get("tool_use_id") == "x7", 'el tool_result lleva el id de su llamada, "x7", no %r' % (obs.get("tool_use_id"),)
+          assert obs.get("is_error") is True, 'una llamada que falla al ejecutarse vuelve con is_error True'
+          assert obs.get("content") == "no existe el fichero 'nada.txt'", 'content es el mensaje de la excepción, str(e): "no existe el fichero \'nada.txt\'", no %r' % (obs.get("content"),)
+          assert entorno == E, 'leer no cambia el entorno, ni cuando falla'
+      - name: "cualquier excepción de la función, no sólo la de leer"
+        code: |
+          veces = []
+          def averiada(entorno, carpeta):
+              veces.append(carpeta)
+              raise RuntimeError("disco lleno")
+          original = FUNCIONES["listar"]
+          FUNCIONES["listar"] = averiada
+          try:
+              obs = ejecutar({"type": "tool_use", "id": "a1", "name": "listar", "input": {"carpeta": ""}}, {})
+          except Exception as err:
+              raise AssertionError('ejecutar deja salir un %s de listar. Atrapa cualquier excepción de la función, no sólo '
+                                   'FileNotFoundError: un harness no sabe de antemano cómo puede fallar una herramienta' % type(err).__name__)
+          finally:
+              FUNCIONES["listar"] = original
+          assert len(veces) == 1, 'ejecutar ha llamado a la función %d veces: una sola. Repetir una llamada es decisión del modelo, que lee el error' % len(veces)
+          assert obs == {"type": "tool_result", "tool_use_id": "a1", "content": "disco lleno", "is_error": True}, 'listar ha lanzado RuntimeError("disco lleno"): la observación es un error con content "disco lleno", no %r' % (obs,)
+      - name: "un turno con un error y un acierto: las dos llamadas tienen su observación"
+        code: |
+          R1 = [{"type": "tool_use", "id": "a", "name": "leer", "input": {"ruta": "receta.txt"}},
+                {"type": "tool_use", "id": "b", "name": "leer", "input": {"ruta": "lista.txt"}}]
+          vistos = []
+          def espia(M, herramientas=()):
+              vistos.append(list(M))
+              return R1 if len(vistos) == 1 else [{"type": "text", "text": "No está."}]
+          try:
+              bucle(espia, [("sistema", "S"), ("usuario", "U")], {"lista.txt": "pan"}, 5)
+          except Exception as err:
+              raise AssertionError('%s: el error de la primera llamada ha parado el bucle, y la segunda no ha llegado a ejecutarse' % type(err).__name__)
+          obs = vistos[1][3][1] if len(vistos) > 1 and len(vistos[1]) > 3 else None
+          assert obs == [{"type": "tool_result", "tool_use_id": "a", "content": "no existe el fichero 'receta.txt'", "is_error": True},
+                         {"type": "tool_result", "tool_use_id": "b", "content": "pan", "is_error": False}], \
+              'en el turno 2 el modelo recibe un error para a y la lista para b, en ese orden: recibe %r' % (obs,)
+      - name: "una llamada que no cumple su esquema sigue sin ejecutarse"
+        code: |
+          entorno = {"lista.txt": "pan"}
+          obs = ejecutar({"type": "tool_use", "id": "e1", "name": "escribir", "input": {"ruta": "lista.txt", "contenido": ["pan", "ajo"]}}, entorno)
+          assert obs == {"type": "tool_result", "tool_use_id": "e1", "content": "no se ha ejecutado: el campo 'contenido' no es de tipo string", "is_error": True}, 'una llamada que no cumple su esquema vuelve como error, con "no se ha ejecutado: " y el motivo: devuelves %r' % (obs,)
+          assert entorno == {"lista.txt": "pan"}, 'una llamada que no cumple su esquema no se ejecuta'
+      - name: "una llamada que sale bien vuelve como antes"
+        code: |
+          entorno = {"lista.txt": "pan"}
+          obs = ejecutar({"type": "tool_use", "id": "w", "name": "escribir", "input": {"ruta": "lista.txt", "contenido": "pan, ajo"}}, entorno)
+          assert obs == {"type": "tool_result", "tool_use_id": "w", "content": "escritos 8 caracteres en lista.txt", "is_error": False}, 'una llamada que sale bien devuelve lo que devuelve la función, con is_error False: devuelves %r' % (obs,)
+          assert entorno == {"lista.txt": "pan, ajo"}, 'la escritura no ha llegado al entorno'
+      - name: "un modelo que insiste en un error para en el tope, sin excepción"
+        code: |
+          pide = [[{"type": "tool_use", "id": "t%d" % i, "name": "leer", "input": {"ruta": "recetas/salmorejo.txt"}}] for i in range(1, 30)]
+          turnos = []
+          def terco(M, herramientas=()):
+              turnos.append(len(M))
+              return pide[len(turnos) - 1]
+          try:
+              salida = bucle(terco, [("sistema", "S"), ("usuario", "U")], {"lista.txt": "pan"}, 3)
+          except Exception as err:
+              raise AssertionError('%s: con un modelo que repite una lectura que falla, el bucle tiene que llegar al tope, no lanzar' % type(err).__name__)
+          assert salida[:2] == ("tope", None) and len(turnos) == 3, 'tres turnos pidiendo un fichero que no existe: ("tope", None, M) tras 3 llamadas al modelo'
+          assert all(m[1][0]["is_error"] for m in salida[2][3::2]), 'cada lectura fallida vuelve como un error en M'
+    solution: |
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+      exec(open_url("/courses/llm-agents/entorno.py").read())      # el entorno y sus herramientas
+
+      def leer(entorno, ruta):
+          if ruta not in entorno:
+              raise FileNotFoundError("no existe el fichero %r" % ruta)
+          return entorno[ruta]
+      FUNCIONES["leer"] = leer
+
+      def error(id, contenido):
+          return {"type": "tool_result", "tool_use_id": id, "content": contenido, "is_error": True}
+
+      def ejecutar(ll, entorno):
+          """Siempre un tool_result, con is_error si la llamada no cumple su esquema o falla al ejecutarse."""
+          motivo = incumple(ll)
+          if motivo is not None:
+              return error(ll["id"], "no se ha ejecutado: " + motivo)
+          try:
+              contenido = FUNCIONES[ll["name"]](entorno, **ll["input"])
+          except Exception as e:                       # lo que falle dentro de la función
+              return error(ll["id"], str(e))
+          return resultado(ll["id"], contenido)
+
+      def bucle(modelo, inicio, entorno, tope):
+          """El de la lección anterior, sin tocar."""
+          M = list(inicio)
+          for turno in range(tope):
+              r = modelo(M, HERRAMIENTAS)
+              M.append(("asistente", r))
+              llamadas = [b for b in r if b["type"] == "tool_use"]
+              if not llamadas:
+                  return "fin", " ".join(b["text"] for b in r if b["type"] == "text"), M
+              M.append(("usuario", [ejecutar(ll, entorno) for ll in llamadas]))
+          return "tope", None, M
+    explanation: 'El `try` envuelve sólo la función, y la comprobación queda fuera y antes. Así los dos errores siguen siendo distintos, y sólo el del esquema puede asegurar que no se ejecutó nada. `except Exception` y no `except FileNotFoundError`, porque el harness no sabe de antemano cómo falla cada herramienta, y una que no previste no debe volver a parar el bucle; lo que no es un error de la herramienta, como interrumpir el programa, no es una `Exception` y sigue saliendo. Y `str(e)`, no `repr(e)`: el contenido lo lee el modelo, y el mensaje es la parte que escribió quien hizo la herramienta.'
+reading:
+  - kind: paper
+    title: 'Reflexion: Language Agents with Verbal Reinforcement Learning'
+    authors: 'Shinn, Cassano, Berman, Gopinath, Narasimhan y Yao'
+    year: '2023'
+    venue: 'arXiv:2303.11366'
+    lang: en
+    url: 'https://arxiv.org/abs/2303.11366'
+    note: 'Agentes que, tras fallar una tarea, escriben qué salió mal y lo leen en el intento siguiente. Es el error como observación llevado un paso más allá: del turno siguiente al intento siguiente.'
+  - kind: blog
+    title: 'Writing effective tools for agents — with agents'
+    authors: 'Ken Aizawa (Anthropic)'
+    year: '2025'
+    venue: 'Anthropic Engineering'
+    lang: en
+    url: 'https://www.anthropic.com/engineering/writing-tools-for-agents'
+    note: 'Cómo diseñar herramientas para un modelo, con ejemplos de mensajes de error que no ayudan y de otros que dicen qué corregir, que es lo que esta lección le pide al contenido de un error.'
+  - kind: blog
+    title: 'Designing robust and predictable APIs with idempotency'
+    authors: 'Brandur Leach'
+    year: '2017'
+    venue: 'Stripe'
+    lang: en
+    url: 'https://stripe.com/blog/idempotency'
+    note: 'La idempotencia en una API de pagos: qué hacer cuando una petición se corta y no sabes si llegó a cobrarse. Es el error a mitad de la ejecución, con dinero en lugar de ficheros.'
+---
+
+{/* COURSE-C2-P1-04 — Bloque 4, lección 4. Las celdas corren sobre el modelo guionizado (cargado
+    de guionizado.py) y cargan de entorno.py el entorno y sus herramientas. El guion trae, por
+    primera vez, dos llamadas equivocadas: una que no cumple su esquema y otra que pide un fichero
+    que no existe. El bucle es el de la lección anterior, sin tocar. Sin ecuaciones aparte. */}
+
+Todos los guiones del bloque, también el de <Leccion slug="el-bucle">la lección que escribió el
+bucle</Leccion>, tenían algo que un modelo de verdad no garantiza: sus llamadas estaban bien.
+Cumplían su esquema y pedían ficheros que existen, porque las escribía yo para eso. El bucle está
+hecho para llamadas así. Sabe terminar y sabe pararse en el tope, pero cuando una llamada sale mal,
+quien se entera es Python, no el modelo.
+
+Y el modelo se equivoca. Escribe una llamada que su esquema no admite, o pide un fichero que no
+existe, y las dos cosas podría arreglarlas él si supiera que han pasado: corregir los argumentos,
+buscar la ruta buena o decirle al usuario que lo que pide no está. Esta lección decide qué le
+cuenta el *harness* cuando una llamada falla, y quién decide qué hacer después. Queda una tercera
+cuestión, que no se ve hasta que se piensa en ella. Tras un error, el modelo suele volver a pedir
+lo mismo, y repetir una llamada no siempre es inofensivo.
+
+Mira primero una conversación con dos errores, sobre un harness que ya sabe contarlos. El entorno
+es el de siempre: la lista de la compra, la nota de la cena y las dos recetas de <W>recetas/</W>.
+El usuario pide <W>Añade a lista.txt lo que falta para el salmorejo.</W>, y en <W>recetas/</W> no
+hay ningún salmorejo.
+
+1. El modelo quiere leer dos ficheros y los pide en una sola llamada, <W>t1</W>, con un campo
+   <W>rutas</W> que es una lista. `leer` no tiene ese campo: tiene <W>ruta</W>, de texto y
+   obligatorio. El harness no ejecuta nada y contesta a <W>t1</W> con una observación marcada como
+   error, que dice por qué: <W>no se ha ejecutado: falta el campo 'ruta'</W>.
+2. El modelo corrige, con una llamada por fichero. <W>t3</W>, la lista, sale bien. <W>t2</W>, la
+   receta, falla al ejecutarse, y su observación es otro error: <W>no existe el fichero
+   'recetas/salmorejo.txt'</W>. Las dos vuelven juntas, en el mismo mensaje, cada una con su
+   identificador.
+3. El modelo no sabe qué recetas hay, y lo pregunta: lista <W>recetas/</W> y recibe dos rutas, la
+   del gazpacho y la de la tortilla.
+4. Ya no pide nada. Escribe que no hay receta de salmorejo, que no ha cambiado <W>lista.txt</W>, y
+   pregunta si añade lo que falta para el gazpacho, que es lo más parecido.
+
+Fíjate en quién ha tomado cada decisión. El harness no ha corregido el campo, no ha buscado un
+fichero parecido y no ha decidido que la tarea era imposible. Ha contado dos errores, y todo lo
+demás lo ha hecho el modelo al leerlos. Fíjate también en cómo termina. El agente no ha cumplido el
+pedido, y es la respuesta correcta: la alternativa era inventarse el salmorejo o escribir el
+gazpacho sin preguntar.
+
+<Callout type="intuition" title="La idea en una frase">
+Una llamada que falla no lanza: el harness le contesta con un `tool_result` marcado con `is_error`
+que dice qué ha fallado, y el modelo decide qué hacer. Repetirla es seguro cuando es idempotente, o
+cuando el error dice que no llegó a ejecutarse.
+</Callout>
+
+## Un error es una observación
+
+Con precisión, una llamada **falla** cuando no hace lo que promete su herramienta, y lo que vuelve
+entonces es un **error**: una observación con `is_error` verdadero. Hay dos maneras de fallar, y el
+harness las distingue porque ocurren en momentos distintos. La llamada puede no cumplir su esquema,
+y entonces no se ejecuta. O puede cumplirlo y fallar al ejecutarse, porque la función lanza una
+excepción.
+
+`ejecutar(llamada, entorno) -> tool_result` pasa a tener este contrato:
+
+- **Nunca lanza.** Devuelve siempre un `tool_result` con el `id` de la llamada, falle lo que falle
+  dentro.
+- Si la llamada no cumple su esquema, *no la ejecuta*, y devuelve un error cuyo contenido es
+  <W>no se ha ejecutado:</W> seguido del motivo de la comprobación.
+- Si la cumple y la función lanza, devuelve un error cuyo contenido es el mensaje de la excepción.
+- Si la cumple y la función devuelve, lo de antes: `is_error` falso y lo devuelto como contenido.
+
+El bucle no cambia, ni una línea. Llama a `ejecutar` una vez por llamada y añade lo que devuelve,
+que ahora es siempre un `tool_result`. Por eso cada llamada recibe su observación también cuando
+falla, aunque falle la primera de tres y las otras dos salgan bien. El invariante de la lección
+anterior, ninguna llamada sin su observación, pasa a valer con un modelo que se equivoca.
+
+El contenido de un error lo lee el modelo, y es lo único que tiene para decidir, así que dice qué
+ha pasado en palabras que permitan arreglarlo: qué campo falta, qué fichero no existe. Para eso le
+falta un caso al contrato de `leer`, el que <Leccion slug="llamar-herramientas">la lección de las
+cuatro herramientas</Leccion> dejó abierto. Si `ruta` no está en el entorno, `leer` falla con
+<W>no existe el fichero 'ruta'</W> y no cambia nada. Las otras tres no fallan nunca con una llamada
+que cumple su esquema. Un `buscar` sin coincidencias devuelve un texto vacío, y eso no es un error:
+la herramienta ha hecho lo que promete, y la respuesta es que no hay nada.
+
+`is_error` hace falta además del texto. El contenido de una lectura es lo que haya en el fichero, y
+un fichero puede contener la frase <W>no existe el fichero 'x'</W> sin que nada haya fallado. La
+marca dice si es un error, y el texto dice cuál. Es la separación que hizo la lección sobre llamar
+herramientas al dar a las peticiones un bloque propio, para que nadie tuviera que adivinarlas en un
+texto.
+
+Lo que sigue lanzando es lo que no pertenece a ninguna llamada. Si es `modelo` el que falla (el
+modelo guionizado ante un mensaje que no es el del guion, una respuesta cortada por la reserva), no
+hay ningún `tool_use` al que contestar, y el único que podría leer el error es el que ha fallado.
+Esa excepción sale del bucle, hacia quien lo llamó.
+
+### Quién decide qué hacer con un error
+
+Con un error delante, el modelo tiene tres salidas, y la traza usa las tres. Corregir la llamada y
+volver a pedirla, como en el turno 2. Pedir otra cosa que le dé lo que le falta, como el `listar`
+del turno 3. O dejarlo y decírselo al usuario, como en el 4. Elegir entre ellas exige entender el
+pedido, y el harness no lo entiende, por la misma razón por la que no decide cuándo termina el
+bucle.
+
+Lo que el harness no hace es arreglarlo por su cuenta. Uno que, ante <W>recetas/salmorejo.txt</W>,
+leyera el fichero más parecido y devolviera el gazpacho sin decirlo le mentiría al modelo: la
+observación diría que el salmorejo lleva tomates, pepino, pimiento y ajo, y el modelo lo apuntaría
+en la lista convencido. Tampoco repite la llamada solo. Con el mismo entorno, la misma llamada
+falla igual, y lo único que cambia algo es una llamada distinta, que sólo puede escribir el modelo.
+
+Que decida el modelo tiene un riesgo, y ya tiene remedio. Un modelo puede insistir turno tras turno
+en una llamada que falla. Antes, el primer error paraba el programa; ahora no para nada, y lo que
+acota esa insistencia es el tope de la lección anterior.
+
+### Repetir sin miedo: llamadas idempotentes
+
+Tras un error, lo más frecuente es que el modelo vuelva a pedir la misma llamada o una casi igual.
+A veces la repite sin que haya fallado, porque no está seguro de que se ejecutara. Repetir es
+inofensivo con unas herramientas y no con otras, y la diferencia tiene nombre.
+
+Una llamada es **idempotente** cuando ejecutarla dos veces seguidas deja el entorno igual que
+ejecutarla una. `leer`, `listar` y `buscar` lo son porque no cambian nada. `escribir` lo es aunque
+cambie el entorno, porque sustituye el fichero entero: la segunda escritura deja exactamente lo que
+dejó la primera. No es casualidad, porque así la definió la lección sobre llamar herramientas. Una
+herramienta `añadir`, que pegara el contenido al final del fichero, no lo sería: dos veces la misma
+llamada, dos veces la misma línea.
+
+De ahí la regla para repetir. Una llamada que ha fallado se puede volver a pedir sin mirar cuando
+es idempotente, o cuando su error dice que no llegó a ejecutarse, que es lo que garantiza un error
+del esquema y por eso su contenido lo dice. Un error al ejecutarse no lo garantiza. Dice que la
+función no terminó, no que no hiciera nada antes de fallar. En este entorno no hay diferencia,
+porque la única herramienta que falla es `leer`, que no escribe. Un comando de verdad, en el bloque
+siguiente, puede cortarse con medio trabajo hecho, y ahí repetir una llamada que no es idempotente
+es repetir esa mitad.
+
+## Dos errores, sobre el modelo guionizado
+
+Las dos celdas corren sobre el modelo guionizado, como todo el bloque, y su guion es el primero
+que trae llamadas equivocadas: las he escrito mal a propósito. La primera celda completa el
+contrato de `leer` y cambia la mitad de `ejecutar` que ya sabía por qué fallaba una llamada, la
+comprobación del esquema, que ahora contesta en lugar de lanzar. El bucle es el de la lección
+anterior, copiado sin tocar. Las observaciones que espera el guion las he escrito a mano, porque
+son las que debe dar un harness correcto, también en el turno 2.
+
+<PyCell code={`
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado
+exec(open_url("/courses/llm-agents/entorno.py").read())      # el entorno y sus herramientas
+
+def leer(entorno, ruta):                  # su contrato entero: también la ruta que no existe
+    if ruta not in entorno:
+        raise FileNotFoundError("no existe el fichero %r" % ruta)
+    return entorno[ruta]
+FUNCIONES["leer"] = leer
+def error(id, contenido):                 # una observación que cuenta un error
+    return {"type": "tool_result", "tool_use_id": id, "content": contenido, "is_error": True}
+
+def ejecutar(ll, entorno):                # el esquema ya no lanza: contesta
+    motivo = incumple(ll)
+    if motivo is not None:
+        return error(ll["id"], "no se ha ejecutado: " + motivo)
+    return resultado(ll["id"], FUNCIONES[ll["name"]](entorno, **ll["input"]))  # esto aún lanza
+
+def bucle(modelo, inicio, entorno, tope):  # el de la lección anterior, sin tocar
+    M = list(inicio)
+    for turno in range(tope):
+        r = modelo(M, HERRAMIENTAS)
+        M.append(("asistente", r))
+        llamadas = [b for b in r if b["type"] == "tool_use"]
+        if not llamadas:
+            return "fin", " ".join(b["text"] for b in r if b["type"] == "text"), M
+        M.append(("usuario", [ejecutar(ll, entorno) for ll in llamadas]))
+    return "tope", None, M
+
+INICIO = [("sistema", "Trabajas con los ficheros del usuario mediante tus herramientas."),
+          ("usuario", "Añade a lista.txt lo que falta para el salmorejo.")]
+RESPUESTAS = [  # el guion, con dos llamadas equivocadas: lo he escrito yo
+    [texto("Leo la receta y la lista."), llamada("t1", "leer", rutas=["recetas/salmorejo.txt", "lista.txt"])],
+    [llamada("t2", "leer", ruta="recetas/salmorejo.txt"), llamada("t3", "leer", ruta="lista.txt")],
+    [llamada("t4", "listar", carpeta="recetas/")],
+    [texto("No hay receta de salmorejo, sólo de gazpacho y de tortilla. No he cambiado lista.txt.")]]
+VISTO = [[error("t1", "no se ha ejecutado: falta el campo 'ruta'")],   # lo que el guion espera
+         [error("t2", "no existe el fichero 'recetas/salmorejo.txt'"), resultado("t3", ENTORNO["lista.txt"])],
+         [resultado("t4", listar(ENTORNO, "recetas/"))], None]
+modelo, entorno = ModeloGuionizado(guion_de(INICIO, RESPUESTAS, VISTO)), dict(ENTORNO)
+print(muestra(ejecutar(RESPUESTAS[0][1], entorno)), "· is_error")
+try:
+    bucle(modelo, INICIO, entorno, 10)
+except Exception as e:
+    print("turno %d: %s: %s" % (modelo.turno, type(e).__name__, e))
+`} />
+
+La primera línea es el error del turno 1 como observación, con el motivo que ya daba la
+comprobación. El modelo guionizado la acepta y escribe las llamadas corregidas, y la conversación
+muere en ese mismo turno 2: `leer` lanza `FileNotFoundError`, que atraviesa `ejecutar` y el bucle,
+y la lectura de la lista, que habría salido bien, no llega a ejecutarse. Que ese error también
+vuelva como observación es el desafío de abajo.
+
+La segunda celda deja los errores y mira la repetición. Ejecuta cada herramienta una vez sobre una
+copia del entorno y dos veces sobre otra, y compara. A las cuatro del bloque les añade una quinta,
+`añadir`, que no es del entorno y está sólo para comparar.
+
+<PyCell code={`
+# Necesita la celda anterior: ENTORNO y las cuatro funciones, con leer ya completa.
+def añadir(entorno, ruta, contenido):     # no es del bloque: escribir, pero al final
+    entorno[ruta] = entorno.get(ruta, "") + contenido
+    return "añadidos %d caracteres a %s" % (len(contenido), ruta)
+
+def una_y_dos(f, **argumentos):           # el entorno tras ejecutar f una vez, y tras dos
+    una, dos = dict(ENTORNO), dict(ENTORNO)
+    f(una, **argumentos)
+    f(dos, **argumentos)
+    f(dos, **argumentos)
+    return una, dos
+
+PRUEBAS = [(leer, {"ruta": "lista.txt"}), (listar, {"carpeta": "recetas/"}),
+           (buscar, {"patron": "patatas"}),
+           (escribir, {"ruta": "lista.txt", "contenido": "pan, leche, patatas, tomates"}),
+           (añadir, {"ruta": "lista.txt", "contenido": ", tomates"})]
+for f, argumentos in PRUEBAS:
+    una, dos = una_y_dos(f, **argumentos)
+    print("%-9s idempotente: %-5s lista.txt tras dos: %s" % (f.__name__, una == dos, dos["lista.txt"]))
+`} />
+
+Las cuatro del bloque dejan lo mismo con una ejecución que con dos. `añadir` deja <W>tomates</W>
+dos veces en la lista. Si el modelo la repitiera sin saber si la primera había llegado a escribir,
+la lista de la compra acabaría así, y ninguna de las dos llamadas tendría nada mal.
+
+## Comprueba tu intuición
+
+Cuatro preguntas (qué hace el harness con un error, cómo se contesta a un turno con un error y un
+acierto, cuándo un resultado vacío es un error y qué llamadas se pueden repetir) y un desafío: la
+otra mitad de `ejecutar`.
+
+<Quiz id="q-quien-decide" />
+
+<Quiz id="q-error-y-acierto" />
+
+<Quiz id="q-vacio-no-es-error" />
+
+<Quiz id="q-repetir" />
+
+<CodeChallenge id="ch-errores" />
+
+---
+
+`ejecutar` ya no se rompe. Contesta a cada llamada con lo que pasó, y el modelo sabe de sus
+equivocaciones tanto como de sus aciertos. Pero ejecuta todo lo que cumple su esquema, y el
+esquema mira la forma y no la intención: un `escribir` bien formado que borra la nota de la cena
+pasa la comprobación y se ejecuta sin que nadie lo pregunte. Y el modelo lee cada observación como
+información fiable, también cuando trae un fichero que alguien escribió para que lo leyera un
+modelo.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug permisos-y-confianza), envolver «La lección siguiente, sobre los permisos» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, sobre los permisos, pone una decisión antes de `ejecutar`: permitir,
+preguntar al usuario o denegar, según lo que la herramienta puede hacer. Y trata lo que vuelve de
+una herramienta como lo que es, contenido que no ha escrito el usuario, porque el agente no obedece
+a los ficheros que lee.

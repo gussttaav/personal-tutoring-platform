@@ -51,7 +51,7 @@ Block 5, and it is why the loop was built first.
 - [x] 25. `de-chat-a-agente`
 - [x] 26. `llamar-herramientas`
 - [x] 27. `el-bucle`
-- [ ] 28. `errores-como-observaciones`
+- [x] 28. `errores-como-observaciones`
 - [ ] 29. `permisos-y-confianza`
 - [ ] 30. `estado-y-memoria`
 - [ ] 31. `proyecto-agente-guionizado`

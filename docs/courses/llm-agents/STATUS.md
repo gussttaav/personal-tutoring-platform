@@ -39,7 +39,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (3/7) | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (4/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1498,3 +1498,37 @@ Approved by Gustavo at review:
   and with tope 3 to `tope` (16 steps, 8 mensajes); `q-mensajes-al-final` answered in the browser,
   the other four not confirmed; no horizontal page scroll at 375 px, no widget line overflows. Not on
   a phone.
+
+Lesson 28 `errores-como-observaciones` authored on its own branch (2026-10-28). 1 861 words, no
+display equation, no widget (none assigned), 2 cells (45 and 19 lines), 4 quiz, 1 challenge
+(`ch-errores`, 7 tests), 3 readings (Reflexion 2023; Anthropic's «Writing effective tools for
+agents», kept with its own em dash in the title; Stripe's idempotency post 2017; URLs checked).
+`minutes: 30` (lint ≈32). Runs on the **scripted model**, said before the first cell, with the
+first guion whose llamadas are wrong on purpose. Approved by Gustavo at review:
+- **The content:** a prose trace (the user asks for the salmorejo, which has no recipe: a `leer`
+  with a `rutas` list fails its esquema and does not run; the corrected turno has a missing file
+  and a good read in one mensaje; the model lists `recetas/` and tells the user, offering the
+  gazpacho); the contract of `ejecutar` (never raises; esquema error = not executed, «no se ha
+  ejecutado: …»; execution error = the exception's message; `is_error` as the flag the text cannot
+  be); `leer`'s missing case; an empty result is not an error; what still raises (`modelo`'s own
+  failures); who decides (the model: correct, ask for something else, or give up and say so; the
+  harness neither fixes nor repeats, the tope bounds a model that insists); idempotence (the four
+  tools are, `escribir` because it replaces the file; an `añadir` would not be; a failed llamada is
+  safe to repeat when idempotent or when its error says it never ran).
+- **The cells:** cell 1 turns the esquema error into an observación, with the bucle copied
+  unchanged and the guion's expected observaciones written by hand, and dies on turno 2 with
+  `FileNotFoundError`; cell 2 runs each tool once and twice against `añadir`. The challenge is the
+  other half, the `try` around the function.
+- **Applied after review:** delta §4 rows `fallar` / `error` (de una llamada), `idempotente`,
+  `repetir` (una llamada); `NOTATION.md`'s Block 4 section records `ejecutar`'s contract, `leer`'s
+  missing case, the empty-result rule, and that `entorno.py` gains the new pieces only when a lesson
+  first loads them.
+- **Lesson 27's bridge now links this lesson** (placeholder comment removed), and lesson 26's three
+  prose mentions and one quiz explanation of «la lección sobre los errores» now link it too. This
+  lesson's bridge names lesson 29 (`permisos-y-confianza`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green; both cells run in
+  the Browser pane on `pnpm start` with the CPython prototype's output; the challenge's starter
+  passes 2/7 and the solution 7/7 in Pyodide, seven wrong variants each fail a named test (CPython),
+  among them catching only `FileNotFoundError`, `is_error` false and retrying inside `ejecutar`;
+  `q-vacio-no-es-error` answered wrong in the browser (rejected, explanation shown), the other three
+  not confirmed; no horizontal page scroll at 375 px. Not on a phone.
