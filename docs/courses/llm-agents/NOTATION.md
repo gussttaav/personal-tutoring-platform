@@ -547,6 +547,23 @@ Lesson 28's cells define the new `leer`, `error` and `ejecutar` in place, and `e
 lesson 26's code: the lesson that first needs them loaded from a file adds them there, checked by
 `llm-agents-assets.test.ts` like the rest.
 
+**From lesson 29 on, `ejecutar` consults a permiso between the esquema and the function**
+(`COURSE-C2-P1-04`, lesson 29). Its firma is unchanged, and it runs three steps in order: the
+esquema (a llamada that fails it is never asked about), `permiso(ll) -> "permitir" | "preguntar" |
+"denegar"`, then the function as in lesson 28. `permiso` reads the llamada's herramienta only,
+`PERMISOS.get(CLASES.get(name), "denegar")`: no M, no observación, no text of the model, so
+nothing an observación says can change a decision. `CLASES` maps each herramienta to `lectura` or
+`escritura`; the entorno has no `ejecución` herramienta, and the lesson names the class and says
+the first one (a command) is Block 5's. A denial is `error(id, "no se ha ejecutado: permiso
+denegado")`; `"preguntar"` calls `preguntar(ll) -> bool` once, the usuario, scripted in the cells
+(it approves writes to `lista.txt` only), and a `False` is `error(id, "no se ha ejecutado: el
+usuario no lo ha permitido")`. With nobody to ask, `preguntar` counts as `denegar`. The bucle is
+unchanged. The cells load `leer`, `error`, `ejecutar` and `bucle` from the frozen
+`public/courses/llm-agents/harness.py`, after `entorno.py`: lesson 28's challenge solution from
+`def leer(`, checked character for character by `llm-agents-assets.test.ts`. Lesson 29's entorno is
+`ENTORNO` plus one file, `recetas/salmorejo.txt`, a recipe copied from the web whose third line is
+an inyección de instrucciones; the four original files and herramientas are unchanged.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the

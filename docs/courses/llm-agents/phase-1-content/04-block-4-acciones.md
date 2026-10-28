@@ -52,7 +52,7 @@ Block 5, and it is why the loop was built first.
 - [x] 26. `llamar-herramientas`
 - [x] 27. `el-bucle`
 - [x] 28. `errores-como-observaciones`
-- [ ] 29. `permisos-y-confianza`
+- [x] 29. `permisos-y-confianza`
 - [ ] 30. `estado-y-memoria`
 - [ ] 31. `proyecto-agente-guionizado`
 
@@ -76,8 +76,9 @@ Block 5, and it is why the loop was built first.
 - **An error is an observation:** `ejecutar` never raises into the loop; it returns
   `tool_result(is_error=true, content=…)` and the model decides. Idempotence of tools as the
   property that makes retries safe
-- **Permissions** as a function `permitir(llamada) -> permitir | preguntar | denegar` evaluated
-  *before* `ejecutar`, per tool class (read / write / execute), with the rule that **tool
+- **Permissions** as a function `permiso(llamada) -> permitir | preguntar | denegar` evaluated
+  *before* the tool's function runs (lesson 29 names it `permiso`, the course's term for the
+  decision, rather than `permitir`, which is one of its values), per tool class (read / write / execute), with the rule that **tool
   results are untrusted content** — a file the agent reads can contain instructions, and the
   loop does not obey files. Prompt injection is this lesson, not a callout
 - **Memory** is two things with one name: `M`, which the model sees and which fills; and the
