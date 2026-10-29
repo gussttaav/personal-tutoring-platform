@@ -1840,7 +1840,11 @@
           "pasaje": "passage {n}",
           "pregunta": "question",
           "respuesta": "reserve for the response",
-          "resumen": "summary"
+          "resumen": "summary",
+          "herramientas": "tools",
+          "pedido": "the user's request",
+          "llamadas": "turn {n} calls",
+          "observaciones": "turn {n} observations"
         },
         "legend": {
           "sistema": "system prompt",
@@ -1850,6 +1854,10 @@
           "pregunta": "question",
           "respuesta": "reserve for the response",
           "resumen": "summary of the old turns",
+          "herramientas": "tools: name, description and schema",
+          "pedido": "the user's request",
+          "llamadas": "calls: what the model asks for",
+          "observaciones": "observations: what the tools return",
           "out": "left out of the call"
         },
         "allFits": "Everything fits: nobody has to decide anything.",

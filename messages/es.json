@@ -1840,7 +1840,11 @@
           "pasaje": "pasaje {n}",
           "pregunta": "pregunta",
           "respuesta": "reserva para la respuesta",
-          "resumen": "resumen"
+          "resumen": "resumen",
+          "herramientas": "herramientas",
+          "pedido": "pedido del usuario",
+          "llamadas": "llamadas del turno {n}",
+          "observaciones": "observaciones del turno {n}"
         },
         "legend": {
           "sistema": "prompt de sistema",
@@ -1850,6 +1854,10 @@
           "pregunta": "pregunta",
           "respuesta": "reserva para la respuesta",
           "resumen": "resumen de los turnos viejos",
+          "herramientas": "herramientas: nombre, descripción y esquema",
+          "pedido": "pedido del usuario",
+          "llamadas": "llamadas: lo que pide el modelo",
+          "observaciones": "observaciones: lo que vuelve de las herramientas",
           "out": "fuera de la llamada"
         },
         "allFits": "Cabe todo: nadie tiene que decidir nada.",

@@ -564,6 +564,20 @@ unchanged. The cells load `leer`, `error`, `ejecutar` and `bucle` from the froze
 `ENTORNO` plus one file, `recetas/salmorejo.txt`, a recipe copied from the web whose third line is
 an inyección de instrucciones; the four original files and herramientas are unchanged.
 
+**From lesson 30 on, a conversation can continue, and the bucle still does not change**
+(`COURSE-C2-P1-04`, lesson 30). A second pedido in the same conversation is a second `bucle` call
+whose `inicio` is the M the first returned plus one `("usuario", texto)` mensaje; a new
+conversation starts again from a two-mensaje `inicio`, so nothing of the earlier M reaches the
+model and only the entorno carries over. The cells count tokens as lesson 22 did, with the
+mini-GPT's `codificar`, a list of bloques counted as its `json.dumps(..., ensure_ascii=False)`;
+`HERRAMIENTAS` is counted apart, since it travels with every call but is not in M. Lesson 30's
+entorno adds `libros/marianela.txt`, the course corpus without its header
+(`quitar_cabecera(corpus.txt)`), for its first cell; its second cell uses `ENTORNO` as it is, with
+one hand edit between the pedidos. The `context-window` widget's `agente` preset draws each turno
+as two segments, its llamadas and its observaciones, sharing one drop rank: segments with equal
+rank leave together, so «lo descarta el harness» never keeps a `tool_use` without its
+`tool_result`.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the

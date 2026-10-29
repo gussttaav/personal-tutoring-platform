@@ -53,7 +53,7 @@ Block 5, and it is why the loop was built first.
 - [x] 27. `el-bucle`
 - [x] 28. `errores-como-observaciones`
 - [x] 29. `permisos-y-confianza`
-- [ ] 30. `estado-y-memoria`
+- [x] 30. `estado-y-memoria`
 - [ ] 31. `proyecto-agente-guionizado`
 
 ## The precise statements (P0-04's step 3 for a systems lesson)
