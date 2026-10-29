@@ -9,11 +9,17 @@
  *      brute force), "front" keeps exactly the last tCtx − reserve tokens of the prompt.
  *   2. THE LESSON'S NUMBERS — what the intuition paragraph reads off the widget at its
  *      default window of 2 560 tokens.
+ *
+ * COURSE-C2-P1-04 — the same two checks for the `agente` preset (Block 4 lesson 6), plus the
+ * rule it needs: segments sharing a drop rank leave together, so "drop" never leaves a
+ * turno's llamadas without their observaciones.
  */
 
 import {
+  AGENT_PRESET,
   ASSISTANT_PRESET,
   SUMMARY_ID,
+  dropGroups,
   fitWindow,
   type Fit,
   type Policy,
@@ -174,5 +180,103 @@ describe("context-window — the numbers the lesson reads at 2 560 tokens", () =
     expect(status(fit, "turno-5")).toBe("whole");
     expect(status(fit, "turno-6")).toBe("whole");
     expect(fit.used).toBe(2_560);
+  });
+});
+
+describe("context-window — agente: the preset", () => {
+  const A = AGENT_PRESET;
+
+  it("is in prompt order, ends on the reserve, and holds less than the largest window", () => {
+    expect(A.segments[A.segments.length - 1].kind).toBe("respuesta");
+    expect(new Set(A.segments.map((s) => s.id)).size).toBe(A.segments.length);
+    expect(sum(A.segments.map((s) => s.tokens))).toBe(4_840);
+    expect(A.tCtxMax).toBeGreaterThanOrEqual(4_840);
+    expect((A.tCtxDefault - A.tCtxMin) % A.tCtxStep).toBe(0);
+    expect((A.tCtxMax - A.tCtxMin) % A.tCtxStep).toBe(0);
+  });
+
+  it("each turno is one drop unit, llamadas then observaciones, oldest first", () => {
+    expect(dropGroups(A.segments).map((g) => g.map((s) => s.id))).toEqual(
+      [1, 2, 3, 4, 5, 6].map((n) => [`llamadas-${n}`, `observaciones-${n}`]),
+    );
+  });
+
+  it("the turnos add 3 280 tokens, 2 440 of them observaciones", () => {
+    const turns = A.segments.filter((s) => s.drop !== undefined);
+    expect(sum(turns.map((s) => s.tokens))).toBe(3_280);
+    expect(sum(turns.filter((s) => s.kind === "observaciones").map((s) => s.tokens))).toBe(2_440);
+  });
+});
+
+describe("context-window — agente, at every window", () => {
+  const A = AGENT_PRESET;
+  const agentWindows: number[] = [];
+  for (let t = A.tCtxMin; t <= A.tCtxMax; t += A.tCtxStep) agentWindows.push(t);
+
+  /** The brute-force answer: the shortest prefix of the rank groups whose removal fits. */
+  function bruteForce(tCtx: number): string[] {
+    const groups = dropGroups(A.segments);
+    const total = sum(A.segments.map((s) => s.tokens));
+    for (let k = 0; k <= groups.length; k++) {
+      const removed = groups.slice(0, k).flat();
+      if (total - sum(removed.map((s) => s.tokens)) <= tCtx) return removed.map((s) => s.id);
+    }
+    return groups.flat().map((s) => s.id);
+  }
+
+  it.each(agentWindows)("tCtx = %i: every policy fits and keeps the order and the reserve", (tCtx) => {
+    for (const policy of ["front", "drop", "compact"] as const) {
+      const fit = fitWindow(A, tCtx, policy);
+      if (fit.fits) expect(fit.used).toBeLessThanOrEqual(tCtx);
+      expect(ids(fit)[ids(fit).length - 1]).toBe("respuesta");
+      const kept = ids(fit).filter((id) => id !== SUMMARY_ID);
+      expect(isSubsequence(kept, A.segments.map((s) => s.id))).toBe(true);
+    }
+  });
+
+  it.each(agentWindows)("tCtx = %i: drop removes whole turnos, never a llamada without its observación", (tCtx) => {
+    const fit = fitWindow(A, tCtx, "drop");
+    const dropped = fit.placed.filter((p) => p.status === "dropped").map((p) => p.segment.id);
+    expect(new Set(dropped)).toEqual(new Set(bruteForce(tCtx)));
+    for (let n = 1; n <= 6; n++) expect(status(fit, `llamadas-${n}`)).toBe(status(fit, `observaciones-${n}`));
+    for (const id of ["sistema", "herramientas", "pedido", "respuesta"]) expect(status(fit, id)).toBe("whole");
+  });
+});
+
+describe("context-window — agente: the numbers the lesson reads", () => {
+  const A = AGENT_PRESET;
+  const tCtx = A.tCtxDefault;
+
+  it("the window is the default the widget opens on", () => {
+    expect(tCtx).toBe(3_584);
+  });
+
+  it("front: the prompt de sistema, the herramientas, the pedido and turno 1 fall off; turno 2 loses its llamadas and the start of its observaciones", () => {
+    const fit = fitWindow(A, tCtx, "front");
+    for (const id of ["sistema", "herramientas", "pedido", "llamadas-1", "observaciones-1", "llamadas-2"]) {
+      expect(status(fit, id)).toBe("dropped");
+    }
+    expect(status(fit, "observaciones-2")).toBe("cut");
+    expect(fit.placed.find((p) => p.segment.id === "observaciones-2")?.kept).toBe(1_074);
+    expect(fit.used).toBe(3_584);
+  });
+
+  it("drop: turnos 1 and 2 go whole, the rest stays", () => {
+    const fit = fitWindow(A, tCtx, "drop");
+    for (const n of [1, 2]) expect(status(fit, `observaciones-${n}`)).toBe("dropped");
+    for (const n of [3, 4, 5, 6]) expect(status(fit, `observaciones-${n}`)).toBe("whole");
+    expect(fit.used).toBe(3_470);
+  });
+
+  it("compact: turnos 1 to 5 become one summary", () => {
+    const fit = fitWindow(A, tCtx, "compact");
+    expect(fit.summary?.replaced).toBe(3_110);
+    expect(fit.used).toBe(1_930);
+  });
+
+  it("at 1 536 tokens, what drop never removes no longer fits", () => {
+    const fit = fitWindow(A, 1_536, "drop");
+    expect(fit.fits).toBe(false);
+    expect(fit.used).toBe(280 + 620 + 60 + 600);
   });
 });

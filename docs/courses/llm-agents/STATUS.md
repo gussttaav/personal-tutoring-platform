@@ -39,7 +39,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (5/7) | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (6/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1573,3 +1573,36 @@ cell, with the first guion whose model obeys an observación. Approved by Gustav
   unclassified herramienta; `q-filtrar-ordenes` answered wrong in the browser (rejected,
   explanation shown), the other four not confirmed; no horizontal page scroll at 375 px. Not on a
   phone.
+
+Lesson 30 `estado-y-memoria` authored on its own branch (2026-10-29). 1 901 words, no display
+equation, 1 widget (`context-window`, new preset `agente`), 2 cells (35 and 32 lines), 4 quiz, no
+challenge (none assigned), 3 readings (MemGPT 2023; Anthropic's «Effective context engineering for
+AI agents» and «Effective harnesses for long-running agents», both 2025; URLs checked).
+`minutes: 30` (lint ≈28). Runs on the **scripted model**, said before the first cell. Approved by
+Gustavo at review:
+- **The content:** the widget shows an agent's seventh call, where observaciones are 2 440 of the
+  3 280 tokens the turnos added; truncating loses the pedido first, dropping loses whole old turnos
+  whose files are still in the entorno. A two-day story (a fact told on Tuesday, a new conversation
+  on Saturday). The two contracts: M (seen whole, grows by what the llamadas ask, must fit the
+  ventana, lasts one conversation) and the entorno (lasts, others change it, seen only through
+  observaciones, costs ventana only when read); what is only in M against what is a copy of the
+  entorno, hence what is cheap to drop (compaction's contract left to Block 5); an observación is a
+  dated copy, `desactualizada` when the entorno changed, and with `escribir` a lost change (Block
+  5's `editar` named as the guarantee); what must last is written.
+- **The cells:** cell 1 puts *Marianela* in the entorno and counts each call's tokens: `leer` sends
+  142 312 tokens of observación, `buscar` 8 788, the herramientas 849 per call. Cell 2 continues a
+  conversation over two pedidos with a hand edit between them; the guion that writes from M loses
+  «aceitunas», the one that re-reads keeps them.
+- **Widget change:** `math/context-window.ts` gains `AGENT_PRESET` and the rule that segments
+  sharing a drop rank leave together (`dropGroups`); `asistente` is unchanged. Colours for four new
+  kinds in `ContextWindow.tsx`, their labels in both message files, tests for the invariants at
+  every window, a brute-force drop check and the lesson's numbers.
+- **Applied after review:** delta §4 rows `pedido` (del usuario) and `desactualizada`, and a note
+  that «memoria» is not a term; `NOTATION.md`'s Block 4 section records continuing a conversation,
+  the token count, the Marianela file and the preset's shared drop ranks.
+- **Lesson 29's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 31 (`proyecto-agente-guionizado`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings for the lesson), `pnpm build` green; both cells run in
+  the Browser pane on `pnpm start` with the CPython prototype's output; the widget at 3 584 tokens
+  and at 1 536 reads as the prose says; no horizontal page scroll at 375 px. Quiz not answered in
+  the browser. Not on a phone.

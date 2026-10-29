@@ -50,6 +50,11 @@ const KIND_FILL: Readonly<Record<string, string>> = {
   pasaje: "var(--warning)",
   pregunta: "var(--text)",
   respuesta: "var(--green-mid)",
+  // COURSE-C2-P1-04 — the `agente` preset (Block 4 lesson 6): what an agent's call carries.
+  herramientas: "var(--green-container)",
+  pedido: "var(--text)",
+  llamadas: "var(--text-muted)",
+  observaciones: "var(--warning)",
 };
 const fillOf = (kind: string) => KIND_FILL[kind] ?? "var(--text-dim)";
 

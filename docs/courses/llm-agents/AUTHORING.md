@@ -318,6 +318,8 @@ this work.
 | the harness's map from clase to decisión (`permitir`, `preguntar`, `denegar`); a clase it does not name is denied | `tabla de permisos` (Block 4 lesson 5); `PERMISOS` in the cells | política (Block 2 lesson 2's $\pi_\theta$); configuración, reglas as the term; *policy* |
 | what an observación carries: written by whoever wrote the file, the page or the program, never an order from the usuario, whatever it says | `contenido no fiable` (Block 4 lesson 5) | contenido no confiable; contenido malicioso (it need not be); datos externos as the term |
 | a text that reaches the model through a herramienta carrying an instrucción for it | `inyección de instrucciones` (Block 4 lesson 5), with *prompt injection* given once per lesson | inyección de prompts; ataque de inyección as the term; *prompt injection* in prose |
+| what the usuario asks the agent for in one mensaje, the task the bucle runs until it is done | `pedido` (del usuario) (Block 4 lesson 5, given its row by lesson 6) | petición as the term (fine for the act of asking, the `instrucción` row's); tarea (Block 1 lesson 8's $\omega$); *prompt*; instrucción alone (a pedido is one, and the row is for the agent's whole job) |
+| an observación whose contenido is no longer what the entorno holds, because the entorno changed after its llamada (the agent's own escritura, or someone outside its herramientas) | `desactualizada` (Block 4 lesson 6) | obsoleta, caducada, vieja as the term (fine in passing); *stale*; inválida (an error is `is_error`, and a desactualizada observación was true when it came back) |
 | the mensajes of the earlier turnos that the harness sends again in each call: each turno leaves two, the usuario's and the asistente's | `historial` (Block 3 lesson 5) | memoria (the `ventana` row refuses it); conversación as the term (fine for the whole exchange, in passing); contexto (what the model *does* see, which the historial is only part of) |
 | the tokens of the ventana kept free for the respuesta: `max_tokens`, since its length is unknown until it is written | `reserva` (Block 3 lesson 5) | margen (Block 2 lesson 4's $r(x, y_A) - r(x, y_B)$); presupuesto (Block 1 lesson 7's $C$, and the lesson's metaphor for the whole ventana); hueco |
 | cutting a prompt that does not fit to its last tokens, keeping nothing of what falls off and deciding nothing: what a model does with a prompt longer than its ventana | `truncar`, `truncamiento` (Block 3 lesson 5), the first course's word for cutting a text at $T_{\max}$ | recortar (the gradient's `recorte`); cortar, corte (top-k's, Block 1 lesson 4); `rellenar` (Block 1 lesson 9's refill of the caché, which is how the mini-GPT truncates) |
@@ -348,6 +350,12 @@ Block 1 of this course picks that function up by name; a `turno` is one call **p
 harness does with what came back, which is a different unit, and the loop's whole point is that
 the two are not the same size. `iteración` is refused for being about the `while` and not about
 the conversation.
+
+«memoria» is not a term, and that is the point of Block 4 lesson 6 (`estado-y-memoria`): the
+word names two things, M and the entorno, and the lesson's claim is that they are different. So
+it appears only in «…», in its loose sense, as the word the lesson title splits, and every claim
+says which of the two it means. The `ventana` and `historial` rows already refuse it as a
+synonym; a lesson that wrote «la memoria del agente» as a term would merge the two again.
 
 `compactación`, not «resumen», because the summary is the *instrument*: what the lesson names is
 the operation on the messages list, with its invariants (what is kept verbatim, what a compaction

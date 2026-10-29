@@ -1,0 +1,331 @@
+---
+slug: estado-y-memoria
+title: "Estado y memoria: lo que el bucle recuerda"
+block: 4
+order: 6
+minutes: 30
+summary: "Lo que un agente recuerda está en dos sitios. M, la lista de mensajes que el modelo ve, crece con cada observación, tiene que caber en la ventana y se acaba con la conversación. El entorno dura, pero el modelo sólo sabe de él lo que le ha traído una llamada, y desde que se lo trajo."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-decide-el-tamano
+    type: single
+    prompt: 'En la primera celda, para el mismo pedido, la observación de `leer` ocupa 142 312 tokens y la de `buscar`, 8 788. ¿Qué decide cuánto entra en M?'
+    options:
+      - { id: a, text: 'La llamada del modelo y el contrato de su herramienta: `leer` promete el fichero entero.' }
+      - { id: b, text: 'El harness, que mide la ventana antes de ejecutar la llamada.' }
+      - { id: c, text: 'La ventana de contexto, que corta la observación a lo que cabe.' }
+      - { id: d, text: 'El prompt de sistema, que le pide al modelo respuestas cortas.' }
+    answer: a
+    explanation: 'La (a). El harness ejecuta lo que pide la llamada y devuelve lo que promete la herramienta, sin medir nada. La ventana no corta la observación: decide si la llamada siguiente cabe, y con más de 142 000 tokens no cabe en una de 128 000. El prompt de sistema habla de lo que escribe el modelo, no de lo que devuelven sus herramientas. Lo que el harness sí puede cambiar es el contrato: un `leer` con un máximo de líneas es otra herramienta, y su descripción tiene que decirlo.'
+  - id: q-conversacion-nueva
+    type: single
+    prompt: 'El martes, el usuario le dice al agente <W>Marta es vegetariana; tenlo en cuenta para la cena del sábado.</W> y el modelo contesta <W>De acuerdo, lo tendré en cuenta.</W>, sin ninguna llamada. El sábado, en una conversación nueva, el usuario pide el menú. ¿Qué sabe el modelo de Marta?'
+    options:
+      - { id: a, text: 'Nada. La conversación nueva empieza con otro M, y en el entorno no hay nada sobre Marta.' }
+      - { id: b, text: 'Lo sabe, porque el harness guarda M de una conversación a la siguiente.' }
+      - { id: c, text: 'Lo sabe si lee <W>notas.txt</W>.' }
+      - { id: d, text: 'Lo sabe, porque lo prometió con su propia respuesta.' }
+    answer: a
+    explanation: 'La (a). El M del martes se acabó con su conversación, y `bucle` empieza el del sábado desde `inicio`. La (c) sería verdad si el martes una llamada hubiera escrito la frase en el fichero, y ninguna lo hizo. La (d) es la trampa: <W>lo tendré en cuenta</W> es texto del modelo, vive en M y dura lo que M. Un harness que guardara M, la (b), no abriría una conversación nueva: seguiría la del martes, con su M cada vez más largo.'
+  - id: q-recuperable
+    type: multi
+    prompt: 'Supón que el harness tiene que quitar de M los turnos más viejos. ¿Cuáles de estas cosas podría el modelo recuperar después con una llamada?'
+    options:
+      - { id: a, text: 'La observación de un `leer` de <W>recetas/gazpacho.txt</W>.' }
+      - { id: b, text: 'El texto en el que el modelo explicó qué plan iba a seguir.' }
+      - { id: c, text: 'El error <W>no se ha ejecutado: el usuario no lo ha permitido</W>.' }
+      - { id: d, text: 'Lo que dejó en <W>lista.txt</W> un `escribir`.' }
+    answer: [a, d]
+    explanation: 'La (a) y la (d) están en el entorno, y un `leer` las vuelve a traer: la (a) tal cual si nadie ha cambiado la receta, la (d) como el contenido que dejó la escritura. La (b) sólo está en M, porque el plan no lo escribió en ningún fichero. La (c) tampoco: lo que contestó el usuario no está en el entorno, y repetir la llamada es volver a preguntarle, no recordar su respuesta.'
+    hint: 'Para cada una, pregúntate si hay una herramienta que la devuelva.'
+  - id: q-desactualizada
+    type: single
+    prompt: 'En la segunda celda, el usuario añade <W>aceitunas</W> a mano entre los dos pedidos. ¿Por qué las pierde el guion «de memoria»?'
+    options:
+      - { id: a, text: 'Porque escribe la lista a partir de lo último que M dice de ella, que es de antes del cambio, y `escribir` sustituye el fichero entero.' }
+      - { id: b, text: 'Porque el harness no le ha contado al modelo lo que hizo el usuario, y debería.' }
+      - { id: c, text: 'Porque `escribir` falla y deja el fichero a medias.' }
+      - { id: d, text: 'Porque M ha perdido el turno en el que el modelo leyó la lista.' }
+    answer: a
+    explanation: 'La (a). M sigue diciendo lo que decía cuando el modelo escribió en t3, y nada en M avisa de que el fichero ha cambiado después. La (b) le pide al harness algo que no puede hacer: sólo ve los cambios que hacen sus herramientas. La (c) es falsa: la escritura sale bien, y eso es lo grave. La (d) también: M sólo crece, y el turno de t2 sigue ahí, tan viejo como el de t3.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'MemGPT: Towards LLMs as Operating Systems'
+    authors: 'Packer, Wooders, Lin, Fang, Patil, Stoica y Gonzalez'
+    year: '2023'
+    venue: 'arXiv:2310.08560'
+    lang: en
+    url: 'https://arxiv.org/abs/2310.08560'
+    note: 'Las dos memorias de esta lección con nombres de sistema operativo: el contexto principal, que el modelo ve, y el externo, al que llega con funciones. Y un modelo que decide qué pasa de uno a otro.'
+  - kind: blog
+    title: 'Effective context engineering for AI agents'
+    authors: 'Rajasekaran, Dixon, Ryan y Hadfield (Anthropic)'
+    year: '2025'
+    venue: 'anthropic.com/engineering'
+    lang: en
+    url: 'https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents'
+    note: 'Qué hacer cuando M se llena: quitar las observaciones viejas, que el modelo puede volver a pedir; tomar notas fuera de la ventana; compactar. Lo segundo es lo que esta lección llama escribir lo que tiene que durar.'
+  - kind: blog
+    title: 'Effective harnesses for long-running agents'
+    authors: 'Justin Young (Anthropic)'
+    year: '2025'
+    venue: 'anthropic.com/engineering'
+    lang: en
+    url: 'https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents'
+    note: 'Un agente que trabaja en muchas sesiones seguidas, cada una con un M vacío. Lo que enlaza una con la siguiente está en el entorno: un fichero de progreso y el historial del repositorio.'
+---
+
+{/* COURSE-C2-P1-04 — Bloque 4, lección 6. Las celdas corren sobre el modelo guionizado y cargan
+    de entorno.py y harness.py el entorno, ejecutar y el bucle de la lección sobre los errores, sin
+    tocar; cuentan tokens con el tokenizador del mini-GPT, como la lección sobre la ventana. El
+    widget es context-window con el preset agente, que añade esta lección. Sin ecuaciones aparte. */}
+
+Desde <Leccion slug="permisos-y-confianza">la lección sobre los permisos</Leccion>, ninguna
+llamada se ejecuta sin pasar por la tabla, y ninguna observación puede saltársela. El bucle, en
+cambio, sigue tal como lo escribió <Leccion slug="el-bucle">la lección que le dio su
+contrato</Leccion>: llama al modelo con M y le añade, turno tras turno, lo que el modelo responde y
+lo que devuelven sus herramientas, sin quitar nada. Al modelo no le llega nada más. Es todo lo que
+sabe de lo que lleva hecho.
+
+Cuando un agente contesta <W>lo tendré en cuenta</W>, la frase es verdad o no según dónde quede
+escrita. Si sólo está en su respuesta, dura lo que dure M: hasta que la conversación termina, o
+hasta que M deja de caber en la ventana de contexto y algo tiene que salir. Si una llamada la
+escribe en un fichero, dura lo que dure el fichero. Esta lección separa esos dos sitios, los dos a
+los que se llama «memoria», y dice qué guarda cada uno, cuánto cuesta y qué pasa cuando no dicen lo
+mismo.
+
+Mira primero cómo se llena M. En el explorable, un agente va por su séptima llamada en una tarea:
+preparar el menú de la semana con las recetas del usuario. Cada llamada lleva el prompt de sistema,
+las herramientas (su nombre, su descripción y su esquema viajan con cada llamada), el pedido y los
+seis turnos anteriores, cada uno partido en dos: sus llamadas y sus observaciones. Los tamaños los
+he puesto yo, redondos, del orden que daría un tokenizador de verdad. De los 3 280 tokens que han
+añadido los seis turnos, 2 440 son observaciones, y casi todas son las seis recetas que leyeron los
+turnos 2 y 3. Las escrituras de los turnos 5 y 6 pesan en sus llamadas, que llevan dentro lo que
+escriben.
+
+<Explorable id="context-window" preset="agente" caption="La séptima llamada de un agente que prepara el menú de la semana: lo que lleva cada llamada, turno a turno, y lo que entra en la ventana según quién decida qué sobra. Casi todo lo que añaden los turnos son observaciones." />
+
+La ventana empieza en 3 584 tokens, y todo suma 4 840. Con «lo trunca el modelo», lo primero que se
+pierde es lo que escribieron el usuario y quien hizo el harness: salen el prompt de sistema, las
+herramientas, el pedido y el turno 1, y de las observaciones del turno 2 entra el final, sin la
+llamada que las pidió. El modelo sigue trabajando sin saber para qué. Con «lo descarta el harness»
+salen los dos turnos más viejos, enteros, cada llamada con su observación: el modelo pierde la lista
+de recetas y las tres primeras que leyó. Pero esas recetas no se han ido a ninguna parte. Siguen en
+el entorno, y una llamada las vuelve a traer. Baja ahora la ventana a 1 536 tokens: lo que el
+harness no descarta ya no cabe. (El tercer modo, compactar, es el de
+<Leccion slug="ventana-de-contexto">la lección sobre la ventana</Leccion>, y su contrato es del
+bloque siguiente.)
+
+La otra memoria se ve entre dos conversaciones. El martes, el usuario le cuenta al agente que Marta,
+que viene a cenar el sábado, es vegetariana, y el modelo contesta que lo tendrá en cuenta. El sábado
+el usuario abre una conversación nueva y pide el menú. El bucle empieza con un M de dos mensajes, y
+del martes no le llega nada al modelo. Si aquel día el modelo hubiera pedido además un `escribir`
+que añadiera la frase a <W>notas.txt</W>, el sábado un `leer` se lo habría dicho.
+
+<Callout type="intuition" title="La idea en una frase">
+El agente recuerda en dos sitios. M es lo que el modelo ve: crece con cada observación, tiene que
+caber en la ventana y se acaba con la conversación. El entorno dura, pero el modelo sólo sabe de él
+lo que le ha traído una llamada, y desde que se lo trajo.
+</Callout>
+
+## Dos memorias con un nombre
+
+Con precisión, el agente tiene dos estados, y cada uno tiene su contrato.
+
+**M**, la lista de mensajes del pseudocódigo del bucle:
+
+- Es lo único que lee el modelo, entero, en cada llamada.
+- Crece dos mensajes por turno, y cuánto añade cada turno lo deciden las llamadas del modelo. Una
+  lectura entra en M con todo lo que devuelve su herramienta, y una escritura, con todo lo que
+  escribe.
+- Cada llamada tiene que caber en la ventana de contexto, con las herramientas y la reserva para la
+  respuesta.
+- Dura una conversación. `bucle` lo empieza desde `inicio` y lo devuelve al terminar. Si el harness
+  sigue la conversación, el `inicio` del pedido siguiente es ese M con el mensaje nuevo detrás; si
+  no, M se pierde.
+
+**El entorno**, todo lo que tocan las herramientas:
+
+- Dura entre turnos y entre conversaciones, y otros pueden cambiarlo: el usuario, otro programa.
+- El modelo no lo ve. Sabe de él lo que le han contado las observaciones.
+- No ocupa ventana hasta que se lee, y entonces ocupa lo que se lea.
+
+Así, lo que hay en M tiene dos orígenes. Una parte sólo está en M: el prompt de sistema, el pedido,
+cada texto del modelo (su plan, lo que ha concluido) y lo que contestó el usuario a cada pregunta
+de un permiso. La otra parte es una copia del entorno: la observación de una lectura dice lo que
+había en un fichero, y el efecto de una escritura está en el fichero que cambió. Lo primero, si sale
+de M, se pierde. Lo segundo lo vuelve a traer una llamada.
+
+Eso dice qué cuesta menos sacar de M cuando no cabe. Una observación de lectura vieja es lo más
+barato: recuperarla cuesta un turno. El pedido es lo más caro, porque no hay herramienta que lo
+devuelva. Un modelo que trunca hace justo lo contrario, y pierde el pedido antes que nada. Qué puede
+sacar el harness, y qué no puede sacar nunca, es el contrato de la compactación, en el bloque
+siguiente.
+
+### Una observación es una copia con fecha
+
+Una observación es verdad en el momento de su llamada, y M no tiene forma de decir hasta cuándo. M
+sólo crece: ninguna línea del bucle reescribe una observación vieja cuando el fichero cambia, ni la
+marca. Una observación está **desactualizada** cuando lo que dice ya no es lo que hay en el entorno.
+
+Puede quedarse así por dos caminos. Uno es el propio agente: la lectura de <W>lista.txt</W> de un
+turno sigue en M después de que otro turno reescriba el fichero. Ése se resuelve leyendo M en orden,
+porque la escritura también está en M, detrás. El otro camino no deja rastro. Alguien cambia el
+entorno sin pasar por las herramientas del agente (el usuario edita la lista a mano entre dos
+pedidos, un programa reescribe un fichero mientras el agente trabaja) y M sigue diciendo lo de
+antes, con la misma seguridad.
+
+Con una herramienta como `escribir`, que sustituye el fichero entero, una observación desactualizada
+se convierte en un cambio perdido. El modelo escribe la lista a partir de lo que M dice de ella y
+borra lo que añadió el usuario, y ninguna llamada falla. Lo que lo evita es leer antes de escribir,
+y eso es una costumbre del modelo: se le puede pedir en el prompt de sistema, pero no garantizar. La
+garantía tiene que estar en el contrato de la herramienta. La herramienta de edición del bloque
+siguiente pide el texto que espera encontrar en el fichero y falla si no lo encuentra, así que una
+copia vieja no puede pisar un cambio.
+
+### Lo que tiene que durar se escribe
+
+El M de una conversación no llega a la siguiente. Lo que el agente necesite saber otro día (lo que
+le contó el usuario, por dónde iba una tarea larga, qué decidió y por qué) tiene que acabar en el
+entorno, escrito por una llamada. Para el harness es una escritura como cualquier otra: pasa por el
+esquema y por el permiso, y su observación dice cuántos caracteres ha escrito. Lo que cambia es para
+quién es: para un modelo que todavía no ha empezado, que lo leerá con un M vacío. El fichero de
+proyecto del bloque siguiente es esa idea con un nombre fijo, un fichero del repositorio que el
+harness lee al empezar.
+
+## Las dos memorias, sobre el modelo guionizado
+
+Las dos celdas corren sobre el modelo guionizado, como todo el bloque, con el entorno de
+`entorno.py` y el `ejecutar` y el bucle de `harness.py`, sin tocar. (El permiso de la lección
+anterior se quedó en sus celdas, y aquí no hace falta.) La primera cuenta lo que ocupa M con el
+tokenizador de tu mini-GPT, como en la lección sobre la ventana. El usuario guarda en el entorno
+una novela, *Marianela*, la del corpus de tu mini-GPT, y pregunta cuántos años tiene la Nela. Dos
+guiones contestan lo mismo: uno lee la novela entera y el otro busca <W>años</W>. Las observaciones
+que espera cada guion salen, como en la lección anterior, de ejecutar sus llamadas sobre una copia
+del entorno.
+
+<PyCell code={`
+import json
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado
+exec(open_url("/courses/llm-agents/entorno.py").read())      # el entorno y sus herramientas
+exec(open_url("/courses/llm-agents/harness.py").read())      # ejecutar y el bucle, sin tocar
+exec(open_url("/courses/llm-agents/bpe.py").read())          # codificar: aquí sólo cuenta tokens
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+def tokens(contenido):                    # un texto, o una lista de bloques escrita en JSON
+    if not isinstance(contenido, str):
+        contenido = json.dumps(contenido, ensure_ascii=False)
+    return len(codificar(contenido, F))
+
+NOVELA = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+E = dict(ENTORNO, **{"libros/marianela.txt": NOVELA})       # el usuario guarda una novela
+INICIO = [("sistema", "Trabajas con los ficheros del usuario mediante tus herramientas."),
+          ("usuario", "¿Cuántos años tiene la Nela? La novela está en libros/marianela.txt.")]
+FINAL = texto("Dieciséis: «Dicen que tengo diez y seis años», le dice ella al doctor.")
+GUIONES = {"leer": [[llamada("t1", "leer", ruta="libros/marianela.txt")], [FINAL]],
+           "buscar": [[llamada("t1", "buscar", patron="años")], [FINAL]]}
+
+def vistos(respuestas, entorno):          # lo que contesta el harness: ejecuta cada llamada
+    copia = dict(entorno)
+    return [[ejecutar(b, copia) for b in r if b["type"] == "tool_use"] or None for r in respuestas]
+
+print("las herramientas, en cada llamada: %d tokens" % tokens(HERRAMIENTAS))
+for nombre, respuestas in GUIONES.items():
+    modelo, recibe = ModeloGuionizado(guion_de(INICIO, respuestas, vistos(respuestas, E))), []
+    def contado(M, herramientas):         # el mismo modelo, apuntando lo que ocupa M
+        obs = sum(tokens(c) for rol, c in M if rol == "usuario" and not isinstance(c, str))
+        recibe.append((len(M), sum(tokens(c) for rol, c in M), obs))
+        return modelo(M, herramientas)
+    motivo, final, M = bucle(contado, INICIO, dict(E), 10)
+    print("\\n%s: %s · %s" % (nombre, motivo, final))
+    for turno, (mensajes, total, obs) in enumerate(recibe, 1):
+        print("  llamada %d: %d mensajes, %d tokens, %d de observaciones" % (turno, mensajes, total, obs))
+`} />
+
+Las herramientas ocupan 849 tokens y viajan en las dos llamadas de cada guion, antes de que el modelo
+haya pedido nada. La segunda llamada del guion que lee recibe un M de 142 453 tokens, y 142 312 son
+la observación de <W>t1</W>: más que la ventana de 128 000 de la lección sobre la ventana, aunque tu
+tokenizador corta el texto más fino que uno de verdad. Un modelo de verdad rechazaría esa llamada,
+`modelo` lanzaría y el bucle se pararía ahí. El guion que busca recibe 8 924 tokens y contesta lo
+mismo. El harness ha hecho lo mismo en los dos: ejecutar lo que se le pide. Y si la tarea siguiera,
+la observación viajaría entera en cada llamada siguiente, porque M sólo crece.
+
+La segunda celda sigue una conversación de dos pedidos. En el primero, el agente añade a la lista lo
+que falta para el gazpacho. Entre los dos pedidos, el usuario abre <W>lista.txt</W> y añade, a mano,
+<W>aceitunas</W>. El segundo pedido va en la misma conversación: su `inicio` es el M del primero con
+el mensaje nuevo detrás, y el bucle no cambia. Lo contestan dos guiones, escritos los dos por mí:
+uno escribe la lista a partir de lo que ya tiene en M, y el otro la relee antes.
+
+<PyCell code={`
+# Necesita la celda anterior: vistos y las piezas de los tres ficheros.
+INICIO = [("sistema", "Trabajas con los ficheros del usuario mediante tus herramientas."),
+          ("usuario", "Añade a lista.txt lo que falta para el gazpacho.")]
+GAZPACHO = "pan, leche, patatas, tomates, pepino, pimiento, ajo"
+PRIMERO = [[llamada("t1", "leer", ruta="recetas/gazpacho.txt"), llamada("t2", "leer", ruta="lista.txt")],
+           [llamada("t3", "escribir", ruta="lista.txt", contenido=GAZPACHO)],
+           [texto("He añadido a lista.txt tomates, pepino, pimiento y ajo.")]]
+entorno = dict(ENTORNO)
+_, final, M = bucle(ModeloGuionizado(guion_de(INICIO, PRIMERO, vistos(PRIMERO, entorno))),
+                    INICIO, entorno, 10)
+print("1.", final)
+
+entorno["lista.txt"] += ", aceitunas"     # el usuario, a mano, entre un pedido y el siguiente
+print("   lista.txt en el entorno:     ", entorno["lista.txt"])
+print("   lo último que M dice de ella:", muestra(M[4][1][0]))
+
+SIGUE = M + [("usuario", "Añade también lo de la tortilla.")]   # la misma conversación
+TORTILLA = llamada("t4", "leer", ruta="recetas/tortilla.txt")
+LISTA = "pan, leche, patatas, tomates, pepino, pimiento, ajo, aceitunas, huevos, cebolla"
+SEGUNDO = {   # dos guiones para el mismo pedido; los dos los he escrito yo
+    "de memoria": [[TORTILLA],
+                   [llamada("t5", "escribir", ruta="lista.txt", contenido=GAZPACHO + ", huevos, cebolla")],
+                   [texto("He añadido huevos y cebolla.")]],
+    "relee":      [[TORTILLA, llamada("t5", "leer", ruta="lista.txt")],
+                   [llamada("t6", "escribir", ruta="lista.txt", contenido=LISTA)],
+                   [texto("He añadido huevos y cebolla.")]]}
+for nombre, respuestas in SEGUNDO.items():
+    e = dict(entorno)
+    _, final, M2 = bucle(ModeloGuionizado(guion_de(SIGUE, respuestas, vistos(respuestas, e))),
+                         SIGUE, e, 10)
+    print("\\n2. %s: %d mensajes en M · %s" % (nombre, len(M2), final))
+    print("   lista.txt:", e["lista.txt"])
+`} />
+
+Lo último que M dice de la lista es la escritura de <W>t3</W>, y el entorno tiene además las
+aceitunas. El guion «de memoria» escribe sobre lo que dice M, y las aceitunas desaparecen con un
+texto final que no miente: ha añadido huevos y cebolla. El que relee gasta una llamada más y las
+conserva. Los dos M terminan con 13 mensajes, y en ninguno hay nada que diga cuál de las dos listas
+es la buena. Eso sólo lo sabe el entorno.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: qué decide lo que ocupa una observación, qué sabe el modelo en una conversación
+nueva, qué se puede recuperar del entorno y por qué se pierde un cambio.
+
+<Quiz id="q-que-decide-el-tamano" />
+
+<Quiz id="q-conversacion-nueva" />
+
+<Quiz id="q-recuperable" />
+
+<Quiz id="q-desactualizada" />
+
+---
+
+El bloque tiene ya todas sus piezas: herramientas con esquema, un bucle que termina, errores que el
+modelo lee, permisos que ninguna observación cambia y una respuesta a qué recuerda cada parte. Pero
+están repartidas en cinco lecciones, en celdas que cargan ficheros congelados y guiones escritos
+para enseñar una cosa cada vez, y nadie ha comprobado que funcionen juntas. Tampoco gestiona nadie
+M cuando no cabe: esta lección dice qué sería barato sacar, y el harness todavía no saca nada, lo
+que queda para el bloque siguiente.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug proyecto-agente-guionizado), envolver «La lección siguiente, el proyecto del bloque» en
+    su Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, el proyecto del bloque, junta las piezas en un agente completo sobre el
+entorno en memoria, con su permiso y su tope, y lo prueba de punta a punta contra el modelo
+guionizado, con guiones que se equivocan a propósito.
