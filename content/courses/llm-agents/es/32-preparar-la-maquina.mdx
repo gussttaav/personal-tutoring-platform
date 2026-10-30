@@ -200,13 +200,24 @@ ollama --version
 ollama version is 0.40.13
 ```
 
-Después clona el primer punto de control del bloque. La orden de `git clone` está en su README, y
-es el sitio del que parten todas las lecciones que siguen:
+Después clona el primer punto de control del bloque, el sitio del que parten todas las lecciones
+que siguen. El enlace abre su página, y en ella está la dirección para clonarlo:
 
 <RepoLink tag="b5-l1">Al empezar el bloque</RepoLink>
 
-Contiene
-el agente del bloque anterior, pasado a ficheros, uno por pieza: `guionizado.py`, `entorno.py`
+Cada lección tiene su etiqueta, y la de esta es `b5-l1`. `--branch` acepta una etiqueta igual que
+una rama, y `agente` es la carpeta que se crea:
+
+```bash
+git clone --branch b5-l1 --depth 1 <la dirección del repositorio> agente
+cd agente
+git switch -c mi-agente
+```
+
+Git avisa de que la etiqueta «is not a commit» y de que no estás en ninguna rama. Es normal: una
+etiqueta es una foto fija. La última orden crea tu rama, donde quedará lo que escribas.
+
+El punto de control contiene el agente del bloque anterior, pasado a ficheros, uno por pieza: `guionizado.py`, `entorno.py`
 (las herramientas, su esquema y los bloques), `permisos.py` (el permiso y `ejecutar`), `bucle.py`,
 `agente.py` y la batería en `tests/`. El entorno sigue siendo un diccionario en memoria, y las
 herramientas, las cuatro de siempre. Y trae los dos ficheros de esta lección: el `Modelfile` y
