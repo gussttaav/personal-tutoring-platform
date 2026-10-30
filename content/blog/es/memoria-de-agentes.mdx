@@ -87,7 +87,7 @@ reading:
     url: "https://simonwillison.net/2025/Sep/12/claude-memory/"
     note: "Las memorias de ChatGPT y de Claude comparadas en una página, a partir de un análisis de cómo funcionan por dentro: una pone un resumen del usuario en cada conversación; la otra busca en los chats cuando hace falta."
 areas: ["ia"]
-cover: "/blog/memoria-de-agentes/dos-memorias.svg"
+cover: "/blog/memoria-de-agentes/memoria-en-capas.svg"
 tags: ["agentes", "llm", "rag", "evaluacion"]
 aiImages: true
 ---
@@ -381,20 +381,9 @@ cuando lo que hay que borrar se ha copiado ya en hechos, resúmenes y reflexione
 ## De Smallville a los sistemas operativos de memoria
 
 La memoria para agentes basados en modelos de lenguaje tiene apenas tres años y medio. Lo que sigue es
-su historia en cuatro etapas, con los trabajos que se citan una y otra vez.
+su historia en cuatro etapas, con los trabajos que se citan una y otra vez, y una figura al final que
+la resume.
 
-<figure>
-  <img
-    src="/blog/memoria-de-agentes/linea-de-tiempo.svg"
-    alt="Línea de tiempo de 2023 a 2026. Encima del eje, los sistemas de memoria: Generative Agents en abril de 2023, MemoryBank en mayo, MemGPT en octubre; Zep en enero de 2025, A-MEM en febrero, Mem0 en abril, MemOS en mayo, Memory-R1 en agosto; ReFind en agosto de 2026 y Raw-RAG en octubre. Debajo, marcos, bancos de pruebas y productos: CoALA en septiembre de 2023; LoCoMo y la memoria de ChatGPT en febrero de 2024, LongMemEval en octubre; MemoryAgentBench en julio de 2025, la búsqueda de chats de Claude en agosto y la herramienta de memoria de la API de Anthropic en septiembre; MEME en mayo de 2026."
-    width="760"
-    height="296"
-  />
-  <figcaption>
-    Tres años y medio de memoria para agentes. Hasta 2025, cada sistema añadía estructura; desde
-    entonces, una parte del campo vuelve a guardar las conversaciones tal cual.
-  </figcaption>
-</figure>
 
 ### 2023: las ideas
 
@@ -402,11 +391,14 @@ su historia en cuatro etapas, con los trabajos que se citan una y otra vez.
 el videojuego *Los Sims*. Cada agente tenía un **registro de memoria** (*memory stream*) con todo lo
 que observaba, escrito en lenguaje natural, la puntuación de recencia, importancia y relevancia para
 recuperarlo, y las reflexiones para resumirlo. Casi todo lo que vino después es una variación de
-alguna de esas tres piezas. El mismo año, [Reflexion](https://arxiv.org/abs/2303.11366) guardó como
-memoria episódica las reflexiones de un agente sobre sus propios fallos, para no repetirlos en el
-intento siguiente, y [Voyager](https://arxiv.org/abs/2305.16291), un agente que jugaba a *Minecraft*,
-guardó como memoria procedimental una biblioteca de habilidades: programas que había escrito y le
-habían funcionado.
+alguna de esas tres piezas.
+
+El mismo año aparecieron otros dos usos de la memoria. [Reflexion](https://arxiv.org/abs/2303.11366)
+es un método para que un agente aprenda de sus errores sin volver a entrenarse: cuando falla una
+tarea, escribe en lenguaje natural qué hizo mal, y esa reflexión se guarda como memoria episódica y
+se le pasa en el intento siguiente, para que no repita el error. Y
+[Voyager](https://arxiv.org/abs/2305.16291), un agente que jugaba a *Minecraft*, guardó como memoria
+procedimental una biblioteca de habilidades: programas que había escrito y le habían funcionado.
 
 En octubre, un grupo de la Universidad de California en Berkeley publicó
 [MemGPT](https://arxiv.org/abs/2310.08560), la idea más influyente del año. Trataba el contexto del
@@ -430,9 +422,12 @@ octubre, LongMemEval. Las dos secciones siguientes vuelven sobre ellos.
 ### 2025: la memoria como capa
 
 En 2025, la memoria se convirtió en una pieza de infraestructura que se compra o se instala, con
-empresas dedicadas. En enero, [Zep](https://arxiv.org/abs/2501.13956) la organizó como un grafo de
-conocimiento con fechas. En febrero, [A-MEM](https://arxiv.org/abs/2502.12110), de la Universidad
-Rutgers, la organizó como un fichero de notas enlazadas al estilo *Zettelkasten*, el método de
+empresas dedicadas. En enero, Zep, una empresa que vende memoria para agentes como servicio, publicó
+[la arquitectura de su producto](https://arxiv.org/abs/2501.13956): un grafo de conocimiento en el que
+cada relación lleva la fecha en que empezó a ser cierta y, cuando deja de serlo, la fecha en que
+dejó de serlo, en lugar de borrarse. En febrero, la Universidad Rutgers publicó
+[A-MEM](https://arxiv.org/abs/2502.12110) (*Agentic Memory*), un sistema de memoria de código abierto
+que organiza los recuerdos como un fichero de notas enlazadas al estilo *Zettelkasten*, el método de
 notas de un sociólogo alemán: cada recuerdo nuevo se escribe como una nota con descripción, palabras
 clave y etiquetas, se enlaza con las notas parecidas y puede hacer que éstas se reescriban.
 
@@ -442,11 +437,18 @@ al 52,90 % de la memoria de ChatGPT. Pero darle al modelo la conversación enter
 acertaba un 72,90 %: más que cualquier memoria. Lo que Mem0 ganaba era velocidad y coste. En el
 percentil 95, la respuesta con la conversación entera tardaba 17,1 segundos, y con Mem0, 1,44.
 
-En mayo, MemOS presentó la memoria como un sistema operativo propio, y en agosto,
-[Memory-R1](https://arxiv.org/abs/2508.19828), de la Universidad Ludwig Maximilian de Múnich y otros
-centros, atacó el punto débil del mantenimiento: entrenó con aprendizaje por refuerzo al modelo que
-elige entre añadir, actualizar, borrar o nada, premiándolo cuando la respuesta final era correcta. Su
-ejemplo es el fallo de Talleres Ruiz en pequeño: alguien cuenta que ha adoptado un perro, Buddy, y
+En mayo se publicó [MemOS](https://arxiv.org/abs/2505.22101), un sistema que gestiona la memoria de
+un modelo como un sistema operativo gestiona los recursos de un ordenador. Trata con las mismas
+operaciones tres memorias distintas: el texto guardado fuera del modelo, la caché KV (el resultado
+intermedio que el modelo guarda al leer un texto, para no tener que leerlo otra vez) y los propios
+pesos, y se encarga de mover cada recuerdo de una a otra según se use.
+
+En agosto, investigadores de la Universidad Ludwig Maximilian de Múnich y otros centros presentaron
+[Memory-R1](https://arxiv.org/abs/2508.19828), un método para entrenar a los modelos que gestionan
+una memoria. Su nombre remite a DeepSeek-R1, el modelo que aprendió a razonar con aprendizaje por
+refuerzo, y ataca así el punto débil del mantenimiento: entrena con aprendizaje por refuerzo al
+modelo que elige entre añadir, actualizar, borrar o nada, premiándolo cuando la respuesta final es
+correcta. Su ejemplo es el fallo de Talleres Ruiz en pequeño: alguien cuenta que ha adoptado un perro, Buddy, y
 más tarde que ha adoptado otro, Scout. Un modelo sin entrenar lo interpreta como una contradicción:
 borra el primer recuerdo y añade el segundo, y la memoria se queda con un solo perro. El modelo
 entrenado hace una sola actualización: «Andrew ha adoptado dos perros, Buddy y Scout».
@@ -465,21 +467,39 @@ texto plano.
 
 ### 2026: la proliferación, y la vuelta atrás
 
-En 2026 se multiplicaron los sistemas con nombre de sistema operativo, como EverMemOS, MemMachine o
-Memora, cada uno con su estructura y sus resultados. Pero también aparecieron los primeros trabajos
-que preguntaban cuánta de esa estructura hacía falta.
-[ReFind](https://arxiv.org/abs/2608.12888), en agosto, no construía nada: le daba a un agente una
-búsqueda por palabras sobre las conversaciones sin modificar, con controles pensados para chats
-(agrupar por sesión, ampliar el contexto de un resultado, acotar por fechas, no releer lo ya leído).
-Sobre unas 2 800 preguntas de recuperación precisa y de seguimiento de hechos, acertaba un 58,2 %, por
-delante del 53,2 % del mejor sistema con grafos, y en la versión corta de LongMemEval llegaba al
-93,2 %. En octubre llegó
-el artículo de este texto.
+En 2026 se multiplicaron los sistemas de memoria, muchos con nombre de sistema operativo y cada uno
+con su estructura: EverMemOS organiza los recuerdos por su cuenta en estructuras pensadas para
+razonar sobre periodos largos, MemMachine guarda el texto original junto a lo que deriva de él, y
+Memora combina recuerdos abstractos con otros concretos. Pero también aparecieron los primeros
+trabajos que preguntaban cuánta de esa estructura hacía falta.
+
+En agosto, investigadores de la Universidad de Ciencia y Tecnología de China y de la empresa
+MetaStone publicaron [ReFind](https://arxiv.org/abs/2608.12888), una interfaz de búsqueda para
+agentes que no construye nada sobre las conversaciones. Le da al agente una búsqueda por palabras
+sobre el historial sin modificar, con controles pensados para chats (agrupar por sesión, ampliar el
+contexto de un resultado, acotar por fechas, no releer lo ya leído), y deja que sea el agente quien
+decide qué buscar y cuándo parar. Sobre unas 2 800 preguntas de recuperación precisa y de seguimiento
+de hechos, acertaba un 58,2 %, por delante del 53,2 % del mejor sistema con grafos, y en la versión
+corta de LongMemEval llegaba al 93,2 %. En octubre llegó el artículo de este texto.
 
 El campo se ha movido en dos direcciones a la vez. Una añade estructura: grafos, notas, sistemas
 operativos, mantenimiento aprendido. La otra la quita: las búsquedas de Claude sobre chats sin
-resumir, MemMachine, que conserva el texto original junto a lo que deriva de él, ReFind y el RAG
-ingenuo de octubre. Para saber cuál tiene razón hay que ver primero cómo se mide.
+resumir, MemMachine, ReFind y el RAG ingenuo de octubre, que su artículo llama Raw-RAG. La figura junta los sistemas con los marcos,
+los productos y los bancos de pruebas, MemoryAgentBench y MEME incluidos, que presenta la sección
+siguiente. Para saber qué dirección tiene razón hay que ver primero cómo se mide.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/linea-de-tiempo.svg"
+    alt="Línea de tiempo de 2023 a 2026. Encima del eje, los sistemas de memoria: Generative Agents en abril de 2023, MemoryBank en mayo, MemGPT en octubre; Zep en enero de 2025, A-MEM en febrero, Mem0 en abril, MemOS en mayo, Memory-R1 en agosto; ReFind en agosto de 2026 y Raw-RAG en octubre. Debajo, marcos, bancos de pruebas y productos: CoALA en septiembre de 2023; LoCoMo y la memoria de ChatGPT en febrero de 2024, LongMemEval en octubre; MemoryAgentBench en julio de 2025, la búsqueda de chats de Claude en agosto y la herramienta de memoria de la API de Anthropic en septiembre; MEME en mayo de 2026."
+    width="760"
+    height="296"
+  />
+  <figcaption>
+    Tres años y medio de memoria para agentes. Hasta 2025, cada sistema añadía estructura; desde
+    entonces, una parte del campo vuelve a guardar las conversaciones tal cual.
+  </figcaption>
+</figure>
 
 ## Cómo se mide una memoria
 
