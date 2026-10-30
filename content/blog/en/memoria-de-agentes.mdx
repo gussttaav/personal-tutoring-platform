@@ -1,0 +1,748 @@
+---
+slug: memoria-de-agentes
+title: "Memory for agents: what to keep, how to read it, and whether you need all that"
+date: "2026-10-31"
+minutes: 27
+summary: "An assistant with memory says a customer is still within the refund window, citing what it was told in March, and misses what it was told in June. Why an agent needs memory, the four kinds cognitive science distinguishes, how a memory system works under the hood, how the field has evolved since 2023, how memory is measured, and why an October 2026 paper found that searching conversations as they are, without transforming them, beats twelve far more complex systems."
+draft: false
+reading:
+  - kind: paper
+    title: "Is Complex Agentic Memory Always Needed? Naive RAG Is Stronger Than We Thought"
+    authors: "Zhengye Bao, Shengtao Zhang, Haokai Zhang, Shiqi Lou, Muning Wen and Minnan Luo"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2610.30755"
+    note: "The paper at the heart of this post. Tables 3 and 4 are the whole comparison, section 5 explains why plain RAG wins, and appendix E reviews fourteen earlier papers whose RAG baseline was poorly configured."
+  - kind: paper
+    title: "Cognitive Architectures for Language Agents"
+    authors: "Theodore R. Sumers, Shunyu Yao, Karthik Narasimhan and Thomas L. Griffiths"
+    year: "2023"
+    venue: "TMLR 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2309.02427"
+    note: "CoALA, the framework that brought working, episodic, semantic and procedural memory to agents. Section 4.1 defines them, and figure 4 places the agents of the day in them."
+  - kind: paper
+    title: "Generative Agents: Interactive Simulacra of Human Behavior"
+    authors: "Joon Sung Park, Joseph C. O'Brien, Carrie J. Cai and others"
+    year: "2023"
+    venue: "UIST 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2304.03442"
+    note: "Twenty-five agents in a town inspired by The Sims. Section 4.1 is the first complete memory design for agents: a record of everything observed, a retrieval score, and reflections that summarise."
+  - kind: paper
+    title: "MemGPT: Towards LLMs as Operating Systems"
+    authors: "Charles Packer, Sarah Wooders, Kevin Lin and others"
+    year: "2023"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2310.08560"
+    note: "The model's memory treated like a computer's: the context is RAM, everything else is disk, and the model itself moves data between them with function calls. Figure 3 is the whole system."
+  - kind: paper
+    title: "Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory"
+    authors: "Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh and Deshraj Yadav"
+    year: "2025"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2504.19413"
+    note: "The design that extracts facts and decides, for each one, whether to add, update, delete or ignore it. Table 2 shows what the abstract leaves out: giving the model the whole conversation was more accurate."
+  - kind: paper
+    title: "LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory"
+    authors: "Di Wu, Hongwei Wang, Wenhao Yu, Yuwei Zhang, Kai-Wei Chang and Dong Yu"
+    year: "2024"
+    venue: "ICLR 2025"
+    lang: en
+    url: "https://arxiv.org/abs/2410.10813"
+    note: "The most widely used memory benchmark, and more: section 4 breaks the design of a memory into decisions, and section 5 measures each one. Back in 2024 it already found that replacing messages with facts loses information."
+  - kind: paper
+    title: "MEME: Multi-entity & Evolving Memory Evaluation"
+    authors: "Seokwon Jung, Alexander Rubinstein, Arnas Uselis, Sangdoo Yun and Seong Joon Oh"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2605.12477"
+    note: "Six tasks on facts that change, including ones that depend on other facts. Every system tested collapses on them, and the main figure shows what the only one that gets close costs."
+  - kind: paper
+    title: "When Your Agent Opens the Chat App: Agent-Controlled Search over Raw Chat Logs Rivals Structured Memory"
+    authors: "Ruizhe Li, Licheng Zhang, Benfeng Xu, Mingxuan Du, Zheren Fu and Weidong Chen"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2608.12888"
+    note: "The same conclusion by another route, two months earlier: an agent that keyword-searches the unmodified history, with controls designed for chats, beats memories built on graphs and trees."
+  - kind: paper
+    title: "Memory-R1: Enhancing Large Language Model Agents to Manage and Utilize Memories via Reinforcement Learning"
+    authors: "Sikuan Yan, Xiufeng Yang, Zuchao Huang and others"
+    year: "2025"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2508.19828"
+    note: "The other answer to failing updates: train the model that decides to add, update or delete with reinforcement learning. Figure 1, with Andrew's dogs, is the failure in a single example."
+  - kind: blog
+    title: "Claude Memory: A Different Philosophy"
+    authors: "Simon Willison"
+    year: "2025"
+    venue: "simonwillison.net"
+    lang: en
+    url: "https://simonwillison.net/2025/Sep/12/claude-memory/"
+    note: "ChatGPT's and Claude's memories compared on one page, based on an analysis of how they work inside: one puts a summary of the user into every conversation; the other searches past chats when it needs to."
+areas: ["ia"]
+cover: "/blog/memoria-de-agentes/memoria-en-capas.en.svg"
+tags: ["agentes", "llm", "rag", "evaluacion"]
+aiImages: true
+---
+
+{/*
+  BLOG-21: Memory for agents, what to keep, how to read it, and whether you need all that.
+  English version of content/blog/es/memoria-de-agentes.mdx; the Spanish file's header holds the
+  author notes (thesis, the invented Talleres Ruiz dates, sources and how the figures are
+  generated).
+
+  The alt of each <img> is the English aria-label written by
+  scripts/figures/memoria-de-agentes/make_svgs.py: change one, change the other.
+*/}
+
+Picture an invoicing software company, Albarán, with an internal assistant for its support team: a
+language model that answers questions about customers and company policy. Since the spring, the
+assistant has had a memory. It holds on to what each team member has told it in earlier
+conversations, so nobody has to repeat themselves. On 10 September, Lucía, who works in support,
+asks it:
+
+> Talleres Ruiz wants a refund on their annual renewal, charged on 15 July. Are they still within
+> the window?
+
+The assistant answers, with a citation:
+
+> Yes. Talleres Ruiz has an agreement with sales that gives them 60 days to ask for a refund on the
+> annual renewal, so the window closes on 13 September. *[Memory: conversation of 10 March]*
+
+The citation checks out: on 10 March, Lucía did tell the assistant exactly that. But on 18 June, at
+the end of a long conversation about a bug in the invoice export, she added a single line: "By the
+way, Ruiz's 60 days are over: sales isn't renewing the deal, and from the July renewal they're back
+on the normal terms." The normal terms for Talleres Ruiz's plan, the Team plan, give annual
+subscriptions 30 days. So the window actually closed on 14 August, and the assistant's answer is
+wrong, backed by a source that seems to support it.
+
+Nobody deleted the June message. The memory simply turned it into something else. This assistant
+doesn't keep conversations. After each one, a model reads it and pulls out short facts, and a second
+step decides whether each new fact should be added to what's already stored, correct it, delete it,
+or change nothing. March produced "Talleres Ruiz: 60-day refund window (sales agreement)". June
+produced "Talleres Ruiz is back on the normal terms of its plan". The second doesn't contradict the
+first word for word, since it mentions neither days nor refunds, so it was added alongside. Neither
+carries a date. In September, a search for what the memory knew about Talleres Ruiz's refunds
+returned the first fact, which is about refunds, and missed the second, which isn't.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/dos-memorias.en.svg"
+    alt="The same three conversations between Lucía and the assistant, stored in two ways. On the left, the conversations: on 10 March, Talleres Ruiz has 60 days to ask for a refund of the annual renewal under an agreement with sales; on 18 June, the 60-day agreement is over and from the July renewal they are back on the normal terms; on 10 September, the question of whether a refund of the renewal charged on 15 July is in time. On top, a memory of facts: it keeps two loose, undated sentences, 60 days under the sales agreement and back on the normal terms of its plan; the search returns only the first one and the answer is yes, until 13 September, which is wrong. Below, the raw history: it keeps the messages with their dates; the search returns the March and June ones, and the answer is no, the 30-day window closed on 14 August, which is right."
+    width="760"
+    height="304"
+  />
+  <figcaption>
+    The same conversations, stored two ways. The June message mentions "the 60 days" and the
+    renewal; the fact extracted from it doesn't. So a search finds the message and misses the fact.
+  </figcaption>
+</figure>
+
+The case is invented, but the failure is among the most studied in the field. Had the conversations
+been kept as written, with their dates, the same question would have turned up the June message,
+which mentions "Ruiz's 60 days" and the renewal, alongside the March one. The model would have read
+the two in order, and it takes very little reasoning to see that the second cancels the first.
+
+The story of agent memory is usually told as an escalation. First came a model that forgets
+everything. Then came systems that extract facts, update them, organise them into graphs and
+consolidate them the way a brain might. Each step adds another model call that rewrites what was
+said, and does so before anyone has asked a question. In October 2026, a paper with a provocative
+title, [*Is Complex Agentic Memory Always Needed?*](https://arxiv.org/abs/2610.30755), pitted twelve
+of those systems against the most naive approach possible: keep the conversations as they are and
+search them with an ordinary search engine. The naive approach came out on top in six of seven
+comparisons.
+
+This post covers why an agent needs memory, the kinds of memory there are, how a memory system works
+under the hood, how the idea has evolved since 2023, how memory is measured, what that paper found,
+and where structure still helps.
+
+## What a model doesn't remember
+
+A language model remembers nothing from one request to the next. Each time you ask it something, it
+reads some text, writes an answer, and that's the end of it. When a chat seems to remember what was
+said ten messages ago, that's because the application resends the whole conversation with every
+turn. Models don't read words but *tokens*, which are pieces of words (a page of text is roughly
+five hundred of them), and the amount that fits into a single request is called the **context
+window**. Once the conversation ends, nothing is left unless someone saved it.
+
+For an assistant you use once, that's fine. For one that works with a team for months, it isn't. It's
+even less workable for an **agent**, a model that chains steps and uses tools on its own to complete
+a task, because an agent's tasks outlast any single conversation and what it learns in one helps in
+the next.
+
+The obvious fix is to send it everything that came before, with every request. That runs into three
+problems. The first is size: if Lucía has three conversations a day of about 3,000 tokens each, a
+working year adds up to nearly two million tokens, more than almost any model's window can hold. The
+second is cost: every question would pay to read the entire history, whether it needs it or not. The
+third is that fitting in the window isn't the same as being read well.
+[LongMemEval](https://arxiv.org/abs/2410.10813), the most widely used memory benchmark, found in
+2024 that models with long windows got 30% to 60% fewer answers right when they read a history of
+about 115,000 tokens than when they read only the sessions containing the answer. Why that happens,
+and how much cheaper reading everything can be made, is the subject of
+[this post on cache-augmented generation](/en/blog/cuando-no-hace-falta-buscar).
+
+So the history is kept outside the model, and with each question the model is handed only what it
+needs. That is what an agent's **memory** is. Mechanically, it's nothing more than the RAG pattern
+(*Retrieval-Augmented Generation*): find the fragments that most resemble the question and pass them
+to the model along with it, as [this post on RAG and its variants](/en/blog/de-rag-a-rag-agentico)
+explains. The material, though, differs from a RAG over documents in four ways.
+
+**The agent writes it.** A company's documents are written by someone with a reader in mind, with
+headings and structure. A memory comes out of conversations: half-finished sentences, jumbled
+topics, an important detail in the last line of a chat about something else.
+
+**It grows every day.** A document collection is refreshed now and then. A memory takes in every
+conversation, indefinitely.
+
+**It changes.** A document collection usually holds the current version of each document. A history
+holds every version of every fact, in the order they were stated: the March agreement and its end in
+June. To know which one applies, you need to know when each was said.
+
+**Who said it matters.** Something Lucía told the assistant isn't the same as something the
+assistant said, because the assistant may have got it wrong. LongMemEval measures the two
+separately.
+
+## Four kinds of memory
+
+In 2023, four researchers at Princeton University proposed [CoALA](https://arxiv.org/abs/2309.02427)
+(*Cognitive Architectures for Language Agents*), a framework for describing agents built on language
+models. They borrowed four kinds of memory from cognitive psychology, and from the cognitive
+architectures that AI researchers built on it from the 1980s onwards. Nearly everyone uses that
+taxonomy now.
+
+| Memory | What it holds | At Albarán | Where it usually lives |
+|---|---|---|---|
+| Working | what's active right now | the current conversation, the result of the last search | the context |
+| Episodic | what happened: what, when, with whom | the conversation of 18 June | an external store |
+| Semantic | what is known about the world and oneself | "Talleres Ruiz is on the Team plan" | an external store, or the weights |
+| Procedural | how things are done | "before answering about a refund, check the customer's plan" | the weights, the code, the instructions |
+
+**Working memory** is what the agent has in front of it right now. In an agent built on a language
+model, that's mostly the context of the current request, and it's both small and expensive.
+**Episodic** memory holds specific experiences, with when they happened and who was involved.
+**Semantic** memory holds general knowledge, detached from the situation in which it was learned. And
+**procedural** memory holds ways of doing things: some of it lives in the model's weights, learned
+during training, and some in the agent's code and instructions. CoALA warns that letting an agent
+rewrite its own procedural memory is the riskiest of the four, since it can introduce bugs or
+sidestep what its designers intended.
+
+There are three places to put all this: in the weights, in the context, or in an external store. The
+weights are the wrong place for specific facts: changing them means retraining, and there's no way
+to check exactly what the model has learned. The context is working memory, and it has no room for
+more. Everything else goes in an external store, and that's where the real design work lies:
+deciding what gets written to it and how it's read back.
+
+The Talleres Ruiz failure has a name in this vocabulary. The conversation of 18 June was an episode,
+and the memory turned it into a semantic fact: it kept the content and discarded the moment and the
+link to what it already knew. A good part of the research on agent memory is about that conversion
+from episodic to semantic, and about when it's worth doing.
+
+## Write, store, read and maintain
+
+Every memory system, however complex, comes down to four decisions. LongMemEval described three
+stages (indexing, retrieval and reading); to those you need to add maintenance, which is what
+happens to the stored material as new information arrives.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/ciclo-de-memoria.en.svg"
+    alt="The cycle of a memory as four decisions, between the conversation and the model. Write: what to keep from each conversation, everything or only extracted facts or summaries. Store: in what form, text fragments, loose facts, linked notes, a graph or several tiers. Read: how to find what is needed, by similarity, with recency and importance, with a reranker or with an agent that searches. What is read goes into the model's context, the model answers, and the answer goes back into the conversation. Maintain acts on what is stored: add, update, delete or do nothing, consolidate and forget."
+    width="760"
+    height="272"
+  />
+  <figcaption>
+    The four decisions behind any memory. Systems differ in what they do in each box, and above all
+    in how much work they do before they know what will be asked.
+  </figcaption>
+</figure>
+
+### Write: what to keep
+
+The simplest option is to keep everything exactly as it is. The alternative is to have a model read
+each conversation and keep only what matters: loose facts, a summary, or a note with keywords. Some
+systems also score what they keep. In [Generative Agents](https://arxiv.org/abs/2304.03442), the 2023
+work from Stanford and Google that opened the field, the model rated each memory from 1 to 10 for
+importance; in the paper's examples, tidying a room scored a 2 and asking someone out scored an 8.
+
+Extraction has obvious advantages. What's kept takes up less space, is quicker to read and can be
+given structure. But whatever is thrown away at write time can't be recovered at read time, and it's
+thrown away without knowing what will later be asked. One recent paper on the subject sums this up
+by calling every transformation a bet placed before the question is known. The June extraction bet
+that what mattered was "back on the normal terms", and the September question needed "the 60 days".
+
+### Store: in what form
+
+What's been written can be stored as text fragments, each with its date; as loose facts, each turned
+into a vector that captures its meaning (an *embedding*) so it can be searched by similarity; as
+notes linked to one another; as a graph of entities and relations; or in several tiers, some kept
+closer to hand than others. Graphs that date their relations rather than deleting the old ones get a
+section of their own in [this post on GraphRAG](/en/blog/cuando-hace-falta-graphrag).
+
+### Read: how it's found
+
+Before you can read, you have to find, and the most common way is to search by similarity: turn the
+question into an embedding and fetch the nearest memories. Generative Agents added two more
+criteria. Each memory's score was the sum of three numbers between 0 and 1: how **recent** it was
+(decaying exponentially by a factor of 0.995 for every game hour since it was last recalled), how
+**important** it was (the 1 to 10 rating) and how **relevant** it was to the situation (the
+similarity between embeddings), all weighted equally.
+
+There's room to refine this. A **reranker** is a second model that reads the question and each
+candidate together, rather than comparing two vectors computed separately. It orders candidates
+better but is slower, which is why it only sees the top hundred or two. Questions with a time
+reference ("what we talked about last week") can be handled by restricting the search to a date
+range. And instead of always searching the same way, you can give the model search as a tool, so it
+decides when to search and for what.
+
+### Maintain: update, consolidate and forget
+
+If the memory holds facts, someone has to keep them up to date. The most widespread design is that of
+[Mem0](https://arxiv.org/abs/2504.19413), a company and open-source library that published its
+method in 2025. After extracting the facts from a conversation, it looks up, for each one, the stored
+memories most similar to it and asks a model to pick one of four operations: add the fact (ADD),
+update an existing memory (UPDATE), delete one that the new fact contradicts (DELETE), or do nothing
+(NOOP).
+
+```python
+# Pseudocode: Mem0-style maintenance
+def save(conversation):
+    for fact in model.extract_facts(conversation):
+        similar = memory.search(embed(fact))
+        operation = model.decide(fact, similar)   # ADD, UPDATE, DELETE or NOOP
+        memory.apply(operation)
+```
+
+That's what went wrong at Albarán. To correct or delete "60-day refund window" on reading "back on
+the normal terms", the model would have had to know that the 60 days depended on the agreement, a
+relationship between two facts that wasn't written in either of them. Without it, ADD was the
+reasonable choice.
+
+There are two other kinds of maintenance. **Consolidating** means condensing many memories into a
+single higher-level one. Generative Agents did this when the summed importance of an agent's latest
+experiences passed 150, generating **reflections** ("Klaus is passionate about research") that were
+stored as one more memory and could in turn feed further reflections. **Forgetting** means letting
+memories lose weight over time: [MemoryBank](https://arxiv.org/abs/2305.10250), also from 2023,
+applied Ebbinghaus's forgetting curve, so memories fade unless they're used and strengthen when
+they are. Sometimes forgetting is also an obligation, as when someone asks for their data to be
+deleted, and that gets harder once what has to go has already been copied into facts, summaries and
+reflections.
+
+## From Smallville to memory operating systems
+
+Memory for language-model agents is barely three and a half years old. Here is its history in four
+stages, covering the papers that keep getting cited, with a figure at the end that sums it all up.
+
+
+### 2023: the ideas
+
+In April, **Generative Agents** set twenty-five agents loose in Smallville, a town inspired by the
+video game *The Sims*. Each agent had a **memory stream** recording everything it observed in
+natural language, a score combining recency, importance and relevance to retrieve from that stream,
+and reflections to summarise it. Almost everything since is a variation on one of those three
+pieces.
+
+The same year brought two other uses of memory. [Reflexion](https://arxiv.org/abs/2303.11366) lets
+an agent learn from its mistakes without retraining: when it fails a task, it writes down in natural
+language what it did wrong, and that reflection is stored as episodic memory and handed back on the
+next attempt so it doesn't repeat the error. And [Voyager](https://arxiv.org/abs/2305.16291), an
+agent that played *Minecraft*, stored a library of skills as procedural memory: programs it had
+written that had worked.
+
+In October, a group at the University of California, Berkeley published
+[MemGPT](https://arxiv.org/abs/2310.08560), the year's most influential idea. It treated the model's
+context as a computer's main memory (its RAM) and the external store as its disk, and gave the model
+functions to move data between the two. The context was split into three parts: fixed instructions;
+a block of text that only the model could edit, through function calls; and a queue of the latest
+messages. When the context passed 70% of the window, the system added a "memory pressure" warning so
+the model would save what mattered. At 100%, it removed some of the messages from the queue (half
+the window, for example), summarised them together with the previous summary, and sent them to a
+store where they could still be searched. The project later became a company, Letta.
+
+### 2024: products and benchmarks
+
+In February 2024, OpenAI began testing a memory feature in ChatGPT, which reached all its users in
+September: the assistant saved facts about the person and put them into the context of every new
+conversation. That same February, [LoCoMo](https://arxiv.org/abs/2402.17753), the first benchmark of
+long conversations, was published; LongMemEval followed in October. Both come up again in the next
+two sections.
+
+### 2025: memory as a layer
+
+In 2025, memory became a piece of infrastructure you could buy or install, and companies sprang up
+to sell it. In January, Zep, which sells agent memory as a service, published
+[its product's architecture](https://arxiv.org/abs/2501.13956): a knowledge graph in which every
+relation records the date it became true and, once it stops being true, the date it stopped, rather
+than being deleted. In February, Rutgers University published
+[A-MEM](https://arxiv.org/abs/2502.12110) (*Agentic Memory*), an open-source system that organises
+memories as a box of linked notes in the style of the *Zettelkasten*, the note-taking method of a
+German sociologist. Each new memory is written as a note with a description, keywords and tags,
+linked to similar notes, and can trigger those notes to be rewritten.
+
+In April, Mem0 published its method for extracting and maintaining facts and measured it on LoCoMo.
+Its main table says more than its abstract does. Mem0 scored 66.88% according to a model acting as
+judge, against 52.90% for ChatGPT's memory. But giving the model the whole conversation, about
+26,000 tokens, scored 72.90%, more than any memory system. What Mem0 gained was speed and cost: at
+the 95th percentile, an answer took 17.1 seconds with the whole conversation and 1.44 with Mem0.
+
+In May came [MemOS](https://arxiv.org/abs/2505.22101), a system that manages a model's memory the
+way an operating system manages a computer's resources. It treats three different kinds of memory
+with the same operations: text stored outside the model, the KV cache (the intermediate result a
+model keeps after reading a text so it doesn't have to read it again) and the weights themselves,
+and it moves content from one to another depending on how it's used.
+
+In August, researchers at Ludwig Maximilian University of Munich and elsewhere presented
+[Memory-R1](https://arxiv.org/abs/2508.19828), a method for training the models that manage a
+memory. The name nods to DeepSeek-R1, the model that learned to reason through reinforcement
+learning, and it attacks maintenance's weak spot the same way: reinforcement learning trains the
+model that chooses between adding, updating, deleting or doing nothing, rewarding it when the final
+answer is right. Its example is the Talleres Ruiz failure in miniature. Andrew mentions adopting a
+dog, Buddy, and later adopting another, Scout. An untrained model reads this as a contradiction: it
+deletes the first memory and adds the second, leaving the memory with a single dog. The trained
+model makes one update: "Andrew adopted two dogs, Buddy and Scout."
+
+Products split into two philosophies. In April, ChatGPT began drawing on all past conversations as
+well as its saved facts. In August, Claude, Anthropic's assistant, got the opposite kind of memory:
+two tools the model calls when it decides it needs them, one to search past conversations and
+another to fetch the most recent ones, with no profile or summary prepared in advance and every
+search visible to the user. September also brought a memory built on a summary you can view and
+edit, first for businesses and in October for the individual paid plans. And at the end of
+September, Anthropic added a file-based memory tool to its API: the model creates, reads and edits
+files in a directory maintained by whoever builds the application. Coding agents had been doing
+something similar for a while, with instruction files written by people and, increasingly, by the
+agent itself: procedural memory in plain text.
+
+### 2026: proliferation, and a step back
+
+In 2026, memory systems multiplied, many with operating-system-style names and each with its own
+structure. EverMemOS organises memories on its own into structures meant for reasoning over long
+periods, MemMachine keeps the original text alongside whatever it derives from it, and Memora
+combines abstract memories with concrete ones. But the first papers asking how much of that
+structure was actually needed appeared too.
+
+In August, researchers at the University of Science and Technology of China and the company
+MetaStone published [ReFind](https://arxiv.org/abs/2608.12888), a search interface for agents that
+builds nothing on top of the conversations. It gives the agent a keyword search over the unmodified
+history, with controls designed for chats (grouping by session, widening the context around a
+result, narrowing by date, skipping what it has already read), and leaves the agent to decide what
+to search for and when to stop. On about 2,800 questions about precise retrieval and fact tracking,
+it scored 58.2%, ahead of the best graph-based system at 53.2%, and on the short version of
+LongMemEval it reached 93.2%. October brought the paper this post is about.
+
+The field has been moving in two directions at once. One adds structure: graphs, notes, operating
+systems, learned maintenance. The other strips it away: Claude's searches over unsummarised chats,
+MemMachine, ReFind, and the October paper's naive RAG, which it calls Raw-RAG. The figure below
+places the systems alongside the frameworks, products and benchmarks, including MemoryAgentBench and
+MEME, which the next section introduces. To judge which direction is right, you first need to see
+how memory is measured.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/linea-de-tiempo.en.svg"
+    alt="Timeline from 2023 to 2026. Above the axis, memory systems: Generative Agents in April 2023, MemoryBank in May, MemGPT in October; Zep in January 2025, A-MEM in February, Mem0 in April, MemOS in May, Memory-R1 in August; ReFind in August 2026 and Raw-RAG in October. Below, frameworks, benchmarks and products: CoALA in September 2023; LoCoMo and ChatGPT's memory in February 2024, LongMemEval in October; MemoryAgentBench in July 2025, Claude's chat search in August and the memory tool in Anthropic's API in September; MEME in May 2026."
+    width="760"
+    height="296"
+  />
+  <figcaption>
+    Three and a half years of agent memory. Until 2025, each system added structure; since then,
+    part of the field has gone back to keeping conversations as they are.
+  </figcaption>
+</figure>
+
+## How memory is measured
+
+A memory benchmark is a long history of conversations plus a list of questions whose answers are
+buried in it. The four that matter for this post each measure something different.
+
+**LoCoMo** (2024), in its published version, has ten very long conversations between two fictional
+people, each running to about 300 turns and up to 35 sessions. They were written by agents given a
+personality and a list of events, then edited by people to keep them consistent. The questions are
+single-hop (one fact), multi-hop (combining facts from different sessions), temporal and
+open-domain. It's the benchmark most systems cite, and also the easiest: a whole conversation fits
+in the window of any current model.
+
+**LongMemEval** (2024) has 500 questions, each with its own history, and tests five abilities:
+extracting a fact, reasoning across several sessions, reasoning about time, keeping the updated
+information when something changes, and abstaining when the answer isn't there. The short version
+has about 115,000 tokens per question; the long one has 500 sessions and close to a million and a
+half tokens. Its authors didn't stop at measuring: they tested each design decision in a memory.
+Storing conversations by round (a question and its answer) worked better than by whole session.
+Replacing messages with summaries or extracted facts made answers worse because of the information
+lost, except on questions that span several sessions. And using extracted facts not as content but
+as search **keys** pointing to the original message improved retrieval by 9.4% and accuracy by 5.4%.
+So as early as 2024, the most cited benchmark was already saying that facts are for finding, not for
+replacing.
+
+[**MemoryAgentBench**](https://arxiv.org/abs/2507.05257) (2025), from the University of California,
+San Diego, measures four competencies: retrieving accurately, learning on the fly (applying examples
+seen in the conversation, without changing the weights), understanding a long text as a whole, and
+resolving conflicts between old and new information.
+
+[**MEME**](https://arxiv.org/abs/2605.12477) (2026), from a group including researchers at KAIST and
+the University of Tübingen, measures what the others barely touched: facts that change, and facts
+that depend on one another. It has six tasks, two of which are exactly the Talleres Ruiz case. In a
+**cascade**, one fact changes and a rule must be applied to work out the new value of another fact
+that depended on it. In an **absence**, a fact changes and you have to recognise that the value
+depending on it can no longer be trusted, even though nobody has said what the new one is. The six
+memory systems tested collapsed, averaging 3% correct on cascades and 1% on absences. Only an agent
+that kept its memory in files, using Claude Opus 4.7 as its model, closed part of the gap, at
+roughly seventy times the cost.
+
+These numbers deserve the caution that any benchmark does, which
+[this post on what a benchmark really measures](/en/blog/bancos-de-pruebas) covers. The
+conversations are synthetic. Many answers are scored by another model acting as judge. The
+collections are small: LoCoMo is only ten conversations. And this field has a problem of its own:
+each system publishes its numbers next to everyone else's, with the others configured by the
+publisher. When Mem0 compared itself with RAG, the RAG retrieved only one or two fragments per
+question and topped out at 61%.
+
+## Is all that machinery needed?
+
+The paper behind this post, by Zhengye Bao, Shengtao Zhang, Haokai Zhang, Shiqi Lou, Muning Wen and
+Minnan Luo, came out on 22 October 2026. Its question is the one in its title: when is the added
+complexity of agentic memory actually needed? To find out, the authors built the simplest version
+they could think of and called it **Raw-RAG**: RAG over the raw history.
+
+### Naive RAG, done properly
+
+Raw-RAG uses no model at write time. Each conversation is stored as text with the date of each
+message (plus descriptions of any images), cut into windows of 256 tokens that overlap by 32, and
+each window is turned into an embedding. When a question comes in, the system finds the 128 windows
+most similar to it, a reranker picks the best 15, and the model that answers, which the authors call
+the **reader**, receives them along with the question. It's the reader, not the memory, that has to
+work out what happened first, what changed and what holds now.
+
+```python
+# At save time: nothing to decide
+def save(message, date, author):
+    history.append(f"[{date}] {author}: {message}")
+    index.update(windows(history, tokens=256, overlap=32))
+
+# At question time
+def recall(question):
+    candidates = index.search(embed(question), k=128)
+    best = reranker.rank(question, candidates)[:15]
+    return model(prompt(question, best))
+```
+
+Compared with the Mem0 pseudocode, everything that happens at save time disappears. What it adds
+over the baseline RAGs in many earlier papers comes down to two things: a broad search (128
+candidates, not one or two) and a reranker. The authors reviewed fourteen papers and found that
+several of their RAG baselines used fragments that were too large, retrieved too few, or skipped
+the reranking.
+
+### The results
+
+They pitted it against twelve systems (EverMemOS, MemOS, EMem, SimpleMem, MemU, MemMachine, Mem0,
+Memora, Nemori, MemoryOS, A-MEM and RecMem) on LoCoMo, LongMemEval, MEME and MemoryAgentBench, using
+several models as the reader: OpenAI's GPT-4o-mini and GPT-4.1-mini, and DeepSeek-V4-Flash. On
+LoCoMo and LongMemEval they reproduced the conditions of the published comparisons; on MEME and
+MemoryAgentBench they ran every system through the same procedure.
+
+| Benchmark | Reader | Raw-RAG | Best memory system | Difference |
+|---|---|---|---|---|
+| LoCoMo | GPT-4o-mini | 89.07 | MemMachine, 88.12 | +0.95 |
+| LoCoMo | GPT-4.1-mini | 93.70 | EverMemOS, 93.05 | +0.65 |
+| LongMemEval | GPT-4.1-mini | 87.53 | Memora, 87.40 | +0.13 |
+| MEME | GPT-4o-mini | 39.30 | MemMachine, 37.06 | +2.24 |
+| MEME | DeepSeek-V4-Flash | 43.19 | MemMachine, 44.71 | −1.52 |
+| MemoryAgentBench | GPT-4o-mini | 48.32 | Memora, 43.84 | +4.48 |
+| MemoryAgentBench | DeepSeek-V4-Flash | 53.41 | Memora, 47.88 | +5.53 |
+
+Raw-RAG wins six of the seven. On LoCoMo and LongMemEval the margin is under a point, which means
+those two benchmarks no longer separate systems very well. On the two harder ones the margin is
+wider, up to five and a half points on MemoryAgentBench. It loses one, MEME with DeepSeek, where
+handing the reader the whole history scores almost twenty points higher than any memory system.
+
+### Why it wins
+
+The most interesting part of the paper isn't the table but the explanation. A correct answer takes
+two things: the memory has to deliver enough evidence to the reader, and the reader has to use it
+well. The authors measured the two separately. **Coverage** is the percentage of questions for which
+the memory brings back enough evidence to answer. **Utilisation** is the percentage of those
+questions the reader then gets right.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/cobertura-y-uso.en.svg"
+    alt="Two dot charts, one per benchmark, with one dot per memory system. The horizontal axis is coverage, the percentage of questions for which the system retrieves sufficient evidence, and the vertical axis is utilisation, the percentage of those questions the reader gets right. On MemoryAgentBench, coverage runs from 19.07% for MemU to 45.29% for Raw-RAG, and utilisation only from 80% for EverMemOS to 89.71% for EMem; Raw-RAG sits at 84.43%. On MEME, coverage runs from 35.69% for MemU to 76.35% for Raw-RAG, and utilisation from 65.51% for Mem0 to 86.55% for EMem; Raw-RAG sits at 73.76%. On both, Raw-RAG is the rightmost dot without being the highest."
+    width="760"
+    height="286"
+  />
+  <figcaption>
+    Systems differ far more in what they find than in how well they use it. Raw-RAG isn't the best at
+    using evidence, but it's the one that has the evidence most often.
+  </figcaption>
+</figure>
+
+On MemoryAgentBench, coverage ranges from 19% to 45% across systems, while utilisation ranges only
+from 80% to 90%. On MEME, coverage varies by 41 points and utilisation by 21. Systems differ mainly
+in whether they find what's needed, and Raw-RAG finds it most often on both. Its readers use the
+evidence slightly worse than the readers of other systems, perhaps because they're reading raw text
+rather than clean facts, but they have the evidence more often, and that counts for more.
+
+The second explanation is the one closest to Talleres Ruiz. In MEME, knowing the current value of
+something takes more than finding the value: you also need the **path** that leads to it, meaning
+the order of the changes or the rule linking one fact to another. Among the questions where a system
+found the value it was after, Raw-RAG also brought back the complete path 62.34% of the time,
+MemMachine (which also keeps the original text) 56.70%, and MemU, which transforms everything, only
+9.62%. An extracted fact can keep the value, "60 days", and lose the path: where it came from and
+what cancelled it.
+
+The third explanation is the hardest to argue with. The authors gave each system the best possible
+access to what it had stored: knowing the answer in advance, they picked the most useful items from
+its entire store, to rule out search as the culprit. The two systems that keep the original text,
+Raw-RAG and MemMachine, reached 57.54% and 57.46% on MEME, close to the 61.60% the reader scored
+with the exact original evidence. The systems that transform the text landed between 7.58 and 29.38
+points lower, even with the same perfect access and no space limit. What's lost at write time, no
+search can bring back.
+
+### What the updates don't do
+
+Earlier in the paper, the authors audited Mem0. On LoCoMo, only 4.39% of 33,902 write decisions were
+updates or deletions; on LongMemEval, 2.46% of 428,858. Many of those were duplicates or malformed,
+and the ones that actually changed any stored text came to 1.90% and 1.34%. Then the authors tried
+banning them: every update became an addition and every deletion became a no-op. Accuracy on LoCoMo
+rose from 67.36% to 69.42% and didn't fall in any category, with temporal questions gaining 3.32
+points. Without updates, the memory keeps every version, and the reader can see which is the latest.
+
+But what if the reader can't resolve the changes? To test that, they gave the reader on MEME exactly
+the messages it needed, in order, with no retrieval errors. DeepSeek-V4-Flash got 82.32% of the
+cascades and 91.54% of the absences right. GPT-4o-mini got 1.83% of the cascades. A capable reader
+works out the changes from the text; a weak one can't, even with the text right in front of it.
+
+### What the structure doesn't do
+
+They also took Raw-RAG itself and, on MemoryAgentBench, added what complex systems add, changing
+nothing else. Replacing the windows with atomic facts cut the score by 19.62 points. Adding
+summaries cut it by 5.81, and widening the search by following a graph cut it by 5.78. In the other
+direction, removing the reranker cost 3.92 points, and fetching a single item instead of fifteen
+cost 11.73. What matters is searching well and bringing back enough; the exact window size, anywhere
+from 128 to 1,024 tokens, made no difference.
+
+Then there's the cost. On ten MEME episodes, preparing the memory and answering 110 questions took
+Raw-RAG 306 seconds, not counting the time to write the answers. The next fastest, EMem, took 1,562,
+five times as long, and EverMemOS took 9,301, thirty times as long. For a conversation of 1,710
+messages approaching a million tokens, storing it took Raw-RAG 0.33 hours and Memora 26.95. Writing
+with a model is expensive, and a complex memory does it for every message.
+
+## Where structure does help
+
+The paper doesn't claim complex memories are useless, and its own data points to where they can
+help.
+
+**With weak readers.** Raw-RAG leaves all the work of reconstructing the current state to the
+reader, and the gap between DeepSeek and GPT-4o-mini on cascades, 82% against 2%, shows how much
+rides on that. A system that maintains state at write time does the work once instead of on every
+question, and could help a small model. The authors leave this as an open question.
+
+**Where raw does worse.** On LongMemEval, Memora beats Raw-RAG on questions about updated
+information (97.40 against 91.03) and on temporal ones (89.50 against 81.45). And on MEME's deletion
+tasks, where someone asks for a fact to be forgotten and is later asked about it, Raw-RAG trails
+several systems, for an easy-to-see reason: the original text still contains what was supposed to be
+forgotten, and the reader finds it.
+
+**For state that other systems rely on.** Benchmarks only ask questions. A memory in production may
+have to hand another tool the current value of something, trigger an action when something changes,
+or genuinely delete a piece of data. That calls for explicit state, not a history to be interpreted.
+
+**In what wasn't tested.** The tests use recorded conversations, with no agents acting in an
+environment. They include no procedural memory, like Voyager's skill library, no histories spanning
+several years, and no storage limits. A raw history grows without end, and every question pays again
+to reason over it.
+
+**And privacy.** Keeping everything as it is also means keeping what should never have been kept, a
+limitation the authors acknowledge. A memory of facts can, at least in theory, hold only what's
+needed; a raw history requires separate decisions about what's kept, for how long, and who can read
+it.
+
+## What comes next
+
+Between the October paper and August's ReFind, a consensus is starting to take shape, in four parts.
+
+**Naive RAG, done properly, is the baseline.** The paper's conclusion is really a demand about
+method: any new memory system should show that it beats RAG over the raw history, with a broad
+search and a reranker, and explain what its added complexity buys. Until now, several systems
+compared themselves with a RAG that fetched one or two fragments.
+
+**The original text is the source of truth; whatever is derived from it is an index.** That's what
+LongMemEval measured in 2024 and what MemMachine and Claude's searches do: facts, summaries and
+graphs help you find things, but each points back to the message it came from, and the reader reads
+the message. That way, a bad extraction makes something harder to find without erasing it.
+
+**The agent decides how to search.** MemGPT already gave the model functions to manage its own
+memory, and ReFind and Claude's memory give it a search over the history. As models keep getting
+better at using tools, searching in several rounds, narrowing by date or reading the conversation
+around a result are decisions the model can make on the spot, once it knows the question. It's the
+same evolution that took us from naive RAG to agentic RAG.
+
+**State that governs doesn't belong in memory.** The Talleres Ruiz agreement should never have lived
+in an assistant's memory. A commercial agreement with a customer is company data, and it belongs in
+the system where customers are managed: the assistant would look it up with a tool, and sales would
+have closed it out there in June. Memory is for what was said; for what *is*, you need a database.
+
+Scale is still an open question. With ever longer context windows and caching that makes rereading
+cheaper, giving the model the whole history gains ground wherever it fits, as the MEME result with
+DeepSeek showed. With histories spanning years, no window is big enough, and we'll need to find out
+whether a well-built derived index, or learned maintenance like Memory-R1's, is worth its cost
+compared with simply searching the original text better. Today's benchmarks aren't long enough to
+say.
+
+## When to use which
+
+The choice doesn't depend on a system's name but on what has to be remembered and why.
+
+| If what has to be remembered… | At Albarán | Use |
+|---|---|---|
+| is what was said in conversations | what Lucía has told it about each customer | the raw history, with date and author, a broad search and a reranker |
+| is state other systems also use | the plan, the charges, the Talleres Ruiz agreement | its own system, queried with a tool; not the memory |
+| is a stable preference that always applies | Lucía prefers short answers, with the section cited | a short, visible, editable profile in the instructions |
+| is a procedure | how a refund is processed | an instructions file that someone reviews |
+| spans many conversations | how often has the export bug come up since July? | facts or summaries as an index, pointing to the original messages |
+| has to be erasable on request | a customer asks for their data to be deleted | delete it from the history and from everything derived from it |
+
+Before building anything more complex, run the test the paper suggests: take fifty real questions,
+including some about things that changed over time, and compare your memory against a RAG over the
+raw history, using the same model as reader. If the RAG gets as many right, keep the RAG. If it
+fails, look at why: if it never found the message, the problem is the search; if it found the
+message and the reader misread it, the problem is the reader.
+
+## What to take away
+
+If you remember only one thing, make it this: **agent memory is RAG over what the agent has lived
+through, and almost all of its complexity comes from transforming that experience before knowing
+what will be asked.** Every transformation is a bet, and in the 2026 comparisons most of those bets
+lose: what's thrown away at write time, no search can bring back. For Albarán, the memory ends up
+looking like this.
+
+<figure>
+  <img
+    src="/blog/memoria-de-agentes/memoria-en-capas.en.svg"
+    alt="Albarán's assistant memory in four layers, from top to bottom. First, instructions and procedures: a text file the team reviews and the assistant always reads. Second, the raw history: every message, with date and author, the source of truth, which is searched and reranked. Third, a derived index: summaries and extracted facts that help find things and point to the original message, never replace it. Fourth, outside the memory: the state that governs, such as plans, charges and sales agreements, in their own systems, which the assistant queries with a tool. On the right, the model reads all four."
+    width="760"
+    height="236"
+  />
+  <figcaption>
+    The history is the source of truth; what's derived only helps to find things. And what governs,
+    like the Talleres Ruiz agreement, is looked up where it lives, not remembered.
+  </figcaption>
+</figure>
+
+And if you take away three more, make them practical.
+
+**Keep what was said, with date and author.** If you extract facts or summaries, use them as a way
+to find things and make them point back to the original message. The reader has to be able to see
+what was said and when, because working out what holds now depends on it.
+
+**Search broadly and rerank.** The difference between a RAG that loses and one that wins was
+fetching 128 candidates and keeping the best 15 rather than one or two. Before adding structure,
+check that the search actually brings back what's needed.
+
+**Separate what was said from what is.** Put preferences and procedures in visible, editable text,
+the data that runs the business in its own systems, and use memory for everything else.

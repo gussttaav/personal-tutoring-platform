@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 304" width="760" height="304" role="img"
+ aria-label="The same three conversations between Lucía and the assistant, stored in two ways. On the left, the conversations: on 10 March, Talleres Ruiz has 60 days to ask for a refund of the annual renewal under an agreement with sales; on 18 June, the 60-day agreement is over and from the July renewal they are back on the normal terms; on 10 September, the question of whether a refund of the renewal charged on 15 July is in time. On top, a memory of facts: it keeps two loose, undated sentences, 60 days under the sales agreement and back on the normal terms of its plan; the search returns only the first one and the answer is yes, until 13 September, which is wrong. Below, the raw history: it keeps the messages with their dates; the search returns the March and June ones, and the answer is no, the 30-day window closed on 14 August, which is right.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="20.0" y="20.0">CONVERSATIONS</text>
+<rect class="bx " x="20.0" y="32.0" width="182.0" height="78.0" rx="6"/>
+<text class="hd" x="30.0" y="48.0">10 Mar</text>
+<text class="tx" x="30.0" y="64.0">“Talleres Ruiz has 60 days</text>
+<text class="tx" x="30.0" y="78.0">to ask for a refund of the</text>
+<text class="tx" x="30.0" y="92.0">annual renewal: a deal</text>
+<text class="tx" x="30.0" y="106.0">with sales.”</text>
+<rect class="bx " x="20.0" y="114.0" width="182.0" height="64.0" rx="6"/>
+<text class="hd" x="30.0" y="130.0">18 Jun</text>
+<text class="tx" x="30.0" y="146.0">“Ruiz's 60 days are over:</text>
+<text class="tx" x="30.0" y="160.0">from the July renewal,</text>
+<text class="tx" x="30.0" y="174.0">normal terms.”</text>
+<rect class="bx w" x="20.0" y="214.0" width="182.0" height="64.0" rx="6"/>
+<text class="hd" x="30.0" y="230.0">10 Sep</text>
+<text class="tx" x="30.0" y="246.0">“Ruiz wants a refund of the</text>
+<text class="tx" x="30.0" y="260.0">15 July renewal. Is it</text>
+<text class="tx" x="30.0" y="274.0">in time?”</text>
+<text class="hd" x="272.0" y="20.0">MEMORY OF FACTS</text>
+<rect class="bx " x="272.0" y="32.0" width="230.0" height="44.0" rx="4"/>
+<text class="tx" x="282.0" y="50.0">Talleres Ruiz: 60-day refund window</text>
+<text class="tx d" x="282.0" y="65.0">(sales agreement)</text>
+<rect class="bx d" x="272.0" y="84.0" width="230.0" height="44.0" rx="4"/>
+<text class="tx d" x="282.0" y="102.0">Talleres Ruiz is back on the</text>
+<text class="tx d" x="282.0" y="117.0">normal terms of its plan</text>
+<text class="sb" x="387.0" y="144.0">no dates · nothing links them</text>
+<path d="M204,70 H214 V172 H204" fill="none" stroke="#86948a"/>
+<path class="ar" d="M214.0,80.0 L268.0,80.0"/>
+<text class="sb" x="243.0" y="72.0">extract</text>
+<line x1="272" y1="160" x2="750" y2="160" stroke="#2a2a2c"/>
+<text class="hd" x="272.0" y="174.0">RAW HISTORY</text>
+<rect class="bx m" x="272.0" y="184.0" width="230.0" height="24.0" rx="4"/>
+<text class="mo" x="282.0" y="200.0">10 Mar · “…has 60 days…”</text>
+<rect class="bx m" x="272.0" y="214.0" width="230.0" height="24.0" rx="4"/>
+<text class="mo" x="282.0" y="230.0">18 Jun · “…60 days are over”</text>
+<rect class="bx g" x="272.0" y="244.0" width="230.0" height="24.0" rx="4"/>
+<text class="tx d" x="282.0" y="260.0">… and every other message</text>
+<path class="ar" d="M214.0,172.0 L214.0,196.0 L268.0,196.0"/>
+<text class="sb" x="218.0" y="212.0" style="text-anchor:start">store</text>
+<text class="sb" x="218.0" y="224.0" style="text-anchor:start">as is</text>
+<path class="ar x" d="M504.0,54.0 L586.0,54.0"/>
+<text class="sb" x="546.0" y="46.0">search</text>
+<rect class="bx x" x="590.0" y="32.0" width="160.0" height="46.0" rx="6"/>
+<text class="tx x" x="600.0" y="51.0">“Yes: 60 days, until</text>
+<text class="tx x" x="600.0" y="65.0">13 September.”</text>
+<path class="ar m" d="M504.0,211.0 L586.0,211.0"/>
+<text class="sb" x="546.0" y="203.0">search</text>
+<rect class="bx m" x="590.0" y="184.0" width="160.0" height="58.0" rx="6"/>
+<text class="tx m" x="600.0" y="203.0">“No: without the deal it</text>
+<text class="tx m" x="600.0" y="217.0">is 30 days, and they ran</text>
+<text class="tx m" x="600.0" y="231.0">out on 14 August.”</text>
+<path d="M110,278 V296 H546 V58" fill="none" stroke="#e8a24c" stroke-width="1.2"/>
+<circle cx="546" cy="54" r="3" fill="#e8a24c"/>
+<circle cx="546" cy="211" r="3" fill="#e8a24c"/>
+<text class="sb w" x="552.0" y="290.0" style="text-anchor:start">the question</text>
+</svg>
