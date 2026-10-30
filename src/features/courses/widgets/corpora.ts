@@ -235,7 +235,9 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "respuestas of its modelo guionizado, which the lesson quotes. An English version is the " +
     "English lesson's own guion over an English entorno.en.py, checked for the same property: " +
     "the number of turnos is fixed by an observación (the folder listing), one respuesta makes " +
-    "several llamadas, and only one llamada changes the entorno.",
+    "several llamadas, and only one llamada changes the entorno. Block 4 lesson 7's preset " +
+    "(proyecto) is that lesson's first cell the same way, with two llamadas that fail and a " +
+    "write the scripted user refuses; its English version needs the same three properties.",
   "courses/llm-agents/entorno.py":
     "The Block 4 entorno and its four herramientas, frozen from lesson 4·2 " +
     "(llamar-herramientas): Spanish routes and contents, Spanish tool names and descriptions, " +
@@ -246,6 +248,12 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "which the cells load after entorno.py: its error messages («no se ha ejecutado: …», " +
     "«no existe el fichero …») are Spanish, and every observación the later Block 4 lessons " +
     "quote is built from them. The English course needs its own harness.en.py beside entorno.en.py.",
+  "courses/llm-agents/permisos.py":
+    "The Block 4 permiso and the ejecutar that consults it, frozen from lesson 4·5 " +
+    "(permisos-y-confianza), which the block's project loads after harness.py: its denial " +
+    "messages («no se ha ejecutado: permiso denegado», «… el usuario no lo ha permitido») and " +
+    "its scripted user, who only lets lista.txt change, are Spanish, and the project's tests " +
+    "quote them. The English course needs its own permisos.en.py beside harness.en.py.",
   // COURSE-C2-P0-03 — the llm-agents mini-GPT is trained on this Spanish corpus, and
   // its checkpoint (minigpt.json) and merge table (bpe-merges.json) are functions of it.
   "courses/llm-agents/corpus.txt":

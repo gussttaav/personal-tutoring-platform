@@ -148,6 +148,11 @@ first course left it — in front of the literature, now with a harness to test 
 - `hasCode: false` will show the sidebar's code icon off for the whole block. That is correct;
   say in lesson 32 where the code runs.
 - Lesson 40 will want to be long. It is a signpost and a close; the budget's floor.
+- **Pass the usuario in, do not swap a global.** In Block 4's cells `preguntar` is a module global
+  that lesson 31's `probar` replaces with the test's scripted usuario, because the frozen
+  `ejecutar` looks it up by name. In the companion repo the usuario (`input()` at the terminal, a
+  scripted one in the tests) is an argument of the harness, like the modelo; lesson 37 is where
+  the real prompt arrives, and lesson 31's tests are what it must keep passing.
 
 ## Out of scope
 

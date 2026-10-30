@@ -1,6 +1,7 @@
 /*
  * COURSE-C2-P1-04 — The agent loop as data, for `agent-loop-trace` (llm-agents Block 4 lesson 3,
- * «El bucle»; the block's project, lesson 7, reuses it with a conversation of its own).
+ * «El bucle»; the block's project, lesson 7, reuses it with a conversation of its own, whose
+ * llamadas fail and ask the user).
  *
  * A scripted conversation (an entorno, the two opening mensajes and the respuestas the modelo
  * guionizado gives, in order) is run through the lesson's loop:
@@ -20,6 +21,13 @@
  * the trace the lesson's is everything else, which is computed: the observaciones come from
  * running the four herramientas of `entorno.py` on the entorno, with Python's semantics (sorted
  * routes, `len` in code points, `"\n".join`), so their text is the text the lesson's cell prints.
+ *
+ * Each llamada goes through `ejecutar` as the block leaves it (lessons 4·4 and 4·5,
+ * `harness.py` and `permisos.py`): the esquema first, a llamada that fails it never run and
+ * answered with an error; then, when the conversation carries a scripted usuario, the permiso
+ * (lesson 4·5's CLASES and PERMISOS), a refused or denied llamada answered with an error; then
+ * the function, a missing file answered with `leer`'s error. Without a usuario there is no
+ * permiso step, which is lesson 4·3's harness: the same trace for every llamada that succeeds.
  *
  * M only ever grows by appending, so each step records only how many mensajes M holds after it
  * (`mensajes`) and how many the model received at its turno's call (`visto`): the M of any step
@@ -45,6 +53,9 @@ export type Block =
     };
 
 export type ToolUse = Extract<Block, { type: "tool_use" }>;
+export type Decision = "permitir" | "preguntar" | "denegar";
+/** Why a llamada came back as an error: its esquema, its function, the tabla, or the usuario. */
+export type Fallo = "esquema" | "funcion" | "denegada" | "usuario";
 export type ToolResult = Extract<Block, { type: "tool_result" }>;
 
 export interface Message {
@@ -62,6 +73,11 @@ export interface Conversation {
   readonly inicio: readonly Message[];
   /** What the modelo guionizado answers, turno by turno. */
   readonly respuestas: readonly (readonly Block[])[];
+  /**
+   * The scripted usuario's answer to each llamada the permiso asks about, by id. Present, the
+   * harness consults the permiso before every function (lesson 4·5's); absent, it does not.
+   */
+  readonly permisos?: { readonly usuario: Readonly<Record<string, boolean>> };
 }
 
 export type StepKind = "inicio" | "llamar" | "responder" | "ejecutar" | "observar" | "fin" | "tope";
@@ -83,6 +99,12 @@ export interface Step {
   readonly bloques: readonly Block[];
   /** "ejecutar" only: the route the llamada wrote, when it changed the entorno. */
   readonly cambia?: string;
+  /** "ejecutar" only: why its observación is an error, when it is one. */
+  readonly fallo?: Fallo;
+  /** "ejecutar" only, with a usuario: what the tabla decided. Absent when the esquema failed. */
+  readonly permiso?: Decision;
+  /** "ejecutar" only: what the usuario answered, when the permiso asked. */
+  readonly aprobada?: boolean;
   /** "fin" only: what the loop returns, the text of the last respuesta. */
   readonly texto?: string;
 }
@@ -106,9 +128,20 @@ const sortedRoutes = (entorno: Entorno) => Object.keys(entorno).sort((a, b) => (
 /** Python's `len()` of a string: code points, not UTF-16 units. */
 const pyLen = (s: string) => [...s].length;
 
+/** Python's `repr()` of a string, for the `%r` in the harness's messages. */
+export function pyRepr(s: string): string {
+  const quote = s.includes("'") && !s.includes('"') ? '"' : "'";
+  const body = s.replace(/\\/g, "\\\\").replace(/\n/g, "\\n");
+  return quote + (quote === "'" ? body.replace(/'/g, "\\'") : body) + quote;
+}
+
+/** What a function of the entorno raises: `leer` on a missing file, the one case it has. */
+export class ToolFailure extends Error {}
+
 /**
- * One llamada run against the entorno with `entorno.py`'s four functions. The trace runs only
- * llamadas a guion's author wrote to succeed; anything else is a broken preset and throws.
+ * One llamada run against the entorno with `entorno.py`'s four functions. A missing file is
+ * `leer`'s contract (harness.py) and throws a ToolFailure with its message; anything else a
+ * function cannot do is a broken preset and throws a plain Error.
  */
 export function runTool(entorno: Entorno, call: ToolUse): { content: string; entorno: Entorno } {
   const arg = (name: string) => {
@@ -119,7 +152,7 @@ export function runTool(entorno: Entorno, call: ToolUse): { content: string; ent
   switch (call.name) {
     case "leer": {
       const ruta = arg("ruta");
-      if (!(ruta in entorno)) throw new Error(`agent-trace: ${call.id} reads a missing ${ruta}`);
+      if (!(ruta in entorno)) throw new ToolFailure(`no existe el fichero ${pyRepr(ruta)}`);
       return { content: entorno[ruta], entorno };
     }
     case "escribir": {
@@ -146,6 +179,100 @@ export function runTool(entorno: Entorno, call: ToolUse): { content: string; ent
     }
     default:
       throw new Error(`agent-trace: ${call.id} names no herramienta (${call.name})`);
+  }
+}
+
+/** The herramientas' esquemas, as `HERRAMIENTAS` in entorno.py declares them: required string fields. */
+const CAMPOS: Readonly<Record<string, readonly string[]>> = {
+  leer: ["ruta"],
+  escribir: ["ruta", "contenido"],
+  listar: ["carpeta"],
+  buscar: ["patron"],
+};
+
+/** `incumple` in entorno.py: why the llamada cannot run, or null if it meets its esquema. */
+export function incumple(call: ToolUse): string | null {
+  const campos = CAMPOS[call.name];
+  if (campos === undefined) return `no hay ninguna herramienta ${pyRepr(call.name)}`;
+  for (const campo of campos) if (!(campo in call.input)) return `falta el campo ${pyRepr(campo)}`;
+  for (const [campo, valor] of Object.entries(call.input)) {
+    if (!campos.includes(campo)) return `sobra el campo ${pyRepr(campo)}`;
+    if (typeof valor !== "string") return `el campo ${pyRepr(campo)} no es de tipo string`;
+  }
+  return null;
+}
+
+/** CLASES and PERMISOS in permisos.py (lesson 4·5). */
+const CLASES: Readonly<Record<string, string>> = {
+  leer: "lectura",
+  listar: "lectura",
+  buscar: "lectura",
+  escribir: "escritura",
+};
+const PERMISOS: Readonly<Record<string, Decision>> = {
+  lectura: "permitir",
+  escritura: "preguntar",
+  "ejecución": "preguntar",
+};
+
+/** `permiso` in permisos.py: the herramienta's clase through the tabla; no clase, denegar. */
+export function permiso(call: ToolUse): Decision {
+  const clase = CLASES[call.name];
+  return (clase !== undefined && PERMISOS[clase]) || "denegar";
+}
+
+export interface Ejecucion {
+  readonly result: ToolResult;
+  readonly entorno: Entorno;
+  readonly fallo?: Fallo;
+  readonly permiso?: Decision;
+  readonly aprobada?: boolean;
+}
+
+/**
+ * `ejecutar` as permisos.py writes it (harness.py's without `usuario`): never throws on a
+ * llamada, always a tool_result with the llamada's id. Throws only on a broken preset: a
+ * function failing other than as its contract says, or a llamada the permiso asks about that
+ * the usuario has no answer for.
+ */
+export function ejecutar(entorno: Entorno, call: ToolUse, usuario?: Readonly<Record<string, boolean>>): Ejecucion {
+  const result = (content: string, is_error: boolean): ToolResult => ({
+    type: "tool_result",
+    tool_use_id: call.id,
+    content,
+    is_error,
+  });
+  const motivo = incumple(call);
+  if (motivo !== null) return { result: result(`no se ha ejecutado: ${motivo}`, true), entorno, fallo: "esquema" };
+
+  let decision: Decision | undefined;
+  let aprobada: boolean | undefined;
+  if (usuario !== undefined) {
+    decision = permiso(call);
+    if (decision === "denegar") {
+      return { result: result("no se ha ejecutado: permiso denegado", true), entorno, fallo: "denegada", permiso: decision };
+    }
+    if (decision === "preguntar") {
+      aprobada = usuario[call.id];
+      if (aprobada === undefined) throw new Error(`agent-trace: the usuario has no answer for ${call.id}`);
+      if (!aprobada) {
+        return {
+          result: result("no se ha ejecutado: el usuario no lo ha permitido", true),
+          entorno,
+          fallo: "usuario",
+          permiso: decision,
+          aprobada,
+        };
+      }
+    }
+  }
+
+  try {
+    const run = runTool(entorno, call);
+    return { result: result(run.content, false), entorno: run.entorno, permiso: decision, aprobada };
+  } catch (e) {
+    if (!(e instanceof ToolFailure)) throw e;
+    return { result: result(e.message, true), entorno, fallo: "funcion", permiso: decision, aprobada };
   }
 }
 
@@ -179,13 +306,23 @@ export function traceLoop(conversation: Conversation, tope: number): Trace {
     const results: ToolResult[] = [];
     for (const call of calls) {
       const before = entorno;
-      const run = runTool(entorno, call);
+      const run = ejecutar(entorno, call, conversation.permisos?.usuario);
       entorno = run.entorno;
       llamadas++;
-      const result: ToolResult = { type: "tool_result", tool_use_id: call.id, content: run.content, is_error: false };
-      results.push(result);
+      results.push(run.result);
       const cambia = run.entorno === before ? undefined : call.input.ruta;
-      steps.push({ kind: "ejecutar", turno, mensajes: M.length, visto, entorno, bloques: [call, result], cambia });
+      steps.push({
+        kind: "ejecutar",
+        turno,
+        mensajes: M.length,
+        visto,
+        entorno,
+        bloques: [call, run.result],
+        cambia,
+        ...(run.fallo !== undefined && { fallo: run.fallo }),
+        ...(run.permiso !== undefined && { permiso: run.permiso }),
+        ...(run.aprobada !== undefined && { aprobada: run.aprobada }),
+      });
     }
 
     M.push({ role: "usuario", content: results });

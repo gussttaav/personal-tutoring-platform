@@ -353,3 +353,42 @@ describe("llm-agents assets — the frozen ejecutar and bucle of Block 4", () =>
     expect(src.match(/^class /gm)).toBeNull();
   });
 });
+
+/*
+ * COURSE-C2-P1-04 — permisos.py is Block 4 lesson 5's `CLASES`, `PERMISOS`, `permiso`, `preguntar`
+ * and `ejecutar` frozen, the way harness.py freezes lesson 4's: the block's project loads it with
+ * one exec line, after entorno.py and harness.py, and its `ejecutar` replaces harness.py's in the
+ * cell's namespace (the bucle looks it up there). Lesson 29's challenge solution is the source of
+ * truth, so the asset is that solution from `CLASES = {` to its end, character for character.
+ */
+describe("llm-agents assets — the frozen permiso of Block 4", () => {
+  const src = read("permisos.py");
+  const mdx = fs.readFileSync(
+    path.join(process.cwd(), "content", "courses", "llm-agents", "es", "29-permisos-y-confianza.mdx"),
+    "utf8",
+  );
+
+  /** The challenge's reference solution, as the frontmatter's block scalar holds it. */
+  function solution(): string {
+    const start = mdx.indexOf("    solution: |\n") + "    solution: |\n".length;
+    const end = mdx.indexOf("    explanation:", start);
+    return mdx
+      .slice(start, end)
+      .split("\n")
+      .map((l) => l.slice(6))
+      .join("\n");
+  }
+
+  it("is lesson 29's challenge solution, from `CLASES = {` to the end of ejecutar", () => {
+    const fromClases = (text: string) => text.slice(text.search(/^CLASES = \{/m)).trimEnd();
+    expect(fromClases(src)).toBe(fromClases(solution()));
+  });
+
+  it("imports nothing, loads nothing, and defines exactly permiso, preguntar and ejecutar", () => {
+    expect(src).not.toMatch(/^\s*(import|from)\s/m);
+    expect(src).not.toMatch(/^exec\(/m);
+    const defs = (src.match(/^def (\w+)/gm) ?? []).map((d) => d.slice(4));
+    expect(defs).toEqual(["permiso", "preguntar", "ejecutar"]);
+    expect(src.match(/^class /gm)).toBeNull();
+  });
+});

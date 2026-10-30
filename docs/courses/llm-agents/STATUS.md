@@ -39,7 +39,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
-| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | 🔄 (6/7) | _tbd_ | |
+| [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ✅ (7/7) | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -1394,7 +1394,7 @@ Approved by Gustavo at review:
   wrong in the browser, the other two not confirmed; no horizontal page scroll at 360 px (the 691 px
   display scrolls in its own box, also on desktop). Not on a phone.
 
-**COURSE-C2-P1-04** — In progress (started 2026-10-24). Lesson 25 `de-chat-a-agente` authored on
+**COURSE-C2-P1-04** — Done (started 2026-10-24, finished 2026-10-30). Lesson 25 `de-chat-a-agente` authored on
 the lesson-24 branch, the block's first. 1 834 words, **no display equation** (the opening says the
 block introduces no mathematics and why: what it fixes are a program's guarantees, written as a
 firma, an algorithm and its invariants), no widget (the block md assigns none), 1 cell (45 lines),
@@ -1606,3 +1606,48 @@ Gustavo at review:
   the Browser pane on `pnpm start` with the CPython prototype's output; the widget at 3 584 tokens
   and at 1 536 reads as the prose says; no horizontal page scroll at 375 px. Quiz not answered in
   the browser. Not on a phone.
+
+Lesson 31 `proyecto-agente-guionizado` authored on its own branch (2026-10-29), the block's
+project and last lesson. 1 896 words, no display equation, 1 widget (`agent-loop-trace`, new
+preset `proyecto`), 3 cells (37, 45 and 33 lines), 3 quiz, 1 challenge (`ch-test-que-falta`,
+3 tests), 2 readings (DeMillo, Lipton & Sayward 1978, mutation testing, DOI checked on Crossref;
+Fowler 2007, «Mocks Aren't Stubs»; URLs checked). `minutes: 35` (lint ≈36, over the 30 target like
+Block 3's project). Runs on the **scripted model**, said before the first cell. Approved by
+Gustavo at review (2026-10-30):
+- **The content:** the widget runs the whole agent on a guion that errs on purpose (a missing
+  recipe, a `leer` with a field its esquema lacks, a write to `notas.txt` nobody asked for, which
+  the usuario refuses); the firma `agente(modelo, pedido, entorno, tope=10) -> (motivo, texto, M)`,
+  one file per piece; a five-guarantee contract (terminates; one observación per llamada, also
+  refused ones and at the tope; only a permitted llamada changes the entorno, esquema before
+  permiso; no llamada stops the bucle; the model sees only M and nothing in M decides a permiso) and
+  three things it does not promise (the task, a truthful final text, fitting the ventana). A test
+  fixes the model's respuestas and writes the expected observaciones by hand: computed with the
+  `ejecutar` under test they compare it with itself. A harness roto checks the batería.
+- **The cells:** cell 1 composes the agent from four frozen files and runs the widget's
+  conversation (5 turnos, 11 mensajes, `notas.txt` unchanged); cell 2 writes `probar` and a batería
+  of three tests (the tortilla, lesson 29's web recipe, lesson 27's stuck model with tope 3), all
+  pass; cell 3 runs it against four harness rotos: no tope (caught by the stuck model), the
+  observaciones not reaching the model (all three), executing blind (tortilla, recipe), and the
+  permiso before the esquema, which passes all three. The challenge writes the test that catches it.
+- **New asset:** `public/courses/llm-agents/permisos.py`, lesson 29's challenge solution from
+  `CLASES = {`, loaded after `harness.py`; checked verbatim by `llm-agents-assets.test.ts`;
+  Spanish-bound in `corpora.ts`.
+- **Widget change:** `math/agent-trace.ts` gains `incumple`, `permiso` and `ejecutar` with
+  harness.py / permisos.py semantics (esquema, permiso, `leer`'s missing file, each an observación
+  with `is_error`), `fallo` / `permiso` / `aprobada` on the `ejecutar` step; the `bucle` preset, with
+  no usuario, traces as before. `AgentLoopTrace.tsx` colours error observaciones and shows the
+  usuario's answer; six step strings and two answer strings in both message files; tests for the
+  semantics and for the preset against the lesson's cell.
+- **Applied after review:** delta §4 rows *test* (del agente), with the challenge chrome's
+  «pruebas superadas» accepted, and `harness roto`; `NOTATION.md`'s Block 4 section records the
+  agent, the test dict, `probar`, `permisos.py` and the `preguntar` global; P0-05's layout section
+  records the companion repo's layout, decided here; Block 5's notes ask for the usuario as an
+  argument rather than a swapped global.
+- **Lesson 30's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 32 (`preparar-la-maquina`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (only the reading-time warning), `pnpm build` green; the three
+  cells run in the Browser pane on `pnpm start` with the CPython prototype's output; the
+  challenge's starter passes 2/3 and the solution 3/3 in Pyodide, an empty submission fails with
+  its message and an unknown-tool test also passes (CPython); the widget's 23 steps read as the
+  prose says, tope 4 stops with the list written; no horizontal page scroll at 375 px. Quiz not
+  answered in the browser. Not on a phone.

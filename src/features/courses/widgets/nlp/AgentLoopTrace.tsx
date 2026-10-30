@@ -1,6 +1,7 @@
 /*
  * COURSE-C2-P1-04 — `agent-loop-trace` (llm-agents Block 4 lesson 3, «El bucle»; the block's
- * project reuses it with a conversation of its own).
+ * project, lesson 7, reuses it with the `proyecto` preset, whose llamadas fail and ask the user:
+ * an error observación is drawn in the error colour, and the step says why it is one).
  *
  * The agent loop as a stepped trace. The reader steps forward and back through every line the
  * loop executes, and sees:
@@ -59,12 +60,13 @@ const KIND_COLOUR: Readonly<Record<Block["type"], string>> = {
   tool_result: "var(--green)",
 };
 
-/** One bloque per row: its type in its colour, then `muestra`'s text. */
+/** One bloque per row: its type in its colour (an error observación in the error colour), then `muestra`'s text. */
 function BlockRow({ block }: { block: Block }) {
   const { kind, text } = blockLine(block);
+  const colour = block.type === "tool_result" && block.is_error ? "var(--error)" : KIND_COLOUR[kind];
   return (
     <div style={line}>
-      <span style={{ color: KIND_COLOUR[kind] }}>{kind}</span> <span style={{ color: "var(--text)" }}>{text}</span>
+      <span style={{ color: colour }}>{kind}</span> <span style={{ color: "var(--text)" }}>{text}</span>
     </div>
   );
 }
@@ -126,9 +128,14 @@ export default function AgentLoopTrace(props: Record<string, unknown>) {
         const c = step.bloques[0];
         const name = c.type === "tool_use" ? c.name : "";
         const id = c.type === "tool_use" ? c.id : "";
-        return step.cambia
-          ? tr("steps.ejecutarCambia", { turno: step.turno, id, name, ruta: step.cambia })
-          : tr("steps.ejecutar", { turno: step.turno, id, name });
+        const v = { turno: step.turno, id, name };
+        if (step.fallo === "esquema") return tr("steps.ejecutarEsquema", v);
+        if (step.fallo === "denegada") return tr("steps.ejecutarDenegada", v);
+        if (step.fallo === "usuario") return tr("steps.ejecutarNo", v);
+        if (step.fallo === "funcion") return tr("steps.ejecutarFalla", v);
+        if (step.permiso === "preguntar") return tr("steps.ejecutarSi", { ...v, ruta: step.cambia ?? "" });
+        if (step.permiso === "permitir" && !step.cambia) return tr("steps.ejecutarLectura", v);
+        return step.cambia ? tr("steps.ejecutarCambia", { ...v, ruta: step.cambia }) : tr("steps.ejecutar", v);
       }
       case "observar":
         return tr("steps.observar", { turno: step.turno, n: step.bloques.length });
@@ -218,7 +225,16 @@ export default function AgentLoopTrace(props: Record<string, unknown>) {
             ) : step.kind === "tope" ? (
               <div style={{ ...line, color: "var(--warning)" }}>{tr("returnsTope")}</div>
             ) : step.bloques.length > 0 ? (
-              step.bloques.map((b, j) => <BlockRow key={j} block={b} />)
+              <>
+                {step.bloques.map((b, j) => (
+                  <BlockRow key={j} block={b} />
+                ))}
+                {step.aprobada !== undefined && step.bloques[0].type === "tool_use" ? (
+                  <div style={{ ...line, color: step.aprobada ? "var(--green)" : "var(--error)" }}>
+                    {tr(step.aprobada ? "askYes" : "askNo", { id: step.bloques[0].id })}
+                  </div>
+                ) : null}
+              </>
             ) : (
               <div style={{ ...line, color: "var(--text)" }}>{tr("inicioLine")}</div>
             )}
