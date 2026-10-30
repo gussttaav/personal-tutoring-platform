@@ -578,6 +578,23 @@ as two segments, its llamadas and its observaciones, sharing one drop rank: segm
 rank leave together, so «lo descarta el harness» never keeps a `tool_use` without its
 `tool_result`.
 
+**From lesson 31 on, the agent is one function and a test is one dict** (`COURSE-C2-P1-04`,
+lesson 31). `agente(modelo, pedido, entorno, tope=10) -> (motivo, texto, M)` is
+`bucle(modelo, inicio(pedido), entorno, tope)`, with `inicio(pedido)` the two opening mensajes
+(`SISTEMA`, then the pedido). The cells load four frozen files in this order: `guionizado.py`,
+`entorno.py`, `harness.py` and `permisos.py`, lesson 29's challenge solution from `CLASES = {`
+(`CLASES`, `PERMISOS`, `permiso`, `preguntar`, `ejecutar`), checked character for character by
+`llm-agents-assets.test.ts`; its `ejecutar` replaces harness.py's in the cell's namespace, where
+the bucle looks it up. A test is a dict with the keys `entorno`, `pedido`, `tope`, `respuestas`,
+`observaciones` (hand-written from the contracts, never computed with the `ejecutar` under test),
+`usuario` (llamada id → answer, in the order the harness must ask), `devuelve` (`(motivo, texto)`)
+and `cambia` (the routes whose contents change); `probar(test) -> None | str` returns `None` or
+the first deviation. `preguntar` is a module global that `probar` swaps for the test's usuario,
+because the frozen `ejecutar` looks it up by name: a wart of the browser cells, named in Block 5's
+notes. The `agent-loop-trace` widget's `proyecto` preset runs `ejecutar` with the esquema, the
+permiso and `leer`'s missing file as observaciones (`math/agent-trace.ts`); the `bucle` preset,
+with no usuario, has no permiso step and traces as before.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the

@@ -1,6 +1,6 @@
 # P1-04 — Block 4: El puente: de texto a acciones
 
-**Tag:** `COURSE-C2-P1-04` · **Effort:** L · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-C2-P1-04` · **Effort:** L · **Owner:** _tbd_ · **Status:** ✅
 **Depends on:** P1-03 · Block 4 widget (built in this task)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** systems
 **Runs on:** the scripted model, only · **Publication:** lesson by lesson
@@ -54,7 +54,7 @@ Block 5, and it is why the loop was built first.
 - [x] 28. `errores-como-observaciones`
 - [x] 29. `permisos-y-confianza`
 - [x] 30. `estado-y-memoria`
-- [ ] 31. `proyecto-agente-guionizado`
+- [x] 31. `proyecto-agente-guionizado`
 
 ## The precise statements (P0-04's step 3 for a systems lesson)
 

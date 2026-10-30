@@ -10,6 +10,10 @@
  *      answered.
  *   2. THE LESSON'S NUMBERS — what the first cell of «El bucle» prints, and the preset held to
  *      the frozen entorno.py and to the cell's text.
+ *
+ * And, for the block's project (lesson 7), `ejecutar` as harness.py and permisos.py write it —
+ * the esquema, the permiso, the function, each failure an observación — and the `proyecto`
+ * preset held to the observaciones that lesson's first cell writes by hand.
  */
 
 import fs from "node:fs";
@@ -17,7 +21,11 @@ import path from "node:path";
 
 import {
   blockLine,
+  ejecutar,
+  incumple,
+  permiso,
   pyJson,
+  pyRepr,
   runTool,
   traceLoop,
   type Block,
@@ -204,5 +212,148 @@ describe("agent-trace — the preset is the asset and the cell", () => {
       }
     }
     expect(mdx).toContain('LISTA = "pan, leche, patatas, tomates, pepino, pimiento, ajo, huevos, cebolla"');
+  });
+});
+
+describe("agent-trace — ejecutar, as harness.py and permisos.py write it", () => {
+  const E = ENTORNO_BLOQUE_4;
+  const SI = { w: true };
+  const NO = { w: false };
+
+  it("writes %r as Python does", () => {
+    expect(pyRepr("ruta")).toBe("'ruta'");
+    expect(pyRepr("it's")).toBe('"it\'s"');
+    expect(pyRepr("a\nb")).toBe("'a\\nb'");
+  });
+
+  it("checks the esquema as incumple does: the name, the required fields in order, no extra field", () => {
+    expect(incumple(call("a", "borrar", { ruta: "lista.txt" }))).toBe("no hay ninguna herramienta 'borrar'");
+    expect(incumple(call("a", "escribir", { ruta: "lista.txt" }))).toBe("falta el campo 'contenido'");
+    expect(incumple(call("a", "leer", { fichero: "lista.txt" }))).toBe("falta el campo 'ruta'");
+    expect(incumple(call("a", "leer", { ruta: "lista.txt", modo: "r" }))).toBe("sobra el campo 'modo'");
+    expect(incumple(call("a", "leer", { ruta: "lista.txt" }))).toBeNull();
+  });
+
+  it("answers a llamada that fails its esquema with an error, runs nothing and asks nobody", () => {
+    const run = ejecutar(E, call("w", "escribir", { ruta: "notas.txt" }), {});
+    expect(run.result).toEqual({
+      type: "tool_result",
+      tool_use_id: "w",
+      content: "no se ha ejecutado: falta el campo 'contenido'",
+      is_error: true,
+    });
+    expect(run.fallo).toBe("esquema");
+    expect(run.permiso).toBeUndefined();
+    expect(run.entorno).toBe(E);
+  });
+
+  it("answers a missing file with leer's error, and never throws for it", () => {
+    const run = ejecutar(E, call("a", "leer", { ruta: "nada.txt" }));
+    expect(run.result.content).toBe("no existe el fichero 'nada.txt'");
+    expect(run.result.is_error).toBe(true);
+    expect(run.fallo).toBe("funcion");
+  });
+
+  it("without a usuario there is no permiso: a write runs (lesson 4·3's harness)", () => {
+    const run = ejecutar(E, call("w", "escribir", { ruta: "notas.txt", contenido: "x" }));
+    expect(run.result.is_error).toBe(false);
+    expect(run.permiso).toBeUndefined();
+    expect(run.entorno["notas.txt"]).toBe("x");
+  });
+
+  it("with a usuario, reads are permitted, writes ask, and a no runs nothing", () => {
+    expect(permiso(call("a", "buscar", { patron: "pan" }))).toBe("permitir");
+    expect(permiso(call("a", "escribir", { ruta: "x", contenido: "y" }))).toBe("preguntar");
+    expect(permiso(call("a", "borrar", { ruta: "x" }))).toBe("denegar");
+
+    const read = ejecutar(E, call("r", "leer", { ruta: "lista.txt" }), {});
+    expect([read.permiso, read.aprobada, read.result.is_error]).toEqual(["permitir", undefined, false]);
+
+    const yes = ejecutar(E, call("w", "escribir", { ruta: "notas.txt", contenido: "x" }), SI);
+    expect([yes.permiso, yes.aprobada, yes.result.content]).toEqual(["preguntar", true, "escritos 1 caracteres en notas.txt"]);
+
+    const no = ejecutar(E, call("w", "escribir", { ruta: "notas.txt", contenido: "x" }), NO);
+    expect(no.result.content).toBe("no se ha ejecutado: el usuario no lo ha permitido");
+    expect([no.fallo, no.aprobada, no.entorno]).toEqual(["usuario", false, E]);
+  });
+
+  it("throws on a broken preset: a llamada the usuario has no answer for", () => {
+    expect(() => ejecutar(E, call("w", "escribir", { ruta: "x", contenido: "y" }), {})).toThrow(/no answer for w/);
+  });
+});
+
+describe("agent-trace — the block's project (proyecto)", () => {
+  const Q = AGENT_TRACE_PRESETS.proyecto;
+  const full = traceLoop(Q, 10);
+  const results = full.mensajes.flatMap((m) => blocks(m).filter((b) => b.type === "tool_result"));
+
+  it("ends in five turnos with the last respuesta's text, every llamada answered", () => {
+    expect([full.motivo, full.turnos, full.llamadas]).toEqual(["fin", 5, 7]);
+    expect(full.mensajes).toHaveLength(11);
+    expect(full.texto).toBe("He añadido huevos y cebolla a lista.txt. El menú no lo he apuntado: no me lo has permitido.");
+    for (const s of full.steps.filter((s) => s.kind === "llamar")) {
+      expect(everyCallAnswered(full.mensajes.slice(0, s.visto))).toBe(true);
+    }
+  });
+
+  it("answers with the observaciones the lesson's first cell writes by hand", () => {
+    expect(results.map((b) => (b.type === "tool_result" ? [b.tool_use_id, b.content, b.is_error] : null))).toEqual([
+      ["t1", "no existe el fichero 'recetas/tortilla-de-patatas.txt'", true],
+      ["t2", "no se ha ejecutado: falta el campo 'ruta'", true],
+      ["t3", "recetas/gazpacho.txt\nrecetas/tortilla.txt", false],
+      ["t4", "pan, leche, patatas", false],
+      ["t5", "Tortilla: huevos, patatas, cebolla.", false],
+      ["t6", "escritos 36 caracteres en lista.txt", false],
+      ["t7", "no se ha ejecutado: el usuario no lo ha permitido", true],
+    ]);
+  });
+
+  it("marks why each error is one, and what the usuario was asked", () => {
+    const ex = full.steps.filter((s) => s.kind === "ejecutar");
+    expect(ex.map((s) => [s.fallo ?? null, s.permiso ?? null, s.aprobada ?? null])).toEqual([
+      ["funcion", "permitir", null],
+      ["esquema", null, null],
+      [null, "permitir", null],
+      [null, "permitir", null],
+      [null, "permitir", null],
+      [null, "preguntar", true],
+      ["usuario", "preguntar", false],
+    ]);
+  });
+
+  it("changes only lista.txt, in turno 4; notas.txt is what it was", () => {
+    expect(full.steps.filter((s) => s.cambia !== undefined).map((s) => [s.turno, s.cambia])).toEqual([[4, "lista.txt"]]);
+    const last = full.steps[full.steps.length - 1].entorno;
+    expect(last["lista.txt"]).toBe("pan, leche, patatas, huevos, cebolla");
+    expect(last["notas.txt"]).toBe(ENTORNO_BLOQUE_4["notas.txt"]);
+  });
+
+  it("stops at a tope of 4 with the list written and nothing to tell the user", () => {
+    const t = traceLoop(Q, 4);
+    expect([t.motivo, t.texto, t.mensajes.length]).toEqual(["tope", null, 10]);
+    expect(t.steps[t.steps.length - 1].entorno["lista.txt"]).toBe("pan, leche, patatas, huevos, cebolla");
+    expect(full.mensajes.slice(0, t.mensajes.length)).toEqual(t.mensajes);
+  });
+
+  it("is the lesson's first cell, word for word", () => {
+    const mdx = fs.readFileSync(
+      path.join(process.cwd(), "content", "courses", "llm-agents", "es", "31-proyecto-agente-guionizado.mdx"),
+      "utf8",
+    );
+    expect(mdx).toContain(`SISTEMA = ${JSON.stringify(Q.inicio[0].content)}`);
+    expect(mdx).toContain(`PEDIDO = ${JSON.stringify(Q.inicio[1].content)}`);
+    for (const r of Q.respuestas) {
+      for (const b of r) {
+        if (b.type === "text") expect(mdx).toContain(`texto(${JSON.stringify(b.text)})`);
+        if (b.type === "tool_use") expect(mdx).toContain(`llamada("${b.id}", "${b.name}"`);
+      }
+    }
+    expect(mdx).toContain('LISTA = "pan, leche, patatas, huevos, cebolla"');
+    // The hand-written observaciones, as the cell's Python literals (\\n inside the JSX template).
+    for (const b of results) {
+      if (b.type !== "tool_result") continue;
+      const lit = JSON.stringify(b.content).replace(/\\n/g, "\\\\n");
+      expect(mdx).toContain(`${b.is_error ? "error" : "resultado"}("${b.tool_use_id}", ${lit})`);
+    }
   });
 });

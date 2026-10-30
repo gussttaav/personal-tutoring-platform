@@ -45,6 +45,14 @@ is never linked.
 **Layout** is decided by Block 4's project lesson (the scripted agent is the same program with a
 different `Modelo`), so this task fixes only what the README must say:
 
+> **Decided by lesson 31 (`proyecto-agente-guionizado`, 2026-10-30).** One file per piece, as the
+> browser cells load them: the modelo (the scripted one for tests, the Messages API adapter from
+> lesson 33), the entorno with its herramientas and esquemas, the bucle, and the permisos with the
+> `ejecutar` that consults them; plus `agente` (the firma
+> `agente(modelo, pedido, entorno, tope) -> (motivo, texto, M)`) and a `tests/` directory whose
+> tests run on the scripted model with hand-written observaciones. Block 5 replaces the modelo
+> and grows the other files; the tests keep running on the guion.
+
 - the interface `modelo(mensajes, herramientas) -> respuesta` and the two adapters that
   implement it (local Messages API; scripted, for tests);
 - one file per tool, one file for the loop, one for permissions, one for compaction — the
