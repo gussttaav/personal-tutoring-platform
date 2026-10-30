@@ -102,8 +102,9 @@ the block's task md:
   prose reads.
 
 Verifying a Block 5 lesson is not `pnpm build`. It is cloning its tag on a clean machine and
-reproducing its run on both models (the 8 GB and the 16 GB one), as the block task md's test plan
-says; `/course-lesson` step 6 already asks for it.
+reproducing its run on the course's one verified model (`qwen3:4b-instruct`, 8 GB of RAM; a bigger
+model appears only in lesson 39's table, run once on a rented 16 GB machine), as the block task
+md's test plan says; `/course-lesson` step 6 already asks for it.
 
 ## 2. Every lesson names the model it runs on (added)
 

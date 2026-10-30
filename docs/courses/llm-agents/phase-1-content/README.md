@@ -39,8 +39,9 @@ The reader must never wonder whether what they are seeing is real.
 - [ ] Every lesson within the budget; `pnpm lint:content` green in CI
 - [ ] Every `<PyCell>` and `<CodeChallenge>` verified to run in Pyodide **in the browser**, on a
       phone, under the cap
-- [ ] Every Block 5 lesson verified on a clean machine on both the 8 GB and the 16 GB model,
-      from its companion-repo tag
+- [ ] Every Block 5 lesson verified on a clean machine on the course's one model
+      (`qwen3:4b-instruct`), from its companion-repo tag; lesson 39 also on a bigger model, on a
+      rented 16 GB cloud machine
 - [ ] The ten widgets registered, bilingual, maths unit-tested against the numbers the prose
       quotes
 - [ ] The Colab notebook run end-to-end from a fresh account on the free tier
