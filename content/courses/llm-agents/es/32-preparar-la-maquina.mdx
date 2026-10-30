@@ -200,8 +200,12 @@ ollama --version
 ollama version is 0.40.13
 ```
 
-Después clona <RepoLink tag="b5-l1">el primer punto de control del bloque</RepoLink>: la orden de
-`git clone` está en su README, y es el sitio del que parten todas las lecciones que siguen. Contiene
+Después clona el primer punto de control del bloque. La orden de `git clone` está en su README, y
+es el sitio del que parten todas las lecciones que siguen:
+
+<RepoLink tag="b5-l1">Al empezar el bloque</RepoLink>
+
+Contiene
 el agente del bloque anterior, pasado a ficheros, uno por pieza: `guionizado.py`, `entorno.py`
 (las herramientas, su esquema y los bloques), `permisos.py` (el permiso y `ejecutar`), `bucle.py`,
 `agente.py` y la batería en `tests/`. El entorno sigue siendo un diccionario en memoria, y las
@@ -309,8 +313,11 @@ if llamadas:                              # el modelo ha pedido algo, y nadie lo
     print(json.dumps(r, ensure_ascii=False, indent=2))
 ```
 
-Si te has perdido, aquí tienes <RepoLink tag="b5-l1" path="protocolo.py">`protocolo.py` tal como
-queda al final de esta lección</RepoLink>. Un aviso antes de ejecutarlo: si en tu terminal ya está
+Si te has perdido, `protocolo.py` está entero en el punto de control de esta lección:
+
+<RepoLink tag="b5-l1" path="protocolo.py">`protocolo.py` al terminar esta lección</RepoLink>
+
+Un aviso antes de ejecutarlo: si en tu terminal ya está
 definida `ANTHROPIC_BASE_URL` (algunas herramientas la definen), el programa hablará con esa
 dirección y no con tu modelo. Bórrala de esa terminal antes de seguir.
 
@@ -394,11 +401,7 @@ durante muchos turnos, con el esquema, el permiso y el tope. Lo que no sabe es h
 protocolo: sus mensajes son tuplas con los roles en español y el prompt de sistema metido en la
 lista.
 
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
-    (slug el-bucle-con-un-modelo-real), envolver «la lección siguiente» en su Leccion slug=…; el
-    lint falla con un slug que no resuelve, también dentro de un comentario. */}
-
-Traducir lo uno a lo otro es la tabla de arriba, y escrita en Python es el adaptador. La lección
-siguiente, sobre el bucle con un modelo real, lo escribe, lo pone detrás de `modelo` y corre el
+Traducir lo uno a lo otro es la tabla de arriba, y escrita en Python es el adaptador. <Leccion slug="el-bucle-con-un-modelo-real">La lección
+siguiente, sobre el bucle con un modelo real</Leccion>, lo escribe, lo pone detrás de `modelo` y corre el
 agente entero contra el servidor. Los tests seguirán pasando sobre el guion. Lo que haga el modelo
 con las herramientas, en cambio, ya no lo ha escrito nadie.

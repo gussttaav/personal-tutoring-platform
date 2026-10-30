@@ -129,7 +129,7 @@ first course left it — in front of the literature, now with a harness to test 
 
 - [ ] chain test recorded above
 - [x] 32. `preparar-la-maquina`
-- [ ] 33. `el-bucle-con-un-modelo-real`
+- [x] 33. `el-bucle-con-un-modelo-real`
 - [ ] 34. `herramientas-de-ficheros`
 - [ ] 35. `prompt-de-sistema-y-fichero-de-proyecto`
 - [ ] 36. `compactacion`

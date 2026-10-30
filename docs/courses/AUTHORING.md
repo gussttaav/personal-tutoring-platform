@@ -873,15 +873,28 @@ and a component that links it the way `<ColabLink>` links a notebook.
 
 `<RepoLink tag="b5-l3">…</RepoLink>` links a **tag** of the course's companion repository — never
 a branch, never `main` — and `path="herramientas/editar.py"` points inside it. The base URL lives
-in one constant; no lesson ever carries the repository's name. Three rules:
+in one constant; no lesson ever carries the repository's name. Four rules:
 
 - **The lesson text is the source of truth; the tag is the copy**, cut from the reviewed lesson at
   its PR review. Code in MDX and code in a tag *can* disagree, and the mitigation is procedural:
   the lesson's test plan clones the tag on a clean machine and reproduces the lesson's
   expected-output run.
-- **A lesson links two tags**: the *previous* one where its implementation step starts («parte de
-  aquí») and its *own* where that step ends («si te has perdido, este es el estado al final de esta
-  lección»).
+- **A lesson links two tags**: the *previous* one where its implementation step starts and its
+  *own* where that step ends.
+- **A `<RepoLink>` stands on its own line, like `<ColabLink>`, never inside a sentence.** It renders
+  as a pill with a kicker, and a pill mid-sentence breaks the line it sits in (two in one sentence,
+  as lesson 33's first draft had them, read as a row of buttons). The sentence *before* it says
+  what the checkpoint is; the label is short and names the moment, not the content:
+
+  ```mdx
+  El código parte del punto de control en que terminó la lección anterior:
+
+  <RepoLink tag="b5-l1">Al empezar esta lección</RepoLink>
+  ```
+
+  and, where the step ends, «Si te has perdido, este es el punto de control al final de la lección,
+  con …:» followed by `<RepoLink tag="b5-l2">Al terminar esta lección</RepoLink>`. One pill per
+  checkpoint: a file worth pointing at is named in the sentence above it, not given a second pill.
 - **It looks like a link out of the course**, as `<ColabLink>` does — the same pill, with a small
   «Punto de control» kicker (`courses.reader.repoLink.kicker`, in the reader's locale) so the reader
   knows it is a snapshot and not the live repository — not like a `<Leccion>`, which stays inside.

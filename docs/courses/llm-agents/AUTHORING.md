@@ -86,8 +86,9 @@ the block's task md:
 - **Step 4 is fenced code** — ```` ```python ```` and ```` ```bash ```` blocks — never a `<PyCell>`,
   so `hasCode` is `false` (it means `<PyCell>`; the sidebar's code icon is off for the block, and
   lesson 32 says where the code runs). The step starts on a `<RepoLink>` to the **previous**
-  lesson's tag («parte de aquí») and ends on one to its **own** («si te has perdido, este es el
-  estado al final de esta lección»). The shared §7 has the component's rules; the one that matters
+  lesson's tag («Al empezar esta lección») and ends on one to its **own** («Al terminar esta
+  lección»), each on its own line after the sentence that introduces it, never inside one. The
+  shared §7 has the component's rules; the one that matters
   while writing is that **the lesson text is the source of truth** and the tag is cut from it at
   review.
 - **Step 5 is a quiz plus a run the student reproduces.** The run is a fenced ```` ```bash ```` the
