@@ -37,7 +37,7 @@ faq:
   - q: "¿Cuánto tiempo me llevará?"
     a: "Alrededor de 40 horas si haces los ejercicios y el proyecto final. Vas a tu ritmo; no hay fechas límite."
   - q: "¿Qué necesito instalar?"
-    a: "Nada hasta el bloque 5. Los cuatro primeros bloques se ejecutan en el navegador, Python incluido. El bloque 5 construye un programa de terminal contra un modelo de lenguaje que corre en tu máquina: Ollama y un modelo de unos 5 GB. Basta un ordenador con 16 GB de RAM y sin GPU; con 8 GB hay un modelo más pequeño que también sirve."
+    a: "Nada hasta el bloque 5. Los cuatro primeros bloques se ejecutan en el navegador, Python incluido. El bloque 5 construye un programa de terminal contra un modelo de lenguaje que corre en tu máquina: Ollama y un modelo de unos 2.5 GB. Te sirve un ordenador con 8 GB de RAM y sin GPU; con más memoria puedes poner un modelo mayor sin cambiar el código."
   - q: "¿Hay tantas matemáticas como en el primer curso?"
     a: "Al principio sí y al final no, y es a propósito. Los bloques 1 y 2 derivan; el 3 mezcla; los bloques 4 y 5 son ingeniería: contratos, protocolos y un programa que crece lección a lección. El título va de las matemáticas a los sistemas, y el curso también."
   - q: "¿Está en inglés?"
