@@ -1,0 +1,471 @@
+---
+slug: el-bucle-con-un-modelo-real
+title: "El bucle con un modelo real"
+block: 5
+order: 2
+minutes: 25
+summary: "El adaptador que traduce M al protocolo de mensajes, puesto donde estaba el modelo guionizado: ni el bucle ni los permisos cambian una línea, y el contrato del agente se cumple igual. Lo que cambia es que nadie ha escrito ya lo que pide el modelo, y lo que el harness no promete empieza a fallar."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-que-cambia
+    type: single
+    prompt: 'Pasas el agente del modelo guionizado al modelo local. ¿Qué ficheros del agente tienes que cambiar?'
+    options:
+      - { id: a, text: 'Ninguno. Añades `api.py`, con una clase que cumple la firma de `modelo`, y quien llama a `agente` le pasa una instancia de esa clase en lugar del modelo guionizado.' }
+      - { id: b, text: '`bucle.py`, que tiene que traducir los roles al inglés antes de llamar al modelo.' }
+      - { id: c, text: '`permisos.py`, porque los ids de las llamadas ya no son <W>t1</W>, <W>t2</W>… sino los que pone el servidor.' }
+      - { id: d, text: '`agente.py`, que tiene que sacar el prompt de sistema de la lista de mensajes.' }
+    answer: a
+    explanation: 'La (a), y `git diff --stat b5-l1` lo comprueba: no imprime nada. La traducción de los roles y del prompt de sistema es del adaptador, que es la única pieza que sabe que existe un protocolo. Los ids no los mira nadie más que el propio `tool_result`, que copia el de su llamada sea cual sea.'
+  - id: q-la-cortada
+    type: single
+    prompt: 'El servidor devuelve `stop_reason` `max_tokens` y una respuesta cuyo último bloque es un `tool_use` de `escribir`. ¿Por qué `ModeloAPI` lanza una excepción en lugar de devolver los bloques?'
+    options:
+      - { id: a, text: 'Porque la llamada puede estar a medias, con un `contenido` cortado que el bucle ejecutaría como si fuera el bueno, y una respuesta sin `tool_use` el bucle la tomaría por final. Sólo el adaptador ve `stop_reason`, así que avisar le toca a él.' }
+      - { id: b, text: 'Porque el protocolo prohíbe mandar al servidor una respuesta cortada en la petición siguiente.' }
+      - { id: c, text: 'Porque `incumple` no sabe comprobar una llamada cortada y el bucle se quedaría colgado.' }
+      - { id: d, text: 'No haría falta: el bucle lee `stop_reason` y ya para por su cuenta.' }
+    answer: a
+    explanation: 'La (a). Es lo que prometió <Leccion slug="el-bucle">la lección del bucle</Leccion>: el bucle decide sólo por los bloques, y un `modelo` que devuelve una respuesta cortada le hace tomar por terminado lo que no lo está. Fíjate en que una llamada cortada puede cumplir su esquema: un `contenido` a medias sigue siendo una cadena, e `incumple` la dejaría pasar.'
+  - id: q-lo-adivino
+    type: single
+    prompt: 'En la traza de la tortilla, `buscar` devuelve una observación vacía y en el turno siguiente el modelo escribe en <W>lista.txt</W> justo los dos ingredientes que faltan, huevos y cebolla. ¿Qué dice M de esa lista?'
+    options:
+      - { id: a, text: 'Que no sale de ninguna observación: ninguna llamada ha leído <W>recetas/tortilla.txt</W>. El modelo ha escrito lo que sabe de tortillas, y ha acertado; con otra receta podría no acertar, y M tendría el mismo aspecto.' }
+      - { id: b, text: 'Que el modelo leyó la receta en un turno anterior que la traza no enseña.' }
+      - { id: c, text: 'Que el servidor tenía la receta en su caché de la ejecución anterior.' }
+      - { id: d, text: 'Que el harness incumplió su contrato al devolver una observación vacía en lugar de un error.' }
+    answer: a
+    explanation: 'La (a). M es todo lo que el modelo ha visto, y en él no está la receta. Una observación vacía no es un error: `buscar` ha hecho lo que promete, devolver las líneas que contienen el patrón tal cual, y la línea dice <W>Tortilla:</W>, con mayúscula. El harness no sabe distinguir un dato leído de uno adivinado, y nada de su contrato le pide que lo haga.'
+  - id: q-tests-real
+    type: boolean
+    prompt: 'Ahora que el agente tiene un modelo de verdad, sus tests deberían correr contra él, porque contra el guion no prueban nada real.'
+    answer: false
+    explanation: 'Falso. Un test fija el modelo para que, si no pasa, sólo pueda haber fallado el harness. El modelo local sortea cada token, y un test que pasa o no pasa según el sorteo no señala a nada. Lo que hace el modelo con el harness no se prueba, se mide: sobre un banco de pruebas, con su tasa de acierto y su intervalo, como en <Leccion slug="evaluar">la lección sobre evaluar</Leccion>.'
+challenges: []
+reading:
+  - kind: blog
+    title: 'Hexagonal architecture (ports and adapters)'
+    authors: 'Alistair Cockburn'
+    year: '2005'
+    venue: 'alistair.cockburn.us'
+    lang: en
+    url: 'https://alistair.cockburn.us/hexagonal-architecture/'
+    note: 'El nombre del patrón de esta lección: el programa habla con una interfaz, y un adaptador por cada cosa que hay detrás, el de verdad y el de los tests. Cockburn lo cuenta con el mismo argumento.'
+  - kind: blog
+    title: 'Qwen3-4B-Instruct-2507'
+    authors: 'Qwen'
+    venue: 'Hugging Face'
+    lang: en
+    url: 'https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507'
+    note: 'La ficha del modelo del curso. Su plantilla de chat enseña qué hace el servidor con tu campo `tools`: lo escribe en el prompt de sistema, y el modelo contesta con un JSON entre dos marcas que el servidor convierte en `tool_use`.'
+  - kind: blog
+    title: 'urllib.request'
+    authors: 'Python Software Foundation'
+    venue: 'Documentación de Python'
+    lang: en
+    url: 'https://docs.python.org/3/library/urllib.request.html'
+    note: 'Todo el cliente del adaptador sale de aquí: `Request`, `urlopen` con su `timeout`, y `HTTPError`, que es la excepción que el adaptador convierte en un error con el motivo que da el servidor.'
+---
+
+{/* COURSE-C2-P1-05 — Bloque 5, lección 2. Terminal: sin celdas (hasCode: false). El punto de
+    control de partida es b5-l1 y el de llegada b5-l2: api.py (el adaptador), correr.py (un pedido
+    con su traza) y tests/test_api.py. bucle.py, permisos.py, agente.py y entorno.py no cambian, y
+    la lección lo comprueba con git diff. Las trazas son las que obtuve con el modelo del Callout,
+    sin retocar. */}
+
+<Callout type="warning" title="Esta lección corre en tu terminal">
+Verificada el 30 de octubre de 2026 con Ollama 0.40.13 y Python 3.14, con el modelo
+<W>qwen3:4b-instruct</W>, que funciona en un ordenador de 8 GB de RAM sin GPU. El código de esta
+lección no se ejecuta en el navegador: lo escribes en tu repositorio y lo corres en tu terminal
+contra un modelo local. Los minutos de arriba son de lectura y escritura; la espera del modelo va
+aparte.
+</Callout>
+
+Las dos mitades ya existen. Hay un servidor con un modelo cargado, que en
+<Leccion slug="preparar-la-maquina">la lección que preparó la máquina</Leccion> contestó a un
+turno montado a mano, y hay un agente, el del bloque anterior, que pasa su batería de tests sobre un
+modelo guionizado. Entre las dos queda un problema de formato y nada más: el agente guarda M como
+tuplas de Python, y el servidor lee el JSON del protocolo. Esta lección escribe la pieza que pasa
+de lo uno a lo otro, la pone donde estaba el modelo guionizado y deja que el *harness* corra solo.
+
+¿Qué más hay que tocar? La respuesta que defiende la lección es que nada, y no es una respuesta
+cómoda. Contra el guion, el harness sólo recibía respuestas que alguien había escrito para que
+encajaran. Un modelo de verdad puede pedir una herramienta que no existe, mezclar texto y llamadas,
+quedarse sin reserva a mitad de una llamada, contestar en otro idioma o dar por hecha una tarea que
+no ha hecho. Si el harness aguanta todo eso sin cambiar una línea, hay que ver por qué. Y hay que
+ver qué deja de saber quien lo usa.
+
+Esta es una ejecución entera del agente, con el pedido de la tortilla, sobre el modelo local. Cada
+turno dice cuánto tardó el modelo y cuántos tokens llevaba la petición; las flechas son lo que
+devuelve el modelo (←) y lo que el harness le contesta en el turno siguiente (→):
+
+```text
+turno 1  15 s  460 tokens de entrada
+  ←  llamada      leer {"ruta": "lista.txt"}
+  →  observación  pan, leche, patatas
+turno 2  10 s  501 tokens de entrada
+  ←  llamada      buscar {"patron": "tortilla"}
+  →  observación
+turno 3  19 s  535 tokens de entrada
+  ←  llamada      escribir {"ruta": "lista.txt", "contenido": "pan, leche, patatas, huevos, cebolla"}
+  →  error        no se ha ejecutado: el usuario no lo ha permitido
+turno 4  13 s  603 tokens de entrada
+  ←  texto        Lo siento, no pude realizar la acción solicitada. ¿Hay otra forma en la que puedo ayudarte?
+fin · 9 mensajes en M
+```
+
+El modelo empieza bien: lee la lista. Después busca la receta con <W>tortilla</W>, y `buscar`
+no encuentra nada, porque compara tal cual y el fichero dice <W>Tortilla:</W>, con mayúscula. Lo
+que hace a continuación no lo ha escrito nadie. No lista la carpeta ni prueba otra búsqueda:
+escribe la lista con huevos y cebolla, los dos ingredientes que faltan, sacados de lo que sabe de
+tortillas y no de ninguna observación. Esta vez acierta. La escritura se deniega, porque en esta
+ejecución no hay usuario a quien preguntar, y el modelo cierra con una disculpa que no dice qué ha
+pasado.
+
+Ahora mira la traza con el contrato del agente delante. Cada llamada ha tenido su observación en el
+mensaje siguiente. La escritura no ha cambiado el entorno. El bucle ha terminado, en cuatro turnos.
+Ninguna de las cinco garantías ha fallado, y el pedido no se ha hecho. Lo que ha fallado está en la
+otra lista, la de lo que el agente no promete: que la tarea se haga y que el texto final diga la
+verdad sobre el entorno.
+
+<Callout type="intuition" title="La idea en una frase">
+Cambiar el modelo no cambia el harness, y su contrato se cumple igual con cualquier modelo detrás.
+Lo que cambia es que nadie sabe de antemano qué va a pedir el modelo, y lo que el harness nunca
+prometió empieza a fallar de verdad.
+</Callout>
+
+## El adaptador y lo que promete
+
+El **adaptador** es la pieza que implementa la firma de `modelo` hablando con un servidor:
+
+```text
+ModeloAPI(nombre="local", max_tokens=1024)
+modelo(mensajes, herramientas) -> respuesta
+```
+
+`nombre` es el modelo que el servidor tiene cargado y `max_tokens` la reserva de cada respuesta. Una
+instancia es una función con la firma de siempre, y su contrato tiene cinco cláusulas:
+
+1. **Traduce M sin tocar el contenido.** El contenido de los mensajes `sistema` va al campo
+   `system`, unido y en su orden. Cada uno de los demás pasa a `messages`, en el mismo orden, con
+   el rol en inglés (`user`, `assistant`) y su contenido tal cual, cadena o lista de bloques. Las
+   herramientas van a `tools` sin cambios. Es la tabla de la lección anterior, y nada más.
+2. **Devuelve la respuesta tal como llega**: el campo `content`, una lista de bloques que el bucle
+   añade a M sin copiarla ni reescribirla. Los ids de las llamadas los pone el servidor, y el
+   `tool_result` de cada una copia el suyo.
+3. **Nunca devuelve una respuesta cortada.** Si `stop_reason` es `max_tokens`, lanza una
+   excepción. Es lo que prometió <Leccion slug="el-bucle">la lección del bucle</Leccion>: el bucle
+   decide por los bloques, y una respuesta cortada puede no traer ningún `tool_use` sin estar
+   terminada, o traer uno con los argumentos a medias. Fuera de ese caso, `stop_reason` no se mira.
+4. **Un error del servidor es una excepción con su motivo.** Una petición que no cabe en la
+   ventana de contexto (un 400), un modelo que el servidor no tiene (un 404) o un servidor apagado
+   salen de `modelo`, y por tanto del bucle, que sólo deja salir eso. El texto que da el servidor
+   va en la excepción, para que sepas qué ha pasado.
+5. **No recuerda nada entre llamadas.** Guarda el `usage` de la última petición para quien quiera
+   mirarlo, y la siguiente no lo lleva. Como el servidor, cada vez recibe M entero.
+
+La quinta es la que hace que el cambio sea un cambio de pieza y no una reescritura. El modelo
+guionizado tampoco recordaba nada que no estuviera en M, aparte de su puntero, así que el bucle no
+puede notar la diferencia. `bucle.py`, `permisos.py`, `agente.py` y `entorno.py` no cambian un
+byte, y el agente sobre el modelo local es `agente(ModeloAPI(), pedido, entorno)`.
+
+### Lo que el guion nunca hacía
+
+Que el bucle no cambie no quiere decir que no tenga trabajo nuevo. Un modelo de verdad devuelve
+cosas que ningún guion del bloque anterior devolvía, y cada una cae en una garantía distinta, o en
+ninguna:
+
+| Lo que devuelve el modelo | Quién lo recoge |
+|---|---|
+| texto y llamadas en la misma respuesta | el bucle: hay llamadas, así que sigue; el texto se queda en M |
+| una llamada a una herramienta que no existe, o con un argumento de más | `ejecutar`: no cumple el esquema, vuelve como error y el modelo lo ve |
+| una respuesta cortada por la reserva | el adaptador: lanza una excepción |
+| una respuesta sin llamadas, en inglés, que no ha mirado el entorno | nadie: es una respuesta sin llamadas, y el bucle devuelve `fin` |
+| un texto final que no cuenta lo que ha pasado | nadie: es lo que el agente no promete |
+
+Las tres primeras filas son el contrato trabajando. Las dos últimas son trabajo para el resto del
+bloque, que va añadiendo capas al harness para que pasen menos.
+
+Y hay una diferencia que no está en ninguna fila: el modelo local **sortea** cada token, así que el
+mismo pedido puede dar dos ejecuciones distintas. Por eso los tests del agente se quedan sobre el
+guion. Un test fija el modelo para que, si no pasa, la culpa sólo pueda ser del harness; lo que
+hace el modelo con el harness no se prueba, se mide, y eso lo hace un banco de pruebas, más adelante
+en el bloque.
+
+## El adaptador, en Python
+
+El código parte del punto de control en que terminó la lección anterior:
+
+<RepoLink tag="b5-l1">Al empezar esta lección</RepoLink>
+
+Todo lo que sigue corre contra un modelo local, el del aviso del principio, y añade tres ficheros sin tocar
+ninguno de los que ya tienes. El primero es `api.py`. Su mitad de arriba son la traducción de la
+primera cláusula y el envío, que es el `enviar` de `protocolo.py` con dos cosas más: una clave
+para cuando el servidor la pida, y el motivo del servidor en la excepción.
+
+```python
+"""modelo(mensajes, herramientas) -> respuesta, sobre la API de mensajes. Lección 33 del curso.
+
+El adaptador: traduce M al protocolo, manda la petición con urllib y devuelve la respuesta
+tal como llega. Ninguna biblioteca del proveedor.
+"""
+import json
+import os
+import urllib.error
+import urllib.request
+
+URL = os.environ.get("ANTHROPIC_BASE_URL", "http://localhost:11434") + "/v1/messages"
+CLAVE = os.environ.get("ANTHROPIC_API_KEY")       # el servidor local no la pide
+ROLES = {"usuario": "user", "asistente": "assistant"}
+
+
+def peticion(nombre, max_tokens, mensajes, herramientas):
+    """M en el protocolo: el prompt de sistema, a su campo; los demás, con el rol en inglés."""
+    p = {"model": nombre, "max_tokens": max_tokens, "thinking": {"type": "disabled"},
+         "system": "\n\n".join(c for rol, c in mensajes if rol == "sistema"),
+         "messages": [{"role": ROLES[rol], "content": c} for rol, c in mensajes if rol != "sistema"]}
+    if herramientas:
+        p["tools"] = list(herramientas)
+    return p
+
+
+def enviar(p):
+    """Un POST con la petición; lo que contesta el servidor, leído del JSON."""
+    cabeceras = {"content-type": "application/json"}
+    if CLAVE:
+        cabeceras.update({"x-api-key": CLAVE, "anthropic-version": "2023-06-01"})
+    req = urllib.request.Request(URL, data=json.dumps(p).encode("utf-8"), headers=cabeceras)
+    try:
+        with urllib.request.urlopen(req, timeout=300) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:              # un 400, un 404: el servidor dice por qué
+        raise RuntimeError("el servidor contesta %d: %s" % (e.code, e.read().decode("utf-8")))
+```
+
+La mitad de abajo es la clase. Tiene la forma de `ModeloGuionizado`, un objeto que se llama como
+una función, y lo único que hace además de traducir y enviar es la tercera cláusula:
+
+```python
+class ModeloAPI:
+    """modelo(mensajes, herramientas) -> respuesta, de un modelo que sirve otro programa."""
+    def __init__(self, nombre="local", max_tokens=1024):
+        self.nombre, self.max_tokens = nombre, max_tokens
+        self.usage = None                             # el de la última petición, para quien mire
+
+    def __call__(self, mensajes, herramientas=()):
+        r = enviar(peticion(self.nombre, self.max_tokens, mensajes, herramientas))
+        self.usage = r["usage"]
+        if r["stop_reason"] == "max_tokens":          # una respuesta cortada no se devuelve
+            raise RuntimeError("la respuesta no cabe en max_tokens=%d" % self.max_tokens)
+        return r["content"]
+```
+
+Dos cláusulas del contrato se pueden comprobar sin servidor, y van a `tests/test_api.py`: la
+traducción, sobre un M de dos turnos, y la respuesta cortada, cambiando `enviar` por una que
+devuelve lo que diría el servidor. Son tests del adaptador, no del agente, y como los del agente,
+no necesitan un modelo:
+
+```python
+"""El adaptador, sin servidor: la traducción de M y la respuesta cortada. Lección 33 del curso."""
+import unittest
+from unittest import mock
+
+import api
+from agente import SISTEMA, inicio
+from entorno import HERRAMIENTAS, llamada, resultado
+
+
+class TestAdaptador(unittest.TestCase):
+    def test_la_traduccion(self):
+        r = [llamada("t1", "leer", ruta="lista.txt")]
+        M = inicio("¿Qué hay en lista.txt?") + [("asistente", r), ("usuario", [resultado("t1", "pan")])]
+        p = api.peticion("local", 1024, M, HERRAMIENTAS)
+        self.assertEqual(p["system"], SISTEMA)
+        self.assertEqual([m["role"] for m in p["messages"]], ["user", "assistant", "user"])
+        self.assertEqual([m["content"] for m in p["messages"]], [c for _, c in M[1:]])
+        self.assertEqual(p["tools"], HERRAMIENTAS)
+
+    def test_la_respuesta_cortada(self):
+        cortada = {"content": [{"type": "text", "text": "pan, le"}], "stop_reason": "max_tokens",
+                   "usage": {"input_tokens": 453, "output_tokens": 1024}}
+        with mock.patch("api.enviar", return_value=cortada):
+            with self.assertRaises(RuntimeError):
+                api.ModeloAPI()(inicio("¿Qué hay en lista.txt?"), HERRAMIENTAS)
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+Falta un programa que reciba un pedido y enseñe qué pasa en cada turno. `correr.py` lo hace sin
+tocar el bucle, con un modelo que envuelve a otro: `Traza` le pasa cada M al modelo de verdad y
+escribe lo que viaja. Las observaciones del turno anterior las encuentra en el último mensaje de M,
+que es justo donde el bucle las deja.
+
+```python
+"""Un pedido al agente, contra el modelo local, turno a turno. Lección 33 del curso.
+
+    python correr.py "¿Qué recetas hay y cuál lleva cebolla?"
+"""
+import json
+import sys
+import time
+
+from agente import agente
+from api import ModeloAPI
+from entorno import ENTORNO
+
+
+def linea(b):
+    """Un bloque en una línea, y si es una observación, si es un error."""
+    if b["type"] == "text":
+        return "texto        " + " ".join(b["text"].split())
+    if b["type"] == "tool_use":
+        return "llamada      %s %s" % (b["name"], json.dumps(b["input"], ensure_ascii=False))
+    return ("error        " if b["is_error"] else "observación  ") + b["content"].replace("\n", " / ")
+
+
+class Traza:
+    """Un modelo que envuelve a otro y escribe lo que viaja. Para el bucle, es un modelo más."""
+    def __init__(self, modelo):
+        self.modelo, self.turno = modelo, 0
+
+    def __call__(self, mensajes, herramientas=()):
+        rol, contenido = mensajes[-1]
+        if rol == "usuario" and isinstance(contenido, list):     # las observaciones de antes
+            for b in contenido:
+                print("  →  " + linea(b))
+        self.turno, t = self.turno + 1, time.time()
+        r = self.modelo(mensajes, herramientas)
+        u = self.modelo.usage
+        print("turno %d  %.0f s  %d tokens de entrada" % (self.turno, time.time() - t,
+              u["input_tokens"] + u.get("cache_read_input_tokens", 0)))
+        for b in r:
+            print("  ←  " + linea(b))
+        return r
+```
+
+Al final del fichero, el agente con el modelo envuelto. El entorno es todavía el diccionario en
+memoria, una copia por ejecución, y no hay usuario: una escritura se deniega, como en la traza de
+arriba. Preguntarte de verdad llega con los permisos, más adelante en el bloque.
+
+```python
+entorno = dict(ENTORNO)
+motivo, texto, M = agente(Traza(ModeloAPI()), sys.argv[1], entorno)
+print(motivo, "·", "%d mensajes en M" % len(M))
+for ruta in sorted(entorno):
+    if entorno[ruta] != ENTORNO.get(ruta):
+        print("cambia", ruta, "->", entorno[ruta])
+```
+
+Antes de correr nada, comprueba que no has tocado ningún fichero de los que había. Como clonaste
+el punto de control, git conoce la etiqueta de la que partes, y esta orden no tiene que imprimir
+nada:
+
+```bash
+git diff --stat b5-l1
+```
+
+Si te has perdido, este es el punto de control al final de la lección, con el adaptador entero en
+`api.py`:
+
+<RepoLink tag="b5-l2">Al terminar esta lección</RepoLink>
+
+Si algún día quieres un modelo más fuerte que el que cabe en tu máquina, el adaptador ya sabe
+hablar con él. Una API en la nube que hable este protocolo es otra dirección: defines
+`ANTHROPIC_BASE_URL` con la de tu proveedor y `ANTHROPIC_API_KEY` con tu clave (en una variable de
+entorno, nunca en un fichero del repositorio), y creas el modelo con su nombre,
+`ModeloAPI(nombre=…)`. No cambia nada más. Es el único sitio del curso donde aparece esa variante,
+porque cuesta dinero y el bloque se ha escrito para que no haga falta.
+
+## El agente, contra el servidor
+
+Primero, los tests: los cuatro del agente sobre el guion y los dos del adaptador. Ninguno necesita
+el servidor:
+
+```bash
+python -m unittest -v
+```
+
+```text
+test_el_modelo_terco (tests.test_agente.TestAgente.test_el_modelo_terco) ... ok
+test_la_escritura_sin_contenido (tests.test_agente.TestAgente.test_la_escritura_sin_contenido) ... ok
+test_la_receta_de_la_web (tests.test_agente.TestAgente.test_la_receta_de_la_web) ... ok
+test_la_tortilla (tests.test_agente.TestAgente.test_la_tortilla) ... ok
+test_la_respuesta_cortada (tests.test_api.TestAdaptador.test_la_respuesta_cortada) ... ok
+test_la_traduccion (tests.test_api.TestAdaptador.test_la_traduccion) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+OK
+```
+
+Después, un pedido que el agente resuelve. Con el servidor en marcha (y sin una
+`ANTHROPIC_BASE_URL` que apunte a otro sitio), ejecuta:
+
+```bash
+python correr.py "¿Qué recetas hay y cuál lleva cebolla?"
+```
+
+```text
+turno 1  13 s  460 tokens de entrada
+  ←  llamada      listar {"carpeta": "recetas/"}
+  ←  llamada      buscar {"patron": "cebolla"}
+  →  observación  recetas/gazpacho.txt / recetas/tortilla.txt
+  →  observación  recetas/tortilla.txt: Tortilla: huevos, patatas, cebolla.
+turno 2  19 s  556 tokens de entrada
+  ←  texto        Las recetas disponibles son: 1. Gazpacho 2. Tortilla La receta que lleva cebolla es la **tortilla**, cuya lista de ingredientes es: huevos, patatas y cebolla.
+fin · 5 mensajes en M
+```
+
+Los segundos dependen de tu máquina, y la primera ejecución tarda más porque el servidor carga los
+pesos. El texto puede salir con otras palabras. Lo que tiene que coincidir es la forma: dos
+llamadas en la primera respuesta, contestadas en el orden en que se pidieron, y una respuesta sin
+llamadas en el segundo turno. Fíjate en los tokens: 460 para una pregunta de siete palabras, porque
+la mayor parte son el prompt de sistema y las cuatro herramientas, que viajan en cada turno.
+
+Ahora uno que no resuelve:
+
+```bash
+python correr.py "¿Qué lleva el gazpacho?"
+```
+
+```text
+turno 1  18 s  455 tokens de entrada
+  ←  texto        I don't have access to any specific files or recipes that would contain information about what goes into gazpacho. You might want to check a recipe book or a culinary website for details on traditional gazpacho ingredients. Let me know if you'd like help with something else!
+fin · 3 mensajes en M
+```
+
+En inglés, sin una sola llamada, y diciendo que no tiene acceso a ningún fichero con las
+herramientas delante. El harness no puede hacer nada: una respuesta sin llamadas es un final. Prueba
+también la tortilla, y otros pedidos tuyos; el modelo del curso es pequeño, y verlo equivocarse es
+parte de lo que esta lección enseña.
+
+<Quiz id="q-que-cambia" />
+
+<Quiz id="q-la-cortada" />
+
+<Quiz id="q-lo-adivino" />
+
+<Quiz id="q-tests-real" />
+
+---
+
+El agente ya corre contra un modelo de verdad, y el bucle que lo mueve es el del bloque anterior,
+sin una línea cambiada. Pero lo que mueve sigue siendo un juguete: un diccionario de cuatro
+ficheros en memoria y cuatro herramientas pensadas para él. `buscar` compara tal cual, y bastó una
+mayúscula para que el modelo dejara de leer y se pusiera a adivinar.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug herramientas-de-ficheros), envolver «la lección siguiente» en su Leccion slug=…; el
+    lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+Un agente de programación trabaja sobre un repositorio en tu disco, y lo que necesita es leerlo,
+buscar en él, cambiar un fichero sin reescribirlo entero y ejecutar los tests. La lección
+siguiente, sobre las herramientas de ficheros, cambia el diccionario por los ficheros de verdad y
+le da al agente esas herramientas, cada una con un contrato que deja comprobar lo que ha hecho un
+modelo pequeño.
