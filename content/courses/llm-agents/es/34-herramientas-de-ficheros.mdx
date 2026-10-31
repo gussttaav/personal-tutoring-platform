@@ -1,0 +1,770 @@
+---
+slug: herramientas-de-ficheros
+title: "Herramientas: leer, buscar, editar, ejecutar"
+block: 5
+order: 3
+minutes: 30
+summary: "El entorno deja de ser un diccionario y pasa a ser una carpeta de tu disco, con cinco herramientas sobre ella. La que enseña es editar: cambia un texto que tiene que aparecer exactamente una vez, o no cambia nada, y escribir ya sólo crea ficheros nuevos, así que cada cambio de un modelo pequeño es una cita que el harness comprueba contra el disco."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-dos-veces
+    type: single
+    prompt: 'En `ejemplo/compra.py`, el texto `[i.strip() for i in lista.split(",")]` aparece en dos líneas. El modelo llama a `editar` con ese texto como `antiguo`. ¿Qué pasa?'
+    options:
+      - { id: a, text: 'La llamada vuelve como error («aparece 2 veces») y el fichero no cambia. El modelo tiene que repetirla con un `antiguo` que incluya algo de alrededor, como el `return` o el `tengo =` del principio de la línea.' }
+      - { id: b, text: '`editar` cambia la primera aparición, que es la que el modelo ha visto antes al leer el fichero.' }
+      - { id: c, text: '`editar` cambia las dos, como hace `str.replace`, y devuelve las dos líneas.' }
+      - { id: d, text: 'El esquema rechaza la llamada antes de ejecutarla, porque `antiguo` no es único.' }
+    answer: a
+    explanation: 'La (a). El harness no sabe cuál de las dos quería cambiar el modelo, y elegir una por él es cambiar un sitio que el modelo quizá no ha mirado; la (c) cambia uno que seguro no ha pedido. La (d) confunde dos comprobaciones: el esquema mira la forma de los argumentos, y cuántas veces aparece `antiguo` sólo se sabe leyendo el fichero, dentro de la función.'
+  - id: q-copia-vieja
+    type: single
+    prompt: 'El agente lee <W>lista.txt</W>, que dice <W>pan, leche</W>. Antes del turno siguiente, tú añades <W>, sal</W> a mano. Ahora el modelo quiere añadir huevos y pide `editar` con `antiguo` <W>pan, leche</W> y `nuevo` <W>pan, leche, huevos</W>. ¿Qué queda en el fichero?'
+    options:
+      - { id: a, text: '<W>pan, leche, huevos, sal</W>: <W>pan, leche</W> sigue apareciendo una vez, así que la edición se hace, y lo que añadiste está fuera del texto citado.' }
+      - { id: b, text: '<W>pan, leche, huevos</W>: la edición sustituye el fichero por lo que el modelo cree que contiene, y tu sal se pierde.' }
+      - { id: c, text: '<W>pan, leche, sal</W>: el fichero ha cambiado desde la lectura y `editar` lo detecta y no hace nada.' }
+      - { id: d, text: 'Nada: `editar` exige que el fichero se haya leído en el mismo turno.' }
+    answer: a
+    explanation: 'La (a). `editar` no sabe cuándo leyó el modelo el fichero; sólo comprueba que el texto citado está, una vez. Con el `escribir` del bloque anterior y el contenido entero que el modelo recuerda, sería la (b): la observación desactualizada pisaría tu cambio sin que ninguna llamada fallara. Si tu cambio hubiera tocado el texto citado (<W>pan, sal, leche</W>), la cita ya no aparecería y la edición fallaría sin escribir nada.'
+  - id: q-salida-uno
+    type: boolean
+    prompt: '`ejecutar("python -m unittest")` termina con código de salida 1 porque un test no pasa. La observación vuelve con `is_error` verdadero.'
+    answer: false
+    explanation: 'Falso. `ejecutar` promete ejecutar el comando y contar qué ha pasado, y lo ha cumplido: el comando ha corrido y su código de salida está en la observación, con su stdout y su stderr. Que un test no pase es justo lo que el modelo necesita saber para arreglarlo. Un error es una llamada que no hace lo que su herramienta promete, como un comando que se pasa del límite de tiempo.'
+  - id: q-se-detiene
+    type: single
+    prompt: 'Un comando se pasa de los 30 segundos y la observación dice «no ha terminado en 30 s y se ha detenido». ¿Por qué no dice «no se ha ejecutado», como un error del esquema?'
+    options:
+      - { id: a, text: 'Porque sí se ha ejecutado, al menos en parte: ha podido escribir ficheros o borrarlos antes de que lo detuvieran. Repetirlo sin mirar sólo es seguro si el comando es idempotente.' }
+      - { id: b, text: 'Porque el comando sigue corriendo en segundo plano y terminará más tarde.' }
+      - { id: c, text: 'Es lo mismo: un comando detenido no deja nada en el entorno.' }
+      - { id: d, text: 'Porque el límite de tiempo es del servidor del modelo, no del harness.' }
+    answer: a
+    explanation: 'La (a), que es la regla de <Leccion slug="errores-como-observaciones">los errores como observaciones</Leccion>: «no se ha ejecutado» garantiza que el entorno está como estaba, y aquí nadie puede garantizarlo. Un comando cortado puede dejar medio trabajo hecho, y el texto del error se lo dice al modelo para que mire antes de repetir.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering'
+    authors: 'Yang, Jimenez, Wettig, Lieret, Yao, Narasimhan y Press'
+    year: '2024'
+    venue: 'arXiv:2405.15793'
+    lang: en
+    url: 'https://arxiv.org/abs/2405.15793'
+    note: 'La tesis de esta lección, medida: con el mismo modelo, cambiar cómo son las herramientas para leer, editar y ejecutar cambia cuántos fallos de un repositorio arregla el agente.'
+  - kind: blog
+    title: 'Edit formats'
+    authors: 'aider'
+    venue: 'Documentación de aider'
+    lang: en
+    url: 'https://aider.chat/docs/more/edit-formats.html'
+    note: 'Las dos formas de editar de esta lección, con sus nombres en otro agente: el fichero entero, que es `escribir`, y un bloque de buscar y sustituir, que es `editar`. Cuenta por qué la segunda sale más barata.'
+  - kind: blog
+    title: 'subprocess — Subprocess management'
+    authors: 'Python Software Foundation'
+    venue: 'Documentación de Python'
+    lang: en
+    url: 'https://docs.python.org/3/library/subprocess.html'
+    note: 'Todo `ejecutar` sale de `subprocess.run`: `capture_output`, `timeout` y `TimeoutExpired`. Lee también sus consideraciones de seguridad sobre `shell=True`, que es lo que la lección de permisos tiene que cerrar.'
+---
+
+{/* COURSE-C2-P1-05 — Bloque 5, lección 3. Terminal: sin celdas (hasCode: false). Punto de
+    control de partida b5-l2, de llegada b5-l3: herramientas/ (un fichero por herramienta),
+    ejemplo/ (un proyecto con dos tests que no pasan) y tests/test_herramientas.py; escribir ya
+    sólo crea ficheros (un fichero que existe cambia por editar); entorno.py deja de guardar el
+    entorno y las cuatro funciones del bloque 4, permisos.py importa CLASES,
+    los tests del agente escriben su entorno en una carpeta temporal y correr.py trabaja sobre
+    una copia de una carpeta y te pregunta antes de cada escritura y cada comando. bucle.py,
+    agente.py, api.py y guionizado.py no cambian. Las trazas son las que obtuve con el modelo del
+    Callout, recortadas (cada … es un trozo quitado) y sin retocar lo que queda; la del principio
+    corrió con el escribir del bloque 4, y la lección lo dice. */}
+
+<Callout type="warning" title="Esta lección corre en tu terminal">
+Verificada el 31 de octubre de 2026 con Ollama 0.40.13 y Python 3.14, con el modelo
+<W>qwen3:4b-instruct</W>, que funciona en un ordenador de 8 GB de RAM sin GPU. El código de esta
+lección no se ejecuta en el navegador: lo escribes en tu repositorio y lo corres en tu terminal
+contra un modelo local. Los minutos de arriba son de lectura y escritura; la espera del modelo va
+aparte.
+</Callout>
+
+Desde <Leccion slug="el-bucle-con-un-modelo-real">la lección del bucle con un modelo real</Leccion>,
+el *harness* del bloque anterior habla con un modelo que nadie ha guionizado, y lo hace sin una
+línea cambiada. Sus llamadas, en cambio, siguen cayendo en un entorno de mentira: rutas y contenidos
+guardados en la memoria del programa, que se pierden cuando termina. Esta lección lo cambia por una
+carpeta de tu disco, y le da al agente cinco herramientas para trabajar en ella.
+
+Escribir cinco funciones que leen y escriben ficheros es la parte fácil. La difícil es decidir qué
+promete cada una, porque quien las va a llamar es un modelo pequeño que se equivoca, y ahora se
+equivocará sobre ficheros que existen. El harness no puede impedirlo. Lo que sí puede es que cada
+equivocación se vea: que una edición hecha de memoria falle en lugar de pisar el fichero, que un
+test que no pasa le llegue al modelo como un dato, que un comando que no termina no deje el bucle
+esperando para siempre. ¿Qué tiene que prometer cada herramienta para eso? Casi toda la respuesta
+está en una sola, `editar`, y en una regla de su contrato.
+
+Esta es una ejecución del agente sobre un proyecto de dos ficheros, `compra.py` y su
+`test_compra.py`, cuyos dos tests fallan. Corre con las herramientas de esta lección salvo una:
+`escribir` es todavía la del bloque anterior, que sustituye un fichero entero, y su descripción
+añade un consejo, «para cambiar una parte, usa editar». El pedido es <W>Los tests fallan: ejecuta
+python -m unittest y arregla compra.py hasta que pasen.</W> He cortado las salidas de los tests
+(cada `…` es un trozo quitado) y los dos textos del modelo, y he quitado las preguntas de permiso,
+a las que contesté que sí. Los segundos son los de mi máquina:
+
+```text
+turno 1  12 s  753 tokens de entrada
+  ←  llamada      ejecutar {"comando": "python -m unittest"}
+  →  observación  código de salida 1
+                  --- stdout
+                  --- stderr
+                  FF
+                  …
+                  AssertionError: Lists differ: ['huevos', 'cebolla.'] != ['huevos', 'cebolla']
+                  …
+                  AssertionError: Lists differ: ['tomates', 'pepino', 'ajo.'] != ['tomates', 'pepino', 'ajo']
+                  …
+                  FAILED (failures=2)
+turno 2  45 s  1196 tokens de entrada
+  ←  llamada      leer {"ruta": "compra.py"}
+  →  observación  """Lo que falta comprar para una receta."""
+                  …
+turno 3  244 s  1361 tokens de entrada
+  ←  texto        I see the issue. In both failing tests, there's a trailing period (`.`) at the end of the ingredient list, …
+  ←  llamada      escribir {"ruta": "compra.py", "contenido": "\"Lo que falta comprar para una receta.\"\n\n\ndef ingredientes(receta):\n    \"\\\"Tortilla: huevos, patatas, cebolla.\\\" -> [\\\"huevos\\\", \\\"patatas\\\", \\\"cebolla\\\"]\\\"\n    nombre, lista = receta.split(:)\n    # Split by comma and strip whitespace and period\n    return [i.strip().rstrip(.) for i in lista.split(,)]\n\n\ndef falta(lista, receta):\n    \"\\\"Los ingredientes de la receta que no están en la lista de la compra.\\\"\\\"\n    tengo = [i.strip() for i in lista.split(,)]\n    return [i for i in ingredientes(receta) if i not in tengo]"}
+  →  observación  escritos 521 caracteres en compra.py
+turno 4  98 s  1865 tokens de entrada
+  ←  texto        The `compra.py` file has been successfully updated to fix the failing tests. …
+  ←  llamada      ejecutar {"comando": "python -m unittest"}
+  →  observación  código de salida 1
+                  …
+                    File "/tmp/tmpajoz5elq/compra.py", line 5
+                      "\"Tortilla: huevos, patatas, cebolla.\" -> [\"huevos\", \"patatas\", \"cebolla\"]\"
+                      ^
+                  SyntaxError: unterminated string literal (detected at line 5); perhaps you escaped the end quote?
+                  …
+```
+
+Los dos primeros turnos son lo que harías tú: correr los tests y leer el fichero. En el tercero el
+modelo acierta el diagnóstico (el punto que se queda pegado al último ingrediente), pasa a escribir
+en inglés y trae en su texto `compra.py` bien corregido, con una línea cambiada. Para escribirlo
+pide `escribir` con el fichero entero, y el contenido de la llamada no es el de su texto: han
+desaparecido comillas (<W>receta.split(:)</W>, <W>lista.split(,)</W>) y las cadenas de
+documentación se han roto. El mismo código, dos veces en una respuesta: bien en el texto, roto en
+la llamada.
+
+El harness ha hecho lo que `escribir` prometía, y la observación es verdad: 521 caracteres. El
+consejo de la descripción no ha servido de nada. El destrozo sólo se descubre porque el pedido decía
+cómo ejecutar los tests, y en el cuarto turno el `SyntaxError` llega como observación; sin ellos, el
+fichero se habría quedado roto y el modelo, convencido de lo contrario. (El quinto turno no volvió:
+tardó más de los 300 segundos que espera el adaptador.)
+
+<Callout type="intuition" title="La idea en una frase">
+Una herramienta no puede hacer que el modelo acierte, pero sí que, cuando falle, falle en voz alta y
+sin tocar nada. `editar` le pide al modelo que cite el fichero, y la cita la comprueba el harness
+contra el disco.
+</Callout>
+
+## Cinco contratos sobre una carpeta
+
+El entorno es ahora una carpeta, la **carpeta de trabajo**, y cada `ruta` que pide el modelo es
+relativa a ella: <W>compra.py</W>, <W>tests/test_compra.py</W>, <W>.</W> para la carpeta entera.
+La función de cada herramienta recibe la carpeta como primer argumento, en el sitio donde antes
+recibía el diccionario, así que para `permisos.ejecutar` y para el bucle sigue siendo «el entorno».
+Una cosa no cambia todavía, y conviene decirla ya: nada impide que una ruta salga de la carpeta
+(<W>../</W>) ni que un comando haga cualquier cosa. Cerrar eso es la lección de permisos y
+*sandbox*, más adelante en el bloque.
+
+Cada herramienta vive en su fichero, y el fichero tiene tres partes para tres lectores. `HERRAMIENTA`
+es lo que lee el modelo: nombre, descripción y esquema, lo único que sabe de ella. `CLASE` es lo que
+lee el permiso, escrita al lado de la función por quien la escribe, como pedía
+<Leccion slug="permisos-y-confianza">la lección de los permisos</Leccion>. Y la función es lo que
+ejecuta el harness. Estos son los cinco contratos:
+
+1. **`leer(ruta)`**, de lectura. Si `ruta` es un fichero, devuelve su contenido entero. Si es una
+   carpeta, las rutas de lo que hay dentro, una por línea, contadas desde la carpeta de trabajo y
+   con una <W>/</W> al final de cada carpeta; ni <W>.git</W> ni las cachés de Python. Es la
+   `listar` del bloque anterior, que desaparece. Si no existe, un error.
+2. **`buscar(patron, ruta)`**, de lectura. Las líneas que contienen `patron` *sin distinguir
+   mayúsculas*, en el fichero `ruta` o en todos los de la carpeta `ruta` y sus subcarpetas, como
+   <W>ruta:número: línea</W>. Si no hay ninguna, lo dice con una frase, sin `is_error`: no
+   encontrar nada no es un error, pero una observación vacía es fácil de no leer. Los dos cambios
+   salen de la traza de la tortilla de la lección anterior.
+3. **`editar(ruta, antiguo, nuevo)`**, de escritura. Si `antiguo` aparece en el fichero
+   **exactamente una vez**, lo sustituye por `nuevo` y devuelve en qué línea. Si aparece cero
+   veces, o dos o más, o está vacío, la llamada es un error que dice cuál de los casos es, y **el
+   fichero no se toca**.
+4. **`escribir(ruta, contenido)`**, de escritura. **Crea** un fichero nuevo, con las carpetas que
+   hagan falta. Si el fichero ya existe, la llamada es un error que manda a `editar`, y el fichero
+   no se toca. Es el cambio que pide la traza de arriba.
+5. **`ejecutar(comando)`**, de ejecución. Corre el comando en la terminal, en la carpeta de
+   trabajo, y devuelve su **código de salida**, su stdout y su stderr. Cualquier código de salida
+   es una observación, no un error. Si no termina en 30 segundos, se detiene, y eso sí es un error,
+   con el *timeout* en el texto.
+
+Las funciones fallan como fallaban las del bloque anterior: lanzan una excepción, y
+`permisos.ejecutar` la convierte en un error que el modelo ve, como estableció
+<Leccion slug="errores-como-observaciones">la lección de los errores como observaciones</Leccion>.
+Hay una coincidencia de nombres que no es una relación: la herramienta `ejecutar` corre un
+comando, y la función `ejecutar` de `permisos.py` ejecuta cualquier llamada, la de esta herramienta
+incluida. En el código no se cruzan, porque la herramienta vive en `herramientas/ejecutar.py`.
+
+### Por qué `antiguo` tiene que aparecer una vez
+
+La regla parece una molestia, y es lo que hace comprobable una edición. Hace tres cosas.
+
+La primera es que `antiguo` es una **cita** del fichero, y el harness la comprueba contra el disco
+antes de escribir. Un modelo que edita de memoria, a partir de una observación que ya no es
+verdad o de un fichero que no ha leído nunca (el de la tortilla, que se inventó en la lección
+anterior), cita algo que no está, y la llamada falla sin escribir. Es lo que prometió
+<Leccion slug="estado-y-memoria">la lección del estado y la memoria</Leccion>: una copia vieja no
+puede pisar un cambio, porque el cambio no está en la cita.
+
+La segunda es que una cita que aparece dos veces no se resuelve eligiendo. El harness no sabe cuál
+de los dos sitios ha mirado el modelo, y cambiar los dos cambia seguro uno que nadie ha pedido. Lo
+que sabe hacer bien es negarse y decir cuántas veces aparece.
+
+La tercera es la que se nota al revisar. Cuando `editar` termina bien, ha cambiado un sitio y nada
+más, y la observación dice cuál. Con el `escribir` de antes, cambiar una línea era volver a escribir
+todas las demás, y lo que se perdiera por el camino (las comillas de la traza) se perdía sin que
+nada fallara. Una cita sin sus comillas, en cambio, no aparece en el fichero. Lo comprobable no es
+que el modelo acierte. Es que se sepa exactamente qué ha tocado.
+
+Por eso `escribir` ya no sustituye. Su consejo era una petición al modelo, y la traza enseña lo que
+vale; una garantía tiene que estar en el contrato, como avisó la lección del estado y la memoria.
+Con un `escribir` que sólo crea, ningún fichero que exista cambia sin una cita comprobada.
+
+`ejecutar` tiene dos decisiones del mismo tipo. Un test que no pasa termina con código de salida 1,
+y eso es lo que el modelo necesita saber, no un fallo de la llamada: la herramienta prometió correr
+el comando y contar qué pasó, y lo ha hecho. Y el error del límite de tiempo no dice «no se ha
+ejecutado», porque no es verdad. Un comando cortado puede haber hecho la mitad de su trabajo, y la
+lección de los errores ya avisó de lo que cuesta repetir esa mitad.
+
+## Las herramientas, en Python
+
+El código parte del punto de control en que terminó la lección anterior:
+
+<RepoLink tag="b5-l2">Al empezar esta lección</RepoLink>
+
+Todo lo que sigue corre contra el modelo local del aviso del principio. Las herramientas van en una
+carpeta nueva, `herramientas/`, una por fichero, más `herramientas/comun.py` con lo que comparten:
+el `objeto` que escribe un esquema, que se muda desde `entorno.py`, y qué rutas no se enseñan.
+
+```python
+"""Lo que comparten las herramientas: el esquema de sus argumentos y qué rutas se ven."""
+
+
+def objeto(**campos):                     # un esquema: estos campos, de texto y obligatorios
+    return {"type": "object", "required": list(campos), "additionalProperties": False,
+            "properties": {c: {"type": "string", "description": d} for c, d in campos.items()}}
+
+
+def visible(ruta):                        # ni .git ni las cachés de Python
+    return not any(p.startswith(".") or p == "__pycache__" for p in ruta.parts)
+```
+
+Las dos de lectura, `herramientas/leer.py` y `herramientas/buscar.py`, usan `pathlib` para que las
+rutas salgan con <W>/</W> también en Windows:
+
+```python
+"""leer(ruta): un fichero entero, o lo que hay en una carpeta. Lección 34 del curso."""
+from pathlib import Path
+
+from herramientas.comun import objeto, visible
+
+CLASE = "lectura"
+HERRAMIENTA = {"name": "leer", "description": "Devuelve el contenido entero de un fichero. "
+               "Si ruta es una carpeta, lo que hay dentro, una ruta por línea; las carpetas "
+               "acaban en /. La carpeta de trabajo es .",
+               "input_schema": objeto(ruta="la ruta del fichero o de la carpeta")}
+
+
+def leer(entorno, ruta):
+    p = Path(entorno, ruta)
+    if p.is_dir():
+        hijos = (h.relative_to(entorno) for h in sorted(p.iterdir()))
+        return "\n".join(h.as_posix() + ("/" if Path(entorno, h).is_dir() else "")
+                         for h in hijos if visible(h))
+    if not p.is_file():
+        raise FileNotFoundError("no existe el fichero %r" % ruta)
+    return p.read_text(encoding="utf-8")
+```
+
+```python
+"""buscar(patron, ruta): las líneas que lo contienen, sin distinguir mayúsculas. Lección 34."""
+from pathlib import Path
+
+from herramientas.comun import objeto, visible
+
+CLASE = "lectura"
+HERRAMIENTA = {"name": "buscar", "description": "Las líneas que contienen patron, sin "
+               "distinguir mayúsculas, en el fichero ruta o en todos los de la carpeta ruta, "
+               "cada una como ruta:número: línea.",
+               "input_schema": objeto(patron="el texto que buscar",
+                                      ruta="un fichero o una carpeta; . es la de trabajo")}
+
+
+def buscar(entorno, patron, ruta):
+    p = Path(entorno, ruta)
+    if not p.exists():
+        raise FileNotFoundError("no existe %r" % ruta)
+    ficheros = [p] if p.is_file() else sorted(f for f in p.rglob("*") if f.is_file())
+    lineas = []
+    for f in (f for f in ficheros if visible(f.relative_to(entorno))):
+        try:
+            texto = f.read_text(encoding="utf-8")
+        except UnicodeDecodeError:                   # un fichero binario no tiene líneas
+            continue
+        for n, linea in enumerate(texto.split("\n"), 1):
+            if patron.lower() in linea.lower():
+                lineas.append("%s:%d: %s" % (f.relative_to(entorno).as_posix(), n, linea))
+    return "\n".join(lineas) or "ninguna línea contiene %r en %s" % (patron, ruta)
+```
+
+`herramientas/editar.py` es el contrato, cláusula por cláusula, y el texto de cada error le dice al
+modelo qué hacer en la llamada siguiente:
+
+```python
+"""editar(ruta, antiguo, nuevo): un cambio en un sitio, o ninguno. Lección 34 del curso."""
+from pathlib import Path
+
+from herramientas.comun import objeto
+
+CLASE = "escritura"
+HERRAMIENTA = {"name": "editar", "description": "Cambia en el fichero ruta el texto antiguo "
+               "por nuevo. antiguo tiene que aparecer en el fichero exactamente una vez, "
+               "copiado tal cual, con sus espacios y sus saltos de línea; si no, no cambia "
+               "nada y dice por qué.",
+               "input_schema": objeto(ruta="la ruta del fichero", antiguo="el texto que cambiar",
+                                      nuevo="el texto que lo sustituye")}
+
+
+def editar(entorno, ruta, antiguo, nuevo):
+    p = Path(entorno, ruta)
+    if not p.is_file():
+        raise FileNotFoundError("no existe el fichero %r" % ruta)
+    texto = p.read_text(encoding="utf-8")
+    veces = texto.count(antiguo) if antiguo else 0     # "" aparecería en todas partes
+    if veces == 0:
+        raise ValueError("antiguo no aparece en %s: cópialo tal cual del fichero. "
+                         "No se ha cambiado nada" % ruta)
+    if veces > 1:
+        raise ValueError("antiguo aparece %d veces en %s: añade líneas de alrededor para que "
+                         "sea único. No se ha cambiado nada" % (veces, ruta))
+    p.write_text(texto.replace(antiguo, nuevo), encoding="utf-8")
+    return "editado %s en la línea %d" % (ruta, texto[:texto.index(antiguo)].count("\n") + 1)
+```
+
+Fíjate en que todas las comprobaciones van antes de la única línea que escribe: por eso el error
+puede decir «no se ha cambiado nada» y que sea verdad.
+
+Quedan `herramientas/escribir.py` y `herramientas/ejecutar.py`, la primera herramienta de ejecución
+del curso. `shell=True` le pasa el comando a la terminal de tu sistema, la que lo entiende:
+
+```python
+"""escribir(ruta, contenido): un fichero nuevo, nunca uno que ya existe. Lecciones 26 y 34."""
+from pathlib import Path
+
+from herramientas.comun import objeto
+
+CLASE = "escritura"
+HERRAMIENTA = {"name": "escribir", "description": "Crea un fichero nuevo con este contenido. "
+               "Si el fichero ya existe, no lo toca: para cambiar un fichero que existe, usa "
+               "editar.",
+               "input_schema": objeto(ruta="la ruta del fichero nuevo",
+                                      contenido="su contenido, entero")}
+
+
+def escribir(entorno, ruta, contenido):
+    p = Path(entorno, ruta)
+    if p.exists():
+        raise FileExistsError("ya existe %r: para cambiarlo, usa editar. No se ha escrito nada"
+                              % ruta)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(contenido, encoding="utf-8")
+    return "escritos %d caracteres en %s" % (len(contenido), ruta)
+```
+
+```python
+"""ejecutar(comando): un programa, con su código de salida y lo que escribe. Lección 34."""
+import subprocess
+
+from herramientas.comun import objeto
+
+CLASE = "ejecución"
+LIMITE = 30                                          # segundos
+HERRAMIENTA = {"name": "ejecutar", "description": "Ejecuta un comando de la terminal en la "
+               "carpeta de trabajo y devuelve su código de salida, su stdout y su stderr. "
+               "Se detiene a los %d segundos." % LIMITE,
+               "input_schema": objeto(comando="el comando, como lo escribirías en la terminal")}
+
+
+def ejecutar(entorno, comando):
+    try:
+        r = subprocess.run(comando, shell=True, cwd=entorno, capture_output=True,
+                           encoding="utf-8", errors="replace", timeout=LIMITE)
+    except subprocess.TimeoutExpired:
+        raise TimeoutError("no ha terminado en %d s y se ha detenido" % LIMITE)
+    return "código de salida %d\n--- stdout\n%s--- stderr\n%s" % (r.returncode, r.stdout, r.stderr)
+```
+
+`herramientas/__init__.py` junta las cinco en lo que el resto del harness ya importaba:
+
+```python
+"""Las cinco herramientas del agente, una por fichero. Lección 34 del curso.
+
+Cada fichero tiene tres partes, para tres lectores: HERRAMIENTA, lo que lee el modelo; CLASE,
+lo que lee el permiso; y la función, lo que ejecuta el harness sobre el entorno, que es una
+carpeta de tu disco.
+"""
+from herramientas import buscar, editar, ejecutar, escribir, leer
+
+MODULOS = [leer, buscar, editar, escribir, ejecutar]
+HERRAMIENTAS = [m.HERRAMIENTA for m in MODULOS]
+CLASES = {m.HERRAMIENTA["name"]: m.CLASE for m in MODULOS}
+FUNCIONES = {"leer": leer.leer, "buscar": buscar.buscar, "editar": editar.editar,
+             "escribir": escribir.escribir, "ejecutar": ejecutar.ejecutar}
+```
+
+### Lo que cambia en los ficheros que ya tienes
+
+Tres ficheros cambian, y ninguno en su lógica. En `entorno.py`, borra las cuatro funciones del
+bloque anterior, `FUNCIONES`, `objeto` y `HERRAMIENTAS`, e importa las nuevas, para que `bucle.py` y
+`permisos.py` las sigan encontrando donde las buscaban. `ENTORNO` se queda, como ficheros de los
+tests. El principio queda así:
+
+```python
+"""Los bloques del protocolo, el esquema de cada llamada y los ficheros de los tests.
+
+Lecciones 26 y 28 del curso. Hasta la lección 34, también el entorno: un diccionario en
+memoria con cuatro herramientas. Ahora el entorno es una carpeta de tu disco, las herramientas
+están en herramientas/, y el diccionario es lo que los tests escriben en una carpeta temporal.
+"""
+import json
+
+from herramientas import FUNCIONES, HERRAMIENTAS     # bucle y permisos las importan de aquí
+```
+
+En `permisos.py`, la línea de `CLASES` desaparece, porque cada herramienta dice la suya:
+
+```python
+from entorno import FUNCIONES, error, incumple, resultado
+from herramientas import CLASES                      # cada herramienta dice la suya
+```
+
+En `tests/test_agente.py`, cada test escribe su entorno en una carpeta temporal y compara lo que
+queda en ella. Añade `import tempfile`, `from pathlib import Path` y
+`from herramientas.escribir import escribir`, y una función que lee la carpeta:
+
+```python
+def ficheros(carpeta):
+    """Lo que hay en la carpeta, como el diccionario de un test: {ruta: contenido}."""
+    return {f.relative_to(carpeta).as_posix(): f.read_text(encoding="utf-8")
+            for f in Path(carpeta).rglob("*") if f.is_file()}
+```
+
+En `probar`, las líneas que copiaban el diccionario y corrían el agente pasan a ser estas, y la
+comprobación del entorno compara `despues`:
+
+```python
+    with tempfile.TemporaryDirectory() as entorno:    # el entorno del test, en una carpeta
+        for ruta, contenido in test["entorno"].items():
+            escribir(entorno, ruta, contenido)
+        try:
+            motivo, final, M = agente(modelo, test["pedido"], entorno, test["tope"], usuario)
+        except Exception as e:            # el modelo guionizado no reconoce M, o algo ha lanzado
+            return "%s: %s" % (type(e).__name__, e)
+        despues = ficheros(entorno)
+```
+
+Y los guiones. Donde la tortilla y el modelo terco piden `listar(carpeta="recetas/")`, pon
+`leer(ruta="recetas")`; la observación esperada es la misma. La tortilla añadía los ingredientes con
+un `escribir` sobre <W>lista.txt</W>, que ahora sería un error, así que su <W>t6</W> pasa a ser
+`llamada("t6", "editar", ruta="lista.txt", antiguo="pan, leche, patatas", nuevo=LISTA)`, con la
+observación `resultado("t6", "editado lista.txt en la línea 1")`.
+
+### Un test por cláusula, y un proyecto donde probarlas
+
+Los contratos se comprueban sin modelo, llamando a las funciones sobre una carpeta temporal.
+`tests/test_herramientas.py` tiene un test por cláusula que importa:
+
+```python
+"""Los contratos de editar y escribir, y ejecutar con un comando que falla. Lección 34."""
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+from herramientas.editar import editar
+from herramientas.ejecutar import ejecutar
+from herramientas.escribir import escribir
+
+CODIGO = "x = 1\ny = 1\n"
+
+
+class TestHerramientas(unittest.TestCase):
+    def setUp(self):
+        self.entorno = self.enterContext(tempfile.TemporaryDirectory())
+        self.fichero = Path(self.entorno, "a.py")
+        self.fichero.write_text(CODIGO, encoding="utf-8")
+
+    def test_editar_una_vez(self):
+        r = editar(self.entorno, "a.py", "y = 1", "y = 2")
+        self.assertEqual(r, "editado a.py en la línea 2")
+        self.assertEqual(self.fichero.read_text(encoding="utf-8"), "x = 1\ny = 2\n")
+
+    def test_editar_ninguna_o_dos_veces(self):
+        for antiguo in ("z = 1", "= 1", ""):
+            with self.assertRaises(ValueError):
+                editar(self.entorno, "a.py", antiguo, "= 2")
+            self.assertEqual(self.fichero.read_text(encoding="utf-8"), CODIGO)
+
+    def test_escribir_no_pisa_un_fichero(self):
+        with self.assertRaises(FileExistsError):
+            escribir(self.entorno, "a.py", "")
+        self.assertEqual(self.fichero.read_text(encoding="utf-8"), CODIGO)
+
+    def test_ejecutar_un_comando_que_falla(self):
+        r = ejecutar(self.entorno, '"%s" -c "import sys; sys.exit(3)"' % sys.executable)
+        self.assertTrue(r.startswith("código de salida 3\n"))
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+Para el modelo hace falta un repositorio, aunque sea diminuto. `ejemplo/compra.py` saca los
+ingredientes de una receta y dice cuáles faltan en la lista:
+
+```python
+"""Lo que falta comprar para una receta."""
+
+
+def ingredientes(receta):
+    """«Tortilla: huevos, patatas, cebolla.» -> ["huevos", "patatas", "cebolla"]"""
+    nombre, lista = receta.split(":")
+    return [i.strip() for i in lista.split(",")]
+
+
+def falta(lista, receta):
+    """Los ingredientes de la receta que no están en la lista de la compra."""
+    tengo = [i.strip() for i in lista.split(",")]
+    return [i for i in ingredientes(receta) if i not in tengo]
+```
+
+Y `ejemplo/test_compra.py` las prueba con recetas que acaban en punto, como las del bloque anterior:
+
+```python
+import unittest
+
+from compra import falta, ingredientes
+
+
+class TestCompra(unittest.TestCase):
+    def test_ingredientes(self):
+        self.assertEqual(ingredientes("Gazpacho: tomates, pepino, ajo."), ["tomates", "pepino", "ajo"])
+
+    def test_falta(self):
+        self.assertEqual(falta("pan, leche, patatas", "Tortilla: huevos, patatas, cebolla."),
+                         ["huevos", "cebolla"])
+```
+
+Los dos tests fallan, por el mismo motivo: el punto final se queda pegado al último ingrediente,
+<W>ajo.</W> y <W>cebolla.</W>. He escrito el fallo a propósito, y también la línea repetida:
+`[i.strip() for i in lista.split(",")]` aparece dos veces en `compra.py`, y la que hay que cambiar
+es sólo una.
+
+### Correr el agente sobre una copia
+
+Queda `correr.py`, que hasta ahora no tenía a quién preguntar y denegaba toda escritura. Ahora
+copia la carpeta que le das a una temporal y corre el agente sobre la copia, así que `ejemplo/`
+conserva su fallo para la próxima vez. Y hace de usuario: antes de cada escritura y cada comando,
+te pregunta a ti. Mientras no lleguen los permisos de verdad, esa pregunta es lo único que separa
+un comando del modelo de tu máquina, así que léela antes de contestar.
+
+Cambia la cabecera y los imports:
+
+```python
+"""Un pedido al agente, sobre una copia de una carpeta, contra el modelo local, turno a turno.
+
+Lecciones 33 y 34 del curso.
+
+    python correr.py ejemplo "Los tests fallan: ejecuta python -m unittest y arregla compra.py."
+"""
+import json
+import shutil
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+from agente import agente
+from api import ModeloAPI
+from herramientas.comun import visible
+```
+
+En `linea`, una observación conserva sus saltos de línea, porque la salida de un test en una sola
+línea no hay quien la lea:
+
+```python
+    return (("error        " if b["is_error"] else "observación  ")
+            + b["content"].rstrip("\n").replace("\n", "\n" + " " * 18))
+```
+
+Y el final del fichero, después de `Traza`, es el usuario, la copia y lo que ha cambiado en ella:
+
+```python
+def usuario(ll):
+    """Tú, en la terminal: cada escritura y cada comando, antes de que corran."""
+    return input("  ?  ¿permites %s? [s/N] " % linea(ll)[13:]).strip().lower() == "s"
+
+
+carpeta, pedido = sys.argv[1], sys.argv[2]
+entorno = tempfile.mkdtemp()                        # una copia: la carpeta no se toca
+shutil.copytree(carpeta, entorno, dirs_exist_ok=True)
+motivo, texto, M = agente(Traza(ModeloAPI()), pedido, entorno, usuario=usuario)
+print(motivo, "·", "%d mensajes en M" % len(M), "· la copia está en", entorno)
+for f in sorted(Path(entorno).rglob("*")):
+    ruta = f.relative_to(entorno)
+    antes = Path(carpeta, ruta)
+    igual = antes.is_file() and antes.read_bytes() == f.read_bytes()
+    if f.is_file() and visible(ruta) and not igual:
+        print("cambia", ruta.as_posix())
+```
+
+El bucle, el agente y el adaptador no se han tocado, y git lo puede comprobar. Esta orden no tiene
+que imprimir nada:
+
+```bash
+git diff --stat b5-l2 -- bucle.py agente.py api.py guionizado.py
+```
+
+Si te has perdido, este es el punto de control al final de la lección, con las cinco herramientas
+en `herramientas/` y el proyecto en `ejemplo/`:
+
+<RepoLink tag="b5-l3">Al terminar esta lección</RepoLink>
+
+## El agente, sobre un repositorio
+
+Primero, los tests. Son los seis de antes, los del agente ahora sobre carpetas de verdad, y los
+cuatro de las herramientas. Ninguno necesita el servidor:
+
+```bash
+python -m unittest -v
+```
+
+```text
+test_el_modelo_terco (tests.test_agente.TestAgente.test_el_modelo_terco) ... ok
+test_la_escritura_sin_contenido (tests.test_agente.TestAgente.test_la_escritura_sin_contenido) ... ok
+test_la_receta_de_la_web (tests.test_agente.TestAgente.test_la_receta_de_la_web) ... ok
+test_la_tortilla (tests.test_agente.TestAgente.test_la_tortilla) ... ok
+test_la_respuesta_cortada (tests.test_api.TestAdaptador.test_la_respuesta_cortada) ... ok
+test_la_traduccion (tests.test_api.TestAdaptador.test_la_traduccion) ... ok
+test_editar_ninguna_o_dos_veces (tests.test_herramientas.TestHerramientas.test_editar_ninguna_o_dos_veces) ... ok
+test_editar_una_vez (tests.test_herramientas.TestHerramientas.test_editar_una_vez) ... ok
+test_ejecutar_un_comando_que_falla (tests.test_herramientas.TestHerramientas.test_ejecutar_un_comando_que_falla) ... ok
+test_escribir_no_pisa_un_fichero (tests.test_herramientas.TestHerramientas.test_escribir_no_pisa_un_fichero) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.054s
+
+OK
+```
+
+Después, el pedido de la traza del principio, ahora con las herramientas definitivas. Con el
+servidor en marcha (y sin una `ANTHROPIC_BASE_URL` que apunte a otro sitio), ejecuta:
+
+```bash
+python correr.py ejemplo "Los tests fallan: ejecuta python -m unittest y arregla compra.py hasta que pasen."
+```
+
+Si tu Python se llama `python3` o `py`, escríbelo así en el pedido, porque `ejecutar` corre el
+comando tal cual. Contesta <W>s</W> a las preguntas que reconozcas (los tests, un `editar` de
+`compra.py`) y <W>n</W> a cualquier otra. Esta es la mía, recortada como la de arriba (de la
+primera lectura dejo la línea que importa):
+
+```text
+turno 1  29 s  749 tokens de entrada
+  ←  llamada      ejecutar {"comando": "python -m unittest"}
+  →  observación  código de salida 1
+                  …
+                  FAILED (failures=2)
+turno 2  44 s  1194 tokens de entrada
+  ←  llamada      leer {"ruta": "compra.py"}
+  →  observación  """Lo que falta comprar para una receta."""
+                  …
+                      return [i.strip() for i in lista.split(",")]
+                  …
+turno 3  102 s  1359 tokens de entrada
+  ←  llamada      editar {"ruta": "compra.py", "antiguo": "    return [i.strip() for i in lista.split(',')]", "nuevo": "    return [i.strip().rstrip('.') for i in lista.split(',')]"}
+  →  error        antiguo no aparece en compra.py: cópialo tal cual del fichero. No se ha cambiado nada
+turno 4  59 s  1590 tokens de entrada
+  ←  llamada      leer {"ruta": "compra.py"}
+  →  observación  """Lo que falta comprar para una receta."""
+                  …
+turno 5  116 s  1835 tokens de entrada
+  ←  llamada      editar {"ruta": "compra.py", "antiguo": "    return [i.strip() for i in lista.split(',')]", "nuevo": "    return [i.strip().rstrip('.') for i in lista.split(',')]"}
+  →  error        antiguo no aparece en compra.py: cópialo tal cual del fichero. No se ha cambiado nada
+turno 6  76 s  2064 tokens de entrada
+  ←  llamada      leer {"ruta": "compra.py"}
+  →  observación  """Lo que falta comprar para una receta."""
+                  …
+turno 7  161 s  2322 tokens de entrada
+  ←  llamada      editar {"ruta": "compra.py", "antiguo": "    return [i.strip() for i in lista.split(',')]", "nuevo": "    return [i.strip().rstrip('.') for i in lista.split(',')]"}
+  →  error        antiguo no aparece en compra.py: cópialo tal cual del fichero. No se ha cambiado nada
+turno 8  111 s  2587 tokens de entrada
+  ←  llamada      leer {"ruta": "compra.py"}
+  →  observación  """Lo que falta comprar para una receta."""
+                  …
+turno 9  146 s  2878 tokens de entrada
+  ←  llamada      editar {"ruta": "compra.py", "antiguo": "    return [i.strip() for i in lista.split(',')]", "nuevo": "    return [i.strip().rstrip('.') for i in lista.split(',')]"}
+  →  error        antiguo no aparece en compra.py: cópialo tal cual del fichero. No se ha cambiado nada
+turno 10  167 s  3087 tokens de entrada
+  ←  llamada      leer {"ruta": "compra.py"}
+tope · 22 mensajes en M · la copia está en /tmp/tmp1a7otp6m
+```
+
+El agente empieza como en la traza del principio, y en el tercer turno pide `editar` con la línea
+que hay que cambiar. La cita es casi buena: el fichero dice <W>split(",")</W>, con comillas dobles,
+y el modelo cita <W>split(',')</W>. `antiguo` no aparece, y el fichero no se toca. Lo que sigue son
+cuatro vueltas iguales: el modelo vuelve a leer el fichero y vuelve a pedir la misma llamada, con
+las mismas comillas simples. Dos veces, en el texto que escribe justo antes, copia la línea bien,
+con las dobles. En el noveno turno culpa al sistema («a temporary or system-level discrepancy»), y
+en el décimo el bucle llega a su tope.
+
+El pedido no se ha hecho, y `compra.py` está como estaba, byte a byte: `correr.py` no imprime
+ninguna línea <W>cambia</W>. En la traza del principio, el mismo modelo con el mismo defecto dejó un
+fichero que no se podía importar, con una observación que decía que todo había ido bien. Aquí cada
+intento ha fallado en voz alta y sin escribir. Y el defecto es siempre el mismo: lo que el modelo
+escribe en su texto y lo que llega en su llamada difieren justo en las comillas dobles. No es cosa
+del adaptador ni del protocolo, porque la API nativa del servidor devuelve la misma llamada rota.
+Es del modelo del curso, y el banco de pruebas del bloque tendrá que contar con él.
+
+Tu ejecución puede ser otra, porque el modelo sortea: puede acertar la cita a la primera, o volver a
+`escribir` y encontrarse con que el fichero ya existe. Lo que tiene que coincidir es lo que promete
+el harness: ninguna llamada que falla cambia un byte de la copia, y cada error dice qué ha pasado.
+
+<Quiz id="q-dos-veces" />
+
+<Quiz id="q-copia-vieja" />
+
+<Quiz id="q-salida-uno" />
+
+<Quiz id="q-se-detiene" />
+
+---
+
+El agente ya trabaja sobre ficheros de verdad, y sus herramientas no dejan que un error del modelo
+estropee nada sin que se note. Lo que el modelo sabe del sitio donde trabaja, en cambio, sigue
+siendo casi nada. Su prompt de sistema es la frase del bloque anterior, y no le dice que conteste en
+español, que no explique cada paso en un párrafo ni que, cuando una edición falla, copie la línea de
+la observación en vez de repetir la llamada. Y del proyecto no sabe ni cómo se ejecutan sus tests:
+el pedido de esta lección tuvo que decírselo.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
+    (slug prompt-de-sistema-y-fichero-de-proyecto), envolver «la lección siguiente» en su Leccion
+    slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+Eso son dos voces que le faltan al agente, y no son la misma. Una es la del harness, que dice qué
+es el agente, qué herramientas tiene y qué reglas sigue. La otra es la del repositorio, que dice
+cómo se trabaja en él. La lección siguiente, sobre el prompt de sistema y el fichero de proyecto,
+escribe las dos y cuenta lo que cuestan en una ventana de 8192 tokens.
