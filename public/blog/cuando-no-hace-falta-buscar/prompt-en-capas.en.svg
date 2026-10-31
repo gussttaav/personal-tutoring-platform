@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" width="760" height="230" role="img"
+ aria-label="Albarán's assistant prompt as a bar divided into layers, from left to right. First, what is read from the cache: the assistant's instructions, 1,500 tokens; the tool definitions, 800; and the policies in order of stability, 32,000, with the FAQ last. A marker shows where the cached prefix ends. Then, what changes with every question: the date, the conversation and the question. Below, an arrow goes from the model to a tool, find_ticket 4812, which queries the ticket database; its result is appended to the end of the prompt, after the question.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+  .br.m { stroke: #4edea3; }
+  .br.w { stroke: #e8a24c; }
+  .br.x { stroke: #ffb4ab; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<path class="br m" d="M20.0,35.0 V30.0 H450.0 V35.0"/>
+<text class="hd" x="235.0" y="22.0" style="text-anchor:middle">READ FROM THE CACHE</text>
+<rect class="bx m" x="20.0" y="44.0" width="96.0" height="44.0" rx="6"/>
+<text class="lb m" x="68.0" y="64.0">Instructions</text>
+<text class="sb" x="68.0" y="78.0">1,500</text>
+<rect class="bx m" x="122.0" y="44.0" width="92.0" height="44.0" rx="6"/>
+<text class="lb m" x="168.0" y="64.0">Tools</text>
+<text class="sb" x="168.0" y="78.0">800</text>
+<rect class="bx m" x="220.0" y="44.0" width="230.0" height="44.0" rx="6"/>
+<text class="lb m" x="335.0" y="64.0">Policies, in order of stability</text>
+<text class="sb" x="335.0" y="78.0">32,000 · FAQ last</text>
+<line x1="460" y1="34" x2="460" y2="98" stroke="#4edea3" stroke-width="2"/>
+<text class="sb m" x="460.0" y="112.0">end of prefix</text>
+<path class="br w" d="M470.0,35.0 V30.0 H748.0 V35.0"/>
+<text class="hd" x="609.0" y="22.0" style="text-anchor:middle">CHANGES WITH EVERY QUESTION</text>
+<rect class="bx w" x="470.0" y="44.0" width="44.0" height="44.0" rx="6"/>
+<text class="lb w" x="492.0" y="70.0">Date</text>
+<rect class="bx w" x="520.0" y="44.0" width="86.0" height="44.0" rx="6"/>
+<text class="lb w" x="563.0" y="70.0">Conversation</text>
+<rect class="bx w" x="612.0" y="44.0" width="62.0" height="44.0" rx="6"/>
+<text class="lb w" x="643.0" y="70.0">Question</text>
+<rect class="bx d" x="680.0" y="44.0" width="68.0" height="44.0" rx="6"/>
+<text class="lb" x="714.0" y="70.0">Result</text>
+<rect class="bx " x="250.0" y="160.0" width="110.0" height="40.0" rx="6"/>
+<text class="lb" x="305.0" y="184.0">Model</text>
+<path class="ar" d="M305.0,90.0 L305.0,158.0"/>
+<rect class="bx " x="410.0" y="160.0" width="170.0" height="40.0" rx="6"/>
+<text class="mo" x="495.0" y="184.0" style="text-anchor:middle">find_ticket(4812)</text>
+<path class="ar" d="M360.0,180.0 L408.0,180.0"/>
+<text class="sb" x="384.0" y="216.0">the question needs it</text>
+<rect class="bx " x="620.0" y="160.0" width="120.0" height="40.0" rx="6"/>
+<text class="lb" x="680.0" y="178.0">Ticket</text>
+<text class="sb" x="680.0" y="192.0">database</text>
+<path class="ar" d="M580.0,180.0 L618.0,180.0"/>
+<path class="ar w" d="M690.0,160.0 L690.0,128.0 L714.0,128.0 L714.0,90.0"/>
+<text class="sb w" x="682.0" y="124.0" style="text-anchor:end">appended at the end</text>
+</svg>

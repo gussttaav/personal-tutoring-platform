@@ -31,6 +31,11 @@
 //           Zoom Video SDK has no server API to disconnect a live participant,
 //           so the client must leave itself when the session's grace window
 //           (startIso + durationWithGrace) elapses.
+//   SESSION-JOIN-01: Tutor-absent alert. A student alone in the room past
+//           `tutorAbsentAlertAt` (from the token response) reports it once to
+//           /api/zoom/tutor-absent, which re-checks and emails the admin.
+//           Only the tutor and the student can join, so "nobody else here"
+//           means "the tutor isn't here".
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -53,6 +58,8 @@ export interface TokenResponse {
   startIso:          string;
   durationWithGrace: number;
   expiresAt:         number;
+  /** SESSION-JOIN-01: when to report the tutor absent (student only; null for the tutor). */
+  tutorAbsentAlertAt?: string | null;
 }
 
 export interface ZoomRoomInnerProps {
@@ -1001,6 +1008,43 @@ export default function ZoomRoomInner({
       if (hardStopRef.current) clearTimeout(hardStopRef.current);
     };
   }, [state, handleLeave]);
+
+  // ── Tutor-absent alert (SESSION-JOIN-01) ───────────────────────────────────
+  // One timeout to tutorAbsentAlertAt while the student is connected and alone;
+  // someone joining clears it. Fires one report per room; a "too_early" answer
+  // (client clock ahead of the server) or a network failure retries in 30 s.
+  const tutorAbsentSentRef = useRef(false);
+  const [absentRetryTick, setAbsentRetryTick] = useState(0);
+  const remoteCount = remoteUsers.length;
+  useEffect(() => {
+    if (state !== "connected" || remoteCount > 0 || tutorAbsentSentRef.current) return;
+    const alertAt = tokenRef.current?.tutorAbsentAlertAt;
+    if (!alertAt) return;
+
+    const retryLater = () => {
+      tutorAbsentSentRef.current = false;
+      setTimeout(() => setAbsentRetryTick((n) => n + 1), 30_000);
+    };
+    const report = () => {
+      if (tutorAbsentSentRef.current) return;
+      tutorAbsentSentRef.current = true;
+      fetch("/api/zoom/tutor-absent", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ eventId }),
+      })
+        .then(async (res) => {
+          const d = (await res.json().catch(() => ({}))) as { outcome?: string };
+          if (res.status >= 500 || d.outcome === "too_early") retryLater();
+        })
+        .catch(retryLater);
+    };
+
+    const msLeft = new Date(alertAt).getTime() - Date.now();
+    if (msLeft <= 0) { report(); return; }
+    const id = setTimeout(report, msLeft);
+    return () => clearTimeout(id);
+  }, [state, remoteCount, eventId, absentRetryTick]);
 
   // ── Elapsed timer: HH:MM ──────────────────────────────────────────────────
   const hh           = String(Math.floor(elapsedSec / 3600)).padStart(2, "0");

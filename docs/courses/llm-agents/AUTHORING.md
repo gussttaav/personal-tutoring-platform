@@ -86,8 +86,9 @@ the block's task md:
 - **Step 4 is fenced code** — ```` ```python ```` and ```` ```bash ```` blocks — never a `<PyCell>`,
   so `hasCode` is `false` (it means `<PyCell>`; the sidebar's code icon is off for the block, and
   lesson 32 says where the code runs). The step starts on a `<RepoLink>` to the **previous**
-  lesson's tag («parte de aquí») and ends on one to its **own** («si te has perdido, este es el
-  estado al final de esta lección»). The shared §7 has the component's rules; the one that matters
+  lesson's tag («Al empezar esta lección») and ends on one to its **own** («Al terminar esta
+  lección»), each on its own line after the sentence that introduces it, never inside one. The
+  shared §7 has the component's rules; the one that matters
   while writing is that **the lesson text is the source of truth** and the tag is cut from it at
   review.
 - **Step 5 is a quiz plus a run the student reproduces.** The run is a fenced ```` ```bash ```` the
@@ -102,8 +103,9 @@ the block's task md:
   prose reads.
 
 Verifying a Block 5 lesson is not `pnpm build`. It is cloning its tag on a clean machine and
-reproducing its run on both models (the 8 GB and the 16 GB one), as the block task md's test plan
-says; `/course-lesson` step 6 already asks for it.
+reproducing its run on the course's one verified model (`qwen3:4b-instruct`, 8 GB of RAM; a bigger
+model appears only in lesson 39's table, run once on a rented 16 GB machine), as the block task
+md's test plan says; `/course-lesson` step 6 already asks for it.
 
 ## 2. Every lesson names the model it runs on (added)
 
@@ -188,7 +190,7 @@ this work.
 | Concept | Use | Not |
 |---|---|---|
 | a `(nombre, descripción, esquema)` triple the model may ask the harness to run | `herramienta` | *tool* in prose — the protocol's block names, `tool_use` / `tool_result`, stay in backticks as identifiers; `función` (that is the Python one) |
-| the model's request that a tool be run: one `tool_use` block, with its arguments | `llamada` (a una herramienta) | *tool call*, *function call*, invocación, petición |
+| the model's request that a tool be run: one `tool_use` block, with its arguments | `llamada` (a una herramienta). Blocks 2–3 spent the noun on each time the harness calls the model (lesson 24 counted *llamadas* to retry); from Block 4 lesson 1, which names the switch once, a llamada is the model's, and calls to the model are counted in `turnos`. The verb is unchanged: el harness *llama al modelo*, el modelo *hace llamadas* | *tool call*, *function call*, invocación, petición |
 | what the harness hands back to the model after a call — the `tool_result`, an error included | `observación` | *observation*; resultado (names the block, not what it is to the model); respuesta (reserved for the model's) |
 | what the model returns to one call: a list of content blocks, text or `tool_use` | `respuesta` — from Block 2 lesson 1 the name of $y$ whether it answers or not, replacing Block 1 lesson 9's «continuación» as the term (the name says what $y$ is asked for, not whether it gets there) | *response*, salida, *completion* — the first course's `genera` completed text; here the model answers |
 | one model call and everything the harness does until the next | `turno` | iteración, ronda, paso — `paso` is the first course's forward pass as a function, and Block 1 here inherits it |
@@ -307,6 +309,21 @@ this work.
 | a vector for a whole text, made so that the cosine can compare two texts: what a recuperador computes for each pasaje and for the question | *embedding* (de un texto) (Block 3 lesson 4). The first course's *embedding* is a row of $\mathbf{E}$, one per entry; the lesson that writes both says in a clause that this one is one per text | vector del documento as the term (the first course's name for TF-IDF's, fine for that one in passing); representación contextual (one position's, the first course's row); codificación (`codificar` is BPE's) |
 | finding, for a question, the $k$ pasajes whose *embeddings* have the largest cosine with its own, to write them into the prompt · the component that does it | `recuperación`, `recuperar` · `recuperador` (Block 3 lesson 4), with *retrieval* given once; the method is RAG, expanded once per lesson | búsqueda as the term (fine in passing); extracción; *retriever*. And `recuperar` in its loose sense («recuperemos el modelo reducido», lesson 18) on a page that uses the term |
 | one of the parts a harness builds a call from, each entering whole or not at all: the prompt de sistema, an ejemplo, a turno of the historial, a pasaje, the caso | `pieza` (del prompt) (Block 3 lesson 1 named three, lesson 5 the rest) | segmento (the `context-window` widget draws them as segments; the prose never names them so); bloque (the protocol's content blocks, Block 4); parte, trozo, fragmento |
+| one element of the content list of a respuesta or a mensaje: `text`, `tool_use` or `tool_result`, with the protocol's English keys | `bloque` (de contenido) (Block 4 lesson 2) | pieza (the prompt's, Block 3); parte, segmento, *content block*. It collides with the syllabus's «bloque 4»: the lesson that defines it names the collision once, in a clause, and a page that needs both says «bloque de contenido» |
+| the algorithm that calls the model with M, appends its respuesta, runs its llamadas and appends their observaciones, until a respuesta asks for nothing or the tope is reached | `bucle` (del agente) (Block 4 lesson 3); one pass of it is a `turno` | *loop*, *agent loop*; ciclo (Block 1 lesson 4's cycle of the voraz); iteración (the `turno` row refuses it); *run* |
+| the most turnos the bucle may give before it stops on its own, whatever the model does; reaching it returns `tope`, not a texto | `tope` (de turnos) (Block 4 lesson 3), Block 3 lesson 7's word for the most llamadas to retry, now counting turnos | límite, máximo, *cap*, *max_turns*; presupuesto (Block 1 lesson 7's $C$) |
+| why the model stopped writing, as the protocol reports it beside a respuesta: `end_turn`, `tool_use`, `max_tokens` | `stop_reason`, in backticks, a protocol identifier (Block 4 lesson 3); in prose «por qué paró el modelo» | motivo de parada as a term; *stop reason* in prose. The bucle's own `fin` / `tope` are what it returns, not a `stop_reason` |
+| a llamada that does not do what its herramienta promises (it fails its esquema, or its function raises) · the observación that reports it, a `tool_result` with `is_error` true | `fallar` · `error` (de una llamada) (Block 4 lesson 4) | *fallo* as the term (fine in passing; lesson 27's bridge has it once); excepción (Python's `raise`, which is what an error stops being: «un error deja de ser una excepción»); falla; *error* in italics (it is Spanish). An empty result (a `buscar` with no match) is not an error: the herramienta did what it promises |
+| a llamada that, executed twice in a row, leaves the entorno as executing it once · the property | `idempotente` · `idempotencia` (Block 4 lesson 4) | repetible, reintentable as the term; segura (it names the consequence, said in passing) |
+| the model asking again for a llamada it already made, as it is or corrected | `repetir` (una llamada) (Block 4 lesson 4) | reintentar, reintento (Block 3's: the harness repeating a call to the model that failed its comprobación); rehacer; relanzar |
+| what a herramienta can change in the entorno with one llamada, which decides its permiso: `lectura` (nothing), `escritura` (files its arguments name), `ejecución` (a program, anything) · written by whoever writes the herramienta, beside its function, never read off its name or description | `clase` (de herramienta) (Block 4 lesson 5); the three values are plain words in prose («de lectura»), strings in the code | tipo (the esquema's `type`); categoría; nivel; *scope* |
+| the harness's map from clase to decisión (`permitir`, `preguntar`, `denegar`); a clase it does not name is denied | `tabla de permisos` (Block 4 lesson 5); `PERMISOS` in the cells | política (Block 2 lesson 2's $\pi_\theta$); configuración, reglas as the term; *policy* |
+| what an observación carries: written by whoever wrote the file, the page or the program, never an order from the usuario, whatever it says | `contenido no fiable` (Block 4 lesson 5) | contenido no confiable; contenido malicioso (it need not be); datos externos as the term |
+| a text that reaches the model through a herramienta carrying an instrucción for it | `inyección de instrucciones` (Block 4 lesson 5), with *prompt injection* given once per lesson | inyección de prompts; ataque de inyección as the term; *prompt injection* in prose |
+| what the usuario asks the agent for in one mensaje, the task the bucle runs until it is done | `pedido` (del usuario) (Block 4 lesson 5, given its row by lesson 6) | petición as the term (fine for the act of asking, the `instrucción` row's); tarea (Block 1 lesson 8's $\omega$); *prompt*; instrucción alone (a pedido is one, and the row is for the agent's whole job) |
+| an observación whose contenido is no longer what the entorno holds, because the entorno changed after its llamada (the agent's own escritura, or someone outside its herramientas) | `desactualizada` (Block 4 lesson 6) | obsoleta, caducada, vieja as the term (fine in passing); *stale*; inválida (an error is `is_error`, and a desactualizada observación was true when it came back) |
+| a conversation with its outcome written in advance (the entorno, the pedido, the tope, the model's respuestas turno by turno, the observaciones the harness must give back, written by hand, the usuario's answers, what the agent returns and leaves in the entorno) that checks the harness with the model fixed · a set of them | *test* (del agente), plural *tests* (Block 4 lesson 7), English by the shared line, bold italic at its definition; a test `pasa` or `no pasa`; the set is a `batería` (de tests) in prose | prueba (Block 3 lesson 6's: one caso with its respuesta esperada, measured on harness × model, never pass/fail by design); caso (Block 1 lesson 8's $x$); banco de pruebas (Block 3's, and Block 5's benchmark); `fallar` for a test (that is a llamada's, Block 4 lesson 4). The challenge card's own chrome says «N de M pruebas superadas» for its graded checks: accepted (2026-10-30), it names the platform's checks, not this term |
+| the agent with one piece replaced by a version with one defect, to see whether a batería notices it · the technique | `harness roto` (Block 4 lesson 7) · *mutation testing*, named once, English only, as the technique's name | mutante, mutación as the term; versión defectuosa; *mutant* |
 | the mensajes of the earlier turnos that the harness sends again in each call: each turno leaves two, the usuario's and the asistente's | `historial` (Block 3 lesson 5) | memoria (the `ventana` row refuses it); conversación as the term (fine for the whole exchange, in passing); contexto (what the model *does* see, which the historial is only part of) |
 | the tokens of the ventana kept free for the respuesta: `max_tokens`, since its length is unknown until it is written | `reserva` (Block 3 lesson 5) | margen (Block 2 lesson 4's $r(x, y_A) - r(x, y_B)$); presupuesto (Block 1 lesson 7's $C$, and the lesson's metaphor for the whole ventana); hueco |
 | cutting a prompt that does not fit to its last tokens, keeping nothing of what falls off and deciding nothing: what a model does with a prompt longer than its ventana | `truncar`, `truncamiento` (Block 3 lesson 5), the first course's word for cutting a text at $T_{\max}$ | recortar (the gradient's `recorte`); cortar, corte (top-k's, Block 1 lesson 4); `rellenar` (Block 1 lesson 9's refill of the caché, which is how the mini-GPT truncates) |
@@ -337,6 +354,12 @@ Block 1 of this course picks that function up by name; a `turno` is one call **p
 harness does with what came back, which is a different unit, and the loop's whole point is that
 the two are not the same size. `iteración` is refused for being about the `while` and not about
 the conversation.
+
+«memoria» is not a term, and that is the point of Block 4 lesson 6 (`estado-y-memoria`): the
+word names two things, M and the entorno, and the lesson's claim is that they are different. So
+it appears only in «…», in its loose sense, as the word the lesson title splits, and every claim
+says which of the two it means. The `ventana` and `historial` rows already refuse it as a
+synonym; a lesson that wrote «la memoria del agente» as a term would merge the two again.
 
 `compactación`, not «resumen», because the summary is the *instrument*: what the lesson names is
 the operation on the messages list, with its invariants (what is kept verbatim, what a compaction

@@ -44,6 +44,8 @@ const TEST_CONFIG: ScheduleConfig = {
   timezone: "Europe/Madrid",
   minNoticeHours: 5,
   cancelMinNoticeHours: 2,
+  joinOpenMinutesBefore: 15,
+  tutorAbsentAlertMinutes: 5,
   bookingWindowWeeks: 8,
 };
 

@@ -97,6 +97,8 @@ const mockSessions = (): jest.Mocked<ISessionRepository> => ({
   findByEventId:        jest.fn().mockResolvedValue(null),
   deleteByEventId:      jest.fn().mockResolvedValue(undefined),
   markStudentJoined:    jest.fn().mockResolvedValue(undefined),
+  markTutorJoined:      jest.fn().mockResolvedValue(undefined),
+  claimTutorAbsentAlert: jest.fn().mockResolvedValue(false),
   appendChatMessage:     jest.fn().mockResolvedValue(0),
   listChatMessages:      jest.fn().mockResolvedValue([]),
   countChatMessages:     jest.fn().mockResolvedValue(0),
@@ -128,6 +130,7 @@ const mockEmail = (): jest.Mocked<IEmailClient> => ({
   sendCancellationConfirmation: jest.fn().mockResolvedValue(undefined),
   sendCancellationNotification: jest.fn().mockResolvedValue(undefined),
   sendContentReportNotification: jest.fn().mockResolvedValue(undefined),
+  sendTutorAbsentNotification:   jest.fn().mockResolvedValue(undefined),
   sendPaymentAuditReport:       jest.fn().mockResolvedValue(undefined), // REFACTOR-R4-P3-03
   renderBlogPostAnnouncement:   jest.fn(), // BLOG-15
   sendBlogPostAnnouncement:     jest.fn().mockResolvedValue(undefined),
@@ -161,6 +164,8 @@ const mockSchedule = (
       timezone: "Europe/Madrid",
       minNoticeHours: 5,
       cancelMinNoticeHours: overrides.cancelMinNoticeHours ?? 2,
+      joinOpenMinutesBefore: 15,
+      tutorAbsentAlertMinutes: 5,
       bookingWindowWeeks: 8,
     }),
     updateConfig: jest.fn().mockResolvedValue(undefined),

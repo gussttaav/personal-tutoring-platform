@@ -34,6 +34,12 @@ export class BookingNotFoundError extends DomainError {
   constructor() { super("Booking not found", "BOOKING_NOT_FOUND"); }
 }
 
+// SESSION-JOIN-01: a student asked to enter the classroom before it opens
+// (start − booking_settings.join_open_minutes_before). Mapped to 403.
+export class ClassroomNotOpenError extends DomainError {
+  constructor() { super("The classroom is not open yet", "CLASSROOM_NOT_OPEN"); }
+}
+
 export class TokenExpiredError extends DomainError {
   constructor() { super("Link is no longer valid", "TOKEN_EXPIRED"); }
 }

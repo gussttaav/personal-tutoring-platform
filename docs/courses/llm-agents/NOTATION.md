@@ -496,6 +496,105 @@ No new mathematics, and the block's first lesson says so in its opening. What th
 never inside `$…$`. (It was the type count in the first course; there is no page on which the two
 could meet, and a symbol that never enters maths is not a symbol.)
 
+**The block's first lesson writes a llamada as JSON inside the text** (`COURSE-C2-P1-04`, lesson
+25): `{"pide": "leer", "ruta": …}` / `{"pide": "escribir", "ruta": …, "contenido": …}`, the tools
+described in the prompt de sistema with `herramientas` still empty, and each observación sent back
+as a `("usuario", "Observación: …")` mensaje — the ReAct-era form, called provisional in the lesson,
+whose defects (the harness guesses what is a request, nothing ties an observación to its llamada)
+are the next lesson's subject. Its entorno is already the `{"ruta": "contenido"}` dict, with `leer`
+and `escribir` only; lesson 26 gives it its four tools and their contracts, and moves llamadas and
+observaciones into `tool_use` / `tool_result` blocks. Until it does, mensajes stay Block 2's
+`(rol, contenido)` tuples.
+
+**From lesson 26 on, a mensaje is still a `(rol, contenido)` tuple, and the contenido is a string or
+a list of bloques de contenido** (`COURSE-C2-P1-04`, lesson 26). The bloques and the herramientas
+use the protocol's English keys, because they are what Block 5 sends over the wire:
+`{"type": "text", "text": …}`, `{"type": "tool_use", "id": …, "name": …, "input": {…}}`,
+`{"type": "tool_result", "tool_use_id": …, "content": …, "is_error": …}`, and a herramienta is
+`{"name": …, "description": …, "input_schema": …}`. Roles stay Spanish (`sistema`, `usuario`,
+`asistente`), so Block 5's adapter translates the roles and nothing else. A respuesta is a list of
+bloques; the observaciones of one turno go in the next `usuario` mensaje, one `tool_result` per
+`tool_use`, in the order of the llamadas (the id is what ties them; the order is the harness's
+convention, which the modelo guionizado checks because it compares whole mensajes). A llamada that
+fails its esquema is not executed, and until lesson 28 the harness raises `ValueError`: provisional,
+like lesson 25's `KeyError`, and lesson 28 turns both into an observación with `is_error`.
+
+**From lesson 27 on, the bucle is one function and its state is `M`** (`COURSE-C2-P1-04`,
+lesson 27). Its pseudocode is written once, in that lesson, and later lessons cite it: `M` starts
+as a copy of the two opening mensajes, each turno appends `("asistente", r)` and, if `r` has any
+`tool_use`, one `("usuario", [...])` with a `tool_result` per llamada, in order. The code's
+signature is `bucle(modelo, inicio, entorno, tope) -> (motivo, texto, M)`, with `motivo` `"fin"`
+(the respuesta asked for nothing; `texto` is its text bloques joined by a space) or `"tope"`
+(`texto` is `None`, and the last turno's llamadas have run and been answered, so `M` never ends on
+an unanswered `tool_use`). Turno $n$ hands the model $2n$ mensajes. A respuesta cut by the
+reserva (the protocol's `stop_reason` `max_tokens`) is `modelo`'s to report: it raises instead of
+returning, so Block 5's adapter does the same and the bucle does not change. The cells load the
+entorno, the four herramientas, `texto` / `llamada` / `resultado` / `muestra`, `incumple` and
+`guion_de` from the frozen `public/courses/llm-agents/entorno.py` (lesson 26's code, checked
+character for character by `llm-agents-assets.test.ts`), with `exec(open_url(…))`, like
+`guionizado.py`.
+
+**From lesson 28 on, `ejecutar` never raises** (`COURSE-C2-P1-04`, lesson 28). Its firma is
+`ejecutar(ll, entorno) -> tool_result`, always with the llamada's `id`: a llamada that fails its
+esquema is not executed and comes back as `error(id, "no se ha ejecutado: " + motivo)`; one whose
+function raises (any `Exception`) comes back as `error(id, str(e))`, the function called once; one
+that returns is `resultado(id, …)` as before. `error` is `resultado` with `is_error` true. `leer`'s
+contract gains its missing case, `FileNotFoundError("no existe el fichero %r" % ruta)`, changing
+nothing; the other three tools never fail on a llamada that meets its esquema, and an empty result
+(a `buscar` with no match, a `listar` of an empty prefix) is an observación with `is_error` false,
+not an error. The bucle is unchanged; only a failure of `modelo` itself still raises out of it.
+Lesson 28's cells define the new `leer`, `error` and `ejecutar` in place, and `entorno.py` stays
+lesson 26's code: the lesson that first needs them loaded from a file adds them there, checked by
+`llm-agents-assets.test.ts` like the rest.
+
+**From lesson 29 on, `ejecutar` consults a permiso between the esquema and the function**
+(`COURSE-C2-P1-04`, lesson 29). Its firma is unchanged, and it runs three steps in order: the
+esquema (a llamada that fails it is never asked about), `permiso(ll) -> "permitir" | "preguntar" |
+"denegar"`, then the function as in lesson 28. `permiso` reads the llamada's herramienta only,
+`PERMISOS.get(CLASES.get(name), "denegar")`: no M, no observación, no text of the model, so
+nothing an observación says can change a decision. `CLASES` maps each herramienta to `lectura` or
+`escritura`; the entorno has no `ejecución` herramienta, and the lesson names the class and says
+the first one (a command) is Block 5's. A denial is `error(id, "no se ha ejecutado: permiso
+denegado")`; `"preguntar"` calls `preguntar(ll) -> bool` once, the usuario, scripted in the cells
+(it approves writes to `lista.txt` only), and a `False` is `error(id, "no se ha ejecutado: el
+usuario no lo ha permitido")`. With nobody to ask, `preguntar` counts as `denegar`. The bucle is
+unchanged. The cells load `leer`, `error`, `ejecutar` and `bucle` from the frozen
+`public/courses/llm-agents/harness.py`, after `entorno.py`: lesson 28's challenge solution from
+`def leer(`, checked character for character by `llm-agents-assets.test.ts`. Lesson 29's entorno is
+`ENTORNO` plus one file, `recetas/salmorejo.txt`, a recipe copied from the web whose third line is
+an inyección de instrucciones; the four original files and herramientas are unchanged.
+
+**From lesson 30 on, a conversation can continue, and the bucle still does not change**
+(`COURSE-C2-P1-04`, lesson 30). A second pedido in the same conversation is a second `bucle` call
+whose `inicio` is the M the first returned plus one `("usuario", texto)` mensaje; a new
+conversation starts again from a two-mensaje `inicio`, so nothing of the earlier M reaches the
+model and only the entorno carries over. The cells count tokens as lesson 22 did, with the
+mini-GPT's `codificar`, a list of bloques counted as its `json.dumps(..., ensure_ascii=False)`;
+`HERRAMIENTAS` is counted apart, since it travels with every call but is not in M. Lesson 30's
+entorno adds `libros/marianela.txt`, the course corpus without its header
+(`quitar_cabecera(corpus.txt)`), for its first cell; its second cell uses `ENTORNO` as it is, with
+one hand edit between the pedidos. The `context-window` widget's `agente` preset draws each turno
+as two segments, its llamadas and its observaciones, sharing one drop rank: segments with equal
+rank leave together, so «lo descarta el harness» never keeps a `tool_use` without its
+`tool_result`.
+
+**From lesson 31 on, the agent is one function and a test is one dict** (`COURSE-C2-P1-04`,
+lesson 31). `agente(modelo, pedido, entorno, tope=10) -> (motivo, texto, M)` is
+`bucle(modelo, inicio(pedido), entorno, tope)`, with `inicio(pedido)` the two opening mensajes
+(`SISTEMA`, then the pedido). The cells load four frozen files in this order: `guionizado.py`,
+`entorno.py`, `harness.py` and `permisos.py`, lesson 29's challenge solution from `CLASES = {`
+(`CLASES`, `PERMISOS`, `permiso`, `preguntar`, `ejecutar`), checked character for character by
+`llm-agents-assets.test.ts`; its `ejecutar` replaces harness.py's in the cell's namespace, where
+the bucle looks it up. A test is a dict with the keys `entorno`, `pedido`, `tope`, `respuestas`,
+`observaciones` (hand-written from the contracts, never computed with the `ejecutar` under test),
+`usuario` (llamada id → answer, in the order the harness must ask), `devuelve` (`(motivo, texto)`)
+and `cambia` (the routes whose contents change); `probar(test) -> None | str` returns `None` or
+the first deviation. `preguntar` is a module global that `probar` swaps for the test's usuario,
+because the frozen `ejecutar` looks it up by name: a wart of the browser cells, named in Block 5's
+notes. The `agent-loop-trace` widget's `proyecto` preset runs `ejecutar` with the esquema, the
+permiso and `leer`'s missing file as observaciones (`math/agent-trace.ts`); the `bucle` preset,
+with no usuario, has no permiso step and traces as before.
+
 ### Block 5 — Un agente de programación en la terminal
 
 None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *protocolo* — the

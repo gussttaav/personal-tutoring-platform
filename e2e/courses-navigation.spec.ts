@@ -17,8 +17,8 @@
  * this stops firing on its own" — it just now stops firing lesson by lesson rather than at the
  * first one.
  *
- * The third test covers the other axis: a course still being WRITTEN (`llm-agents`, one published
- * lesson of a planned 40) has to advertise the four blocks nobody has written yet, because before
+ * The third test covers the other axis: a course still being WRITTEN (`llm-agents`, declared at 40
+ * lessons and not all published yet) has to advertise what nobody has written yet, because before
  * COURSE-BUILD-01 the card said "1 módulo" and the landing showed a one-block syllabus.
  *
  * The cross-locale fallback — an `/en` URL that still serves Spanish prose — has NOT gone away;
@@ -110,18 +110,42 @@ function blockTitles(slug: string, locale: "es" | "en"): string[] {
   return [...blocks.matchAll(/^ {4}title: "(.+)"$/gm)].map((m) => m[1]);
 }
 
-/** How many blocks have at least one PUBLISHED lesson — i.e. how many syllabus rows are
- *  expandable `<details>`. The rest render as plain «próximamente» rows. */
-function startedBlocks(slug: string, locale: "es" | "en"): number {
+/** Published (non-draft) lessons per block id. */
+function publishedPerBlock(slug: string, locale: "es" | "en"): Map<string, number> {
   const dir = join(process.cwd(), "content/courses", slug, locale);
-  const blocks = new Set<string>();
+  const counts = new Map<string, number>();
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".mdx") && !f.startsWith("_"))) {
     const src = readFileSync(join(dir, file), "utf-8");
     if (/^draft:\s*true\s*$/m.test(src)) continue;
     const block = src.match(/^block:\s*(\d+)$/m)?.[1];
-    if (block) blocks.add(block);
+    if (block) counts.set(block, (counts.get(block) ?? 0) + 1);
   }
-  return blocks.size;
+  return counts;
+}
+
+/** How many blocks have at least one PUBLISHED lesson — i.e. how many syllabus rows are
+ *  expandable `<details>`. The rest render as plain «próximamente» rows. */
+function startedBlocks(slug: string, locale: "es" | "en"): number {
+  return publishedPerBlock(slug, locale).size;
+}
+
+/** Whether the course is still being written: some block has published fewer lessons than the
+ *  `lessons: N` it declares in the manifest. Mirrors `courseBuildStatus().complete` (a block
+ *  with no `lessons:` counts as complete once it has one lesson). "Has every block been started?"
+ *  is NOT this question — a course with all blocks started can be far from finished. */
+function isStillBeingWritten(slug: string, locale: "es" | "en"): boolean {
+  const src = readFileSync(
+    join(process.cwd(), "content/courses", slug, `course.${locale}.yml`),
+    "utf-8",
+  );
+  const published = publishedPerBlock(slug, locale);
+  const blocks = src.slice(src.indexOf("\nblocks:"));
+  return blocks.split(/^ {2}- id: /m).slice(1).some((chunk) => {
+    const id = chunk.match(/^(\d+)/)?.[1] ?? "";
+    const planned = chunk.match(/^ {4}lessons: (\d+)$/m)?.[1];
+    const have = published.get(id) ?? 0;
+    return have === 0 || (planned !== undefined && have < Number(planned));
+  });
 }
 
 test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => {
@@ -195,8 +219,10 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
 
     // When `llm-agents` is finished this stops being an in-progress course and the assertions
     // below stop describing it: point them at whatever course is being written then, or retire
-    // them. A silent pass is the one outcome worth ruling out.
-    expect(started).toBeLessThan(titles.length);
+    // them. A silent pass is the one outcome worth ruling out. Measured against the declared
+    // `lessons:` plan, not against "every block has a lesson" (Block 5 started long before it
+    // was done).
+    expect(isStillBeingWritten(IN_PROGRESS_SLUG, "es")).toBe(true);
 
     await page.goto("/cursos");
     await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });

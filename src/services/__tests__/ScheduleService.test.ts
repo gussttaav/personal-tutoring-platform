@@ -26,6 +26,8 @@ describe("ScheduleService", () => {
       expect(config.timezone).toBe("Europe/Madrid");
       expect(config.minNoticeHours).toBe(5);
       expect(config.cancelMinNoticeHours).toBe(2);
+      expect(config.joinOpenMinutesBefore).toBe(15);   // SESSION-JOIN-01
+      expect(config.tutorAbsentAlertMinutes).toBe(5);  // SESSION-JOIN-01
       expect(config.bookingWindowWeeks).toBe(BOOKING_WINDOW_WEEKS);
       // Monday has the morning + afternoon split shift.
       expect(config.weeklyHours[1]).toEqual([
@@ -99,6 +101,8 @@ describe("ScheduleService", () => {
         timezone:             "Europe/London",
         minNoticeHours:       12,
         cancelMinNoticeHours: 3,
+        joinOpenMinutesBefore:   30,
+        tutorAbsentAlertMinutes: 10,
         by:                   "admin@test.com",
         reason:               "new summer schedule",
       });
@@ -107,6 +111,8 @@ describe("ScheduleService", () => {
       expect(config.timezone).toBe("Europe/London");
       expect(config.minNoticeHours).toBe(12);
       expect(config.cancelMinNoticeHours).toBe(3);
+      expect(config.joinOpenMinutesBefore).toBe(30);
+      expect(config.tutorAbsentAlertMinutes).toBe(10);
       expect(config.weeklyHours[1]).toEqual([{ startMinute: 600, endMinute: 720 }]);
       expect(config.weeklyHours[2]).toEqual([]);
     });
@@ -118,6 +124,8 @@ describe("ScheduleService", () => {
         timezone:             "Europe/Madrid",
         minNoticeHours:       8,
         cancelMinNoticeHours: 4,
+        joinOpenMinutesBefore:   20,
+        tutorAbsentAlertMinutes: 7,
         by:                   "admin@test.com",
         reason:               "closing for holidays",
       });
@@ -129,6 +137,8 @@ describe("ScheduleService", () => {
         timezone:             "Europe/Madrid",
         minNoticeHours:       8,
         cancelMinNoticeHours: 4,
+        joinOpenMinutesBefore:   20,
+        tutorAbsentAlertMinutes: 7,
         reason:               "closing for holidays",
       });
     });

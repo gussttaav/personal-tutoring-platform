@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 372" width="360" height="372" role="img" aria-label="Tres cajas apiladas: arriba el modelo, en medio el harness, abajo el entorno, con sus ficheros. Entre el modelo y el harness, dos flechas: la respuesta baja del modelo al harness y los mensajes suben del harness al modelo. Entre el harness y el entorno, otras dos: las herramientas bajan y lo que devuelven sube. A la izquierda del harness, el usuario, con una flecha que entra con el pedido y otra que sale con el texto final. Entre el modelo y el entorno no hay ninguna flecha. La caja del harness es la única en verde.">
+  <!-- COURSE-C2-P1-04 (bloque 4, lección 1, de-chat-a-agente) — las cuatro piezas de un agente.
+       Escrita a mano. El verde marca la pieza que el bloque construye; lo que la figura
+       afirma está en lo que NO dibuja: ninguna flecha une el modelo con el entorno. -->
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .ttl { font-size: 15px; fill: #e5e1e4; text-anchor: middle; }
+    .sub { font-size: 12.5px; fill: #86948a; text-anchor: middle; }
+    .box { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    .harness { stroke: #4edea3; stroke-width: 2; fill: none; }
+    .ttlv { font-size: 15px; fill: #4edea3; text-anchor: middle; }
+    .edge { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    .izq { font-size: 13px; fill: #bbcabf; text-anchor: end; }
+    .der { font-size: 13px; fill: #bbcabf; text-anchor: start; }
+    .usr { font-size: 14px; fill: #e5e1e4; text-anchor: middle; }
+  </style>
+
+  <defs>
+    <marker id="punta" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
+    </marker>
+  </defs>
+
+  <!-- El modelo -->
+  <rect class="box" x="130" y="14" width="210" height="54" rx="8" />
+  <text class="ttl" x="235" y="38">modelo</text>
+  <text class="sub" x="235" y="56">mensajes → respuesta</text>
+
+  <!-- modelo ⇄ harness -->
+  <line class="edge" x1="195" y1="68" x2="195" y2="160" marker-end="url(#punta)" />
+  <text class="izq" x="187" y="112">respuesta</text>
+  <line class="edge" x1="268" y1="160" x2="268" y2="68" marker-end="url(#punta)" />
+  <text class="der" x="276" y="106">mensajes,</text>
+  <text class="der" x="276" y="122">observación</text>
+
+  <!-- El harness -->
+  <rect class="harness" x="130" y="160" width="210" height="54" rx="8" />
+  <text class="ttlv" x="235" y="184">harness</text>
+  <text class="sub" x="235" y="202">bucle, herramientas, permisos</text>
+
+  <!-- El usuario -->
+  <text class="usr" x="50" y="192">usuario</text>
+  <line class="edge" x1="88" y1="176" x2="128" y2="176" marker-end="url(#punta)" />
+  <line class="edge" x1="128" y1="198" x2="88" y2="198" marker-end="url(#punta)" />
+  <text class="sub" x="50" y="162">pedido</text>
+  <text class="sub" x="50" y="220">texto final</text>
+
+  <!-- harness ⇄ entorno -->
+  <line class="edge" x1="195" y1="214" x2="195" y2="304" marker-end="url(#punta)" />
+  <text class="izq" x="187" y="258">ejecuta una</text>
+  <text class="izq" x="187" y="274">herramienta</text>
+  <line class="edge" x1="268" y1="304" x2="268" y2="214" marker-end="url(#punta)" />
+  <text class="der" x="276" y="258">lo que</text>
+  <text class="der" x="276" y="274">devuelve</text>
+
+  <!-- El entorno -->
+  <rect class="box" x="130" y="304" width="210" height="54" rx="8" />
+  <text class="ttl" x="235" y="328">entorno</text>
+  <text class="sub" x="235" y="346">lista.txt, receta.txt</text>
+</svg>

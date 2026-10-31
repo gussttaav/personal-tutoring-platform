@@ -20,6 +20,8 @@ const PRICES: ChatPromptPrices = {
   pack10: 14000,
   packValidityDays: 180,
   cancelHours: 2,
+  joinOpenMinutes: 15,
+  tutorAbsentAlertMinutes: 5,
 };
 
 const SITE = "https://gustavoai.dev";
@@ -92,6 +94,15 @@ describe("buildChatSystemPrompt — prices", () => {
     expect(prompt).toContain("| 2 horas  | 30,50 €   |");
     expect(prompt).toContain("Validez de 180 días");
     expect(prompt).toContain("hasta 2 horas antes");
+  });
+
+  // SESSION-JOIN-01
+  it("injects the classroom opening and the tutor-absent alert delay", () => {
+    const prompt = build({ ...PRICES, joinOpenMinutes: 20, tutorAbsentAlertMinutes: 7 }, content());
+    expect(prompt).toContain("el aula se abre 20 minutos antes de la hora de inicio");
+    expect(prompt).toContain("se activa 20 minutos antes del inicio");
+    expect(prompt).toContain("Esta clase ya no está disponible");
+    expect(prompt).toContain("7 minutos después de la hora de inicio");
   });
 });
 

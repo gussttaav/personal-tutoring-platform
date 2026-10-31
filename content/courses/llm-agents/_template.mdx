@@ -284,8 +284,11 @@ tiene, y el que no, sigue leyendo.
        BLOQUES 1-4: un <PyCell> que el estudiante ejecuta en el navegador.
        BLOQUE 5: código en bloques ```python / ```bash que el estudiante escribe en su
        repositorio, NUNCA un <PyCell> (y `hasCode: false`). El paso EMPIEZA con un
-       <RepoLink> a la etiqueta de la lección ANTERIOR («parte de aquí») y TERMINA con uno
-       a la suya propia («si te has perdido, este es el estado al final de esta lección»).
+       <RepoLink> a la etiqueta de la lección ANTERIOR y TERMINA con uno a la suya propia.
+       Cada <RepoLink> va SOLO EN SU LÍNEA, como <ColabLink>, NUNCA dentro de una frase: es
+       una píldora, y en mitad de una frase la rompe. La frase de ANTES dice qué es; la
+       etiqueta es corta («Al empezar esta lección», «Al terminar esta lección»). Una
+       píldora por punto de control: el fichero que importe se nombra en la frase.
        Nunca `main`. El texto de la lección es la fuente de verdad; la etiqueta se corta
        de la lección revisada. Y el lint mide el bloque de código más largo como mide una
        celda: 45 líneas es el objetivo, 90 el techo; pasado el techo, parte el bloque con
@@ -312,16 +315,19 @@ print(np.arange(3))
        `path`, opcional, apunta dentro de ella. La URL base vive en una constante: ninguna
        lección lleva el nombre del repositorio.
 
-Parte de <RepoLink tag="b5-lN-1">el estado al final de la lección anterior</RepoLink>.
+El código parte del punto de control en que terminó la lección anterior:
+
+<RepoLink tag="b5-lN-1">Al empezar esta lección</RepoLink>
 
 ```python
 # TODO: el código que el estudiante añade en esta lección, en trozos de ≤45 líneas
 # con prosa entre ellos.
 ```
 
-Si te has perdido, <RepoLink tag="b5-lN">este es el estado al final de esta lección</RepoLink>
-(y <RepoLink tag="b5-lN" path="herramientas/editar.py">este</RepoLink>, el fichero que acabas de
-escribir).
+Si te has perdido, este es el punto de control al final de la lección, con TODO el fichero
+que acabas de escribir:
+
+<RepoLink tag="b5-lN">Al terminar esta lección</RepoLink>
 */}
 
 {/* ── 5. VERIFICACIÓN — con título: «deja de leer y ponte a prueba». Algo como

@@ -2,6 +2,8 @@
  * COURSE-C2-P1-03 — What one call to the model can hold, for `context-window` (llm-agents
  * Block 3 lesson 5, «La ventana de contexto es un recurso escaso»; reused by Block 4's lesson
  * on state and memory and Block 5's on compaction, which add their own presets).
+ * COURSE-C2-P1-04 — Block 4 lesson 6 adds the `agente` preset and the rule that segments
+ * sharing a drop rank leave together.
  *
  * A call is an ORDERED list of segments, the order the plantilla writes them in: the prompt
  * de sistema, the ejemplos, the turns of the conversation, the pasajes, the caso (here a
@@ -15,8 +17,10 @@
  *     as the mini-GPT's `modelo` does (Block 1 lesson 9), and the first segments fall off
  *     whole, then one is cut through the middle. The prompt de sistema is the first to go;
  *   - "drop" — the harness decides, whole segments only: it removes droppable segments in
- *     rank order until the rest fits. Pinned segments never leave; if they alone overflow,
- *     the call does not fit and nothing is cut;
+ *     rank order until the rest fits. Segments that share a rank are one unit and leave
+ *     together (Block 4's turno: its llamadas and their observaciones, since a `tool_use`
+ *     without its `tool_result` is a call the protocol refuses). Pinned segments never leave;
+ *     if they alone overflow, the call does not fit and nothing is cut;
  *   - "compact" — the harness first replaces every compactable segment but the last
  *     `keepRecent` with ONE summary of `summaryTokens`, written where the first of them was
  *     (the summary and the recent turns are then pinned), and only if that is not enough
@@ -111,18 +115,22 @@ function fitFront(segments: readonly Segment[], tCtx: number): Fit {
   return { placed, call, used: sum(call.map((p) => p.kept)), total, fits: true };
 }
 
-/** Removes droppable segments by rank until the rest fits; never cuts one. */
+/** The droppable segments grouped by rank, lowest first: each group leaves as one unit. */
+export function dropGroups(segments: readonly Segment[]): Segment[][] {
+  const ranks = [...new Set(segments.flatMap((s) => (s.drop === undefined ? [] : [s.drop])))].sort((a, b) => a - b);
+  return ranks.map((r) => segments.filter((s) => s.drop === r));
+}
+
+/** Removes droppable groups by rank until the rest fits; never cuts a segment. */
 function dropUntilFits(segments: readonly Segment[], tCtx: number): Set<string> {
   let used = sum(segments.map((s) => s.tokens));
   const out = new Set<string>();
-  const order = segments
-    .filter((s) => s.drop !== undefined)
-    .slice()
-    .sort((a, b) => (a.drop as number) - (b.drop as number));
-  for (const s of order) {
+  for (const group of dropGroups(segments)) {
     if (used <= tCtx) break;
-    out.add(s.id);
-    used -= s.tokens;
+    for (const s of group) {
+      out.add(s.id);
+      used -= s.tokens;
+    }
   }
   return out;
 }
@@ -224,8 +232,55 @@ export const ASSISTANT_PRESET: WindowPreset = {
   tCtxDefault: 2560,
 };
 
+/*
+ * COURSE-C2-P1-04 — Block 4 lesson 6's preset (estado y memoria): an agent in its seventh call
+ * of one task, the week's menu from the user's recipes. Every call carries the prompt de
+ * sistema, the herramientas (name, description, esquema: they travel with each call), the
+ * pedido, and each earlier turno as two segments, its llamadas and their observaciones.
+ * The turnos are 1 `listar`, 2 and 3 three `leer` each, 4 `leer` of the list and the notes,
+ * 5 `escribir` of the menu and 6 `escribir` of the list: a lectura weighs in its observación,
+ * an escritura in its llamada, which carries the content. The sizes are the author's, round
+ * numbers of the order a real tokenizer gives such texts; the lesson says so. A turno's two
+ * segments share a drop rank, so "drop" removes them together, oldest first.
+ */
+const AGENT_TURNS: readonly (readonly [llamadas: number, observaciones: number])[] = [
+  [30, 110],
+  [80, 1_150],
+  [80, 1_050],
+  [60, 90],
+  [440, 20],
+  [150, 20],
+];
+
+export const AGENT_PRESET: WindowPreset = {
+  segments: [
+    { id: "sistema", kind: "sistema", tokens: 280 },
+    { id: "herramientas", kind: "herramientas", tokens: 620 },
+    { id: "pedido", kind: "pedido", tokens: 60 },
+    ...AGENT_TURNS.flatMap(([llamadas, observaciones], i) => [
+      { id: `llamadas-${i + 1}`, kind: "llamadas", n: i + 1, tokens: llamadas, drop: 10 + i, compactable: true },
+      {
+        id: `observaciones-${i + 1}`,
+        kind: "observaciones",
+        n: i + 1,
+        tokens: observaciones,
+        drop: 10 + i,
+        compactable: true,
+      },
+    ]),
+    { id: "respuesta", kind: "respuesta", tokens: 600 },
+  ],
+  summaryTokens: 200,
+  keepRecent: 2,
+  tCtxMin: 1_280,
+  tCtxMax: 6_144,
+  tCtxStep: 256,
+  tCtxDefault: 3_584,
+};
+
 export const CONTEXT_WINDOW_PRESETS = {
   asistente: ASSISTANT_PRESET,
+  agente: AGENT_PRESET,
 } as const satisfies Record<string, WindowPreset>;
 
 export type PresetName = keyof typeof CONTEXT_WINDOW_PRESETS;

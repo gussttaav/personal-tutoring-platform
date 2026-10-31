@@ -11,13 +11,18 @@
  *
  * The empty-state CTA and every «Reprogramar» open their booking screen in place
  * (useBookingActions.ts); they used to `router.push` into `/mentoria?book=` / `?reschedule=`.
+ *
+ * SESSION-JOIN-01: each row's join button is disabled until its classroom opens
+ * (useJoinWindow); the opening time is its title / accessible name.
  */
 
 import { useLocale, useTranslations } from "next-intl";
 import CancelSessionFlow from "./CancelSessionFlow";
-import { dateTile, sessionTypeKey, timeRange, weekdayName } from "./session-display";
+import { formatTime } from "@/lib/formatting";
+import { dateTile, sessionTypeKey, timeRange, viewerTimeZone, weekdayName } from "./session-display";
 import type { UserBooking } from "./types";
 import { useBookingActions } from "./useBookingActions";
+import { useJoinWindow } from "./useJoinWindow";
 
 interface UpcomingTabProps {
   bookings:    UserBooking[];
@@ -65,6 +70,11 @@ function UpcomingItem({ booking, onCancelled }: { booking: UserBooking; onCancel
   const tCommon  = useTranslations("common");
   const locale   = useLocale() as "es" | "en";
   const { openReschedule } = useBookingActions();
+  const join = useJoinWindow(booking.startsAt);
+  const tz   = viewerTimeZone();
+  const joinLabel = join.open
+    ? t("join")
+    : t("joinOpensAt", { time: formatTime(join.opensAtIso, locale, tz ? { timeZone: tz } : undefined) });
 
   const { day, month } = dateTile(booking.startsAt, locale);
   const typeKey = sessionTypeKey(booking.sessionType);
@@ -108,8 +118,9 @@ function UpcomingItem({ booking, onCancelled }: { booking: UserBooking; onCancel
             <button
               type="button"
               className="pa-iconbtn"
-              title={t("join")}
-              aria-label={t("join")}
+              title={joinLabel}
+              aria-label={joinLabel}
+              disabled={!join.open}
               onClick={() => { window.location.href = `/sesion/${booking.joinToken}`; }}
             >
               <span className="material-symbols-outlined" aria-hidden="true">play_circle</span>

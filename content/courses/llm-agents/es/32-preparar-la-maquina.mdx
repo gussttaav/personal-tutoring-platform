@@ -1,0 +1,418 @@
+---
+slug: preparar-la-maquina
+title: "Preparar la máquina: un modelo local y la API de mensajes"
+block: 5
+order: 1
+minutes: 25
+summary: "El primer paso del agente fuera del navegador: un servidor que tiene el modelo cargado en tu ordenador, el protocolo con el que se le habla y un turno entero hecho a mano, mirando lo que viaja. El servidor responde y nada más: no ejecuta, no recuerda y no comprueba nada, y lo demás sigue siendo del harness."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-nadie-ha-leido
+    type: single
+    prompt: 'La primera petición de `protocolo.py` vuelve con `stop_reason` `tool_use` y una llamada a `leer` sobre <W>lista.txt</W>. ¿Quién conoce en ese momento lo que contiene <W>lista.txt</W>?'
+    options:
+      - { id: a, text: 'Nadie: el modelo ha pedido la lectura, y el servidor ni tiene el entorno ni ejecuta herramientas. El fichero lo leerá el harness, si su permiso lo deja.' }
+      - { id: b, text: 'El servidor, que lo ha leído y lo tiene guardado hasta la petición siguiente.' }
+      - { id: c, text: 'El modelo, que lo ha leído antes de responder: sus tokens están en `input_tokens`.' }
+      - { id: d, text: 'El servidor, que lo ha leído pero sólo lo enseña cuando el modelo responde `end_turn`.' }
+    answer: a
+    explanation: 'La (a). Un `tool_use` es una petición del modelo al harness, y `stop_reason` `tool_use` quiere decir que le toca al harness. El servidor no sabe que <W>lista.txt</W> existe: en tu ordenador, el entorno está en la memoria de `protocolo.py`, no en la del servidor. Los 453 `input_tokens` son el prompt de sistema, la pregunta y las cuatro herramientas, que viajan en cada petición.'
+  - id: q-todo-otra-vez
+    type: single
+    prompt: 'La segunda petición de `protocolo.py` vuelve a mandar el prompt de sistema, la pregunta y la primera respuesta, y `usage` dice que 473 de sus tokens salieron de la caché del servidor. ¿Por qué hay que mandarlo todo otra vez?'
+    options:
+      - { id: a, text: 'Porque el servidor no guarda nada entre peticiones: el modelo ve lo que lleva cada una y nada más. La caché se ahorra el cálculo de un principio que ya ha visto, pero sólo si la petición lo trae entero y sin cambios.' }
+      - { id: b, text: 'No haría falta: con la caché llena, bastaría con mandar el `tool_result`.' }
+      - { id: c, text: 'Porque el protocolo obliga a repetir el prompt de sistema en cada petición, aunque el servidor recuerde el resto de la conversación.' }
+      - { id: d, text: 'Porque la ventana de contexto se vacía al terminar cada petición, y lo que sale de la caché no ocupa ventana.' }
+    answer: a
+    explanation: 'La (a). La caché es la de claves y valores de la red, la misma que construiste en el bloque 1, guardada en el servidor entre dos peticiones. Ahorra tiempo, no hace de memoria: si la segunda petición no trajera el principio, el modelo no lo vería. La (d) se equivoca en lo segundo: los tokens de la caché están en la ventana igual que los demás; sólo se ahorra volver a calcularlos.'
+  - id: q-el-hueco
+    type: boolean
+    prompt: 'Si una petición lleva una respuesta con un `tool_use` y, detrás, un mensaje del usuario sin su `tool_result`, el servidor local de esta lección la rechaza con un error.'
+    answer: false
+    explanation: 'Falso. La acepta y responde, y el modelo tapa el hueco: en la prueba de la lección se inventó una lista de la compra entera. Una API en la nube sí rechaza esa petición. Con este servidor, que ninguna llamada se quede sin su observación es cosa del harness: es la segunda garantía del contrato del agente, y la batería de tests del bloque anterior la vigila.'
+challenges: []
+reading:
+  - kind: blog
+    title: 'Messages'
+    authors: 'Anthropic'
+    venue: 'Documentación de la API de Claude'
+    lang: en
+    url: 'https://platform.claude.com/docs/en/api/messages'
+    note: 'La referencia del protocolo campo a campo: todo lo que puede llevar una petición y todo lo que puede volver. La lección usa seis campos de ida y tres de vuelta; aquí están los demás, por si un día te hacen falta.'
+  - kind: blog
+    title: 'Anthropic compatibility'
+    authors: 'Ollama'
+    venue: 'Documentación de Ollama'
+    lang: en
+    url: 'https://docs.ollama.com/api/anthropic-compatibility'
+    note: 'Qué parte del protocolo habla el servidor de la lección y qué parte no. Es un subconjunto, y saber cuál es explica por qué una petición que la nube rechaza aquí pasa.'
+  - kind: blog
+    title: 'Modelfile reference'
+    authors: 'Ollama'
+    venue: 'Documentación de Ollama'
+    lang: en
+    url: 'https://docs.ollama.com/modelfile'
+    note: 'El fichero de cuatro líneas con el que fijas la ventana de contexto, y el resto de parámetros que acepta. `num_ctx` es el que usa el bloque; los de muestreo los conoces del bloque 1.'
+---
+
+{/* COURSE-C2-P1-05 — Bloque 5, lección 1. La primera lección de terminal: sin celdas
+    (hasCode: false), código en bloques que el estudiante escribe y corre, y una ejecución
+    reproducida con su salida esperada, la que obtuve con el modelo del Callout.
+    El punto de control es b5-l1: el proyecto del bloque 4 en ficheros, más protocolo.py.
+    Es el primero, así que no hay etiqueta anterior; la lección enlaza la suya al empezar
+    (para clonarla) y protocolo.py al terminar. Sin ecuaciones, a propósito: el bloque no
+    introduce matemáticas, y el primer párrafo lo dice. */}
+
+<Callout type="warning" title="Esta lección corre en tu terminal">
+Verificada el 30 de octubre de 2026 con Ollama 0.40.13 (se instala desde
+[ollama.com/download](https://ollama.com/download)) y Python 3.14, con el modelo
+<W>qwen3:4b-instruct</W>, que funciona en un ordenador de 8 GB de RAM sin GPU. El código de esta lección no se ejecuta en el
+navegador: lo corres en tu terminal contra un modelo local. Los minutos de arriba son de lectura y
+escritura; la espera del modelo va aparte.
+</Callout>
+
+El bloque anterior terminó con un agente que pasa su batería de tests sin haber hablado nunca con
+un modelo de lenguaje. Cada respuesta que recibía estaba escrita en un guion, y eso es lo que
+permitía probar el *harness* con todo lo demás fijo. Este último bloque pone en ese sitio un modelo
+de verdad, que corre en tu ordenador y no cuesta nada, y no introduce matemáticas nuevas: lo que
+queda es ingeniería, un programa que crece lección a lección. Ese programa ya no cabe en el
+navegador, y por eso el icono de código de la barra lateral está apagado en todo el bloque. Vive en
+un repositorio tuyo y se ejecuta en tu terminal.
+
+Cambiar el guion por un modelo parece cosa de una línea, porque `modelo` es una función. Pero un
+modelo de verdad no es una función de tu programa. Son unos gigabytes de pesos que otro programa, el
+**servidor**, tiene cargados en memoria, y tu código sólo puede mandarle texto por un puerto de tu
+máquina y leer el texto que vuelve. ¿Qué texto, exactamente? ¿Qué hace el servidor con una llamada
+a `leer`, y qué recuerda de una vez a la siguiente? Antes de escribir el adaptador vas a hacer un
+turno entero a mano, mirando lo que viaja.
+
+El turno es este. Las flechas son las dos direcciones: lo que manda tu programa y lo que contesta
+el servidor.
+
+```text
+→  system: Trabajas con los ficheros…   messages: [user «¿Qué hay en lista.txt?»]   tools: leer, escribir, listar, buscar
+←  content: [tool_use leer {"ruta": "lista.txt"}]                                stop_reason: tool_use
+→  lo mismo, + [assistant: el tool_use de arriba] + [user: tool_result «pan, leche, patatas»]
+←  content: [text «El contenido de lista.txt es: pan, leche, patatas.»]          stop_reason: end_turn
+```
+
+La primera **petición**, el texto que tu programa manda al servidor cada vez que llama al modelo,
+lleva el prompt de sistema, la pregunta del usuario y las cuatro herramientas del bloque anterior.
+Lo que vuelve es una respuesta con un solo bloque, una llamada a `leer`, y al lado `stop_reason` dice
+por qué paró el modelo: ha pedido una herramienta.
+
+Fíjate en lo que no ha pasado. Nadie ha leído <W>lista.txt</W>. El servidor no sabe que ese fichero
+existe, no tiene el entorno y no ejecuta nada: ha parado porque el modelo pidió algo, y ahora le
+toca al harness. La observación de la tercera línea la escribe quien haga de harness, y para que el
+modelo la vea hay que volver a mandarlo todo (el prompt de sistema, la pregunta, la respuesta) con
+ella detrás. De la primera petición, el servidor no se ha quedado con nada.
+
+Lo que más enseña es lo que pasa cuando el harness no hace su parte. He mandado al servidor la
+segunda petición sin el `tool_result`, con un mensaje del usuario que dice <W>¿Y bien?</W> en su
+lugar. No ha protestado. Ha devuelto `end_turn`, y el modelo ha contestado que <W>lista.txt</W>
+contiene «Comprar leche, Comprar pan, Comprar huevos, Comprar fruta»: el contenido de un fichero que
+nadie ha leído, inventado para tapar el hueco.
+
+<Callout type="intuition" title="La idea en una frase">
+El servidor es `modelo` y nada más: recibe M entero en cada petición, devuelve una respuesta y se
+olvida. No ejecuta, no recuerda y no comprueba que cada llamada tenga su observación. Todo lo demás
+sigue siendo del harness.
+</Callout>
+
+## Lo que viaja cada vez que llamas al modelo
+
+El **protocolo** es el formato de mensajes en que se ponen de acuerdo el harness y el modelo:
+llamar al modelo es mandar una petición HTTP `POST` a la dirección del servidor seguida de
+`/v1/messages`, con un objeto JSON en el cuerpo, y lo que vuelve es otro objeto JSON. La petición
+lleva estos campos:
+
+- `model`, el nombre con el que el servidor conoce el modelo. En el curso, siempre `local`.
+- `max_tokens`, la reserva de <Leccion slug="ventana-de-contexto">la lección sobre la ventana de
+  contexto</Leccion>: lo más que puede escribir la respuesta.
+- `system`, el prompt de sistema. Va en un campo propio, fuera de la lista de mensajes.
+- `messages`, el historial: mensajes que alternan los roles `user` y `assistant` y empiezan por
+  `user`. El contenido de cada uno es una cadena o una lista de bloques.
+- `tools`, las herramientas, cada una con su `name`, su `description` y su `input_schema`.
+- `thinking`, si el modelo puede escribir una
+  <Leccion slug="cadena-de-pensamiento">cadena de pensamiento</Leccion> antes de responder. El
+  modelo del curso no la escribe, y el campo la apaga también en uno que sí lo haría: en una CPU,
+  esa cadena son minutos de espera en cada turno. Los modelos que
+  razonan antes de responder quedan para el final del bloque.
+
+Lo que vuelve trae tres campos que importan. `content` es la respuesta, una lista de bloques `text`
+y `tool_use`. `stop_reason` dice por qué paró el modelo: `end_turn` si la respuesta no pide nada,
+`tool_use` si pide alguna llamada, `max_tokens` si la cortó la reserva. Y `usage` cuenta los tokens
+de entrada y los de salida. El resto (un `id`, el `model`, el `role`) el harness no lo usa.
+
+Los bloques ya los conoces. Desde <Leccion slug="llamar-herramientas">la lección sobre llamar
+herramientas</Leccion>, el agente los escribe con las claves inglesas del protocolo, y por eso una
+respuesta del servidor entra en M tal como llega. Lo único que no coincide son los mensajes:
+
+| En M | En la petición |
+|---|---|
+| `("sistema", s)` | el campo `system`, con `s` |
+| `("usuario", c)` | `{"role": "user", "content": c}` en `messages` |
+| `("asistente", r)` | `{"role": "assistant", "content": r}` en `messages` |
+
+### Lo que el servidor no hace
+
+El servidor implementa `modelo(mensajes, herramientas) -> respuesta` y nada más. Su contrato con el
+harness tiene cinco cláusulas, y las tres primeras dicen lo que *no* hace:
+
+1. **No guarda nada entre peticiones.** Cada una lleva M entero, y la siguiente lo vuelve a llevar
+   con un turno más. Lo que sí reaprovecha es cálculo: `cache_read_input_tokens` cuenta los tokens
+   del principio de la petición que ya tenía en su <Leccion slug="kv-cache">caché de claves y
+   valores</Leccion> de la vez anterior. Es velocidad, no memoria: un principio que cambia en un
+   solo carácter se vuelve a leer entero.
+2. **No ejecuta nada.** Un `tool_use` es lo que el modelo le pide al harness, y `stop_reason`
+   `tool_use` quiere decir que el turno sigue en tu programa.
+3. **No comprueba que cada llamada tenga su observación.** El protocolo pide que cada `tool_use`
+   reciba su `tool_result`, con el mismo id, en el mensaje del usuario que sigue. Una API en la nube
+   rechaza la petición que no lo cumple; este servidor la acepta, y el modelo rellena el hueco. Que
+   no falte nunca lo garantiza el bucle: es la segunda garantía del contrato de
+   <Leccion slug="proyecto-agente-guionizado">el agente del bloque anterior</Leccion>.
+4. **La ventana de contexto es del servidor, no de la petición.** Ningún campo dice cuántos tokens
+   caben. Lo decide el servidor al cargar el modelo, y en el curso son 8192, fijados en un fichero
+   del repositorio. Una petición que no cabe vuelve con un error HTTP 400, <W>request (… tokens)
+   exceeds the available context size (8192 tokens)</W>, y no se recorta. Para tu programa es una
+   excepción de `urlopen`, y un fallo de `modelo` sale del bucle sin que el harness pueda
+   contestarlo. Evitar que llegue a pasar es la compactación, más adelante en el bloque.
+5. **La dirección es la única configuración.** El código lee de `ANTHROPIC_BASE_URL` dónde está el
+   servidor, y si no está definida usa `"http://localhost:11434"`. Ningún otro sitio del programa
+   sabe con quién está hablando.
+
+## Tu máquina, paso a paso
+
+Todo lo que sigue corre en tu terminal, contra un modelo local. En los comandos, `python` es tu
+Python 3.11 o posterior: en macOS y en muchos Linux se llama `python3`, y en Windows, `py`.
+
+Instala el servidor que fija el aviso del principio y comprueba la versión:
+
+```bash
+ollama --version
+```
+
+```text
+ollama version is 0.40.13
+```
+
+Después clona el primer punto de control del bloque, el sitio del que parten todas las lecciones
+que siguen. El enlace abre su página, y en ella está la dirección para clonarlo:
+
+<RepoLink tag="b5-l1">Al empezar el bloque</RepoLink>
+
+Cada lección tiene su etiqueta, y la de esta es `b5-l1`. `--branch` acepta una etiqueta igual que
+una rama, y `agente` es la carpeta que se crea:
+
+```bash
+git clone --branch b5-l1 --depth 1 <la dirección del repositorio> agente
+cd agente
+git switch -c mi-agente
+```
+
+Git avisa de que la etiqueta «is not a commit» y de que no estás en ninguna rama. Es normal: una
+etiqueta es una foto fija. La última orden crea tu rama, donde quedará lo que escribas.
+
+El punto de control contiene el agente del bloque anterior, pasado a ficheros, uno por pieza: `guionizado.py`, `entorno.py`
+(las herramientas, su esquema y los bloques), `permisos.py` (el permiso y `ejecutar`), `bucle.py`,
+`agente.py` y la batería en `tests/`. El entorno sigue siendo un diccionario en memoria, y las
+herramientas, las cuatro de siempre. Y trae los dos ficheros de esta lección: el `Modelfile` y
+`protocolo.py`.
+
+El paso a ficheros cambia una cosa. En las celdas, el usuario que contesta a un permiso era una
+función global que los tests sustituían por la suya. En un programa con módulos eso no funciona, y
+el usuario pasa a ser un argumento, como el modelo: `agente(modelo, pedido, entorno, tope=10,
+usuario=None)`, y sin nadie a quien preguntar, preguntar cuenta como denegar. Comprueba que el
+harness sigue cumpliendo su contrato. Los tests corren sobre el modelo guionizado, como en el
+bloque anterior, y no necesitan el servidor:
+
+```bash
+python -m unittest -v
+```
+
+```text
+test_el_modelo_terco (tests.test_agente.TestAgente.test_el_modelo_terco) ... ok
+test_la_escritura_sin_contenido (tests.test_agente.TestAgente.test_la_escritura_sin_contenido) ... ok
+test_la_receta_de_la_web (tests.test_agente.TestAgente.test_la_receta_de_la_web) ... ok
+test_la_tortilla (tests.test_agente.TestAgente.test_la_tortilla) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+```
+
+Ahora el modelo. Lo que descargas son sus pesos, guardados con unos 4 bits por parámetro en lugar de
+los 16 con que se publican, para que quepan en tu memoria (el curso no entra en cómo). El del curso
+tiene 4000 millones de parámetros y ocupa unos 2.5 GB:
+
+```bash
+ollama pull qwen3:4b-instruct
+ollama create local -f Modelfile
+```
+
+El `Modelfile` dice de qué modelo partir y fija la ventana de contexto, y `ollama create` hace con
+él un modelo que se llama `local`, sin copiar los pesos:
+
+```text
+# El modelo local del curso, con la ventana de contexto del curso. Funciona con 8 GB de RAM.
+#   ollama create local -f Modelfile
+FROM qwen3:4b-instruct
+PARAMETER num_ctx 8192
+```
+
+`local` es el único nombre de modelo que aparece en el código, y 8192 es la ventana con la que se
+ha escrito el bloque: lo bastante pequeña como para que la veas llenarse cuando toque. Si tienes
+más memoria, puedes cambiar la línea `FROM` por un modelo mayor y volver a crear `local`. El código
+no cambia, pero las salidas esperadas del bloque son las de este modelo, y con otro no te puedo
+prometer que se parezcan.
+
+Por último, `protocolo.py`. Su primera mitad monta la petición del turno y la manda. `enviar` es
+todo el cliente: un `POST` con `urllib`, de la biblioteca estándar, sin ninguna biblioteca del
+proveedor, porque lo que hablas es un protocolo y no un producto.
+
+```python
+"""Un turno a mano: el protocolo de mensajes, sin harness. Lección 32 del curso."""
+import json
+import os
+import urllib.request
+
+from entorno import HERRAMIENTAS
+
+URL = os.environ.get("ANTHROPIC_BASE_URL", "http://localhost:11434") + "/v1/messages"
+
+
+def enviar(peticion):
+    """Manda una petición al servidor y devuelve lo que contesta, ya leído del JSON."""
+    datos = json.dumps(peticion).encode("utf-8")
+    req = urllib.request.Request(URL, data=datos, headers={"content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=300) as r:
+        return json.load(r)
+
+
+peticion = {
+    "model": "local",
+    "max_tokens": 1024,
+    "thinking": {"type": "disabled"},
+    "system": "Trabajas con los ficheros del usuario mediante tus herramientas.",
+    "messages": [{"role": "user", "content": "¿Qué hay en lista.txt?"}],
+    "tools": HERRAMIENTAS,
+}
+r = enviar(peticion)
+print(json.dumps(r, ensure_ascii=False, indent=2))
+```
+
+La segunda mitad es el harness, y lo haces tú. Si la respuesta pide alguna llamada, el programa te
+la enseña y espera a que escribas su observación, que en <W>lista.txt</W> sería
+<W>pan, leche, patatas</W>. Después añade a la petición la respuesta del modelo y un mensaje del
+usuario con un `tool_result` por llamada, y la manda otra vez:
+
+```python
+llamadas = [b for b in r["content"] if b["type"] == "tool_use"]
+if llamadas:                              # el modelo ha pedido algo, y nadie lo ha ejecutado
+    observaciones = []
+    for ll in llamadas:                   # el harness eres tú: escribe lo que contestaría
+        contenido = input("\n%s %s -> " % (ll["name"], json.dumps(ll["input"], ensure_ascii=False)))
+        observaciones.append({"type": "tool_result", "tool_use_id": ll["id"], "content": contenido})
+    peticion["messages"] += [{"role": "assistant", "content": r["content"]},
+                             {"role": "user", "content": observaciones}]
+    r = enviar(peticion)
+    print(json.dumps(r, ensure_ascii=False, indent=2))
+```
+
+Si te has perdido, `protocolo.py` está entero en el punto de control de esta lección:
+
+<RepoLink tag="b5-l1" path="protocolo.py">`protocolo.py` al terminar esta lección</RepoLink>
+
+Un aviso antes de ejecutarlo: si en tu terminal ya está
+definida `ANTHROPIC_BASE_URL` (algunas herramientas la definen), el programa hablará con esa
+dirección y no con tu modelo. Bórrala de esa terminal antes de seguir.
+
+## Comprueba tu intuición
+
+Ejecuta el turno. La primera petición tarda más, porque el servidor carga los pesos en
+memoria. Cuando el programa te enseñe la llamada a `leer`, escribe la observación y pulsa Intro:
+
+```bash
+python protocolo.py
+```
+
+```text
+{
+  "id": "msg_03ff8b57297866038532d021",
+  "type": "message",
+  "role": "assistant",
+  "model": "local",
+  "content": [
+    {
+      "type": "tool_use",
+      "id": "fl3ShdpPxtRXLg0saR67PRfqYgysFY8o",
+      "name": "leer",
+      "input": {
+        "ruta": "lista.txt"
+      }
+    }
+  ],
+  "stop_reason": "tool_use",
+  "usage": {
+    "input_tokens": 453,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 21
+  }
+}
+
+leer {"ruta": "lista.txt"} -> pan, leche, patatas
+{
+  "id": "msg_ba312aa38dbd9ba20f9f2ed1",
+  "type": "message",
+  "role": "assistant",
+  "model": "local",
+  "content": [
+    {
+      "type": "text",
+      "text": "El contenido de lista.txt es: pan, leche, patatas."
+    }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 21,
+    "cache_read_input_tokens": 473,
+    "output_tokens": 16
+  }
+}
+```
+
+Los ids cambian en cada ejecución, y el texto final puede no ser ese, porque el modelo sortea
+cada token. Lo que
+tiene que coincidir es la forma: una sola llamada, a `leer` con <W>lista.txt</W>, que vuelve con
+`tool_use`, y un texto que vuelve con `end_turn`. Fíjate en dos números. Los 453 tokens de entrada
+de la primera petición son casi todos el prompt de sistema y las cuatro herramientas, que ocupan
+ventana en cada turno aunque la pregunta tenga siete palabras. Y la segunda petición, que lleva todo
+lo de la primera y algo más, sólo ha leído 21 tokens nuevos: los otros 473 salieron de la caché.
+
+Prueba también a contestar otra cosa, <W>no existe el fichero</W> o una lista distinta: el modelo
+se cree lo que le escribas, porque para él la observación es la única noticia que tiene del
+entorno.
+
+<Quiz id="q-nadie-ha-leido" />
+
+<Quiz id="q-todo-otra-vez" />
+
+<Quiz id="q-el-hueco" />
+
+---
+
+Durante un turno has hecho de harness: ver que la respuesta pide `leer`, contestar con un
+`tool_result` del mismo id y volver a mandarlo todo. El bucle del bloque anterior ya sabe hacer eso
+durante muchos turnos, con el esquema, el permiso y el tope. Lo que no sabe es hablar este
+protocolo: sus mensajes son tuplas con los roles en español y el prompt de sistema metido en la
+lista.
+
+Traducir lo uno a lo otro es la tabla de arriba, y escrita en Python es el adaptador. <Leccion slug="el-bucle-con-un-modelo-real">La lección
+siguiente, sobre el bucle con un modelo real</Leccion>, lo escribe, lo pone detrás de `modelo` y corre el
+agente entero contra el servidor. Los tests seguirán pasando sobre el guion. Lo que haga el modelo
+con las herramientas, en cambio, ya no lo ha escrito nadie.

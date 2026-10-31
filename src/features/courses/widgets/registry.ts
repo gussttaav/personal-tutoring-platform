@@ -78,4 +78,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "logit-mask": dynamic(() => import("./nlp/LogitMask"), { ssr: false }),
   // COURSE-C2-P1-03 — llm-agents Block 3 lesson 5 (la ventana de contexto), reused in Blocks 4–5.
   "context-window": dynamic(() => import("./nlp/ContextWindow"), { ssr: false }),
+  // COURSE-C2-P1-04 — llm-agents Block 4 lesson 3 (el bucle), reused by the block's project.
+  "agent-loop-trace": dynamic(() => import("./nlp/AgentLoopTrace"), { ssr: false }),
 };

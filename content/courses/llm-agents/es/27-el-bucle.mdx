@@ -1,0 +1,487 @@
+---
+slug: el-bucle
+title: "El bucle"
+block: 4
+order: 3
+minutes: 30
+summary: "El bucle de un agente llama al modelo con la lista de mensajes, añade lo que responde, ejecuta lo que pide y añade lo que vuelve, hasta que una respuesta no pide nada o se acaba el tope. La lección lo escribe con sus tres maneras de parar y sus invariantes: el modelo sólo ve esa lista, y la lista sólo crece."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-quien-termina
+    type: single
+    prompt: 'En el widget, con el tope de 10, ¿qué hace que el bucle termine en el turno 4?'
+    options:
+      - { id: a, text: 'Que la cuarta respuesta no trae ningún `tool_use`. Lo decide el modelo al escribirla; el harness sólo lo comprueba.' }
+      - { id: b, text: 'Que el harness ve que <W>lista.txt</W> ya tiene lo que faltaba.' }
+      - { id: c, text: 'Que se llega al tope de turnos.' }
+      - { id: d, text: 'Que el guion tiene cuatro respuestas, y el bucle lo sabe.' }
+    answer: a
+    explanation: 'La (a). La (b) le pide al harness algo que no sabe hacer: el pedido del usuario es para él un mensaje más, y no puede juzgar si el entorno ya lo cumple. La (c) no ocurre con un tope de 10. La (d) es justo lo que el bucle ha dejado de saber: con un modelo de verdad, el mismo código termina cuando la respuesta no pide nada, sea en el turno 4 o en el 40.'
+  - id: q-mensajes-al-final
+    type: numeric
+    prompt: 'Un modelo hace una sola llamada por respuesta y termina, con un texto, en el turno 6. ¿Cuántos mensajes tiene M cuando el bucle devuelve?'
+    answer: 13
+    tolerance: 0
+    explanation: 'Trece: los 2 del principio, 2 por cada uno de los 5 turnos que piden algo y la respuesta final, 2 + 10 + 1. Cuántas llamadas haga cada respuesta no cambia la cuenta: las tres lecturas del turno 2 de la traza también dejan dos mensajes.'
+    hint: 'El último turno deja un mensaje, no dos.'
+  - id: q-sin-memoria
+    type: single
+    prompt: 'Un harness llama al modelo, ejecuta lo que pide y no añade nada a M. ¿Qué pasa con un modelo de verdad?'
+    options:
+      - { id: a, text: 'Recibe en cada turno los mismos mensajes, así que vuelve a pedir lo mismo, o algo muy parecido. Sólo el tope lo para, y cada vuelta ejecuta otra vez la llamada.' }
+      - { id: b, text: 'El modelo recuerda lo que pidió en el turno anterior y pasa a lo siguiente.' }
+      - { id: c, text: 'El protocolo rechaza la petición del segundo turno, porque falta una observación.' }
+      - { id: d, text: 'El bucle termina en el turno 2, porque M no tiene ningún `tool_use`.' }
+    answer: a
+    explanation: 'La (a). La (b) es la que descarta el primer invariante: el modelo no guarda nada entre llamadas, y lo que no está en M no ha pasado. La (c) sería cierta si el harness añadiera la respuesta y no las observaciones, porque M tendría un `tool_use` sin su `tool_result`; sin añadir nada, la petición es la del primer turno, válida y repetida. La (d) confunde M con la respuesta, que es lo que el bucle mira, y la respuesta vuelve a pedir. Si la llamada fuera un `escribir`, se escribiría hasta agotar el tope.'
+  - id: q-tope-a-medias
+    type: multi
+    prompt: 'En el widget, con un tope de 3, el bucle para en el turno 3. ¿Qué es cierto en ese momento?'
+    options:
+      - { id: a, text: '<W>lista.txt</W> ya está reescrita.' }
+      - { id: b, text: 'El usuario no recibe ninguna respuesta del agente.' }
+      - { id: c, text: 'El harness deshace la escritura, porque la tarea no terminó.' }
+      - { id: d, text: 'En el turno 3, el modelo sabía que era su último turno.' }
+      - { id: e, text: 'La llamada <W>t5</W> se queda sin su observación.' }
+    answer: [a, b]
+    explanation: 'El tope para el bucle y no deshace nada: la escritura del turno 3 ya ha ocurrido, y el bucle devuelve `tope` sin texto. La (d) es falsa porque nada en M lo dice, y el modelo sólo ve M; un harness que quiera avisarlo tiene que escribirlo en un mensaje. La (e) es falsa porque el bucle ejecuta las llamadas del último turno y añade sus observaciones antes de salir, así que M sigue cumpliendo el invariante.'
+    hint: 'Mira el entorno en el último paso.'
+  - id: q-tres-lecturas
+    type: boolean
+    prompt: 'El turno 2 de la traza pide tres lecturas, así que añade cuatro mensajes a M: la respuesta y una observación por llamada.'
+    answer: false
+    explanation: 'Falso: añade dos. La respuesta, con sus tres `tool_use`, y un solo mensaje del usuario con los tres `tool_result`, cada uno con el id de su llamada. Es la tercera regla de la lección anterior, y la razón de que en el turno $n$ el modelo reciba siempre $2n$ mensajes.'
+challenges:
+  - id: ch-bucle
+    prompt: |
+      La primera celda escribe el bucle sin tope, y la segunda enseña lo que cuesta. Escribe `bucle(modelo, inicio, entorno, tope)` con el contrato entero de la lección. `ejecutar` y todo lo que carga `entorno.py` están en el código de partida.
+
+      - `M` empieza como una copia de `inicio`, que es del que llama y no se toca.
+      - Cada turno llama a `modelo(M, HERRAMIENTAS)` y añade la respuesta entera a `M`, como `("asistente", r)`.
+      - Si la respuesta no trae ningún `tool_use`, devuelve `("fin", texto, M)`, con el texto de sus bloques `text` unidos por un espacio.
+      - Si trae llamadas, añade un solo `("usuario", [...])` con lo que devuelve `ejecutar` para cada una, en el orden de las llamadas, y vuelve a empezar.
+      - Como mucho `tope` llamadas al modelo. Si la respuesta del último turno aún pide algo, ejecuta sus llamadas, añade sus observaciones y devuelve `("tope", None, M)`.
+
+      La primera prueba es una conversación con el modelo guionizado; las demás miran qué mensajes recibe el modelo en cada turno.
+    starter: |
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+      exec(open_url("/courses/llm-agents/entorno.py").read())      # el entorno y sus herramientas
+
+      def ejecutar(ll, entorno):
+          """Una llamada, comprobada contra su esquema: su tool_result."""
+          motivo = incumple(ll)
+          if motivo is not None:
+              raise ValueError(motivo)
+          return resultado(ll["id"], FUNCIONES[ll["name"]](entorno, **ll["input"]))
+
+      def bucle(modelo, inicio, entorno, tope):
+          """('fin', texto, M) si el modelo termina; ('tope', None, M) si tras tope turnos sigue pidiendo."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "una conversación entera: el modelo guionizado acepta cada turno"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          exec(open_url("/courses/llm-agents/entorno.py").read())
+          L = "pan, leche, patatas, tomates, pepino, pimiento, ajo, huevos, cebolla"
+          inicio = [("sistema", "Trabajas con ficheros."), ("usuario", "Añade a lista.txt lo que falta para las recetas.")]
+          rs = [[texto("Miro qué recetas hay."), llamada("t1", "listar", carpeta="recetas/")],
+                [llamada("t2", "leer", ruta="recetas/gazpacho.txt"), llamada("t3", "leer", ruta="recetas/tortilla.txt"),
+                 llamada("t4", "leer", ruta="lista.txt")],
+                [llamada("t5", "escribir", ruta="lista.txt", contenido=L)],
+                [texto("Hecho.")]]
+          e = dict(ENTORNO)
+          modelo = ModeloGuionizado(guion_de(inicio, rs, [[ejecutar(b, e) for b in r if b["type"] == "tool_use"] for r in rs]))
+          entorno = dict(ENTORNO)
+          try:
+              salida = bucle(modelo, inicio, entorno, 10)
+          except ValueError as err:
+              raise AssertionError('el modelo guionizado no reconoce los mensajes del turno %d (%s): en cada turno, '
+                                   'la respuesta entera como mensaje del asistente y, si pedía algo, un mensaje del '
+                                   'usuario con un tool_result por llamada' % (modelo.turno, err))
+          assert salida is not None, 'bucle no devuelve nada: falta el return'
+          assert isinstance(salida, tuple) and len(salida) == 3, 'bucle devuelve una tupla (motivo, texto, M), no %r' % (salida,)
+          motivo, final, M = salida
+          assert modelo.turno == 4, 'la conversación tiene cuatro turnos y has llamado al modelo %d veces' % modelo.turno
+          assert (motivo, final) == ("fin", "Hecho."), 'la cuarta respuesta no pide nada: devuelve ("fin", "Hecho.", M), no %r' % ((motivo, final),)
+          assert entorno["lista.txt"] == L, 'la llamada del turno 3 escribe lista.txt, y no se ha ejecutado'
+          assert len(M) == 9, 'M acaba con 9 mensajes: los 2 del principio, 2 por cada turno que pide algo y la respuesta final. Tiene %d' % len(M)
+      - name: "la respuesta entra en M entera, con su texto"
+        code: |
+          R1 = [{"type": "text", "text": "Leo la lista."}, {"type": "tool_use", "id": "a", "name": "leer", "input": {"ruta": "lista.txt"}}]
+          vistos = []
+          def espia(M, herramientas=()):
+              vistos.append(list(M))
+              if len(vistos) > 2:
+                  raise AssertionError('el modelo ya ha terminado en el turno 2 y lo vuelves a llamar')
+              return R1 if len(vistos) == 1 else [{"type": "text", "text": "Ya está."}]
+          bucle(espia, [("sistema", "S"), ("usuario", "U")], {"lista.txt": "pan"}, 5)
+          assert len(vistos) == 2, 'la primera respuesta pide algo, así que hay un segundo turno, y has llamado al modelo %d %s' % (len(vistos), "vez" if len(vistos) == 1 else "veces")
+          assert len(vistos[1]) > 2 and vistos[1][2] == ("asistente", R1), 'en el turno 2, el mensaje 2 es ("asistente", respuesta del turno 1), entera, texto incluido. Recibe %r' % (vistos[1][2:3],)
+      - name: "cada llamada recibe su observación antes de volver a llamar al modelo"
+        code: |
+          R1 = [{"type": "tool_use", "id": "a", "name": "leer", "input": {"ruta": "lista.txt"}},
+                {"type": "tool_use", "id": "b", "name": "listar", "input": {"carpeta": "recetas/"}}]
+          vistos = []
+          def espia(M, herramientas=()):
+              vistos.append(list(M))
+              if len(vistos) > 2:
+                  raise AssertionError('el modelo ya ha terminado en el turno 2 y lo vuelves a llamar')
+              return R1 if len(vistos) == 1 else [{"type": "text", "text": "Ya está."}]
+          E = {"lista.txt": "pan", "recetas/tortilla.txt": "huevos"}
+          bucle(espia, [("sistema", "S"), ("usuario", "U")], dict(E), 5)
+          assert len(vistos) == 2, 'la primera respuesta pide algo, así que hay un segundo turno, y has llamado al modelo %d %s' % (len(vistos), "vez" if len(vistos) == 1 else "veces")
+          obs = [{"type": "tool_result", "tool_use_id": "a", "content": "pan", "is_error": False},
+                 {"type": "tool_result", "tool_use_id": "b", "content": "recetas/tortilla.txt", "is_error": False}]
+          assert len(vistos[1]) == 4, ('en el turno 2 el modelo recibe 4 mensajes y le llegan %d. Sin el mensaje con las '
+                                        'observaciones, el modelo no sabe qué devolvieron sus llamadas' % len(vistos[1]))
+          assert vistos[1][3] == ("usuario", obs), 'el mensaje 3 es ("usuario", [un tool_result por llamada, en orden]): recibe %r' % (vistos[1][3],)
+      - name: "una respuesta sin tool_use termina: ('fin', su texto, M)"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          inicio = [("sistema", "S"), ("usuario", "¿Hola?")]
+          modelo = ModeloGuionizado([(inicio, [{"type": "text", "text": "Hola."}])])
+          salida = bucle(modelo, inicio, {}, 5)
+          assert salida is not None, 'bucle no devuelve nada: falta el return'
+          assert salida[:2] == ("fin", "Hola."), 'una respuesta sin llamadas termina: ("fin", "Hola.", M), no %r' % (salida[:2],)
+          assert modelo.turno == 1, 'una respuesta sin llamadas termina el bucle en el turno 1'
+          assert salida[2] == inicio + [("asistente", [{"type": "text", "text": "Hola."}])], 'M acaba en la respuesta final, como mensaje del asistente'
+      - name: "un modelo que no termina nunca para en tope turnos"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          exec(open_url("/courses/llm-agents/entorno.py").read())
+          inicio = [("sistema", "S"), ("usuario", "Lista las recetas.")]
+          pide = [[llamada("t%d" % i, "listar", carpeta="recetas/")] for i in range(1, 21)]
+          e = dict(ENTORNO)
+          terco = ModeloGuionizado(guion_de(inicio, pide, [[ejecutar(r[0], e)] for r in pide]))
+          try:
+              salida = bucle(terco, inicio, dict(ENTORNO), 4)
+          except RuntimeError:
+              raise AssertionError('el guion tiene 20 respuestas que piden algo, y has llegado al final: con tope 4, el modelo se llama 4 veces')
+          assert salida is not None, 'bucle no devuelve nada cuando se alcanza el tope: devuelve ("tope", None, M)'
+          assert terco.turno == 4, 'con tope 4, el modelo se llama 4 veces, no %d' % terco.turno
+          assert salida[:2] == ("tope", None), 'tras tope turnos pidiendo, devuelve ("tope", None, M), no %r' % (salida[:2],)
+      - name: "el tope no deja ninguna llamada sin su observación"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          exec(open_url("/courses/llm-agents/entorno.py").read())
+          inicio = [("sistema", "S"), ("usuario", "Lista las recetas.")]
+          pide = [[llamada("t%d" % i, "listar", carpeta="recetas/")] for i in range(1, 21)]
+          e = dict(ENTORNO)
+          terco = ModeloGuionizado(guion_de(inicio, pide, [[ejecutar(r[0], e)] for r in pide]))
+          salida = bucle(terco, inicio, dict(ENTORNO), 3)
+          assert salida is not None, 'bucle no devuelve nada cuando se alcanza el tope: devuelve ("tope", None, M)'
+          motivo, final, M = salida
+          assert len(M) == 8, 'tres turnos que piden algo dejan 2 + 3·2 = 8 mensajes en M, y hay %d' % len(M)
+          assert M[-1][0] == "usuario" and M[-1][1][0].get("tool_use_id") == "t3", ('la llamada del último turno también se '
+              'ejecuta y recibe su observación: M acaba en ("usuario", [tool_result de t3]), para que se pueda seguir desde ahí')
+      - name: "con un tope justo, termina"
+        code: |
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/guionizado.py").read())
+          exec(open_url("/courses/llm-agents/entorno.py").read())
+          inicio = [("sistema", "S"), ("usuario", "¿Qué recetas hay?")]
+          rs = [[llamada("t1", "listar", carpeta="recetas/")], [texto("Dos.")]]
+          e = dict(ENTORNO)
+          G = guion_de(inicio, rs, [[ejecutar(b, e) for b in r if b["type"] == "tool_use"] for r in rs])
+          salida = bucle(ModeloGuionizado(G), inicio, dict(ENTORNO), 2)
+          assert salida is not None, 'bucle no devuelve nada: falta el return'
+          assert salida[:2] == ("fin", "Dos."), 'el guion termina en el turno 2 y tope es 2: el bucle llega a la respuesta final, ("fin", "Dos.", M), no %r' % (salida[:2],)
+          salida = bucle(ModeloGuionizado(G), inicio, dict(ENTORNO), 1)
+          assert salida is not None, 'bucle no devuelve nada cuando se alcanza el tope: devuelve ("tope", None, M)'
+          assert salida[:2] == ("tope", None), 'con tope 1 el modelo se llama una vez, y pide algo: ("tope", None, M), no %r' % (salida[:2],)
+      - name: "no toca la lista inicio"
+        code: |
+          inicio = [("sistema", "S"), ("usuario", "U")]
+          respuestas = iter([[{"type": "tool_use", "id": "a", "name": "leer", "input": {"ruta": "x"}}], [{"type": "text", "text": "Ya."}]])
+          llamadas = []
+          def modelo(M, herramientas=()):
+              llamadas.append(len(M))
+              return next(respuestas)
+          bucle(modelo, inicio, {"x": "y"}, 5)
+          assert llamadas, 'bucle no llama al modelo'
+          assert inicio == [("sistema", "S"), ("usuario", "U")], 'has añadido los mensajes a la lista inicio, que es del que llama: trabaja sobre una copia, M = list(inicio)'
+    solution: |
+      from pyodide.http import open_url
+      exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado, para ensayar
+      exec(open_url("/courses/llm-agents/entorno.py").read())      # el entorno y sus herramientas
+
+      def ejecutar(ll, entorno):
+          """Una llamada, comprobada contra su esquema: su tool_result."""
+          motivo = incumple(ll)
+          if motivo is not None:
+              raise ValueError(motivo)
+          return resultado(ll["id"], FUNCIONES[ll["name"]](entorno, **ll["input"]))
+
+      def bucle(modelo, inicio, entorno, tope):
+          """('fin', texto, M) si el modelo termina; ('tope', None, M) si tras tope turnos sigue pidiendo."""
+          M = list(inicio)                                  # una copia: inicio es del que llama
+          for turno in range(tope):                         # como mucho tope llamadas al modelo
+              r = modelo(M, HERRAMIENTAS)
+              M.append(("asistente", r))
+              llamadas = [b for b in r if b["type"] == "tool_use"]
+              if not llamadas:
+                  return "fin", " ".join(b["text"] for b in r if b["type"] == "text"), M
+              M.append(("usuario", [ejecutar(ll, entorno) for ll in llamadas]))
+          return "tope", None, M                            # cada llamada tiene ya su observación
+    explanation: 'El tope es un `for` donde la celda tenía un `while True`, y lo único que pide pensar es el último turno. Ejecutar sus llamadas y guardar sus observaciones antes de salir deja `M` cumpliendo el invariante de la lección anterior, ninguna llamada sin su observación, y por tanto una conversación desde la que el harness puede seguir. Salir sin ejecutarlas dejaría un `tool_use` colgando, que un protocolo de verdad rechaza en la petición siguiente. Y `list(inicio)`, no `inicio`: un `append` sobre la lista del que llama le cambia sus datos sin avisar.'
+reading:
+  - kind: paper
+    title: 'WebGPT: Browser-assisted question-answering with human feedback'
+    authors: 'Nakano, Hilton, Balaji, Wu, Ouyang et al.'
+    year: '2021'
+    venue: 'arXiv:2112.09332'
+    lang: en
+    url: 'https://arxiv.org/abs/2112.09332'
+    note: 'GPT-3 ajustado para buscar y navegar en un navegador de texto: escribe una orden, lee lo que vuelve y decide la siguiente, hasta que responde. Es el bucle de esta lección, con las órdenes todavía dentro del texto.'
+  - kind: blog
+    title: 'Stop reasons and fallback'
+    authors: 'Anthropic'
+    venue: 'Documentación de la API de Claude'
+    lang: en
+    url: 'https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons'
+    note: 'Los valores de `stop_reason` de un protocolo real y qué hacer con cada uno, incluida una llamada cortada por `max_tokens`. Su bucle de ejemplo no tiene tope: compáralo con el de la lección.'
+---
+
+{/* COURSE-C2-P1-04 — Bloque 4, lección 3. Las celdas corren sobre el modelo guionizado (cargado
+    de guionizado.py) y cargan de entorno.py el entorno, las herramientas y los bloques de la
+    lección anterior, congelados. El pseudocódigo del bucle aparece aquí una vez, y las lecciones
+    siguientes lo citan sin reescribirlo. Sin ecuaciones aparte. */}
+
+Desde <Leccion slug="llamar-herramientas">la lección sobre llamar herramientas</Leccion>, un turno
+del *harness* está resuelto de principio a fin: el modelo pide en bloques `tool_use`, el harness
+comprueba cada uno contra el esquema de su herramienta, lo ejecuta y contesta con un `tool_result`
+que lleva el mismo identificador. Lo que falta es el paso de un turno al siguiente. Allí lo daba
+un `for` con el número de turnos escrito a mano, y ese número sólo lo conoce quien escribió el
+guion.
+
+Escrito, el bucle de un agente ocupa seis líneas, y las bibliotecas que construyen agentes suelen
+esconderlo detrás de un solo método. Por eso parece que no hay nada que pensar. Hay tres cosas, y
+ninguna se ve en el código. Quién decide que el trabajo ha terminado, si no es el harness. Qué
+impide que no termine nunca, si el modelo puede pedir sin parar. Y qué sabe el modelo en cada
+vuelta, si entre dos llamadas no guarda nada. Esta lección escribe el bucle con su contrato, que
+es la respuesta a las tres.
+
+Mira el bucle trabajar antes de escribirlo. El entorno es el de la lección anterior: la lista de
+la compra, una nota y dos recetas dentro de <W>recetas/</W>. El usuario pide <W>Añade a lista.txt
+lo que falta para las recetas.</W>, y el modelo, que no sabe cuántas recetas hay, empieza por
+preguntarlo. Avanza paso a paso y fíjate en tres cosas: cuándo crece M, la lista de mensajes;
+qué cambia en el entorno; y qué recibe el modelo cada vez que se le llama, que es lo que marca el
+botón «Lo que ve el modelo».
+
+<Explorable id="agent-loop-trace" caption="El bucle sobre el modelo guionizado, una línea por paso. «Lo que ve el modelo» marca los mensajes que recibió en su última llamada; con un tope de 3, el bucle para antes de que el modelo conteste." />
+
+El modelo recibe 2 mensajes en el turno 1, 4 en el 2, 6 en el 3 y 8 en el 4. Cada turno que pide
+algo deja dos mensajes en M, su respuesta y sus observaciones, aunque pida tres lecturas a la vez
+como en el turno 2. Y en ningún paso recibe el entorno: lo que sabe de las recetas es lo que
+trajeron las observaciones de <W>t2</W> y <W>t3</W>.
+
+Fíjate también en lo que nadie ha escrito. Ningún código dice que hagan falta cuatro turnos: hasta
+que vuelve la observación de <W>t1</W>, con dos rutas, ni el harness ni el modelo saben cuántas
+recetas hay que leer. Y ninguna línea del harness decide que el trabajo está hecho. El bucle
+termina porque la cuarta respuesta no pide nada, y esa decisión es del modelo. Prueba ahora un
+tope de 3: el bucle para después de reescribir la lista, con el entorno ya cambiado y sin una
+palabra para el usuario.
+
+<Callout type="intuition" title="La idea en una frase">
+El bucle llama al modelo con M, añade a M lo que responde, ejecuta lo que pide y añade lo que
+vuelve, hasta que una respuesta no pide nada o se acaba el tope. El modelo no ve nada más que M, y
+M sólo crece.
+</Callout>
+
+## El bucle y lo que promete
+
+Con precisión, el **bucle** de un agente es este algoritmo, donde `M` es la lista de mensajes, el
+estado del bucle, y `tope` el número máximo de turnos:
+
+```text
+M = [sistema, usuario]
+repetir como mucho tope veces:
+    r = modelo(M, herramientas)
+    M.append(asistente: r)
+    si r no contiene ningún tool_use:
+        devolver fin, el texto de r
+    M.append(usuario: [ejecutar(ll) para cada tool_use ll de r])
+devolver tope
+```
+
+Cada vuelta es un turno. `ejecutar` es lo que hacía el harness en la lección anterior: comprueba
+la llamada contra su esquema, ejecuta la función y devuelve su `tool_result`. Este bucle no cambia
+en el resto del curso. Las lecciones que quedan del bloque cambian `ejecutar` y lo que la rodea, y
+el bloque siguiente cambia `modelo`.
+
+### Tres maneras de parar
+
+La primera es que **la respuesta no pide nada**. Es el final normal, y lo decide el modelo. El
+harness no podría decidirlo: no entiende el pedido del usuario, sólo lo transporta. La
+consecuencia es que un modelo que cree haber terminado antes de tiempo termina el bucle antes de
+tiempo, y ninguna línea del harness lo detecta.
+
+La segunda es **el tope**, y la decide el harness. Es la única garantía de que el bucle termina
+haga lo que haga el modelo, porque un modelo puede pedir sin fin: repetir una lectura que ya
+tiene, insistir en una herramienta que no le da lo que busca. Al llegar, el bucle ejecuta las
+llamadas del último turno y añade sus observaciones antes de salir, así que M queda con cada
+llamada contestada. Lo que no hace es deshacer: lo que esas llamadas cambiaron se queda cambiado,
+y el harness tiene que decirle al usuario que el agente no terminó. Para eso devuelve `tope` y no
+un texto. El número se elige entre dos costes. Debe bastar para la tarea más larga que aceptes, y
+cada turno de más es una llamada al modelo, que cuesta tiempo y, con un modelo servido por otros,
+dinero.
+
+La tercera es que **el modelo deje de escribir por otra razón**. El protocolo del bloque siguiente
+dice, junto a cada respuesta, por qué paró el modelo (`stop_reason`): `tool_use` si espera
+observaciones, `end_turn` si ha terminado y `max_tokens` si se le acabó la reserva. Las dos
+primeras son lo que el bucle ya lee en los bloques. La tercera es una respuesta cortada, que puede
+no traer ningún `tool_use` sin estar terminada, o acabar en una llamada con los argumentos a
+medias. El bucle no puede tomarla por final ni ejecutarla. Como el `modelo` del curso devuelve sólo
+los bloques, avisar del corte le toca a él: lanza una excepción en lugar de devolver, y el bucle se
+para ahí. El modelo guionizado no la lanza nunca, porque sus respuestas están escritas enteras.
+
+### Lo que ve el modelo
+
+Tres invariantes, que valen en cada turno.
+
+**El modelo sólo ve M.** No guarda nada de una llamada a la siguiente: lo que sabe de lo que pidió
+y de lo que pasó está en M o no está en ninguna parte. Por eso M lo carga todo. Cada respuesta
+entra entera, porque en el turno siguiente el modelo tiene que leer lo que dijo, y cada
+observación entra, porque es la única forma de que sepa qué devolvieron sus llamadas.
+
+**Ninguna llamada sin su observación.** Cuando el bucle llama al modelo, cada `tool_use` de M
+tiene su `tool_result` en el mensaje siguiente. Es el invariante de la lección anterior, y ahora lo
+mantiene el bucle, también al salir por el tope.
+
+**M sólo crece.** El bucle añade y nunca reescribe ni quita, así que el M de cada turno es un
+principio del M final, y en el turno $n$ el modelo recibe $2n$ mensajes. (Quitar mensajes cuando
+ya no caben en la ventana de contexto es la compactación, del bloque siguiente.)
+
+Los tres se rompen juntos. Un harness que olvida añadir las observaciones llama al modelo con un
+`tool_use` sin contestar, y el protocolo rechaza la petición. Uno que no añade nada llama siempre
+con los mismos mensajes, y un modelo de verdad, que no recuerda haber pedido nada, lo vuelve a
+pedir: el bucle da vueltas hasta el tope, ejecutando cada vez la misma llamada. El tope no arregla
+ese error, pero impide que dure para siempre.
+
+## El bucle, sobre el modelo guionizado
+
+Las dos celdas corren sobre el modelo guionizado, como todo el bloque. El entorno, las cuatro
+herramientas, las funciones que fabrican bloques y la comprobación del esquema son los de la
+lección anterior, y ahora se cargan con una línea de un fichero, `entorno.py`, como la clase del
+modelo. La primera celda escribe `ejecutar` y el bucle, todavía sin tope, y lo corre sobre la
+conversación del widget. Las observaciones que espera el guion las calculo yo, ejecutando sus
+llamadas en orden sobre una copia del entorno: es lo que hace un harness correcto, y el modelo
+guionizado falla si el bucle hace otra cosa.
+
+<PyCell code={`
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/guionizado.py").read())   # ModeloGuionizado
+exec(open_url("/courses/llm-agents/entorno.py").read())      # el entorno y sus herramientas
+
+def ejecutar(ll, entorno):                  # una llamada: su esquema, y después la función
+    motivo = incumple(ll)
+    if motivo is not None:
+        raise ValueError(motivo)            # hasta la lección sobre los errores
+    return resultado(ll["id"], FUNCIONES[ll["name"]](entorno, **ll["input"]))
+
+def bucle(modelo, inicio, entorno):
+    M = list(inicio)                                  # el estado del bucle: los mensajes
+    while True:                                       # sin tope, todavía
+        r = modelo(M, HERRAMIENTAS)
+        M.append(("asistente", r))                    # la respuesta entra entera
+        llamadas = [b for b in r if b["type"] == "tool_use"]
+        if not llamadas:                              # nada que ejecutar: ha terminado
+            return " ".join(b["text"] for b in r if b["type"] == "text"), M
+        M.append(("usuario", [ejecutar(ll, entorno) for ll in llamadas]))
+
+INICIO = [("sistema", "Trabajas con los ficheros del usuario mediante tus herramientas."),
+          ("usuario", "Añade a lista.txt lo que falta para las recetas.")]
+LISTA = "pan, leche, patatas, tomates, pepino, pimiento, ajo, huevos, cebolla"
+RESPUESTAS = [  # las cuatro respuestas del modelo guionizado: las he escrito yo
+    [texto("Miro qué recetas hay."), llamada("t1", "listar", carpeta="recetas/")],
+    [llamada("t2", "leer", ruta="recetas/gazpacho.txt"),
+     llamada("t3", "leer", ruta="recetas/tortilla.txt"), llamada("t4", "leer", ruta="lista.txt")],
+    [llamada("t5", "escribir", ruta="lista.txt", contenido=LISTA)],
+    [texto("He añadido a lista.txt tomates, pepino, pimiento, ajo, huevos y cebolla.")]]
+e = dict(ENTORNO)                # lo que el guion espera ver: sus llamadas, ejecutadas en orden
+GUION = guion_de(INICIO, RESPUESTAS, [[ejecutar(b, e) for b in r if b["type"] == "tool_use"]
+                                      for r in RESPUESTAS])
+
+modelo, entorno = ModeloGuionizado(GUION), dict(ENTORNO)
+final, M = bucle(modelo, INICIO, entorno)
+for i, (rol, contenido) in enumerate(M):                # M entero, mensaje a mensaje
+    lineas = [contenido] if isinstance(contenido, str) else [muestra(b) for b in contenido]
+    print("%d  %-10s" % (i, rol) + ("\\n" + " " * 13).join(lineas))
+print("\\n%d turnos: %s" % (modelo.turno, final))
+print("lista.txt:", entorno["lista.txt"])
+`} />
+
+M sale entero, con los nueve mensajes del widget, y el bucle devuelve el texto de la cuarta
+respuesta sin que nada en él cuente turnos. Cámbialo tú: borra la línea que añade las
+observaciones y mira en qué turno se queja el modelo guionizado y qué mensaje dice que no es el
+del guion. Un protocolo de verdad también rechazaría ese turno, por la llamada <W>t1</W> sin su
+observación.
+
+La segunda celda hace dos cosas con el mismo bucle. Primero lo corre con el modelo envuelto en una
+función que apunta cuántos mensajes recibe en cada turno, para ver el tercer invariante en
+números. Después le da un guion de doce respuestas que piden todas lo mismo, la lista de las
+recetas, sin que ninguna termine: lo que haría un modelo atascado.
+
+<PyCell code={`
+# Necesita la celda anterior: bucle, ejecutar, INICIO y GUION.
+vistos = []
+def mirado(M, herramientas):                 # el mismo modelo, apuntando cuánto recibe
+    vistos.append(len(M))
+    return modelo(M, herramientas)
+modelo = ModeloGuionizado(GUION)
+bucle(mirado, INICIO, dict(ENTORNO))
+print("mensajes que recibe el modelo en cada turno:", vistos)
+
+PIDE = [[llamada("t%d" % i, "listar", carpeta="recetas/")] for i in range(1, 13)]
+e = dict(ENTORNO)                            # un guion de doce respuestas que piden lo mismo
+terco = ModeloGuionizado(guion_de(INICIO, PIDE, [[ejecutar(r[0], e)] for r in PIDE]))
+try:
+    bucle(terco, INICIO, dict(ENTORNO))
+except RuntimeError as error:
+    print("terco:", error, "· turnos:", terco.turno)
+`} />
+
+Los mensajes salen 2, 4, 6 y 8. El guion terco acaba con un `RuntimeError` en el turno 12, con
+doce llamadas ejecutadas, y no porque el bucle haya decidido nada: se ha quedado sin guion. Un
+modelo de verdad no se queda sin respuestas, y con él este bucle no terminaría nunca. Si en lugar
+de listar pidiera escribir, cada vuelta reescribiría el fichero. El tope que lo impide es el
+desafío de abajo.
+
+## Comprueba tu intuición
+
+Cinco preguntas (quién termina el bucle, cuánto crece M, qué pasa si no crece, qué deja un tope y
+cuántos mensajes añade un turno) y un desafío: el tope que le falta a la primera celda.
+
+<Quiz id="q-quien-termina" />
+
+<Quiz id="q-mensajes-al-final" />
+
+<Quiz id="q-sin-memoria" />
+
+<Quiz id="q-tope-a-medias" />
+
+<Quiz id="q-tres-lecturas" />
+
+<CodeChallenge id="ch-bucle" />
+
+---
+
+El bucle ya tiene la forma que tendrá en el resto del curso, y sus garantías no dependen del
+modelo: termina, cada llamada recibe su observación y el modelo sabe lo que ha pasado porque está
+en M. Lo que no garantiza es llegar vivo al final de un turno. `ejecutar` lanza `ValueError` con
+una llamada que no cumple su esquema, `leer` lanza `KeyError` con una ruta que no existe, y
+cualquiera de las dos atraviesa el bucle y para el programa. El usuario recibe un error de Python,
+y el modelo, que podría haber pedido otra ruta, no se entera de nada.
+
+<Leccion slug="errores-como-observaciones">La lección siguiente, sobre los errores como
+observaciones</Leccion>, cambia sólo `ejecutar`: un fallo deja
+de ser una excepción y pasa a ser un `tool_result` con `is_error`, que el modelo lee como cualquier
+otra observación. Su guion, por primera vez, trae llamadas equivocadas.

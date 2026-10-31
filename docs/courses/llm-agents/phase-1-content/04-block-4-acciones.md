@@ -1,6 +1,6 @@
 # P1-04 — Block 4: El puente: de texto a acciones
 
-**Tag:** `COURSE-C2-P1-04` · **Effort:** L · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-C2-P1-04` · **Effort:** L · **Owner:** _tbd_ · **Status:** ✅
 **Depends on:** P1-03 · Block 4 widget (built in this task)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** systems
 **Runs on:** the scripted model, only · **Publication:** lesson by lesson
@@ -48,13 +48,13 @@ Block 5, and it is why the loop was built first.
 
 ## Lesson progress
 
-- [ ] 25. `de-chat-a-agente`
-- [ ] 26. `llamar-herramientas`
-- [ ] 27. `el-bucle`
-- [ ] 28. `errores-como-observaciones`
-- [ ] 29. `permisos-y-confianza`
-- [ ] 30. `estado-y-memoria`
-- [ ] 31. `proyecto-agente-guionizado`
+- [x] 25. `de-chat-a-agente`
+- [x] 26. `llamar-herramientas`
+- [x] 27. `el-bucle`
+- [x] 28. `errores-como-observaciones`
+- [x] 29. `permisos-y-confianza`
+- [x] 30. `estado-y-memoria`
+- [x] 31. `proyecto-agente-guionizado`
 
 ## The precise statements (P0-04's step 3 for a systems lesson)
 
@@ -76,8 +76,9 @@ Block 5, and it is why the loop was built first.
 - **An error is an observation:** `ejecutar` never raises into the loop; it returns
   `tool_result(is_error=true, content=…)` and the model decides. Idempotence of tools as the
   property that makes retries safe
-- **Permissions** as a function `permitir(llamada) -> permitir | preguntar | denegar` evaluated
-  *before* `ejecutar`, per tool class (read / write / execute), with the rule that **tool
+- **Permissions** as a function `permiso(llamada) -> permitir | preguntar | denegar` evaluated
+  *before* the tool's function runs (lesson 29 names it `permiso`, the course's term for the
+  decision, rather than `permitir`, which is one of its values), per tool class (read / write / execute), with the rule that **tool
   results are untrusted content** — a file the agent reads can contain instructions, and the
   loop does not obey files. Prompt injection is this lesson, not a callout
 - **Memory** is two things with one name: `M`, which the model sees and which fills; and the

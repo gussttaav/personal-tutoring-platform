@@ -15,6 +15,10 @@
  *
  * The rendered text only changes on a deploy or a price edit, so the prompt cache
  * (`cache_control` in ClaudeClient) keeps hitting.
+ *
+ * SESSION-JOIN-01: the classroom's opening time (minutes before the start), the
+ * "this class is no longer available" link page and the tutor-absent alert, with
+ * both figures injected from booking_settings like the cancellation window.
  */
 
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/constants/app-stores";
@@ -30,6 +34,10 @@ export interface ChatPromptPrices {
   packValidityDays: number;
   /** Cancellation window in hours (admin-editable). */
   cancelHours: number;
+  /** SESSION-JOIN-01: minutes before the start the classroom opens (admin-editable). */
+  joinOpenMinutes: number;
+  /** SESSION-JOIN-01: minutes after the start before Gustavo is alerted he hasn't connected (admin-editable). */
+  tutorAbsentAlertMinutes: number;
 }
 
 /** One published course, as the assistant sees it. Prose in Spanish (the canonical manifest). */
@@ -165,6 +173,8 @@ export function buildChatSystemPrompt(prices: ChatPromptPrices, content: ChatPro
   const perClass10  = eur(Math.round(prices.pack10 / 10));
   const validez     = prices.packValidityDays;
   const cancelH     = prices.cancelHours;
+  const joinMin     = prices.joinOpenMinutes;
+  const absentMin   = prices.tutorAbsentAlertMinutes;
   const site        = content.siteUrl;
 
   const courses = content.courses.length > 0
@@ -332,9 +342,12 @@ Pago seguro con Stripe (Visa, Mastercard, Amex). Se puede cancelar o reprogramar
 ## Tras reservar:
 - El alumno recibe un email de confirmación con: fecha y hora, enlace para unirse al aula virtual dentro de la plataforma, enlace para añadir el evento a Google Calendar, enlace para cancelar, enlace para reprogramar.
 - Las clases se realizan por defecto en un **aula virtual integrada en la plataforma** (tecnología Zoom SDK), que se abre desde la propia web o desde la app móvil, sin instalar nada más. En ella se comparte pantalla, código y una pizarra digital. Si el alumno prefiere usar otra plataforma (por ejemplo Google Meet, Teams u otra), puede acordarlo previamente con Gustavo y se adaptará sin problema.
+- **Cuándo se puede entrar al aula:** el aula se abre ${joinMin} minutos antes de la hora de inicio. Antes, el botón «Entrar al aula» del área personal aparece desactivado e indica a qué hora se abre, y el enlace del email muestra una cuenta atrás y entra solo cuando se abre. No hace falta probar el enlace justo después de reservar.
+- **Si el enlace dice «Esta clase ya no está disponible»:** la clase se canceló, se reprogramó (la nueva reserva trae su propio enlace en su email de confirmación) o ya terminó. Las próximas clases siempre están en el área personal.
+- **Si Gustavo no se ha conectado:** si el alumno está en el aula y Gustavo no ha entrado ${absentMin} minutos después de la hora de inicio, Gustavo recibe un aviso automático por email. Lo mejor es quedarse en el aula esperando; si pasa demasiado tiempo, se puede escribir a contacto@gustavoai.dev.
 
 ## Área personal del alumno (${site}/area-personal):
-- **Próximas:** las sesiones reservadas. Desde ahí puede unirse directamente al aula virtual, reprogramar o cancelar cada sesión, sin necesidad de usar los enlaces del email. También puede reservar una sesión nueva.
+- **Próximas:** las sesiones reservadas. Desde ahí puede unirse directamente al aula virtual (el botón «Entrar al aula» se activa ${joinMin} minutos antes del inicio), reprogramar o cancelar cada sesión, sin necesidad de usar los enlaces del email. También puede reservar una sesión nueva.
 - **Historial:** las clases pasadas, con la opción de valorarlas.
 - **Mis cursos:** los cursos empezados y el progreso en cada uno.
 - **Eliminar cuenta:** al final del área personal. Es irreversible, y no se puede hacer mientras queden créditos de un pack sin usar (en ese caso se pide el reembolso por email a contacto@gustavoai.dev) o clases próximas que aún se puedan cancelar (hay que cancelarlas antes). La página ${site}/eliminar-cuenta explica el proceso sin necesidad de iniciar sesión.

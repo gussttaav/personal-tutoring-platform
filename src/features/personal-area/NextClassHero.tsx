@@ -10,14 +10,18 @@
  *
  * «Reprogramar» opens the reschedule in place (useBookingActions.ts), no longer
  * `router.push("/mentoria?reschedule=…")`.
+ *
+ * SESSION-JOIN-01: the join button is disabled until the classroom opens
+ * (useJoinWindow), with the opening time under it.
  */
 
 import { useLocale, useTranslations } from "next-intl";
-import { formatRelative } from "@/lib/formatting";
+import { formatRelative, formatTime } from "@/lib/formatting";
 import CancelSessionFlow from "./CancelSessionFlow";
-import { dateTile, sessionTypeKey, timeRange, weekdayName } from "./session-display";
+import { dateTile, sessionTypeKey, timeRange, viewerTimeZone, weekdayName } from "./session-display";
 import type { UserBooking } from "./types";
 import { useBookingActions } from "./useBookingActions";
+import { useJoinWindow } from "./useJoinWindow";
 
 interface NextClassHeroProps {
   booking:     UserBooking;
@@ -31,6 +35,9 @@ export default function NextClassHero({ booking, onCancelled }: NextClassHeroPro
   const tModal  = useTranslations("areaPersonal.history.modal");
   const locale  = useLocale() as "es" | "en";
   const { openReschedule } = useBookingActions();
+  const join = useJoinWindow(booking.startsAt);
+  const tz   = viewerTimeZone();
+  const opensAtLabel = formatTime(join.opensAtIso, locale, tz ? { timeZone: tz } : undefined);
 
   const { day, month } = dateTile(booking.startsAt, locale);
   const label = t(`sessionLabels.${sessionTypeKey(booking.sessionType)}` as Parameters<typeof t>[0]);
@@ -77,6 +84,8 @@ export default function NextClassHero({ booking, onCancelled }: NextClassHeroPro
             <button
               type="button"
               className="pa-btn pa-btn--primary pa-btn--lg"
+              disabled={!join.open}
+              title={join.open ? undefined : t("joinOpensAt", { time: opensAtLabel })}
               onClick={() => { window.location.href = `/sesion/${booking.joinToken}`; }}
             >
               <span className="material-symbols-outlined" aria-hidden="true">play_circle</span>
@@ -97,6 +106,12 @@ export default function NextClassHero({ booking, onCancelled }: NextClassHeroPro
           </div>
         )}
       />
+      {!join.open && (
+        <p className="pa-nc__join-note">
+          <span className="material-symbols-outlined" aria-hidden="true">schedule</span>
+          {t("joinOpensAt", { time: opensAtLabel })}
+        </p>
+      )}
     </section>
   );
 }

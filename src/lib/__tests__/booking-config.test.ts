@@ -2,7 +2,15 @@
 // regression guard that dropping the legacy "-15 morning buffer" is behaviour-
 // preserving: a literal 09:00–13:30 block must produce the same 60-min slot
 // starts as before (09:00, 10:00, 11:00, 12:00 — nothing ending past 13:30).
-import { slotsFromBlocks, isWithinBlocks, gridHourRange } from "../booking-config";
+import {
+  slotsFromBlocks,
+  isWithinBlocks,
+  gridHourRange,
+  joinOpensAtMs,
+  tutorAbsentAlertAtMs,
+  DEFAULT_JOIN_OPEN_MINUTES,
+  DEFAULT_TUTOR_ABSENT_ALERT_MINUTES,
+} from "../booking-config";
 import type { WeeklyHours } from "@/domain/types";
 
 describe("slotsFromBlocks", () => {
@@ -72,5 +80,25 @@ describe("gridHourRange", () => {
   it("falls back to 09:00–19:00 when no blocks are configured", () => {
     const weekly: WeeklyHours = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
     expect(gridHourRange(weekly)).toEqual({ minHour: 9, maxHour: 19 });
+  });
+});
+
+// SESSION-JOIN-01
+describe("joinOpensAtMs / tutorAbsentAlertAtMs", () => {
+  const START = "2026-10-27T08:00:00.000Z";
+  const startMs = Date.parse(START);
+
+  it("opens joinOpenMinutesBefore minutes before the start", () => {
+    expect(joinOpensAtMs(START, { joinOpenMinutesBefore: 10 })).toBe(startMs - 10 * 60_000);
+    expect(joinOpensAtMs(START, { joinOpenMinutesBefore: 0 })).toBe(startMs);
+  });
+
+  it("alerts tutorAbsentAlertMinutes minutes after the start", () => {
+    expect(tutorAbsentAlertAtMs(START, { tutorAbsentAlertMinutes: 7 })).toBe(startMs + 7 * 60_000);
+  });
+
+  it("falls back to the defaults for a config cached before the fields existed", () => {
+    expect(joinOpensAtMs(START, {})).toBe(startMs - DEFAULT_JOIN_OPEN_MINUTES * 60_000);
+    expect(tutorAbsentAlertAtMs(START, {})).toBe(startMs + DEFAULT_TUTOR_ABSENT_ALERT_MINUTES * 60_000);
   });
 });

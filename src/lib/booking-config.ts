@@ -11,9 +11,13 @@
  *
  * REFACTOR-R4-P1-01: SESSION_DURATION_MINUTES + SLOT_ALIGNMENT_MINUTES — the
  * server-side definition of a bookable window, enforced by BookingService.checkSlot.
+ *
+ * SESSION-JOIN-01: joinOpensAtMs / tutorAbsentAlertAtMs — when the classroom opens
+ * for the student, and when the tutor-absent alert may fire. One definition shared
+ * by SessionService (enforcement), the /sesion page and the personal area (display).
  */
 
-import type { SessionType, TimeBlock, WeeklyHours } from "@/domain/types";
+import type { ScheduleConfig, SessionType, TimeBlock, WeeklyHours } from "@/domain/types";
 
 /** How many weeks ahead bookings are allowed. Static for now (not admin-editable). */
 export const BOOKING_WINDOW_WEEKS = 8;
@@ -30,6 +34,26 @@ export const SESSION_DURATION_MINUTES: Record<SessionType, number> = {
 
 /** Every bookable start sits on this grid in the tutor's timezone. */
 export const SLOT_ALIGNMENT_MINUTES = 15;
+
+// SESSION-JOIN-01: fallbacks for a ScheduleConfig cached before migration 0028 added
+// the fields (the Redis config cache and the 30-day ISR loader can both serve the old
+// shape until the next admin save). Same values as the 0028 column defaults.
+export const DEFAULT_JOIN_OPEN_MINUTES = 15;
+export const DEFAULT_TUTOR_ABSENT_ALERT_MINUTES = 5;
+
+type JoinWindowConfig = Partial<Pick<ScheduleConfig, "joinOpenMinutesBefore" | "tutorAbsentAlertMinutes">>;
+
+/** Epoch ms at which the student may enter the classroom (start − joinOpenMinutesBefore). */
+export function joinOpensAtMs(startIso: string, config: JoinWindowConfig): number {
+  const minutes = config.joinOpenMinutesBefore ?? DEFAULT_JOIN_OPEN_MINUTES;
+  return new Date(startIso).getTime() - minutes * 60_000;
+}
+
+/** Epoch ms from which a waiting student may raise the tutor-absent alert (start + M). */
+export function tutorAbsentAlertAtMs(startIso: string, config: JoinWindowConfig): number {
+  const minutes = config.tutorAbsentAlertMinutes ?? DEFAULT_TUTOR_ABSENT_ALERT_MINUTES;
+  return new Date(startIso).getTime() + minutes * 60_000;
+}
 
 /**
  * Generates the candidate slot start-minutes for a set of working blocks.

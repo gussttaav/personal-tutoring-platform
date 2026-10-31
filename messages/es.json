@@ -288,7 +288,8 @@
       "cancelConfirmTitle": "¿Cancelar esta sesión?",
       "cancelConfirmBody": "Esta acción no se puede deshacer. Si es de pack, el crédito se devolverá automáticamente.",
       "keepSession": "Mantener",
-      "confirmCancel": "Sí, cancelar"
+      "confirmCancel": "Sí, cancelar",
+      "joinOpensAt": "El aula se abre a las {time}"
     },
     "packStatus": {
       "essentialPack": "Pack Esencial 5h",
@@ -322,7 +323,8 @@
       "zoomShort": "Zoom",
       "emptyTitle": "¿Listo para empezar?",
       "emptyBody": "Aún no tienes clases reservadas. Reserva tu primera sesión y da el primer paso hacia tus objetivos.",
-      "emptyCta": "Reservar una sesión"
+      "emptyCta": "Reservar una sesión",
+      "joinOpensAt": "Disponible desde las {time}"
     },
     "history": {
       "statCompleted": "Completadas",
@@ -841,7 +843,8 @@
       "deletionBlockedActivePack": "No puedes eliminar tu cuenta mientras te queden clases sin usar en un pack activo. Escribe a contacto@gustavoai.dev para solicitar el reembolso.",
       "deletionBlockedCancellableBookings": "No puedes eliminar tu cuenta mientras tengas clases reservadas que aún puedes cancelar. Cancélalas primero.",
       "deletionNotConfirmed": "La confirmación no coincide con el email de tu cuenta.",
-      "userNotFound": "No encontramos tu cuenta."
+      "userNotFound": "No encontramos tu cuenta.",
+      "classroomNotOpen": "El aula todavía no está abierta. Podrás entrar unos minutos antes de la hora de inicio."
     },
     "validation": {
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
@@ -1837,7 +1840,11 @@
           "pasaje": "pasaje {n}",
           "pregunta": "pregunta",
           "respuesta": "reserva para la respuesta",
-          "resumen": "resumen"
+          "resumen": "resumen",
+          "herramientas": "herramientas",
+          "pedido": "pedido del usuario",
+          "llamadas": "llamadas del turno {n}",
+          "observaciones": "observaciones del turno {n}"
         },
         "legend": {
           "sistema": "prompt de sistema",
@@ -1847,6 +1854,10 @@
           "pregunta": "pregunta",
           "respuesta": "reserva para la respuesta",
           "resumen": "resumen de los turnos viejos",
+          "herramientas": "herramientas: nombre, descripción y esquema",
+          "pedido": "pedido del usuario",
+          "llamadas": "llamadas: lo que pide el modelo",
+          "observaciones": "observaciones: lo que vuelve de las herramientas",
           "out": "fuera de la llamada"
         },
         "allFits": "Cabe todo: nadie tiene que decidir nada.",
@@ -1856,6 +1867,40 @@
         "dropped": "Fuera de la llamada: {parts}.",
         "slider": "Ventana de contexto",
         "sliderValue": "{tokens} tokens"
+      },
+      "agent-loop-trace": {
+        "groupAria": "El bucle del agente paso a paso: la lista de mensajes M, lo que hace el harness en cada paso y el entorno",
+        "steps": {
+          "inicio": "Antes del primer turno, M tiene {n} mensajes: el prompt de sistema y el pedido del usuario.",
+          "llamar": "Turno {turno}. El harness llama al modelo con los {n} mensajes de M, y nada más.",
+          "responder": "Turno {turno}. La respuesta entra entera en M, como mensaje del asistente. {n, plural, =0 {No pide nada.} one {Pide una llamada.} other {Pide # llamadas.}}",
+          "ejecutar": "Turno {turno}. El harness comprueba {id} contra el esquema de {name} y la ejecuta. El entorno no cambia.",
+          "ejecutarCambia": "Turno {turno}. El harness comprueba {id} contra el esquema de {name} y la ejecuta: cambia {ruta}.",
+          "ejecutarEsquema": "Turno {turno}. {id} no cumple el esquema de {name}: el harness no la ejecuta ni pregunta nada, y su observación es un error que dice por qué.",
+          "ejecutarFalla": "Turno {turno}. El harness comprueba {id} contra el esquema de {name} y la ejecuta, y la función falla: su observación es un error con el mensaje de la excepción.",
+          "ejecutarLectura": "Turno {turno}. {id} cumple el esquema de {name}, que es de lectura: la tabla de permisos la permite sin preguntar, y el harness la ejecuta. El entorno no cambia.",
+          "ejecutarSi": "Turno {turno}. {id} cumple el esquema de {name}, que es de escritura: el harness le pregunta al usuario, que dice que sí, y la ejecuta: cambia {ruta}.",
+          "ejecutarNo": "Turno {turno}. {id} cumple el esquema de {name}, que es de escritura: el harness le pregunta al usuario, que dice que no. No se ejecuta, y su observación es un error que lo dice.",
+          "ejecutarDenegada": "Turno {turno}. La tabla de permisos deniega {id} ({name}) sin preguntar: no se ejecuta, y su observación es un error que lo dice.",
+          "observar": "Turno {turno}. {n, plural, one {La observación entra en M en un mensaje del usuario, con el id de su llamada.} other {Las # observaciones entran en M en un solo mensaje del usuario, cada una con el id de su llamada.}}",
+          "fin": "Turno {turno}. La respuesta no tiene ningún tool_use: el bucle termina y devuelve su texto.",
+          "tope": "Se ha llegado al tope: {tope} turnos, y el modelo sigue pidiendo. El bucle para sin nada que contestar al usuario, y el entorno se queda como esté."
+        },
+        "mTitle": "M: {n} mensajes",
+        "mTitleSeen": "M: {n} mensajes. En su última llamada, el modelo recibió los {visto} primeros",
+        "mAria": "La lista de mensajes M, con {n} mensajes",
+        "stepTitle": "Este paso",
+        "inicioLine": "M = [sistema, usuario]",
+        "callLine": "modelo(M, herramientas), con M de {n} mensajes",
+        "returns": "devuelve fin,",
+        "returnsTope": "devuelve tope: no hay texto que darle al usuario",
+        "askYes": "preguntar({id}): sí",
+        "askNo": "preguntar({id}): no",
+        "entornoTitle": "El entorno",
+        "entornoHidden": "El modelo no ve el entorno. Lo que sabe de él le ha llegado en M, en las observaciones.",
+        "entornoAria": "El entorno: cada fichero con su contenido",
+        "seenToggle": "Lo que ve el modelo",
+        "topeLabel": "Tope de turnos"
       }
     }
   },
@@ -1906,7 +1951,16 @@
       "session2h": "Sesión extendida · 2 horas",
       "pack": "Clase de pack",
       "signIn": "Inicia sesión para acceder a tu sesión.",
-      "continueGoogle": "Continuar con Google"
+      "continueGoogle": "Continuar con Google",
+      "notOpenEyebrow": "Aún no ha empezado",
+      "notOpenTitle": "El aula se abre a las {time}",
+      "notOpenBody": "Tu {session} empieza el {date} a las {start}. Podrás entrar al aula {minutes} minutos antes; esta página se actualizará sola cuando se abra.",
+      "notOpenCountdown": "Se abre en {time}",
+      "goToPersonalArea": "Ir a mi área personal",
+      "unavailableEyebrow": "Enlace no disponible",
+      "unavailableTitle": "Esta clase ya no está disponible",
+      "unavailableBody": "Puede que se haya cancelado, que se haya reprogramado (el email de la nueva reserva trae su propio enlace) o que ya haya terminado. Tus próximas clases están en tu área personal.",
+      "unavailableHelp": "¿Crees que es un error? Escríbeme a contacto@gustavoai.dev"
     },
     "cancelar": {
       "invalidLink": "Enlace de cancelación inválido.",

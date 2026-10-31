@@ -13,6 +13,9 @@
  * ADMIN-USERS-01: the low-credit tile and list are gone. In their place, «Créditos sin
  * reservar»: users holding pack credits not yet booked, soonest expiry first, so a reminder
  * can go out before they lapse.
+ * SESSION-JOIN-01: a confirmed class stays on the agenda until it ENDS (was: until it
+ * starts), so its join link is still here when the tutor opens the panel at the hour;
+ * the spotlight says «En curso» once it has started.
  */
 
 import Link from "next/link";
@@ -64,7 +67,7 @@ export default async function AdminDashboard() {
   // eslint-disable-next-line react-hooks/purity -- Server Component: renders once per request, never re-renders on the client.
   const now = Date.now();
   const upcoming = bookings
-    .filter((b) => b.status === "confirmed" && new Date(b.starts_at).getTime() > now)
+    .filter((b) => b.status === "confirmed" && new Date(b.ends_at).getTime() > now)
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
     .slice(0, AGENDA_SIZE);
   const next = upcoming[0];
@@ -162,7 +165,9 @@ export default async function AdminDashboard() {
               <span className="overline">Próxima sesión</span>
               <span className="next-session-countdown">
                 <span className="next-session-live" aria-hidden="true" />
-                Empieza {relativeTime(next.starts_at)}
+                {new Date(next.starts_at).getTime() <= now
+                  ? "En curso"
+                  : `Empieza ${relativeTime(next.starts_at)}`}
               </span>
             </div>
             <div className="next-session-main">

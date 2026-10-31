@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img"
+ aria-label="Two diagrams, each in two lanes: on top what is done once, below what is done for every question. RAG: once, documents, split into fragments, embed each fragment, and an index; for every question, the question, search for the k nearest fragments, build the prompt from the question and the fragments, and the model answers. CAG: once, the 40 whole documents, prefill, and the stored KV cache; for every question, the cache plus the question, the model answers, and the cache is trimmed back to the end of the policies.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .br { fill: none; stroke: #86948a; stroke-width: 1; }
+  .br.m { stroke: #4edea3; }
+  .br.w { stroke: #e8a24c; }
+  .br.x { stroke: #ffb4ab; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="lb" x="20.0" y="44.0" style="text-anchor:start">RAG</text>
+<text class="hd" x="60.0" y="42.0">ONCE</text>
+<text class="hd" x="60.0" y="104.0">EVERY QUESTION</text>
+<rect class="bx " x="172.0" y="18.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="234.0" y="42.0">Documents</text>
+<rect class="bx " x="318.0" y="18.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="380.0" y="36.0">Split</text>
+<text class="sb" x="380.0" y="50.0">into fragments</text>
+<path class="ar" d="M298.0,38.0 L315.0,38.0"/>
+<rect class="bx " x="464.0" y="18.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="526.0" y="36.0">Embed</text>
+<text class="sb" x="526.0" y="50.0">each fragment</text>
+<path class="ar" d="M444.0,38.0 L461.0,38.0"/>
+<rect class="bx m" x="610.0" y="18.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb m" x="672.0" y="36.0">Index</text>
+<text class="sb" x="672.0" y="50.0">vectors and text</text>
+<path class="ar" d="M590.0,38.0 L607.0,38.0"/>
+<rect class="bx " x="172.0" y="80.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="234.0" y="104.0">Question</text>
+<rect class="bx " x="318.0" y="80.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="380.0" y="98.0">Search</text>
+<text class="sb" x="380.0" y="112.0">the k nearest</text>
+<path class="ar" d="M298.0,100.0 L315.0,100.0"/>
+<rect class="bx " x="464.0" y="80.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="526.0" y="98.0">Prompt</text>
+<text class="sb" x="526.0" y="112.0">question + fragments</text>
+<path class="ar" d="M444.0,100.0 L461.0,100.0"/>
+<rect class="bx " x="610.0" y="80.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="672.0" y="98.0">Model</text>
+<text class="sb" x="672.0" y="112.0">answers</text>
+<path class="ar" d="M590.0,100.0 L607.0,100.0"/>
+<path class="ar m" d="M672.0,58.0 L672.0,70.0 L380.0,70.0 L380.0,78.0"/>
+<text class="lb" x="20.0" y="194.0" style="text-anchor:start">CAG</text>
+<text class="hd" x="60.0" y="192.0">ONCE</text>
+<text class="hd" x="60.0" y="254.0">EVERY QUESTION</text>
+<rect class="bx " x="172.0" y="168.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="234.0" y="186.0">Documents</text>
+<text class="sb" x="234.0" y="200.0">all 40, whole</text>
+<rect class="bx " x="318.0" y="168.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="380.0" y="186.0">Prefill</text>
+<text class="sb" x="380.0" y="200.0">32,000 tokens</text>
+<path class="ar" d="M298.0,188.0 L315.0,188.0"/>
+<rect class="bx m" x="464.0" y="168.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb m" x="526.0" y="186.0">KV cache</text>
+<text class="sb" x="526.0" y="200.0">stored</text>
+<path class="ar" d="M444.0,188.0 L461.0,188.0"/>
+<rect class="bx " x="172.0" y="230.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="234.0" y="254.0">Cache + question</text>
+<rect class="bx " x="318.0" y="230.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="380.0" y="248.0">Model</text>
+<text class="sb" x="380.0" y="262.0">answers</text>
+<path class="ar" d="M298.0,250.0 L315.0,250.0"/>
+<rect class="bx " x="464.0" y="230.0" width="124.0" height="40.0" rx="6"/>
+<text class="lb" x="526.0" y="248.0">Trim</text>
+<text class="sb" x="526.0" y="262.0">back to the policies</text>
+<path class="ar" d="M444.0,250.0 L461.0,250.0"/>
+<path class="ar m" d="M526.0,208.0 L526.0,220.0 L234.0,220.0 L234.0,228.0"/>
+<path class="ar m" d="M526.0,270.0 L526.0,284.0 L234.0,284.0 L234.0,273.0"/>
+<line x1="20" y1="150" x2="740" y2="150" stroke="#2a2a2c"/>
+</svg>

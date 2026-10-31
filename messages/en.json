@@ -288,7 +288,8 @@
       "cancelConfirmTitle": "Cancel this session?",
       "cancelConfirmBody": "This action cannot be undone. If it's a pack class, the credit will be returned automatically.",
       "keepSession": "Keep",
-      "confirmCancel": "Yes, cancel"
+      "confirmCancel": "Yes, cancel",
+      "joinOpensAt": "The classroom opens at {time}"
     },
     "packStatus": {
       "essentialPack": "Essential Pack 5h",
@@ -322,7 +323,8 @@
       "zoomShort": "Zoom",
       "emptyTitle": "Ready to get started?",
       "emptyBody": "You have no classes booked yet. Book your first session and take the first step toward your goals.",
-      "emptyCta": "Book a session"
+      "emptyCta": "Book a session",
+      "joinOpensAt": "Available from {time}"
     },
     "history": {
       "statCompleted": "Completed",
@@ -841,7 +843,8 @@
       "deletionBlockedActivePack": "You cannot delete your account while you have unused classes in an active pack. Write to contacto@gustavoai.dev to request a refund.",
       "deletionBlockedCancellableBookings": "You cannot delete your account while you have booked classes you can still cancel. Cancel them first.",
       "deletionNotConfirmed": "The confirmation does not match your account email.",
-      "userNotFound": "We could not find your account."
+      "userNotFound": "We could not find your account.",
+      "classroomNotOpen": "The classroom isn't open yet. You can enter a few minutes before the start time."
     },
     "validation": {
       "invalidRequest": "The submitted data is not valid. Check the form and try again."
@@ -1837,7 +1840,11 @@
           "pasaje": "passage {n}",
           "pregunta": "question",
           "respuesta": "reserve for the response",
-          "resumen": "summary"
+          "resumen": "summary",
+          "herramientas": "tools",
+          "pedido": "the user's request",
+          "llamadas": "turn {n} calls",
+          "observaciones": "turn {n} observations"
         },
         "legend": {
           "sistema": "system prompt",
@@ -1847,6 +1854,10 @@
           "pregunta": "question",
           "respuesta": "reserve for the response",
           "resumen": "summary of the old turns",
+          "herramientas": "tools: name, description and schema",
+          "pedido": "the user's request",
+          "llamadas": "calls: what the model asks for",
+          "observaciones": "observations: what the tools return",
           "out": "left out of the call"
         },
         "allFits": "Everything fits: nobody has to decide anything.",
@@ -1856,6 +1867,40 @@
         "dropped": "Left out of the call: {parts}.",
         "slider": "Context window",
         "sliderValue": "{tokens} tokens"
+      },
+      "agent-loop-trace": {
+        "groupAria": "The agent loop step by step: the messages list M, what the harness does at each step, and the environment",
+        "steps": {
+          "inicio": "Before the first turn, M holds {n} messages: the system prompt and the user's request.",
+          "llamar": "Turn {turno}. The harness calls the model with the {n} messages in M, and nothing else.",
+          "responder": "Turn {turno}. The response goes into M whole, as an assistant message. {n, plural, =0 {It asks for nothing.} one {It makes one call.} other {It makes # calls.}}",
+          "ejecutar": "Turn {turno}. The harness checks {id} against the schema of {name} and runs it. The environment does not change.",
+          "ejecutarCambia": "Turn {turno}. The harness checks {id} against the schema of {name} and runs it: {ruta} changes.",
+          "ejecutarEsquema": "Turn {turno}. {id} does not meet the schema of {name}: the harness neither runs it nor asks anyone, and its observation is an error that says why.",
+          "ejecutarFalla": "Turn {turno}. The harness checks {id} against the schema of {name} and runs it, and the function fails: its observation is an error carrying the exception's message.",
+          "ejecutarLectura": "Turn {turno}. {id} meets the schema of {name}, a read tool: the permission table allows it without asking, and the harness runs it. The environment does not change.",
+          "ejecutarSi": "Turn {turno}. {id} meets the schema of {name}, a write tool: the harness asks the user, who says yes, and runs it: {ruta} changes.",
+          "ejecutarNo": "Turn {turno}. {id} meets the schema of {name}, a write tool: the harness asks the user, who says no. It does not run, and its observation is an error that says so.",
+          "ejecutarDenegada": "Turn {turno}. The permission table denies {id} ({name}) without asking: it does not run, and its observation is an error that says so.",
+          "observar": "Turn {turno}. {n, plural, one {The observation goes into M in a user message, with the id of its call.} other {The # observations go into M in a single user message, each with the id of its call.}}",
+          "fin": "Turn {turno}. The response has no tool_use: the loop ends and returns its text.",
+          "tope": "The cap is reached: {tope} turns, and the model is still asking. The loop stops with nothing to tell the user, and the environment stays as it is."
+        },
+        "mTitle": "M: {n} messages",
+        "mTitleSeen": "M: {n} messages. At its latest call, the model received the first {visto}",
+        "mAria": "The messages list M, with {n} messages",
+        "stepTitle": "This step",
+        "inicioLine": "M = [sistema, usuario]",
+        "callLine": "modelo(M, herramientas), with M of {n} messages",
+        "returns": "returns fin,",
+        "returnsTope": "returns tope: there is no text to give the user",
+        "askYes": "preguntar({id}): yes",
+        "askNo": "preguntar({id}): no",
+        "entornoTitle": "The environment",
+        "entornoHidden": "The model does not see the environment. What it knows of it reached it in M, in the observations.",
+        "entornoAria": "The environment: each file with its contents",
+        "seenToggle": "What the model sees",
+        "topeLabel": "Turn cap"
       }
     }
   },
@@ -1906,7 +1951,16 @@
       "session2h": "Extended session · 2 hours",
       "pack": "Pack class",
       "signIn": "Sign in to access your session.",
-      "continueGoogle": "Continue with Google"
+      "continueGoogle": "Continue with Google",
+      "notOpenEyebrow": "Not started yet",
+      "notOpenTitle": "The classroom opens at {time}",
+      "notOpenBody": "Your {session} starts on {date} at {start}. You can enter the classroom {minutes} minutes before; this page will update by itself when it opens.",
+      "notOpenCountdown": "Opens in {time}",
+      "goToPersonalArea": "Go to my personal area",
+      "unavailableEyebrow": "Link unavailable",
+      "unavailableTitle": "This class is no longer available",
+      "unavailableBody": "It may have been cancelled, rescheduled (the new booking's email has its own link) or already finished. Your upcoming classes are in your personal area.",
+      "unavailableHelp": "Think this is a mistake? Write to me at contacto@gustavoai.dev"
     },
     "cancelar": {
       "invalidLink": "Invalid cancellation link.",

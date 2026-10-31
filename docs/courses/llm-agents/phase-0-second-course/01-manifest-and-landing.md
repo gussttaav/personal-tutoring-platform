@@ -126,7 +126,8 @@ sense — it is the one search query that lands here, in both languages.
   card. The card appears by itself with the first `draft: false` lesson (P1-01's last PR).
 - `level` is rendered raw. `avanzado` / `advanced`, lowercase, like `intermedio`.
 - The FAQ's hardware numbers (16 GB, ~5 GB, 8 GB) are the same numbers P1-05 verifies. If P1-05
-  changes them, this file changes in the same PR.
+  changes them, this file changes in the same PR. **Changed by P1-05 (2026-10-30):** one verified
+  model, 8 GB of RAM and a ~2.5 GB model; the FAQ in both manifests says so.
 - The `heroMotif` enum member `attention-matrix` is deliberately NLP-specific (see the comment on
   `CourseHeroMotif`). A second motif is a design task; the manifest omits the key until one
   exists.

@@ -40,7 +40,7 @@ faq:
   - q: "How long will it take?"
     a: "Around 40 hours if you do the exercises and the final project. Go at your own pace; there are no deadlines."
   - q: "What do I need to install?"
-    a: "Nothing until block 5. The first four blocks run in the browser, Python included. Block 5 builds a terminal program against a language model running on your machine: Ollama and a model of about 5 GB. A computer with 16 GB of RAM and no GPU is enough; with 8 GB there is a smaller model that also works."
+    a: "Nothing until block 5. The first four blocks run in the browser, Python included. Block 5 builds a terminal program against a language model running on your machine: Ollama and a model of about 2.5 GB. A computer with 8 GB of RAM and no GPU is enough; with more memory you can swap in a bigger model without changing the code."
   - q: "Is there as much maths as in the first course?"
     a: "At the start yes, at the end no, and that is on purpose. Blocks 1 and 2 derive; block 3 mixes; blocks 4 and 5 are engineering: contracts, protocols and a program that grows lesson by lesson. The title goes from the maths to the systems, and so does the course."
   - q: "Do I build a real Claude Code?"

@@ -6,7 +6,8 @@
  * before the Zoom Video SDK session starts.
  *
  * Access control:
- *  - Invalid/used token → redirect to homepage.
+ *  - Invalid/used token → "this class is no longer available" screen (SESSION-JOIN-01;
+ *    was a silent redirect to `/`, which bounced signed-in users to their landing).
  *  - Valid token, not signed in → Google sign-in prompt with callbackUrl preserving the token.
  *  - Valid token, signed in → PreJoinSetup (device preview + "Entrar al aula").
  *
@@ -18,13 +19,21 @@
  * PreJoinSetup mounts PackBookingOverlay, whose BookingModeView reads the booking
  * schedule, which the root layout no longer provides. The sign-in prompt books
  * nothing, so it goes without (its footer modal fetches `/api/policy` on open).
+ *
+ * SESSION-JOIN-01: a signed-in student before the classroom opens
+ * (start − booking_settings.join_open_minutes_before) sees ClassroomNotOpenYet,
+ * which refreshes this page when it opens. The admin (tutor) may enter any time.
+ * SessionService.issueJoinToken enforces the same rule server-side.
  */
 
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { toZonedTime } from "date-fns-tz";
 import { bookingService } from "@/services";
 import { auth } from "@/auth";
+import { isAdmin } from "@/lib/admin";
+import { getScheduleConfig } from "@/lib/schedule-config";
+import { DEFAULT_JOIN_OPEN_MINUTES, joinOpensAtMs } from "@/lib/booking-config";
+import { ClassroomNotOpenYet, ClassroomUnavailable } from "@/components/ClassroomStatus";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
@@ -57,7 +66,15 @@ export default async function SesionPage({
   const t = await getTranslations("pages.sesion");
 
   const record = await bookingService.getJoinInfo(token);
-  if (!record) redirect("/");
+  if (!record) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background">
+        <Navbar />
+        <ClassroomUnavailable />
+        <Footer />
+      </div>
+    );
+  }
 
   const SESSION_LABELS: Record<string, string> = {
     free15min: t("free"),
@@ -88,6 +105,27 @@ export default async function SesionPage({
         <Footer />
       </div>
     );
+  }
+
+  // ── Too early (SESSION-JOIN-01) ────────────────────────────────────────────
+  if (!isAdmin(session)) {
+    const schedule  = await getScheduleConfig();
+    const opensAtMs = joinOpensAtMs(record.startsAt, schedule);
+    // eslint-disable-next-line react-hooks/purity -- Server Component: renders once per request.
+    if (Date.now() < opensAtMs) {
+      return (
+        <div className="flex flex-col min-h-screen bg-background">
+          <Navbar />
+          <ClassroomNotOpenYet
+            startIso={record.startsAt}
+            opensAtIso={new Date(opensAtMs).toISOString()}
+            sessionLabel={sessionLabel}
+            openMinutesBefore={schedule.joinOpenMinutesBefore ?? DEFAULT_JOIN_OPEN_MINUTES}
+          />
+          <Footer />
+        </div>
+      );
+    }
   }
 
   // ── Authenticated ──────────────────────────────────────────────────────────
