@@ -601,3 +601,29 @@ None. Object language: *harness*, *compactación*, *sandbox*, *subagente*, *prot
 terminology table. Product names only in `reading` (the AUTHORING delta's product-name rule). The
 one quantity the block counts, the window — `tokens(M)` against `umbral` — is code, and stays
 code.
+
+**From lesson 34 on, the entorno is a folder and the herramientas are a package**
+(`COURSE-C2-P1-05`, lesson 34, tag `b5-l3`). The `entorno` that `bucle` and `permisos.ejecutar`
+pass along is now the path of the `carpeta de trabajo`; every `ruta` is relative to it, and nothing
+confines it until lesson 37. `herramientas/` holds one file per herramienta, each with three parts
+for three readers: `HERRAMIENTA` (the `{"name", "description", "input_schema"}` the model reads),
+`CLASE` (what the permiso reads; `permisos.py` imports `CLASES` instead of declaring it) and the
+function `f(entorno, **argumentos)`; `herramientas/comun.py` has `objeto` (moved from `entorno.py`)
+and `visible` (no path component starting with `.`, no `__pycache__`). `entorno.py` keeps the
+bloques, `muestra`, `incumple` and `ENTORNO`, now only the tests' files, and re-exports
+`FUNCIONES` / `HERRAMIENTAS`, so `bucle.py` is unchanged. The five contracts: `leer(ruta)` — a
+file's text, or a folder's entries one per line, paths from the carpeta, folders ending in `/`
+(Block 4's `listar` is gone); `buscar(patron, ruta)` — every line containing `patron` ignoring
+case, in a file or a folder's tree, as `ruta:n: línea`, and a no-match answered with the sentence
+`ninguna línea contiene … en …` (still `is_error` false; the Block 4 empty string is gone);
+`editar(ruta, antiguo, nuevo)` — `antiguo` must appear exactly once, else a `ValueError` that says
+whether it appeared 0 or N times and that nothing changed (an empty `antiguo` counts as 0), and on
+success `editado <ruta> en la línea <n>`; `escribir(ruta, contenido)` — **creates** a file (with its
+folders) and raises `FileExistsError` on one that exists, so an existing file changes only through
+`editar`; `ejecutar(comando)` — `shell=True` in the carpeta, `código de salida N\n--- stdout\n…---
+stderr\n…` for any código, and `TimeoutError("no ha terminado en 30 s y se ha detenido")` past
+`LIMITE = 30` (not «no se ha ejecutado»: lesson 28's rule). The tests write `ENTORNO` into a
+`tempfile.TemporaryDirectory()` and compare `ficheros(carpeta)` with the expected dict; their
+expected observaciones are Block 4's, except the tortilla's `t6`, now an `editar`.
+`correr.py <carpeta> <pedido>` runs on a `tempfile.mkdtemp()` copy and its usuario is `input()`
+at the terminal (`[s/N]`), the real permiso prompt still being lesson 37's.
