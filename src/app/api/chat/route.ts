@@ -13,9 +13,15 @@
  *           kill-switch counter moved to `chat:requests:<date>`.
  *   CHAT-CONTENT-01: the prompt also carries the published courses and blog posts,
  *           read from the content registries (no DB call, no network).
+ *   CHAT-AGENT-P1-02: the body is parsed with ChatRequestSchema (adds `timezone`
+ *           and `voice`); the route builds the ToolContext from the server session
+ *           (never from the model) and answers `{ reply, sessionId, actions }`. The
+ *           kill switch counts model calls (a tool loop makes several per reply):
+ *           pre-check on the current value, `incrby` after the call.
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { buildChatSystemPrompt } from "@/constants/chat-prompt";
 import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
 import { getScheduleConfig } from "@/lib/schedule-config";
@@ -28,10 +34,24 @@ import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
 import { getSession } from "@/lib/session";
 import { kv } from "@/infrastructure/redis/client";
+import { ChatRequestSchema } from "@/lib/schemas"; // CHAT-AGENT-P1-02
+import type { ToolContext } from "@/infrastructure/anthropic";
 import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
-const MAX_MESSAGE_LENGTH        = 1000;
-const MAX_DAILY_CHAT_REQUESTS   = 1000;
+const MAX_DAILY_CHAT_REQUESTS   = 1000; // model calls per day (CHAT-AGENT-P1-02)
+
+// CHAT-AGENT-P1-02: the tool loop's own deadline is 20 s; this makes the cap explicit.
+export const maxDuration = 25;
+
+/** CHAT-AGENT-P1-02: adds this reply's model calls to today's kill-switch counter. */
+async function countModelCalls(todayKey: string, modelCalls: number): Promise<void> {
+  try {
+    const total = await kv.incrby(todayKey, modelCalls);
+    if (total === modelCalls) await kv.expire(todayKey, 86400);
+  } catch (err) {
+    log("warn", "Chat kill-switch counter not updated", { service: "chat", error: String(err) });
+  }
+}
 
 async function postHandler(req: NextRequest) {
   // ── CSRF ───────────────────────────────────────────────────────────────────
@@ -78,10 +98,10 @@ async function postHandler(req: NextRequest) {
 
   // REFACTOR-P2-03: Daily spend kill-switch. Per-IP rate limits cap individual
   // abusers; this caps total cost across all users for the day.
+  // CHAT-AGENT-P1-02: checked here, counted after the call (by model calls).
   const todayKey   = `chat:requests:${new Date().toISOString().slice(0, 10)}`;
-  const todaySpend = await kv.incr(todayKey);
-  if (todaySpend === 1) await kv.expire(todayKey, 86400);
-  if (todaySpend > MAX_DAILY_CHAT_REQUESTS) {
+  const todaySpend = (await kv.get<number>(todayKey)) ?? 0;
+  if (todaySpend >= MAX_DAILY_CHAT_REQUESTS) {
     log("error", "Chat daily request cap exceeded — circuit open", {
       service: "chat",
       todaySpend,
@@ -101,19 +121,19 @@ async function postHandler(req: NextRequest) {
   }
 
   // REFACTOR-P2-03: `history` field is intentionally NOT read — history is
-  // server-side. Kept absent from destructuring to make that explicit.
-  const { message, sessionId } = body as Record<string, unknown>;
-
-  if (typeof message !== "string" || !message.trim()) {
-    return NextResponse.json({ error: "El mensaje no puede estar vacío" }, { status: 400 });
+  // server-side. The schema strips it.
+  const parsed = ChatRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const error =
+      issue?.path[0] !== "message" ? "Cuerpo de petición inválido"
+      : issue.code === "too_big"   ? "Mensaje demasiado largo"
+      :                              "El mensaje no puede estar vacío";
+    return NextResponse.json({ error }, { status: 400 });
   }
-  if (message.length > MAX_MESSAGE_LENGTH) {
-    return NextResponse.json({ error: "Mensaje demasiado largo" }, { status: 400 });
-  }
+  const { message, sessionId, timezone } = parsed.data;
 
-  const normalizedSessionId =
-    typeof sessionId === "string" && sessionId.length === 36 ? sessionId : null;
-
+  let modelCalls = 0;
   try {
     // Inject live prices + policy figures so the assistant never quotes outdated
     // values (all three reads are cached, so this isn't a per-request DB hit).
@@ -127,6 +147,9 @@ async function postHandler(req: NextRequest) {
     // theirs, or the assistant would contradict the prices on the page they are
     // looking at. Costs one uncached read, and only when signed in; anonymous
     // visitors keep the cached global figures above.
+    // CHAT-AGENT-P1-02: one lookup serves the private prices and the ToolContext.
+    const user = isAuthenticated ? await userService.findByEmail(session.user!.email!) : null;
+
     let priceCents = {
       session1h: prices.session1h.priceCents,
       session2h: prices.session2h.priceCents,
@@ -134,7 +157,6 @@ async function postHandler(req: NextRequest) {
       pack10:    prices.pack10.priceCents,
     };
     if (isAuthenticated) {
-      const user = await userService.findByEmail(session.user!.email!);
       if (user && (await pricingService.hasUserOverrides(user.id))) {
         const own = await pricingService.getPublicPricing(user.id);
         const byKey = new Map(
@@ -161,18 +183,40 @@ async function postHandler(req: NextRequest) {
       getChatPromptContent(),
     );
 
-    const { reply, sessionId: newSessionId } = await chatService.ask({
-      message: message.trim(),
-      sessionId: normalizedSessionId,
+    // CHAT-AGENT-P1-02: identity comes from the session, never from tool input.
+    const toolContext: ToolContext = {
+      userId:   user?.id ?? null,
+      email:    session?.user?.email ?? null,
+      timezone: timezone ?? schedule.timezone,
+      locale:   (await cookies()).get("NEXT_LOCALE")?.value === "en" ? "en" : "es",
+      now:      new Date(),
+    };
+
+    const result = await chatService.ask({
+      message,
+      sessionId: sessionId ?? null,
       systemPrompt,
+      toolContext,
     });
-    return NextResponse.json({ reply, sessionId: newSessionId });
+    modelCalls = result.modelCalls;
+    log("info", "Chat reply", {
+      service: "chat", modelCalls, actions: result.actions.map((a) => a.type),
+    });
+    return NextResponse.json({
+      reply:     result.reply,
+      sessionId: result.sessionId,
+      actions:   result.actions,
+    });
   } catch (err) {
+    // A failed turn counts as one call, as every request did before the tool loop.
+    modelCalls = 1;
     log("error", "Chat model error", { service: "chat", error: String(err) });
     return NextResponse.json(
       { error: "Error al contactar con el asistente. Inténtalo de nuevo." },
       { status: 502 }
     );
+  } finally {
+    await countModelCalls(todayKey, modelCalls);
   }
 }
 
