@@ -1,0 +1,672 @@
+---
+slug: que-es-un-sandbox
+title: "Qué es un sandbox, qué no lo es y cuándo hace falta"
+date: "2026-11-03"
+minutes: 23
+summary: "Cada página web que abres ejecuta código de un desconocido, y no pasa nada porque algo que ese código no puede tocar decide qué le está permitido. Qué es un sandbox, de dónde viene, dónde se puede poner la frontera (en el lenguaje, en el proceso, en el núcleo o en el hipervisor), cuánto cuesta cada opción y cuándo elegirla, qué cosas se llaman sandbox sin serlo y cuándo no hace falta ninguno."
+draft: false
+reading:
+  - kind: paper
+    title: "Efficient Software-Based Fault Isolation"
+    authors: "Robert Wahbe, Steven Lucco, Thomas E. Anderson y Susan L. Graham"
+    year: "1993"
+    venue: "SOSP 1993"
+    lang: en
+    url: "https://homes.cs.washington.edu/~tom/pubs/sfi.pdf"
+    note: "El artículo que dio a «sandboxing» su sentido actual: reescribir el código no fiable para que cada acceso a memoria y cada salto se queden en su región. La sección 3 es la técnica entera, en cuatro instrucciones."
+  - kind: paper
+    title: "A Secure Environment for Untrusted Helper Applications: Confining the Wily Hacker"
+    authors: "Ian Goldberg, David Wagner, Randi Thomas y Eric A. Brewer"
+    year: "1996"
+    venue: "USENIX Security 1996"
+    lang: en
+    url: "https://www.usenix.org/conference/6th-usenix-security-symposium/secure-environment-untrusted-helper-applications"
+    note: "Janus: filtrar las llamadas al sistema de un programa que no se ha escrito uno. Es la idea de seccomp y del sandbox de Chrome quince años antes, y la sección 2 explica por qué se filtra ahí y no en otro sitio."
+  - kind: paper
+    title: "The Security Architecture of the Chromium Browser"
+    authors: "Adam Barth, Collin Jackson, Charles Reis y el equipo de Google Chrome"
+    year: "2008"
+    venue: "Informe técnico de Stanford y Google"
+    lang: en
+    url: "https://css.csail.mit.edu/6.858/2018/readings/chromium.pdf"
+    note: "Cómo se partió un navegador en un proceso con privilegios y otro encerrado que lee la web. La sección 5 mide, sobre los fallos de un año de los otros navegadores, cuántos habría contenido: un 70 % de los críticos."
+  - kind: paper
+    title: "Site Isolation: Process Separation for Web Sites within the Browser"
+    authors: "Charles Reis, Alexander Moshchuk y Nasko Oskov"
+    year: "2019"
+    venue: "USENIX Security 2019"
+    lang: en
+    url: "https://www.usenix.org/conference/usenixsecurity19/presentation/reis"
+    note: "Lo que Chrome hizo después de Spectre: un proceso por sitio. Las secciones 2 y 6 cuentan por qué ya no bastaba con aislar dentro del proceso, y cuánto costó en memoria hacerlo fuera."
+  - kind: paper
+    title: "Spectre is here to stay: An analysis of side-channels and speculative execution"
+    authors: "Ross McIlroy, Jaroslav Ševčík, Tobias Tebbi, Ben L. Titzer y Toon Verwaest"
+    year: "2019"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/1902.05178"
+    note: "El equipo de V8 explica por qué ningún lenguaje puede garantizar que un programa no lea la memoria de otro que comparte su proceso. Es el argumento para poner la frontera más abajo, escrito por quien la tenía arriba."
+  - kind: paper
+    title: "Firecracker: Lightweight Virtualization for Serverless Applications"
+    authors: "Alexandru Agache, Marc Brooker, Andreea Florescu y otros"
+    year: "2020"
+    venue: "NSDI 2020"
+    lang: en
+    url: "https://www.usenix.org/conference/nsdi20/presentation/agache"
+    note: "Por qué AWS no se fiaba de los contenedores para aislar a sus clientes, y cómo construyó una máquina virtual que arranca en menos de 125 ms. La sección 2 compara las alternativas con mucha franqueza."
+  - kind: paper
+    title: "Blending Containers and Virtual Machines: A Study of Firecracker and gVisor"
+    authors: "Anjali, Tyler Caraza-Harter y Michael M. Swift"
+    year: "2020"
+    venue: "VEE 2020"
+    lang: en
+    url: "https://pages.cs.wisc.edu/~swift/papers/vee20-isolation.pdf"
+    note: "Contenedores, gVisor y Firecracker medidos uno junto a otro: qué llamadas al sistema se permite cada uno (tabla 1), cuánto código del núcleo anfitrión ejecutan (tabla 2) y dónde pierde cada uno rendimiento."
+  - kind: paper
+    title: "The Protection of Information in Computer Systems"
+    authors: "Jerome H. Saltzer y Michael D. Schroeder"
+    year: "1975"
+    venue: "Proceedings of the IEEE"
+    lang: en
+    url: "https://web.mit.edu/Saltzer/www/publications/protection/"
+    note: "Los ocho principios de diseño que se siguen citando cincuenta años después, entre ellos el mínimo privilegio y la mediación completa. La sección I.A.3 cabe en dos páginas y resume casi todo este artículo."
+  - kind: blog
+    title: "Cloud Computing without Containers"
+    authors: "Cloudflare"
+    year: "2018"
+    venue: "blog.cloudflare.com"
+    lang: en
+    url: "https://blog.cloudflare.com/cloud-computing-without-containers/"
+    note: "El caso a favor de aislar dentro de un proceso: miles de isolates de V8 que arrancan en 5 ms. Leído junto a «Spectre is here to stay», enseña las dos caras del mismo intercambio."
+  - kind: blog
+    title: "The pysandbox project is broken"
+    authors: "Victor Stinner"
+    year: "2013"
+    venue: "python-dev"
+    lang: en
+    url: "https://mail.python.org/pipermail/python-dev/2013-November/130132.html"
+    note: "Tres años intentando encerrar Python desde dentro de Python, y por qué su autor concluyó que el diseño estaba roto. Es la lección más corta sobre por qué la frontera no puede estar en el lenguaje que se quiere encerrar."
+areas: ["programacion"]
+cover: "/blog/que-es-un-sandbox/capas.svg"
+tags: ["seguridad", "infraestructura"]
+aiImages: true
+---
+
+{/*
+  BLOG-22 — Qué es un sandbox, qué no lo es y cuándo hace falta.
+
+  Primero de dos artículos. El segundo trata los sandboxes para agentes de IA; éste no los
+  menciona, y la frase que enlace al segundo se añade cuando se publique.
+
+  Tesis: un sandbox es una frontera que impone algo que el código de dentro no puede cambiar.
+  Elegir uno es decidir dónde poner esa frontera (en el lenguaje, en el proceso, en el núcleo, en
+  el hipervisor o en otra máquina), y la decisión depende de quién ataca y de cuánto hablan el
+  código aislado y su anfitrión.
+
+  Artículo conceptual: ningún número medido por nosotros. Los citados, leídos en sus fuentes:
+    - Anjali et al., VEE 2020: tabla 1 (llamadas permitidas al núcleo anfitrión, de 350: LXC
+      todas menos 44, Firecracker 36, gVisor 53 sin red del anfitrión y 68 con ella; gVisor
+      release-20200127.0, Firecracker v0.19.1); tabla 2 (líneas del núcleo ejecutadas, de 806 318:
+      anfitrión 7,83 %, Firecracker 9,59 %, LXC 11,23 %, gVisor 11,31 %); §3.2 (el Sentry implementa
+      237 llamadas, noviembre de 2019).
+    - Docker, documentación de seccomp: el perfil por defecto desactiva «unas 44 llamadas de más de
+      300».
+    - Firecracker (NSDI 2020): menos de 125 ms hasta el código de la aplicación, menos de 5 MiB por
+      microVM, hasta 150 por segundo y servidor.
+    - Cloudflare (9 nov 2018): un isolate arranca en 5 ms; 3 MB frente a 35 MB de un proceso de Node.
+    - Wasmtime 1.0 (sep 2022): instanciar SpiderMonkey.wasm pasa de unos 2 ms a 5 µs, con el
+      asignador de instancias en grupo (pooling allocator).
+    - Reis et al., USENIX Security 2019: Site Isolation cuesta entre un 9 % y un 13 % de memoria y
+      menos de un 2,25 % de tiempo de carga.
+    - Barth et al. 2008: la arquitectura de Chromium habría contenido un 70 % de los fallos críticos
+      de ejecución de código de los otros navegadores.
+    - CVE-2023-26489 (Wasmtime/Cranelift, x86-64, marzo de 2023): un módulo podía leer y escribir
+      fuera de su memoria lineal. CVE-2019-5736 (runc, 11 feb 2019): root dentro del contenedor
+      sobrescribe el binario runc del anfitrión. CVE-2015-3456 (VENOM, QEMU, mayo de 2015): el
+      controlador de disquete emulado. CVE-2016-3714 (ImageTragick, mayo de 2016).
+    - Fechas: CP-67 (1967), Multics (1969), Anderson (1972), Lampson (1973), chroot en la séptima
+      versión de Unix (1979), SFI (1993), applets de Java (1995), Janus (1996), jails en FreeBSD 4.0
+      (2000), seccomp en Linux 2.6.12 (2005), seccomp-bpf en Linux 3.5 (2012), cgroups en Linux
+      2.6.24 (2008), Chrome (sep 2008), Native Client (2009), Docker (2013), WebAssembly en los
+      cuatro navegadores (2017), Spectre (ene 2018), gVisor (may 2018), Firecracker (nov 2018),
+      Landlock en Linux 5.13 (2021), Security Manager de Java en desuso en JDK 17 (2021, JEP 411) y
+      desactivado en JDK 24 (2025, JEP 486), pysandbox abandonado (nov 2013), systrap como
+      plataforma por defecto de gVisor (mediados de 2023).
+
+  Figuras en public/blog/que-es-un-sandbox/, generadas por
+  scripts/figures/que-es-un-sandbox/make_svgs.py (Python sin dependencias; escribe el .svg y el
+  .en.svg de cada una). El alt de cada <img> es el aria-label del SVG: si cambia uno, cambia el otro.
+*/}
+
+Hoy has ejecutado código de decenas de desconocidos. Cada página web que abres trae su JavaScript,
+y el navegador lo ejecuta sin preguntarte. Cada vez que instalas un paquete con npm, el gestor de
+paquetes de JavaScript, los scripts de instalación de ese paquete y de sus dependencias se ejecutan
+en tu máquina. Cada PDF que abres pasa por un intérprete de un formato tan complejo que contiene su
+propio lenguaje de programación. Nadie ha revisado ese código por ti, y casi nunca pasa nada.
+
+No pasa nada porque, en casi todos esos casos, algo que ese código no puede tocar decide qué le
+está permitido. El JavaScript de una página no puede leer tus ficheros, aunque el navegador que lo
+ejecuta sí pueda. Esa pieza tiene nombre: un **entorno aislado** (*sandbox*, en inglés, el cajón de
+arena donde juegan los niños sin salir de él). La palabra se usa mucho y se aplica a cosas muy
+distintas, desde un intérprete con funciones recortadas hasta una máquina virtual por petición, y
+también a cosas que no aíslan nada.
+
+Este artículo cuenta qué es un sandbox, de dónde viene la idea, qué lo hace bueno, y las formas de
+construirlo, ordenadas por dónde ponen la frontera: dentro del lenguaje, con
+[WebAssembly](https://webassembly.org/), en el proceso con filtros como
+[seccomp](https://man7.org/linux/man-pages/man2/seccomp.2.html), en contenedores, con un núcleo
+propio como [gVisor](https://gvisor.dev/), con máquinas virtuales mínimas como
+[Firecracker](https://firecracker-microvm.github.io/) o en otra máquina. Después, cuándo elegir
+cada una, qué cosas se llaman sandbox sin serlo y cuándo no hace falta ninguno.
+
+## Qué es un sandbox
+
+Un sandbox es un entorno en el que se ejecuta código del que no te fías con menos permisos de los
+que tendría fuera, y en el que esos límites los impone algo que ese código no puede modificar. La
+segunda mitad es la que importa. Un programa que promete no leer tus ficheros no está en un
+sandbox; un programa que lo intenta y recibe un error del sistema operativo, sí.
+
+Todo sandbox tiene tres piezas:
+
+- **La frontera**: lo que separa el código aislado de todo lo demás. Puede ser un espacio de
+  memoria, un proceso, un núcleo de sistema operativo o una máquina entera.
+- **El punto de control**: el sitio por el que tiene que pasar cada petición que cruza la frontera,
+  y donde se decide si se atiende. En un proceso, son las llamadas al sistema (*system calls*), las
+  funciones con las que un programa le pide algo al núcleo del sistema operativo: abrir un fichero,
+  abrir una conexión, crear otro proceso.
+- **La política**: la lista de lo que está permitido. Puede ser tan simple como «nada de red» o tan
+  detallada como «puede leer este directorio, escribir en este otro y conectarse a este puerto».
+
+<figure>
+  <img
+    src="/blog/que-es-un-sandbox/monitor.svg"
+    alt="Las tres piezas de un sandbox. A la izquierda, dentro de una línea discontinua que marca la frontera, el código no fiable. Cada petición que hace sale de la frontera y pasa por un punto de control, fuera de su alcance, que la compara con la política: qué se permite y cuánto. A la derecha, los recursos y lo que la política decide para cada uno: los ficheros, sólo su directorio; la red, denegada; los demás procesos, denegados; la CPU y la memoria, con límite."
+    width="760"
+    height="206"
+  />
+  <figcaption>
+    El código aislado no toca los recursos: los pide, y el punto de control decide. La política
+    no sólo dice qué se permite, también cuánto: la CPU y la memoria también se pueden agotar.
+  </figcaption>
+</figure>
+
+Lo que un sandbox protege se suele resumir en tres palabras. La **confidencialidad**: que el código
+no lea lo que no debe, como tus claves o los datos de otro usuario. La **integridad**: que no
+modifique lo que no debe, como tus ficheros o el propio sistema. Y la **disponibilidad**: que no se
+quede con todo. Un bucle infinito o un programa que reserva memoria sin parar no roba nada, pero
+deja sin servicio a todos los demás, así que un sandbox completo también limita la CPU (el
+procesador), la memoria y el tiempo.
+
+La idea de punto de control tiene casi sesenta años. En 1972, un informe de James Anderson para la
+Fuerza Aérea de Estados Unidos la llamó **monitor de referencia** (*reference monitor*): el
+componente que comprueba cada acceso de un programa a un recurso. Y le puso tres condiciones que
+siguen siendo la mejor forma de juzgar un sandbox: tiene que intervenir **siempre**, sin ningún
+camino que lo esquive; tiene que ser **inalterable** por el código que vigila, y tiene que ser lo
+bastante **pequeño** como para poder revisarlo y convencerse de que es correcto. Tres años después,
+Jerome Saltzer y Michael Schroeder añadieron el principio que decide las políticas: el de **mínimo
+privilegio**, que cada programa tenga los permisos que necesita para su trabajo y ninguno más.
+
+## De dónde viene
+
+Las piezas son mucho más viejas que la palabra.
+
+En los años sesenta, los ordenadores se compartían entre muchos usuarios a la vez, y el problema
+era que el programa de uno no estropease el de otro. IBM respondió en 1967 con CP-67, que daba a
+cada usuario una **máquina virtual** propia: una copia simulada del ordenador entero, con su propio
+sistema operativo. Multics, el sistema operativo de tiempo compartido del MIT, General Electric y
+los laboratorios Bell, entró en servicio en 1969 con **anillos de protección**: niveles de
+privilegio en los que el código de un anillo exterior sólo puede pedir cosas al interior por
+puertas definidas. Los procesadores actuales siguen teniendo esos anillos, y el núcleo del sistema
+operativo vive en el más privilegiado.
+
+En 1973, Butler Lampson describió el **problema del confinamiento**: cómo ejecutar un programa de
+forma que no pueda comunicar a nadie lo que ha visto, salvo a quien lo llamó. Su respuesta fue que
+es más difícil de lo que parece, porque un programa puede filtrar información por canales que nadie
+diseñó para comunicarse, como cuánto tarda en responder.
+
+En 1979, la séptima versión de Unix incluyó `chroot`, que hace que un proceso vea un directorio
+cualquiera como si fuera la raíz del disco. No se diseñó para la seguridad, pero se usó para ella
+durante años (más adelante veremos por qué no basta).
+
+La palabra llegó en 1993. Robert Wahbe y sus coautores querían ejecutar código no fiable dentro del
+mismo proceso que el programa principal, sin pagar el coste de cambiar de proceso en cada llamada.
+Su técnica, el [aislamiento de fallos por software](https://homes.cs.washington.edu/~tom/pubs/sfi.pdf)
+(*software-based fault isolation*, SFI), reescribía el código no fiable para que cada acceso a
+memoria quedase forzado dentro de su región, y llamaron *sandboxing* a esa operación.
+
+En 1995 llegaron los *applets* de Java: programas que una página web descargaba y que la máquina
+virtual de Java ejecutaba con permisos recortados. Fue el primer sandbox que usó masivamente gente
+que no sabía que existía, y también el primero en enseñar lo difícil que es mantener uno: se
+descubrieron escapes durante años. Al año siguiente, Ian Goldberg, David Wagner y sus coautores
+presentaron [Janus](https://www.usenix.org/conference/6th-usenix-security-symposium/secure-environment-untrusted-helper-applications),
+que encerraba los programas auxiliares del navegador (los que abrían, por ejemplo, un PDF
+descargado) filtrando sus llamadas al sistema. Ésa es, casi tal cual, la idea que usa hoy Chrome.
+
+En 2000, FreeBSD, un sistema operativo de la familia de Unix, añadió las *jails*: `chroot` más aislamiento de procesos, usuarios y red, el
+antecedente directo de los contenedores. En 2005, Linux incorporó seccomp. Y en 2008 coincidieron
+dos cosas: Chrome salió con cada pestaña en un proceso encerrado, y Linux añadió los cgroups, que
+limitan cuánta CPU y memoria usa un grupo de procesos. Docker, una herramienta de contenedores, los
+popularizó en 2013, junto con los *namespaces*, como forma de empaquetar aplicaciones.
+
+En 2017, WebAssembly llegó a los cuatro navegadores principales. Y en enero de 2018 se publicó
+**Spectre**: una familia de ataques que aprovecha que los procesadores ejecutan instrucciones por
+adelantado, antes de saber si deben, para leer memoria a la que el programa no tiene acceso. Spectre
+rompió una suposición en la que se apoyaban muchos sandboxes: que si el lenguaje impide a dos
+programas del mismo proceso leer la memoria del otro, en la práctica tampoco pueden.
+Ese mismo año, Google publicó gVisor y AWS (*Amazon Web Services*, la nube de Amazon) publicó
+Firecracker, y en 2021 Linux añadió Landlock.
+
+<figure>
+  <img
+    src="/blog/que-es-un-sandbox/linea-de-tiempo.svg"
+    alt="Línea de tiempo, no a escala, de 1967 a 2021. Encima del eje, las ideas: el monitor de referencia en 1972, el problema del confinamiento en 1973, el aislamiento de fallos por software, que da nombre al sandboxing, en 1993, Janus en 1996 y Spectre en 2018. Debajo, los sistemas: CP-67 en 1967, los anillos de Multics en 1969, chroot en 1979, los applets de Java en 1995, las jails de FreeBSD en 2000, seccomp en 2005, Chrome en 2008, Docker en 2013, WebAssembly en 2017, gVisor y Firecracker en 2018 y Landlock en 2021."
+    width="760"
+    height="218"
+  />
+  <figcaption>
+    Cincuenta años de sandboxes. Las ideas de los setenta siguen siendo las que se usan para
+    juzgar los sistemas de ahora.
+  </figcaption>
+</figure>
+
+## Qué hace bueno a un sandbox
+
+Las tres condiciones de Anderson se traducen en preguntas concretas, y a ellas se suman las que
+decide el presupuesto.
+
+**¿Cuánto se puede atacar el punto de control?** Es la **superficie de ataque**: todo lo que el
+código aislado puede pedir, y que por tanto puede intentar usar mal. Linux ofrece más de 350
+llamadas al sistema, y cada una es un camino hacia el núcleo con su propio código y sus propios
+fallos. Un sandbox que deja pasar 300 tiene más puntos débiles que uno que deja pasar 36, y más
+abajo veremos que la diferencia entre unas técnicas y otras es justo ésa.
+
+**¿Cuánto cuesta?** Hay tres costes distintos: lo que tarda en **arrancar** un entorno nuevo, lo que
+se pierde en **cada operación** que cruza la frontera, y la **densidad**, cuántos entornos caben a
+la vez en una máquina. Van desde microsegundos y unos pocos megabytes hasta segundos y cientos de
+megabytes, y los números de cada técnica están en su sección.
+
+**¿Qué código funciona dentro?** Es la **compatibilidad**. Hay sandboxes que ejecutan cualquier
+programa de Linux sin tocarlo, y otros que sólo ejecutan JavaScript, o código compilado a un formato
+especial.
+
+**¿Qué se puede limitar?** Ficheros, red, otros procesos y recursos son cosas distintas, y no todos
+los mecanismos controlan todas. La red merece mención aparte: es el camino por el que sale lo que se
+ha leído.
+
+**¿Se puede tirar después?** Un entorno **efímero**, que se crea para una tarea y se destruye al
+acabar, no acumula nada que un atacante pueda dejar preparado para la siguiente.
+
+Y una última característica, que no es de ningún mecanismo sino de cómo se combinan: los sandboxes
+serios son **capas**. Chrome encierra cada página en un proceso, filtra sus llamadas al sistema y,
+desde Spectre, separa los sitios en procesos distintos. Firecracker se ejecuta, a su vez, dentro de
+un proceso con seccomp. La pregunta no es si una capa tiene fallos, porque todas los han tenido,
+sino si un solo fallo basta para salir.
+
+## Dónde se puede poner la frontera
+
+Las formas de construir un sandbox se distinguen sobre todo por una cosa: a qué altura ponen la
+frontera, y por tanto cuánto comparte el código aislado con todo lo demás. Cuanto más abajo, menos
+se comparte y más cuesta.
+
+<figure>
+  <img
+    src="/blog/que-es-un-sandbox/capas.svg"
+    alt="Siete formas de aislar un programa, en columnas, y cuatro capas en filas, de arriba abajo: el programa, el runtime del lenguaje, el núcleo del sistema operativo y el hardware. En cada columna, una línea naranja marca la frontera: lo que queda encima es sólo de ese programa, y lo que queda debajo lo comparte con los demás. Isolate de V8 y WebAssembly: la frontera está justo debajo del programa, y comparte el runtime, el núcleo y el hardware. Proceso con filtros, como seccomp o Landlock, y contenedor, con namespaces y cgroups: la frontera está encima del núcleo, que se comparte. gVisor: la frontera está dentro de la capa del núcleo, con un núcleo propio, el Sentry, encima del núcleo del anfitrión, que se comparte. MicroVM: la frontera es el hipervisor, KVM y el gestor de la máquina virtual, y sólo se comparte el hardware. Otra máquina: no se comparte nada; la frontera es la red."
+    width="760"
+    height="294"
+  />
+  <figcaption>
+    Lo que queda debajo de la línea es lo que un fallo puede alcanzar desde dentro. Por eso las
+    opciones de la derecha se usan cuando el código es de un desconocido.
+  </figcaption>
+</figure>
+
+### Dentro del lenguaje
+
+La frontera más alta es el propio intérprete. El programa aislado no tiene acceso a las funciones
+que tocan el sistema: el intérprete simplemente no se las ofrece. [Lua](https://www.lua.org/), un lenguaje pensado para
+integrarse en otros programas, lo permite de forma natural: se ejecuta el código con un entorno que
+no incluye las bibliotecas de ficheros ni de procesos. Los motores de JavaScript hacen lo mismo con
+cada página.
+
+Su versión más potente son los **isolates** de V8, el motor de JavaScript de Chrome: entornos
+independientes, cada uno con su propia memoria, dentro de un mismo proceso. Cloudflare los usa en
+[Workers](https://workers.cloudflare.com/), su plataforma de funciones en la nube, porque
+arrancan en unos 5 ms y cada uno ocupa unos 3 MB, frente a los 35 MB de un proceso de Node.js, el entorno de JavaScript para servidores, con el mismo
+código.
+
+El problema es que la frontera es el intérprete entero, con su compilador a código máquina (JIT,
+*just-in-time*), sus optimizaciones y millones de líneas de código, y cualquier fallo en él es un
+escape. En lenguajes que no se diseñaron para esto, además, la introspección deja demasiadas
+puertas abiertas. Victor Stinner pasó tres años construyendo
+[pysandbox](https://mail.python.org/pipermail/python-dev/2013-November/130132.html) para Python y lo
+abandonó en 2013 diciendo que estaba roto por diseño: cada objeto de Python lleva a otros objetos, y desde casi
+cualquiera se acaba llegando a las funciones peligrosas. Java recorrió el mismo camino más
+despacio: el [Security Manager](https://openjdk.org/jeps/486) que encerraba los applets se marcó
+para eliminar en 2021 y quedó desactivado para siempre en 2025.
+
+Y después llegó Spectre. En 2019, el equipo de V8 publicó un análisis cuya conclusión está en el
+título: [Spectre is here to stay](https://arxiv.org/abs/1902.05178). En los procesadores actuales,
+ninguna protección del lenguaje impide que un programa lea la memoria de otro que comparte su
+proceso, y no hay forma conocida de arreglarlo sólo con software. Chrome respondió con
+[Site Isolation](https://www.chromium.org/Home/chromium-security/site-isolation/), un proceso por
+sitio web, que cuesta entre un 9 % y un 13 % más de memoria.
+Desde entonces, aislar dentro de un proceso sólo es razonable si se combina con otras capas, como
+hace Cloudflare.
+
+### WebAssembly y el aislamiento de fallos por software
+
+La idea de Wahbe sigue viva, con otro nombre. [WebAssembly](https://webassembly.org/) (Wasm) es un formato de código de bajo
+nivel al que se compilan C, Rust, Go y otros lenguajes. Un módulo de Wasm tiene una única región de
+memoria, su **memoria lineal**, y el compilador que lo traduce a código máquina garantiza que cada
+acceso a memoria cae dentro de ella y que cada salto va a una función válida. No hay punteros hacia
+fuera, ni instrucciones para llamar al sistema: todo lo que el módulo puede hacer fuera de su
+memoria son las funciones que el anfitrión le pasa al crearlo.
+
+Ésa es la diferencia con un proceso: un proceso nace con todos los permisos de su usuario y hay que
+quitárselos; un módulo de Wasm nace sin ninguno y hay que dárselos. [WASI](https://wasi.dev/)
+(*WebAssembly System Interface*), la interfaz estándar de Wasm con el sistema, sigue ese modelo de
+**capacidades**: el módulo sólo puede abrir ficheros dentro de los directorios que el anfitrión le
+ha entregado expresamente.
+
+Es, además, la frontera más barata.
+[Wasmtime](https://bytecodealliance.org/articles/wasmtime-1-0-fast-safe-and-production-ready), uno
+de los entornos de ejecución de Wasm más usados, crea una instancia en unos 5 µs cuando reutiliza memoria ya reservada. Eso permite crear un entorno nuevo por petición, e incluso
+por llamada.
+
+Los límites son dos. El primero, la compatibilidad: el código tiene que compilarse a Wasm, y no
+todo programa existente lo hace. El segundo, que la frontera es el compilador, y los compiladores
+fallan: en 2023, [un fallo en Cranelift](https://osv.dev/vulnerability/CVE-2023-26489), el que usa
+Wasmtime, permitía a un módulo leer y escribir fuera de su memoria en procesadores x86-64. Y como un módulo comparte proceso con su anfitrión, Spectre le afecta igual que a un
+isolate.
+
+### El proceso y los filtros del sistema operativo
+
+Un **proceso** ya es una frontera, y muy buena: el procesador, con ayuda del núcleo, garantiza que
+un proceso no ve la memoria de otro, y cada cosa que quiere hacer fuera de su memoria pasa por una
+llamada al sistema. El problema es la política por defecto: un proceso puede hacer todo lo que
+puede hacer su usuario. Si tu usuario puede leer `~/.ssh`, cualquier programa que ejecutes, también.
+
+Los sistemas operativos han ido añadiendo formas de restringir a un proceso por debajo de su
+usuario:
+
+- **[seccomp](https://man7.org/linux/man-pages/man2/seccomp.2.html)**, en Linux, filtra las
+  llamadas al sistema. Nació en 2005 con un modo que sólo permitía leer y escribir en ficheros ya
+  abiertos y terminar; desde 2012 acepta filtros escritos como pequeños programas BPF (*Berkeley
+  Packet Filter*, el lenguaje de filtros de paquetes del núcleo), que pueden mirar también los
+  argumentos de cada llamada.
+- **[Landlock](https://docs.kernel.org/userspace-api/landlock.html)**, en Linux desde 2021, permite
+  a cualquier proceso, sin ser administrador, restringirse a sí mismo el acceso a ficheros y, en
+  versiones más recientes, a puertos de red.
+- **[AppArmor](https://apparmor.net/)** y **[SELinux](https://github.com/SELinuxProject)** son
+  políticas del sistema entero, escritas por el administrador, que dicen qué puede tocar cada
+  programa. Las dos son módulos de seguridad de Linux (LSM, *Linux Security Modules*).
+- En macOS, el sandbox del sistema (al que Apple llama
+  [App Sandbox](https://developer.apple.com/documentation/security/app-sandbox) en las
+  aplicaciones de su tienda) aplica perfiles por proceso. En OpenBSD,
+  [pledge](https://man.openbsd.org/pledge.2) y [unveil](https://man.openbsd.org/unveil.2) dejan a un
+  programa renunciar a familias de llamadas y a partes del disco. En Windows,
+  [AppContainer](https://learn.microsoft.com/en-us/windows/win32/secauthz/appcontainer-isolation)
+  da a un proceso una identidad sin permisos de la que hay que partir.
+
+Chrome es el ejemplo canónico de cómo se combinan. En su
+[diseño original](https://css.csail.mit.edu/6.858/2018/readings/chromium.pdf), el navegador se
+dividía en un proceso principal, con permisos, y procesos de renderizado, que leen y ejecutan la web
+sin acceso a ficheros ni a red: todo lo pedían al principal, que comprobaba cada petición. Sus
+autores revisaron los fallos críticos de un año de los demás navegadores y calcularon que esa
+separación habría contenido un 70 %.
+
+En Linux, la forma práctica de usar todo esto sin escribir filtros a mano es una herramienta como
+[bubblewrap](https://github.com/containers/bubblewrap), la que usa Flatpak (un sistema para
+distribuir aplicaciones de escritorio) para encerrarlas: monta una vista recortada del disco, quita
+la red y aplica un filtro de seccomp.
+
+El coste es casi nulo: arrancar un proceso. El límite es que todos los procesos comparten el mismo
+núcleo, y un fallo en él, alcanzable por una llamada permitida, es un escape. Y la política es
+difícil de escribir bien: un filtro demasiado estricto rompe el programa, y uno demasiado amplio no
+protege nada.
+
+### Contenedores
+
+Un **contenedor** no es un mecanismo nuevo, sino una combinación de los del apartado anterior con
+dos más del núcleo de Linux. Los
+[namespaces](https://man7.org/linux/man-pages/man7/namespaces.7.html) deciden **qué ve** el proceso:
+su propio árbol de procesos, su propio sistema de ficheros, su propia red, sus propios usuarios.
+Los [cgroups](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html) deciden **cuánto
+usa**: CPU, memoria, número de procesos. A eso se suman las
+[capacidades](https://man7.org/linux/man-pages/man7/capabilities.7.html) de Linux, que trocean los
+poderes de administrador y permiten quitarle al contenedor los que no necesita, y un filtro de
+seccomp. El [perfil de seccomp de Docker](https://docs.docker.com/engine/security/seccomp/), la
+herramienta de contenedores más extendida, desactiva unas 44 llamadas de más de 300.
+
+Es poco, y es a propósito. Los contenedores se diseñaron para empaquetar y desplegar aplicaciones,
+y la prioridad del perfil por defecto es que casi todo funcione. El aislamiento que dan es
+real, pero todo lo que queda debajo es un único núcleo compartido con el anfitrión y con los demás
+contenedores. Un fallo en ese núcleo, o en las herramientas que crean los contenedores, sirve para
+salir. En 2019 se descubrió que un proceso con permisos de administrador dentro de un contenedor
+podía, por [un fallo de runc](https://nvd.nist.gov/vuln/detail/CVE-2019-5736), sobrescribir en el
+anfitrión ese mismo runc, el programa que crea los contenedores de Docker, y con ello ejecutar lo que
+quisiera fuera.
+
+Hay formas de endurecerlos. Los contenedores **sin privilegios** (*rootless*) usan un namespace de
+usuarios para que el administrador de dentro sea un usuario cualquiera fuera, y aquel fallo de runc
+no les afectaba. Un perfil de seccomp hecho a medida para el programa concreto reduce mucho la
+superficie. Con eso, un contenedor es un sandbox razonable para código que no es de un atacante
+decidido. Para código que sí puede serlo, hace falta bajar la frontera.
+
+### Un núcleo propio en espacio de usuario: gVisor
+
+[gVisor](https://gvisor.dev/), que Google publicó en 2018, ataca el problema del núcleo compartido sin llegar a una máquina
+virtual. Intercepta todas las llamadas al sistema del programa aislado y las atiende un núcleo
+escrito en Go, el **Sentry**, que se ejecuta como un proceso normal. En 2019 implementaba 237
+llamadas al sistema. El Sentry, a su vez, sólo puede hacer 53 llamadas al núcleo real (68 si usa la
+red del anfitrión), y en la versión estudiada el acceso a ficheros lo hacía otro proceso aparte.
+
+Un fallo explotable en el núcleo de Linux ya no basta: primero hay que encontrar uno en el Sentry,
+escrito en un lenguaje sin los errores de memoria de C, y después otro en las pocas llamadas que el
+Sentry puede hacer. El precio está en las llamadas al sistema. La forma por defecto de
+interceptarlas desde 2023, [systrap](https://gvisor.dev/docs/architecture_guide/platforms/), usa el
+propio seccomp para desviarlas, y cada una cuesta bastante más que en un proceso normal. Según la
+documentación de gVisor, el cálculo puro y los accesos a memoria van a la misma velocidad, pero un
+programa que hace muchas operaciones pequeñas de red o de ficheros se nota. Y no todas las llamadas
+de Linux están implementadas, así que algún programa no funciona.
+
+### Máquinas virtuales y microVMs
+
+Una **máquina virtual** lleva la frontera al hardware. El programa aislado tiene su propio núcleo
+de sistema operativo, el **invitado**, y la frontera es el **hipervisor**: el componente que usa las
+extensiones de virtualización del procesador para que el invitado crea que tiene una máquina para
+él solo. En Linux, el hipervisor es KVM (*Kernel-based Virtual Machine*), y lo acompaña un gestor
+de máquina virtual (VMM, *virtual machine monitor*), un proceso que simula los dispositivos: disco,
+red, consola.
+
+Un fallo del núcleo invitado ya no sirve para salir: el atacante sólo controla su propio núcleo.
+Lo que queda expuesto es la interfaz con el hipervisor y los dispositivos simulados, que es mucho
+más estrecha que 350 llamadas al sistema. Pero no es invulnerable. En 2015, el fallo conocido como
+[VENOM](https://nvd.nist.gov/vuln/detail/CVE-2015-3456) permitía salir de máquinas virtuales de
+QEMU, un emulador muy usado como VMM, a través de su controlador de disquetes simulado, que seguía
+ahí aunque nadie usaba disquetes.
+
+Esa lección es la que aplicó AWS con [Firecracker](https://firecracker-microvm.github.io/), publicado en 2018: un VMM escrito en Rust con un
+puñado de dispositivos (red, disco, consola y poco más), que se ejecuta dentro de un proceso con
+seccomp que le permite 36 llamadas al sistema. Según el
+[artículo que lo describe](https://www.usenix.org/conference/nsdi20/presentation/agache), cada **microVM** arranca
+hasta el código de la aplicación en menos de 125 ms, ocupa menos de 5 MB además de la memoria que
+usa el programa, y un mismo servidor puede crear hasta 150 por segundo. Es lo que aísla las
+funciones de AWS Lambda, el servicio de funciones en la nube de Amazon, y lo que ha hecho viable una máquina virtual por tarea.
+[Kata Containers](https://katacontainers.io/) aplica la misma idea a los contenedores: se usan como
+contenedores normales, pero cada uno se ejecuta dentro de su propia máquina virtual ligera.
+
+El coste es un núcleo entero por entorno: más memoria, un arranque de decenas de milisegundos en el
+mejor caso y de segundos con una máquina virtual completa, y más latencia en la red, que pasa por
+dos núcleos. A cambio, la compatibilidad es total: dentro funciona cualquier programa de Linux.
+
+### Contenedor, gVisor y microVM, medidos
+
+En 2020, Anjali, Tyler Caraza-Harter y Michael Swift, de la Universidad de Wisconsin-Madison,
+pusieron las tres últimas opciones una junto a otra y contaron cuántas llamadas al sistema se
+permite cada una hacia el núcleo del anfitrión.
+
+<figure>
+  <img
+    src="/blog/que-es-un-sandbox/superficie.svg"
+    alt="Barras horizontales con el número de llamadas al sistema, de 350, que cada plataforma se permite hacer al núcleo del anfitrión, según Anjali y otros, 2020. Un proceso sin filtro, 350. Un contenedor con el perfil por defecto, 306: todas menos 44. gVisor con la red del anfitrión, 68. gVisor, 53. Firecracker, 36."
+    width="760"
+    height="222"
+  />
+  <figcaption>
+    En gVisor y en Firecracker, el programa aislado nunca llama al núcleo del anfitrión: estas
+    llamadas son las del componente que hace de frontera. Las versiones medidas son de principios
+    de 2020.
+  </figcaption>
+</figure>
+
+Un contenedor deja pasar casi todo; gVisor y Firecracker, una décima parte o menos. Pero el número
+de llamadas no lo es todo. El mismo estudio midió cuántas líneas del núcleo anfitrión se ejecutaban
+con cada plataforma, y las que menos llamadas permiten no eran las que menos núcleo usaban: el
+programa sin aislar ejecutó el 7,8 % de las 806 318 líneas del núcleo, Firecracker el 9,6 %, un
+contenedor el 11,2 % y gVisor el 11,3 %. Aislar también es código, y ese código también está en el
+núcleo. Lo que cambia es quién puede alcanzarlo: en un contenedor, el programa aislado directamente;
+en las otras dos, sólo el componente que hace de frontera.
+
+### Otra máquina
+
+La frontera más baja es no compartir nada: ejecutar el código en un ordenador distinto, conectado
+sólo por la red. Es lo que hacen las nubes cuando ofrecen servidores dedicados a un solo cliente, y
+lo que se hace con los entornos más sensibles. Elimina incluso los ataques por canales laterales
+como Spectre, que necesitan compartir procesador. El coste es el de una máquina entera, y la
+frontera pasa a ser la red: lo que la máquina aislada puede alcanzar por ella es lo que tiene que
+decidir la política.
+
+## Cuál elegir
+
+No hay un sandbox mejor que los demás, sino uno adecuado para cada situación, y la decisión depende
+casi siempre de dos preguntas. La primera: **¿quién escribió el código, y qué ganaría saliendo?** Un
+script de un compañero puede tener un error; un programa que te envía un desconocido puede estar
+diseñado para escapar. Cuanto más hostil puede ser el código, y cuantos más clientes distintos
+comparten la máquina, más abajo tiene que ir la frontera. La segunda: **¿cuánto hablan el código
+aislado y su anfitrión?** Si el anfitrión llama al código aislado miles de veces por segundo, cada
+cruce de frontera cuenta, y eso empuja hacia arriba.
+
+| Situación | Frontera razonable | Por qué |
+| --- | --- | --- |
+| Extensiones dentro de tu aplicación que se llaman constantemente | WebAssembly, o un intérprete recortado como Lua | Microsegundos por instancia, llamadas baratas y un módulo que sólo tiene lo que le das |
+| Convertir ficheros que sube cualquiera: imágenes, PDF, documentos | El conversor en un proceso aparte, con seccomp o Landlock y sin red | El que falla es el lector del formato, no tu código; aislarlo cuesta casi nada |
+| Un servicio que ejecuta código de sus usuarios: un juez de programación, un cuaderno compartido | Contenedor endurecido, o gVisor | Ejecutan cualquier programa de Linux; gVisor quita del medio el núcleo compartido |
+| Código de desconocidos en máquinas compartidas por muchos clientes: funciones en la nube, integración continua de proyectos públicos | MicroVM o máquina virtual desechable | Ningún fallo de un solo núcleo basta para salir, y el entorno no sobrevive a la tarea |
+| Un programa que procesa contenido hostil todo el día: navegador, cliente de correo | Procesos separados con los filtros del sistema | Es lo que hace Chrome: el proceso que lee la web no tiene permisos |
+| Tus propios scripts, con tus datos | Ninguno | Ver más abajo |
+
+Dos ejemplos de la tabla merecen un detalle. El de los conversores es más común de lo que parece:
+en 2016, [ImageTragick](https://imagetragick.com/), un conjunto de fallos en ImageMagick, una
+biblioteca muy usada para convertir imágenes, permitía ejecutar comandos en cualquier servidor que
+convirtiese una imagen subida por un usuario. El servidor estaba bien escrito; el fallo estaba en una
+biblioteca que procesaba datos hostiles con todos sus permisos. Y el de la integración continua es
+la razón por la que la [guía de seguridad de GitHub Actions](https://docs.github.com/en/actions/reference/security/secure-use)
+desaconseja ejecutar sus trabajos en máquinas propias en proyectos públicos: cualquiera puede abrir una petición
+de cambios con código que se ejecutará en esa máquina.
+
+Las capas se suman. Un contenedor dentro de una máquina virtual dedicada a un cliente es una
+combinación muy común, y gVisor y Firecracker se ejecutan, ellos mismos, encerrados por seccomp.
+
+## Lo que no es un sandbox
+
+La palabra se aplica a muchas cosas que no cumplen la definición: o no hay frontera, o el código de
+dentro la puede cambiar.
+
+**`chroot` sólo.** Su propia [página de manual](https://man7.org/linux/man-pages/man2/chroot.2.html)
+lo dice: no está pensado para ningún propósito de seguridad, ni para encerrar un proceso ni para
+restringir sus llamadas al sistema. Cambia cómo se resuelven las rutas y nada más, y un proceso con
+permisos de administrador sale de él con tres órdenes.
+
+**Un contenedor con la puerta abierta.** Según la
+[documentación de Docker](https://docs.docker.com/engine/containers/run/), un contenedor arrancado
+con `--privileged` recibe todas las capacidades y acceso a todos los dispositivos del anfitrión. Uno que monta el socket de Docker, `/var/run/docker.sock`, puede pedirle
+al propio Docker, que se ejecuta como administrador, que cree otro contenedor con el disco entero del
+anfitrión montado. En los dos casos el contenedor sigue existiendo, pero ya no aísla nada.
+
+**Un entorno virtual de Python** (`venv`) o un gestor de versiones como nvm. Aíslan las
+dependencias de un proyecto de las de otro, no los permisos: el código que se ejecuta dentro puede
+hacer todo lo que puede hacer tu usuario.
+
+**Una lista de órdenes permitidas, comparadas por su nombre.** Permitir `git` pero no `rm` parece
+una política, pero no limita lo que el programa hace, sólo cómo se llama. `git -c alias.x='!…' x`
+ejecuta la orden que se ponga detrás del `!`, `find . -exec` ejecuta cualquier orden y `npm test`
+ejecuta lo que diga el fichero `package.json` del proyecto. Una política tiene que hablar de
+efectos (qué ficheros, qué red), y el punto de control tiene que verlos, no adivinarlos por el
+nombre del programa.
+
+**Un lenguaje seguro en memoria.** Rust evita que tu programa tenga los fallos de memoria que
+abren la puerta a muchos ataques (lo cuenta el [artículo sobre C y Rust](/blog/de-c-a-rust)), pero
+no impide que una dependencia maliciosa haga, con tus permisos, exactamente lo que quiere: su
+fichero `build.rs` se ejecuta al compilar. La seguridad de memoria protege de los errores, no de las
+intenciones.
+
+**Un entorno de pruebas.** Algunos proveedores de pagos llaman *sandbox* a su entorno de pruebas,
+en el que los cobros no son reales. Es un uso legítimo de la palabra, pero significa «aquí no pasa
+nada de verdad», no «aquí el código está encerrado».
+
+**Un enclave.** Los entornos de ejecución confiables (TEE, *trusted execution environments*), como
+SGX (*Software Guard Extensions*) y TDX (*Trust Domain Extensions*), de Intel, o SEV
+(*Secure Encrypted Virtualization*), de AMD, también aíslan código, pero en la dirección contraria:
+protegen al programa de dentro frente al sistema operativo y al hipervisor que lo ejecutan. Sirven
+para que el dueño de la máquina no vea tus datos, no para que tu código no toque su máquina.
+
+## Cuándo no hace falta
+
+Un sandbox es una herramienta contra un riesgo concreto: que se ejecute código que puede hacer más
+de lo que debe. Si ese riesgo no está, no hace falta.
+
+**Cuando el código es tuyo y ya se ejecuta con tus permisos.** Tus scripts, tu aplicación en tu
+servidor. Aplicar el mínimo privilegio sigue siendo buena idea (un usuario propio para el servicio,
+sin acceso a lo que no necesita), pero eso es higiene, no un sandbox contra un atacante que no está.
+
+**Cuando el riesgo no es ejecutar código.** Si te preocupa que un usuario lea datos de otro a
+través de tu aplicación, lo que falta es autorización: comprobar, en cada petición, que ese usuario
+puede ver eso. Ningún sandbox lo resuelve, porque tu código hace exactamente lo que debe, sólo que
+para quien no debe.
+
+**Cuando la entrada son datos, y basta con no ejecutarlos.** La mejor forma de aislar un código es
+no ejecutarlo. Leer un fichero JSON con un lector de JSON no ejecuta nada. Leerlo con algo capaz de
+reconstruir objetos arbitrarios, como pickle en Python, sí; su
+[documentación](https://docs.python.org/3/library/pickle.html) avisa de que no se debe usar con
+datos de los que no te fías. Elegir un formato que sólo pueda contener datos elimina el riesgo en
+vez de encerrarlo.
+
+**Cuando el entorno ya es desechable y no tiene nada.** Una máquina virtual que se crea para una
+tarea, sin credenciales ni acceso a nada valioso, y que se destruye después, ya es un sandbox.
+Ponerle otro dentro puede no aportar nada.
+
+**Cuando cuesta más de lo que protege.** Un sandbox tiene coste de rendimiento, de complejidad y de
+programas que dejan de funcionar. A veces la respuesta correcta es aceptar el riesgo.
+
+Y una advertencia para cuando sí hace falta: **un sandbox no protege lo que dejas pasar a
+propósito**. Si metes una clave en las variables de entorno del proceso aislado, el código de dentro
+la puede leer. Si montas tu directorio personal para que el programa acceda a un fichero, accede a
+todos. Si le dejas red para que descargue una dependencia, también la tiene para enviar fuera lo
+que ha leído. Casi todos los sandboxes que fallan en la práctica no fallan por el mecanismo, sino
+por la política: por lo que alguien decidió dejar dentro para que las cosas funcionasen.
+
+## Qué te llevas
+
+Si te llevas una sola cosa, que sea ésta: **un sandbox es una frontera que impone algo que el código
+de dentro no puede cambiar, y elegir uno es decidir a qué altura poner esa frontera.** Cuanto más
+abajo, menos comparte el código aislado con lo demás, y más cuesta.
+
+Y si te llevas tres cosas más, que sean prácticas.
+
+**Pon la frontera según quién ataca.** Para extensiones de confianza, el lenguaje o WebAssembly.
+Para programas que procesan datos hostiles, un proceso con filtros. Para código de desconocidos en
+una máquina compartida, una máquina virtual. Un contenedor con su configuración por defecto
+empaqueta muy bien, pero no está pensado para contener a un atacante.
+
+**Escribe la política en términos de efectos.** Qué ficheros, qué red, cuánta CPU y memoria. Una
+lista de nombres de programas no es una política, y una política que deja la red abierta deja
+abierta la salida de todo lo demás.
+
+**Revisa lo que dejas dentro.** Claves, directorios montados, sockets, red. El mecanismo rara vez es
+lo que falla; lo que falla es lo que alguien metió dentro para que el programa funcionase.
+
+Hace cincuenta años, Anderson pidió que el punto de control interviniese siempre, que nadie pudiese
+alterarlo y que fuese lo bastante pequeño como para comprobarlo. Cada sandbox de este artículo es un
+intento distinto de cumplir esas tres condiciones a un precio que se pueda pagar.
