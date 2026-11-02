@@ -1,6 +1,6 @@
 # P1-01: Availability service
 
-**Tag:** `CHAT-AGENT-P1-01` · **Effort:** S · **Owner:** Claude · **Status:** ⬜
+**Tag:** `CHAT-AGENT-P1-01` · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

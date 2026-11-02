@@ -1,11 +1,11 @@
 // PERF-10 — Tiered availability caching via Redis; cache hit skips Google API call.
+// CHAT-AGENT-P1-01: the lookup (date guards, cache, freebusy) moved to AvailabilityService,
+// shared with the chat tools. The route keeps rate limiting, parsing and localization.
 import { NextRequest, NextResponse } from "next/server";
-import { getAvailableSlots } from "@/infrastructure/google";
-import { scheduleService } from "@/services";
+import { scheduleService, availabilityService } from "@/services";
 import { availabilityRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
-import { getOrCompute, resolveCacheKey, cacheTTLSeconds } from "@/lib/availability-cache";
 import type { ScheduleConfig, TimeSlot } from "@/domain/types";
 
 function localizeSlots(slots: TimeSlot[], tz: string, duration: number, scheduleTz: string) {
@@ -58,33 +58,12 @@ export async function GET(req: NextRequest) {
   if (![15, 30, 60, 120].includes(duration))
     return NextResponse.json({ error: "Duración inválida" }, { status: 400 });
 
-  const requested = new Date(date);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  if (requested < today) return NextResponse.json({ slots: [] });
-
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + config.bookingWindowWeeks * 7);
-  if (requested > maxDate) return NextResponse.json({ slots: [] });
-
-  const dow = new Date(`${date}T12:00:00Z`).getDay();
-  if ((config.weeklyHours[dow] ?? []).length === 0) return NextResponse.json({ slots: [] });
-
   try {
-    // REFACTOR-P3-03: Coalesce concurrent misses so only the first caller hits
-    // the Calendar API; the rest wait briefly and re-read the cache.
-    const ttl = cacheTTLSeconds(date);
-    const key = await resolveCacheKey(date, duration);
-    const result = await getOrCompute<{ slots: TimeSlot[] }>(
-      key,
-      async () => {
-        log("info", "Availability cache miss", { service: "availability", date, duration });
-        const slots = await getAvailableSlots(date, duration, config);
-        return { slots };
-      },
-      ttl,
-    );
+    // null: the date is closed (past, beyond the window, no working hours).
+    const slots = await availabilityService.lookup(date, duration, config);
+    if (slots === null) return NextResponse.json({ slots: [] });
 
-    return NextResponse.json({ slots: localizeSlots(result.slots, tz, duration, config.timezone), timezone: config.timezone });
+    return NextResponse.json({ slots: localizeSlots(slots, tz, duration, config.timezone), timezone: config.timezone });
   } catch (err) {
     log("error", "Error fetching slots", { service: "availability", date, error: String(err) });
     return NextResponse.json({ error: "Error al consultar disponibilidad" }, { status: 500 });
