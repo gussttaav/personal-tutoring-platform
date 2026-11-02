@@ -1,4 +1,5 @@
 // ARCH-12/15/13/14/16: Singleton service instances — import from here in route handlers.
+// CHAT-AGENT-P1-01: availabilityService (GET /api/availability + the chat tools).
 import { CreditService }        from "./CreditService";
 import { SessionService }       from "./SessionService";
 import { BookingService }       from "./BookingService";
@@ -18,6 +19,7 @@ import { AdminService }         from "./AdminService";
 import { BookingPaymentAuditService } from "./BookingPaymentAuditService";
 import { BlogAnnouncementService } from "./BlogAnnouncementService";
 import { CourseAnnouncementService } from "./CourseAnnouncementService";
+import { AvailabilityService }  from "./AvailabilityService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -40,7 +42,7 @@ import { registryBlogPostCatalog } from "@/lib/blog/post-catalog";
 import { registryCourseAnnouncementCatalog } from "@/lib/courses/announcement-catalog";
 import { registryAdminCourseCatalog } from "@/lib/courses/admin-catalog";
 import { ZoomClient }      from "@/infrastructure/zoom";
-import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
+import { CalendarClient, GoogleIdTokenVerifier, getAvailableSlots }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
 import { StripeClient }    from "@/infrastructure/stripe/StripeClient";
 import { ClaudeClient }    from "@/infrastructure/anthropic"; // CHAT-CLAUDE-01
@@ -59,6 +61,10 @@ export const scheduleService = new ScheduleService(
   supabaseAuditRepository,
   redisConfigCache,
 );
+
+// CHAT-AGENT-P1-01: the free-slot lookup (date guards + Redis cache + Google freebusy),
+// shared by GET /api/availability and the chat assistant's tools.
+export const availabilityService = new AvailabilityService(scheduleService, getAvailableSlots);
 
 // SESSION-JOIN-01: reads the join window + alert delay from the schedule, and
 // emails the tutor-absent alert.

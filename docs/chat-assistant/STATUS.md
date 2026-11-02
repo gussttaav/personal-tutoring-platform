@@ -4,7 +4,7 @@ Legend: ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked · ⏸ gated (wa
 
 | Task | Title | Status | PR / commit | Notes |
 |------|-------|--------|-------------|-------|
-| P1-01 | [Availability service](phase-1-actions/01-availability-service.md) | ⬜ | | Prerequisite for the tools |
+| P1-01 | [Availability service](phase-1-actions/01-availability-service.md) | ✅ | `chat-agent/p1-01-availability-service` | Deviation: public `lookup(date, duration, config)` returns `null` for a closed date so the route keeps `{slots: []}` (no `timezone`) byte-identical; route still reads the config itself (tz default + response) |
 | P1-02 | [Tool loop in the chat](phase-1-actions/02-chat-tool-loop.md) | ⬜ | | |
 | P1-03 | [Free-call tools + prompt](phase-1-actions/03-free-call-tools.md) | ⬜ | | |
 | P1-04 | [Slot chips + confirmation card](phase-1-actions/04-confirmation-card.md) | ⬜ | | Q1 decided: sign in inside the card, then Confirmar |
@@ -18,3 +18,4 @@ Legend: ⬜ todo · 🟡 in progress · ✅ done · ⛔ blocked · ⏸ gated (wa
 
 - 2026-10-31: plan written.
 - 2026-10-31: Gustavo decided Q1, Q2, Q4, Q5 (see PLAN.md); Q3 deferred to P2-03.
+- 2026-11-02: P1-01 done on `chat-agent/p1-01-availability-service`: `AvailabilityService` (`getSlots`, `findSlots` capped at 7 days, `lookup`); route spot-checked old vs new on the test DB, 16/16 compared responses identical (a 17th old-code call was rate-limited).
