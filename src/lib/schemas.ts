@@ -13,6 +13,8 @@
  *
  * Moving them here lets api-client.ts, route handlers, and tests all share
  * the same schema definitions and inferred types.
+ *
+ * CHAT-AGENT-P1-02: ChatRequestSchema (was parsed inline in /api/chat).
  */
 
 import { z } from "zod";
@@ -327,6 +329,22 @@ export type ReviewInput = z.infer<typeof ReviewSchema>;
 export const TutorAbsentSchema = z.object({
   eventId: z.string().min(1).max(256),
 });
+
+// ─── Chat assistant (CHAT-AGENT-P1-02) ────────────────────────────────────────
+
+export const CHAT_MESSAGE_MAX_LENGTH = 1000;
+
+export const ChatRequestSchema = z.object({
+  // The length cap applies before trimming, as the inline check did.
+  message:   z.string().max(CHAT_MESSAGE_MAX_LENGTH).trim().min(1),
+  // Anything but a 36-char id starts a new conversation (never a 400).
+  sessionId: z.string().length(36).nullish().catch(null),
+  // The visitor's timezone for the tools; absent → the tutor's.
+  timezone:  z.enum(SUPPORTED_TIMEZONES).optional(),
+  voice:     z.boolean().optional(),
+});
+
+export type ChatRequestInput = z.infer<typeof ChatRequestSchema>;
 
 // ─── Locale preference ────────────────────────────────────────────────────────
 
