@@ -1,5 +1,6 @@
 // ARCH-12/15/13/14/16: Singleton service instances — import from here in route handlers.
 // CHAT-AGENT-P1-01: availabilityService (GET /api/availability + the chat tools).
+// CHAT-AGENT-P1-03: the chat gets the free-call tools (read-only: find + propose).
 import { CreditService }        from "./CreditService";
 import { SessionService }       from "./SessionService";
 import { BookingService }       from "./BookingService";
@@ -20,6 +21,7 @@ import { BookingPaymentAuditService } from "./BookingPaymentAuditService";
 import { BlogAnnouncementService } from "./BlogAnnouncementService";
 import { CourseAnnouncementService } from "./CourseAnnouncementService";
 import { AvailabilityService }  from "./AvailabilityService";
+import { createFreeCallTools }  from "./chat-tools/free-call-tools";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -100,7 +102,16 @@ export const paymentService = new PaymentService(
   scheduleService,
 );
 
-export const chatService = new ChatService(new ClaudeClient());
+// CHAT-AGENT-P1-03: the assistant can look up and propose free-call slots; the user's
+// click on the card books through /api/book, never the model.
+export const chatService = new ChatService(
+  new ClaudeClient(),
+  createFreeCallTools({
+    availability: availabilityService,
+    booking:      bookingService,
+    schedule:     scheduleService,
+  }),
+);
 
 export const subscriptionService = new SubscriptionService(supabaseSubscriptionRepository, userService);
 

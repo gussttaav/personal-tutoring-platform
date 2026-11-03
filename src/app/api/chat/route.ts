@@ -18,6 +18,10 @@
  *           (never from the model) and answers `{ reply, sessionId, actions }`. The
  *           kill switch counts model calls (a tool loop makes several per reply):
  *           pre-check on the current value, `incrby` after the call.
+ *   CHAT-AGENT-P1-03: a per-request `contextNote` (the user's current date and time
+ *           in their timezone, the timezone, signed in or not, the UI language), so
+ *           the model can resolve «mañana» / «el jueves» for the free-call tools.
+ *           It rides as a mid-conversation system message, out of the cached prompt.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -37,6 +41,7 @@ import { kv } from "@/infrastructure/redis/client";
 import { ChatRequestSchema } from "@/lib/schemas"; // CHAT-AGENT-P1-02
 import type { ToolContext } from "@/infrastructure/anthropic";
 import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
+import { buildContextNote } from "@/lib/chat-context-note"; // CHAT-AGENT-P1-03
 
 const MAX_DAILY_CHAT_REQUESTS   = 1000; // model calls per day (CHAT-AGENT-P1-02)
 
@@ -197,6 +202,7 @@ async function postHandler(req: NextRequest) {
       sessionId: sessionId ?? null,
       systemPrompt,
       toolContext,
+      contextNote: buildContextNote(toolContext),
     });
     modelCalls = result.modelCalls;
     log("info", "Chat reply", {
