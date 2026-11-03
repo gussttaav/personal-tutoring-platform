@@ -95,6 +95,17 @@ machine, which the lesson 39 cloud run covers.
   yet — the benchmark tasks (lesson 39) don't exist. 8192 is pinned in lessons 32+ and in the
   repo's Modelfiles; revisit when `tareas/` exists, and do not raise it.
 - **`llama-server`:** not exercised.
+- **Lesson 34's five tools, 2026-10-31 (same machine, heavily loaded: 2 tok/s generation, 12–250 s
+  per turno, two turnos past `api.py`'s 300 s `urlopen` timeout).** Every llamada still met its
+  esquema, but the model **cannot put a double quote into a tool argument**: its own `text` block
+  writes `split(",")` and its `tool_use` in the same respuesta writes `split(',')` (run 6: four
+  identical `editar` llamadas refused, tope 10, file untouched) or drops the quotes (run 5:
+  `receta.split(:)`, a whole-file `escribir` that broke `compra.py`). Ollama's native `/api/chat`
+  returns the same broken argument, so it is not the adapter or the Messages layer. Consequence for
+  lesson 39: an `editar` on double-quoted Python cannot succeed on this model; write the `tareas/`
+  around it (single quotes) or measure it as is, and say which. Also seen: regex alternations in
+  `buscar`'s literal `patron` (`"error|fail|failed"`), a switch to English after reading code, and
+  90–270 words of narration per turno (lesson 35's motivation). Transcripts in lesson 34.
 - **Gotcha found on the way:** an `ANTHROPIC_BASE_URL` already set in the shell (here, to the
   cloud API) silently redirects the course's code; the first run got a 401 from the cloud with a
   dummy key. Lesson 32 warns about it before the run.
@@ -130,7 +141,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [ ] chain test recorded above
 - [x] 32. `preparar-la-maquina`
 - [x] 33. `el-bucle-con-un-modelo-real`
-- [ ] 34. `herramientas-de-ficheros`
+- [x] 34. `herramientas-de-ficheros`
 - [ ] 35. `prompt-de-sistema-y-fichero-de-proyecto`
 - [ ] 36. `compactacion`
 - [ ] 37. `permisos-y-sandbox`

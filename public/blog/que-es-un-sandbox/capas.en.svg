@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 294" width="760" height="294" role="img"
+ aria-label="Seven ways to isolate a program, in columns, and four layers in rows, from top to bottom: the program, the language runtime, the operating system kernel and the hardware. In each column, an orange line marks the boundary: what lies above belongs to that program alone, and what lies below it shares with everything else. V8 isolate and WebAssembly: the boundary sits right under the program, which shares the runtime, the kernel and the hardware. Process with filters, such as seccomp or Landlock, and container, with namespaces and cgroups: the boundary sits above the kernel, which is shared. gVisor: the boundary sits inside the kernel layer, with a kernel of its own, the Sentry, on top of the host kernel, which is shared. MicroVM: the boundary is the hypervisor, KVM and the virtual machine monitor, and only the hardware is shared. Another machine: nothing is shared; the boundary is the network.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="20.0" y="16.0" style="text-anchor:start">THE LOWER THE BOUNDARY, THE LESS IS SHARED</text>
+<text class="tx" x="20.0" y="87.0" style="text-anchor:start">Program</text>
+<text class="tx" x="20.0" y="127.0" style="text-anchor:start">Runtime</text>
+<text class="tx" x="20.0" y="167.0" style="text-anchor:start">Kernel</text>
+<text class="tx" x="20.0" y="207.0" style="text-anchor:start">Hardware</text>
+<text class="lb" x="147.0" y="38.0">Isolate</text>
+<text class="sb" x="147.0" y="52.0">(V8)</text>
+<rect class="bx m" x="104.0" y="66.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="104.0" y="106.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="104.0" y="146.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="104.0" y="186.0" width="86.0" height="34.0" rx="4"/>
+<line x1="102.0" y1="103.0" x2="192.0" y2="103.0" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb w" x="147.0" y="238.0">the runtime</text>
+<text class="lb" x="239.0" y="38.0">WebAssembly</text>
+<rect class="bx m" x="196.0" y="66.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="196.0" y="106.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="196.0" y="146.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="196.0" y="186.0" width="86.0" height="34.0" rx="4"/>
+<line x1="194.0" y1="103.0" x2="284.0" y2="103.0" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb w" x="239.0" y="238.0">linear memory</text>
+<text class="lb" x="331.0" y="38.0">Process</text>
+<text class="sb" x="331.0" y="52.0">with filters</text>
+<rect class="bx m" x="288.0" y="66.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="288.0" y="106.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="288.0" y="146.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="288.0" y="186.0" width="86.0" height="34.0" rx="4"/>
+<line x1="286.0" y1="143.0" x2="376.0" y2="143.0" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb w" x="331.0" y="238.0">seccomp,</text>
+<text class="sb w" x="331.0" y="251.0">Landlock</text>
+<text class="lb" x="423.0" y="38.0">Container</text>
+<rect class="bx m" x="380.0" y="66.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="380.0" y="106.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="380.0" y="146.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="380.0" y="186.0" width="86.0" height="34.0" rx="4"/>
+<line x1="378.0" y1="143.0" x2="468.0" y2="143.0" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb w" x="423.0" y="238.0">namespaces,</text>
+<text class="sb w" x="423.0" y="251.0">cgroups</text>
+<text class="lb" x="515.0" y="38.0">gVisor</text>
+<rect class="bx m" x="472.0" y="66.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="472.0" y="106.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="472.0" y="146.0" width="86.0" height="15.0" rx="4"/>
+<text class="sb m" x="515.0" y="157.5">Sentry</text>
+<rect class="bx g" x="472.0" y="165.0" width="86.0" height="15.0" rx="4"/>
+<text class="sb" x="515.0" y="176.5">host</text>
+<rect class="bx g" x="472.0" y="186.0" width="86.0" height="34.0" rx="4"/>
+<line x1="470.0" y1="163.0" x2="560.0" y2="163.0" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb w" x="515.0" y="238.0">the Sentry</text>
+<text class="lb" x="607.0" y="38.0">MicroVM</text>
+<rect class="bx m" x="564.0" y="66.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="564.0" y="106.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="564.0" y="146.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx g" x="564.0" y="186.0" width="86.0" height="34.0" rx="4"/>
+<line x1="562.0" y1="183.0" x2="652.0" y2="183.0" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb w" x="607.0" y="238.0">KVM + VMM</text>
+<text class="lb" x="699.0" y="38.0">Another</text>
+<text class="sb" x="699.0" y="52.0">machine</text>
+<rect class="bx m" x="656.0" y="66.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="656.0" y="106.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="656.0" y="146.0" width="86.0" height="34.0" rx="4"/>
+<rect class="bx m" x="656.0" y="186.0" width="86.0" height="34.0" rx="4"/>
+<line x1="654.0" y1="223.0" x2="744.0" y2="223.0" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb w" x="699.0" y="238.0">the network</text>
+<rect class="bx m" x="104.0" y="275.0" width="14.0" height="12.0" rx="2"/>
+<text class="sb" x="124.0" y="285.0" style="text-anchor:start">this program's alone</text>
+<rect class="bx g" x="284.0" y="275.0" width="14.0" height="12.0" rx="2"/>
+<text class="sb" x="304.0" y="285.0" style="text-anchor:start">shared with the rest</text>
+<line x1="474" y1="281" x2="494" y2="281" stroke="#e8a24c" stroke-width="3"/>
+<text class="sb" x="500.0" y="285.0" style="text-anchor:start">the boundary</text>
+</svg>
