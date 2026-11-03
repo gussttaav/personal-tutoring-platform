@@ -31,6 +31,11 @@
  *     `tool_choice: none`, so the model answers with what it has.
  *   - Each call gets `timeout: min(TIMEOUT_MS, budget)` plus an abort signal at the
  *     budget, so the SDK's retry cannot outrun it either.
+ *
+ * CHAT-AGENT-P1-02b: a tool-round call that runs out of its budget no longer fails
+ * the turn. The loop makes the reserved tools-off call with the messages so far
+ * (actions already collected stay), still inside DEADLINE_MS. A timeout on that
+ * last call (or on a request without tools) fails the turn as before.
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -115,13 +120,13 @@ function describeApiError(err: InstanceType<typeof Anthropic.APIError>): string 
   if (err instanceof Anthropic.RateLimitError) {
     return `Anthropic rate or spend limit reached: ${err.message}`;
   }
-  if (err instanceof Anthropic.APIUserAbortError) {
-    return "Claude call aborted: the chat time budget ran out";
-  }
   return `Anthropic API error ${err.status ?? "(no status)"}: ${err.message}`;
 }
 
 class ToolTimeoutError extends Error {}
+
+/** CHAT-AGENT-P1-02b: a model call stopped by its time budget, whichever timer fired. */
+class ModelBudgetError extends Error {}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -157,33 +162,46 @@ export class ClaudeClient implements IChatModelClient {
     const actions: ChatAction[] = [];
     let modelCalls = 0;
     let rounds     = 0;
+    let toolsOff   = false; // CHAT-AGENT-P1-02b: a tool round ran out of budget
 
     for (;;) {
       const remaining = deadline - Date.now();
       const toolRound =
-        apiTools.length > 0 && rounds < MAX_TOOL_ROUNDS && remaining > FINAL_CALL_RESERVE_MS;
+        apiTools.length > 0 && !toolsOff && rounds < MAX_TOOL_ROUNDS && remaining > FINAL_CALL_RESERVE_MS;
       // A tool round leaves the reserve for the last call; the last call (or a
       // request without tools) gets what is left, never less than the reserve.
       const budget = toolRound
         ? remaining - FINAL_CALL_RESERVE_MS
         : Math.max(remaining, FINAL_CALL_RESERVE_MS);
 
-      const response = await this.create(
-        {
-          model:         CHAT_MODEL,
-          max_tokens:    MAX_TOKENS,
-          output_config: { effort: "low" },
-          system: [
-            { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
-          ],
-          messages: [...messages], // a snapshot: the loop keeps appending
-          // The history may hold tool_use blocks, so the last call keeps the tool
-          // definitions and turns them off with tool_choice instead.
-          ...(apiTools.length > 0 ? { tools: apiTools } : {}),
-          ...(apiTools.length > 0 && !toolRound ? { tool_choice: { type: "none" as const } } : {}),
-        },
-        budget,
-      );
+      let response: Anthropic.Message;
+      try {
+        response = await this.create(
+          {
+            model:         CHAT_MODEL,
+            max_tokens:    MAX_TOKENS,
+            output_config: { effort: "low" },
+            system: [
+              { type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } },
+            ],
+            messages: [...messages], // a snapshot: the loop keeps appending
+            // The history may hold tool_use blocks, so the last call keeps the tool
+            // definitions and turns them off with tool_choice instead.
+            ...(apiTools.length > 0 ? { tools: apiTools } : {}),
+            ...(apiTools.length > 0 && !toolRound ? { tool_choice: { type: "none" as const } } : {}),
+          },
+          budget,
+        );
+      } catch (err) {
+        if (!(toolRound && err instanceof ModelBudgetError)) throw err;
+        // CHAT-AGENT-P1-02b: the reserve is still there; answer with tools off.
+        modelCalls++; // the aborted call may still be billed
+        toolsOff = true;
+        log("warn", "Claude tool-round call ran out of budget: answering with tools off", {
+          service: "chat", rounds, budgetMs: budget,
+        });
+        continue;
+      }
       modelCalls++;
 
       if (response.stop_reason === "refusal") {
@@ -215,12 +233,22 @@ export class ClaudeClient implements IChatModelClient {
     params: Anthropic.MessageCreateParamsNonStreaming,
     budgetMs: number,
   ): Promise<Anthropic.Message> {
+    const signal = AbortSignal.timeout(budgetMs);
     try {
       return await getClient().messages.create(params, {
         timeout: Math.min(TIMEOUT_MS, budgetMs),
-        signal:  AbortSignal.timeout(budgetMs),
+        signal,
       });
     } catch (err) {
+      // CHAT-AGENT-P1-02b: the signal (APIUserAbortError, or an abort while the body
+      // is read) or the SDK's own timeout on the last attempt.
+      if (
+        err instanceof Anthropic.APIUserAbortError ||
+        err instanceof Anthropic.APIConnectionTimeoutError ||
+        signal.aborted
+      ) {
+        throw new ModelBudgetError("Claude call aborted: the chat time budget ran out", { cause: err });
+      }
       if (err instanceof Anthropic.APIError) {
         throw new Error(describeApiError(err), { cause: err });
       }
