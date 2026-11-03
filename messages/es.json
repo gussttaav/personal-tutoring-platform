@@ -737,7 +737,26 @@
     "closeAssistant": "Cerrar asistente IA",
     "assistantLabel": "Asistente virtual de Gustavo Torres",
     "error": "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
-    "unknownError": "Error desconocido"
+    "unknownError": "Error desconocido",
+    "actions": {
+      "slotsLabel": "Huecos libres para el encuentro inicial",
+      "pickSlot": "Prefiero el {day} a las {time}",
+      "proposalTitle": "Encuentro inicial gratuito · 15 min",
+      "proposalLabel": "Propuesta de encuentro inicial gratuito: {when}",
+      "timezone": "Hora de {city}",
+      "signInFirst": "Para reservar, inicia sesión con Google. Después confirma la reserva aquí mismo.",
+      "signIn": "Continuar con Google",
+      "confirm": "Confirmar reserva",
+      "booking": "Reservando…",
+      "booked": "Reservado. Te hemos enviado un email con el enlace al aula.",
+      "bookedNoEmail": "Reservado. No hemos podido enviarte el email; tienes el enlace al aula en tu área personal.",
+      "goToPersonalArea": "Ir a mi área personal",
+      "slotTaken": "Ese hueco acaba de ocuparse.",
+      "findAnother": "Buscar otro hueco",
+      "findAnotherMessage": "Ese hueco ya no está libre. ¿Qué otros huecos tienes para el encuentro inicial?",
+      "expired": "Este horario ya no se puede reservar. Pide otro al asistente.",
+      "superseded": "Propuesta anterior. Confirma la más reciente."
+    }
   },
   "postClassReview": {
     "ratings": [
