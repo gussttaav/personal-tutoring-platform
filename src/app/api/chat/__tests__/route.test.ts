@@ -5,6 +5,7 @@
 // ChatRequestSchema (a bad timezone is a 400, the old message errors are kept),
 // the ToolContext comes from the server session and never from the body, the
 // response carries `actions`, and the daily kill switch counts model calls.
+// CHAT-AGENT-P1-03: the route passes a per-request contextNote built from that context.
 import { NextRequest } from "next/server";
 
 jest.mock("@/lib/ratelimit", () => ({
@@ -152,6 +153,17 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
       userId: "user-1", email: "alumno@example.com", timezone: "America/New_York", locale: "en",
       now: expect.any(Date),
     });
+  });
+
+  it("passes the context note built from the ToolContext (CHAT-AGENT-P1-03)", async () => {
+    mockGetSession.mockResolvedValue({ user: { email: "alumno@example.com" } });
+    mockFindByEmail.mockResolvedValue({ id: "user-1" });
+
+    await POST(postReq({ message: "hola", timezone: "America/Bogota" }));
+
+    expect(mockAsk.mock.calls[0][0].contextNote).toMatch(
+      /^Fecha y hora actual del usuario: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}-05:00 \(\p{L}+\)\. Zona horaria del usuario: America\/Bogota\. Sesión iniciada: sí\. Idioma: es\.$/u,
+    );
   });
 
   it("counts the reply's model calls in the kill switch", async () => {
