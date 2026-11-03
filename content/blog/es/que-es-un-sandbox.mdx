@@ -197,7 +197,7 @@ quede con todo. Un bucle infinito o un programa que reserva memoria sin parar no
 deja sin servicio a todos los demás, así que un sandbox completo también limita la CPU (el
 procesador), la memoria y el tiempo.
 
-La idea de punto de control tiene casi sesenta años. En 1972, un informe de James Anderson para la
+La idea de punto de control tiene más de cincuenta años. En 1972, un informe de James Anderson para la
 Fuerza Aérea de Estados Unidos la llamó **monitor de referencia** (*reference monitor*): el
 componente que comprueba cada acceso de un programa a un recurso. Y le puso tres condiciones que
 siguen siendo la mejor forma de juzgar un sandbox: tiene que intervenir **siempre**, sin ningún
@@ -521,7 +521,7 @@ permite cada una hacia el núcleo del anfitrión.
   </figcaption>
 </figure>
 
-Un contenedor deja pasar casi todo; gVisor y Firecracker, una décima parte o menos. Pero el número
+Un contenedor deja pasar casi todo; gVisor y Firecracker, sólo una fracción pequeña. Pero el número
 de llamadas no lo es todo. El mismo estudio midió cuántas líneas del núcleo anfitrión se ejecutaban
 con cada plataforma, y las que menos llamadas permiten no eran las que menos núcleo usaban: el
 programa sin aislar ejecutó el 7,8 % de las 806 318 líneas del núcleo, Firecracker el 9,6 %, un
