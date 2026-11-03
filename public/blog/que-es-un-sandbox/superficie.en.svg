@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 222" width="760" height="222" role="img"
+ aria-label="Horizontal bars with the number of system calls, out of 350, that each platform allows itself towards the host kernel, according to Anjali et al., 2020. An unfiltered process, 350. A container with the default profile, 306: all but 44. gVisor with host networking, 68. gVisor, 53. Firecracker, 36.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="20.0" y="18.0" style="text-anchor:start">SYSTEM CALLS ALLOWED TOWARDS THE HOST KERNEL, OUT OF 350</text>
+<line x1="236.0" y1="32" x2="236.0" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="236.0" y="212.0">0</text>
+<line x1="302.3" y1="32" x2="302.3" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="302.3" y="212.0">50</text>
+<line x1="368.6" y1="32" x2="368.6" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="368.6" y="212.0">100</text>
+<line x1="434.9" y1="32" x2="434.9" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="434.9" y="212.0">150</text>
+<line x1="501.1" y1="32" x2="501.1" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="501.1" y="212.0">200</text>
+<line x1="567.4" y1="32" x2="567.4" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="567.4" y="212.0">250</text>
+<line x1="633.7" y1="32" x2="633.7" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="633.7" y="212.0">300</text>
+<line x1="700.0" y1="32" x2="700.0" y2="196" stroke="#2a2a2c"/>
+<text class="sb" x="700.0" y="212.0">350</text>
+<text class="tx" x="226.0" y="55.0" style="text-anchor:end">Unfiltered process</text>
+<rect x="236" y="40" width="464.0" height="20" rx="3" fill="#86948a" fill-opacity="0.55"/>
+<text class="tx" x="706.0" y="55.0" style="text-anchor:start">350</text>
+<text class="tx" x="226.0" y="87.0" style="text-anchor:end">Container (default profile)</text>
+<rect x="236" y="72" width="405.7" height="20" rx="3" fill="#86948a" fill-opacity="0.55"/>
+<text class="tx" x="647.7" y="87.0" style="text-anchor:start">306</text>
+<text class="tx" x="226.0" y="119.0" style="text-anchor:end">gVisor, with host networking</text>
+<rect x="236" y="104" width="90.1" height="20" rx="3" fill="#4edea3" fill-opacity="0.85"/>
+<text class="tx m" x="332.1" y="119.0" style="text-anchor:start">68</text>
+<text class="tx" x="226.0" y="151.0" style="text-anchor:end">gVisor</text>
+<rect x="236" y="136" width="70.3" height="20" rx="3" fill="#4edea3" fill-opacity="0.85"/>
+<text class="tx m" x="312.3" y="151.0" style="text-anchor:start">53</text>
+<text class="tx" x="226.0" y="183.0" style="text-anchor:end">Firecracker</text>
+<rect x="236" y="168" width="47.7" height="20" rx="3" fill="#4edea3" fill-opacity="0.85"/>
+<text class="tx m" x="289.7" y="183.0" style="text-anchor:start">36</text>
+</svg>
