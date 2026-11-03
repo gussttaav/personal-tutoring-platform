@@ -10,6 +10,9 @@
  *
  * CHAT-AGENT-P1-02: `chat` returns a ChatReply; the bounded tool loop (rounds,
  * deadline, parallel results, is_error, refusal / max_tokens mid-loop) is below.
+ *
+ * CHAT-AGENT-P1-02b: a tool-round call aborted by its budget falls back to the
+ * reserved tools-off call instead of failing the turn.
  */
 
 const mockCreate = jest.fn();
@@ -22,6 +25,7 @@ jest.mock("@anthropic-ai/sdk", () => {
     AuthenticationError: actual.AuthenticationError,
     RateLimitError:      actual.RateLimitError,
     APIUserAbortError:   actual.APIUserAbortError,
+    APIConnectionTimeoutError: actual.APIConnectionTimeoutError,
   });
   return { __esModule: true, default: MockAnthropic };
 });
@@ -404,6 +408,69 @@ describe("ClaudeClient.chat — tool loop (CHAT-AGENT-P1-02)", () => {
     // 12 s left after the tool → this tool round may use 7 s, keeping 5 s back.
     expect(mockCreate.mock.calls[1][1].timeout).toBe(7_000);
     expect(mockCreate.mock.calls[1][0]).not.toHaveProperty("tool_choice");
+  });
+
+  it("a tool-round call aborted by its budget falls back to the tools-off call (CHAT-AGENT-P1-02b)", async () => {
+    let now = 1_000_000;
+    jest.spyOn(Date, "now").mockImplementation(() => now);
+    const tool = makeTool("find", async () => ({ result: { slots: ["10:00"] }, action: PROPOSAL }));
+    mockCreate
+      .mockImplementationOnce(async () => {
+        now += 3_000;
+        return reply([toolUse("tu_1", "find")], "tool_use");
+      })
+      .mockImplementationOnce(async () => {
+        now += 12_000; // the second round eats its whole 12 s budget
+        throw new Anthropic.APIUserAbortError();
+      })
+      .mockResolvedValueOnce(reply([{ type: "text", text: "El viernes a las 10:00 está libre" }]));
+
+    const res = await new ClaudeClient().chat("PROMPT", [], "¿viernes?", { tools: [tool], toolContext: CTX });
+
+    expect(res).toEqual({ text: "El viernes a las 10:00 está libre", actions: [PROPOSAL], modelCalls: 3 });
+    expect(tool.run).toHaveBeenCalledTimes(1);
+    const [aborted, last] = [mockCreate.mock.calls[1], mockCreate.mock.calls[2]];
+    expect(aborted[0]).not.toHaveProperty("tool_choice");
+    expect(last[0].tool_choice).toEqual({ type: "none" });
+    expect(last[0].messages).toEqual(aborted[0].messages); // the tool results so far
+    expect(last[1].timeout).toBe(5_000);                     // the reserve, still inside 20 s
+    expect(log).toHaveBeenCalledWith("warn", expect.stringContaining("ran out of budget"), expect.any(Object));
+  });
+
+  it("also falls back when the SDK's own timeout fires on the last attempt (CHAT-AGENT-P1-02b)", async () => {
+    const tool = makeTool("find", async () => ({ result: {} }));
+    mockCreate
+      .mockRejectedValueOnce(new Anthropic.APIConnectionTimeoutError())
+      .mockResolvedValueOnce(reply([{ type: "text", text: "ok" }]));
+
+    const res = await new ClaudeClient().chat("PROMPT", [], "q", { tools: [tool], toolContext: CTX });
+
+    expect(res).toEqual({ text: "ok", actions: [], modelCalls: 2 });
+    expect(tool.run).not.toHaveBeenCalled();
+    expect(mockCreate.mock.calls[1][0].tool_choice).toEqual({ type: "none" });
+  });
+
+  it("a timeout on the tools-off call still fails the turn (CHAT-AGENT-P1-02b)", async () => {
+    const tool = makeTool("find", async () => ({ result: {} }));
+    mockCreate
+      .mockResolvedValueOnce(reply([toolUse("tu_1", "find")], "tool_use"))
+      .mockRejectedValueOnce(new Anthropic.APIUserAbortError())
+      .mockRejectedValueOnce(new Anthropic.APIUserAbortError());
+
+    await expect(new ClaudeClient().chat("PROMPT", [], "q", { tools: [tool], toolContext: CTX }))
+      .rejects.toThrow(/time budget/);
+    expect(mockCreate).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not fall back on a non-timeout API error in a tool round", async () => {
+    const tool = makeTool("find", async () => ({ result: {} }));
+    mockCreate.mockRejectedValueOnce(new Anthropic.RateLimitError(
+      429, errorBody("rate_limit_error", "slow down"), "slow down", new Headers(),
+    ));
+
+    await expect(new ClaudeClient().chat("PROMPT", [], "q", { tools: [tool], toolContext: CTX }))
+      .rejects.toThrow(/rate or spend limit/);
+    expect(mockCreate).toHaveBeenCalledTimes(1);
   });
 
   it("throws on a refusal mid-loop", async () => {
