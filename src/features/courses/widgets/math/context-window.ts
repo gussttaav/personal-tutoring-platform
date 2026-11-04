@@ -4,6 +4,8 @@
  * on state and memory and Block 5's on compaction, which add their own presets).
  * COURSE-C2-P1-04 — Block 4 lesson 6 adds the `agente` preset and the rule that segments
  * sharing a drop rank leave together.
+ * COURSE-C2-P1-05 — Block 5 lesson 5 (compactación) adds the `compactacion` preset and the
+ * optional `margin`: a harness that compacts at an umbral, before the window is full.
  *
  * A call is an ORDERED list of segments, the order the plantilla writes them in: the prompt
  * de sistema, the ejemplos, the turns of the conversation, the pasajes, the caso (here a
@@ -24,7 +26,10 @@
  *   - "compact" — the harness first replaces every compactable segment but the last
  *     `keepRecent` with ONE summary of `summaryTokens`, written where the first of them was
  *     (the summary and the recent turns are then pinned), and only if that is not enough
- *     drops the rest in rank order. Compacting happens only when the call overflows.
+ *     drops the rest in rank order. Compacting happens only when the call overflows, or,
+ *     when the preset has a `margin`, as soon as the call would leave less than `margin`
+ *     tokens free: Block 5's harness compacts at an umbral of tCtx − reserve − margin, so that
+ *     the observaciones of the turno in progress, whose size it cannot know, still fit.
  *
  * Whatever the policy, segments that stay keep their order: the harness chooses WHAT enters,
  * never rearranges it. Everything here is integers and pure, so the tests can check each
@@ -54,6 +59,8 @@ export interface WindowPreset {
   readonly summaryTokens: number;
   /** How many of the last compactable segments "compact" keeps verbatim. */
   readonly keepRecent: number;
+  /** "compact" fires once the call would leave fewer free tokens than this (absent = 0). */
+  readonly margin?: number;
   readonly tCtxMin: number;
   readonly tCtxMax: number;
   readonly tCtxStep: number;
@@ -147,9 +154,9 @@ function fitDrop(segments: readonly Segment[], tCtx: number): Fit {
 }
 
 function fitCompact(preset: WindowPreset, tCtx: number): Fit {
-  const { segments, summaryTokens, keepRecent } = preset;
+  const { segments, summaryTokens, keepRecent, margin = 0 } = preset;
   const total = sum(segments.map((s) => s.tokens));
-  if (total <= tCtx) return fitDrop(segments, tCtx);
+  if (total + margin <= tCtx) return fitDrop(segments, tCtx);
 
   const compactable = segments.filter((s) => s.compactable);
   const folded = new Set(compactable.slice(0, Math.max(0, compactable.length - keepRecent)).map((s) => s.id));
@@ -278,9 +285,62 @@ export const AGENT_PRESET: WindowPreset = {
   tCtxDefault: 3_584,
 };
 
+/*
+ * COURSE-C2-P1-05 — Block 5 lesson 5's preset (compactación): the tenth petición of the
+ * lesson's opening run, the real agent on the course's local model with compaction off, on the
+ * five-file `recetario/` project. Unlike the two presets above, the sizes are MEASURED: the
+ * inicio by `coste.py` (the pedido by difference, 1044 − 705 − 189 − 123), each turno from the server's `usage` (its llamadas are the respuesta's
+ * output tokens; its observaciones, the next petición's input minus this one's input and
+ * output). Turnos 2, 6 and 8 are the same `leer` of recetario.py; 5, 7 and 9 an `editar` that
+ * failed. The reserve is `max_tokens`, 1024. `margin` is the 3072 tokens `compactar.py` keeps
+ * for the turno in progress (UMBRAL = 8192 − 1024 − 3072), and `keepRecent` its k = 2 turnos;
+ * the summary is the size of the one the model wrote in the lesson's run (216 tokens of text,
+ * 260 as the mensaje that carries it).
+ */
+const MEASURED_TURNS: readonly (readonly [llamadas: number, observaciones: number])[] = [
+  [22, 1_155],
+  [23, 784],
+  [22, 632],
+  [26, 1_166],
+  [261, 43],
+  [23, 784],
+  [334, 41],
+  [23, 784],
+  [263, 41],
+];
+
+export const COMPACTION_PRESET: WindowPreset = {
+  segments: [
+    { id: "sistema", kind: "sistema", tokens: 189 },
+    { id: "herramientas", kind: "herramientas", tokens: 705 },
+    { id: "proyecto", kind: "proyecto", tokens: 123 },
+    { id: "pedido", kind: "pedido", tokens: 27 },
+    ...MEASURED_TURNS.flatMap(([llamadas, observaciones], i) => [
+      { id: `llamadas-${i + 1}`, kind: "llamadas", n: i + 1, tokens: llamadas, drop: 10 + i, compactable: true },
+      {
+        id: `observaciones-${i + 1}`,
+        kind: "observaciones",
+        n: i + 1,
+        tokens: observaciones,
+        drop: 10 + i,
+        compactable: true,
+      },
+    ]),
+    { id: "respuesta", kind: "respuesta", tokens: 1_024 },
+  ],
+  summaryTokens: 260,
+  keepRecent: 4,
+  margin: 3_072,
+  tCtxMin: 4_096,
+  tCtxMax: 12_288,
+  tCtxStep: 256,
+  tCtxDefault: 8_192,
+};
+
 export const CONTEXT_WINDOW_PRESETS = {
   asistente: ASSISTANT_PRESET,
   agente: AGENT_PRESET,
+  compactacion: COMPACTION_PRESET,
 } as const satisfies Record<string, WindowPreset>;
 
 export type PresetName = keyof typeof CONTEXT_WINDOW_PRESETS;

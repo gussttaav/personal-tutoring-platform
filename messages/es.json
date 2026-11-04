@@ -1844,7 +1844,8 @@
           "herramientas": "herramientas",
           "pedido": "pedido del usuario",
           "llamadas": "llamadas del turno {n}",
-          "observaciones": "observaciones del turno {n}"
+          "observaciones": "observaciones del turno {n}",
+          "proyecto": "fichero de proyecto"
         },
         "legend": {
           "sistema": "prompt de sistema",
@@ -1858,6 +1859,7 @@
           "pedido": "pedido del usuario",
           "llamadas": "llamadas: lo que pide el modelo",
           "observaciones": "observaciones: lo que vuelve de las herramientas",
+          "proyecto": "fichero de proyecto: AGENTE.md",
           "out": "fuera de la llamada"
         },
         "allFits": "Cabe todo: nadie tiene que decidir nada.",

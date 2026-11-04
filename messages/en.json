@@ -1844,7 +1844,8 @@
           "herramientas": "tools",
           "pedido": "the user's request",
           "llamadas": "turn {n} calls",
-          "observaciones": "turn {n} observations"
+          "observaciones": "turn {n} observations",
+          "proyecto": "project file"
         },
         "legend": {
           "sistema": "system prompt",
@@ -1858,6 +1859,7 @@
           "pedido": "the user's request",
           "llamadas": "calls: what the model asks for",
           "observaciones": "observations: what the tools return",
+          "proyecto": "project file: AGENTE.md",
           "out": "left out of the call"
         },
         "allFits": "Everything fits: nobody has to decide anything.",

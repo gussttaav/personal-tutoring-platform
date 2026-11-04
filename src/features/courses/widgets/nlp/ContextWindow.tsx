@@ -1,7 +1,7 @@
 /*
  * COURSE-C2-P1-03 — `context-window` (llm-agents Block 3 lesson 5, «La ventana de contexto es
  * un recurso escaso»; Block 4's lesson on state and memory and Block 5's on compaction reuse
- * it with presets of their own).
+ * it with presets of their own). COURSE-C2-P1-05 adds the `proyecto` kind.
  *
  * The window as one bar. The reader moves the window's size (a slider) and picks who decides
  * what does not fit:
@@ -55,6 +55,8 @@ const KIND_FILL: Readonly<Record<string, string>> = {
   pedido: "var(--text)",
   llamadas: "var(--text-muted)",
   observaciones: "var(--warning)",
+  // COURSE-C2-P1-05 — the `compactacion` preset (Block 5 lesson 5): the fichero de proyecto.
+  proyecto: "var(--green-dim)",
 };
 const fillOf = (kind: string) => KIND_FILL[kind] ?? "var(--text-dim)";
 
