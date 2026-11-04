@@ -1,5 +1,6 @@
 // Publicly accessible privacy policy page.
 // Referenced by Google OAuth consent screen and external links.
+// CHAT-AGENT-P3-01: lastUpdated bumped for the Google Calendar (calendar.freebusy) section.
 
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -31,7 +32,7 @@ export default async function PrivacidadPage({
   setRequestLocale(locale);
   const tModal = await getTranslations({ locale, namespace: "footerModals" });
   return (
-    <PolicyPage title={tModal("privacy")} lastUpdated={locale === "en" ? "October 2026" : "Octubre 2026"}>
+    <PolicyPage title={tModal("privacy")} lastUpdated={locale === "en" ? "November 2026" : "Noviembre 2026"}>
       <PrivacidadContent locale={locale} />
     </PolicyPage>
   );

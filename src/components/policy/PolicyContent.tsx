@@ -19,6 +19,13 @@
 // don't drift from those without updating this copy too. Its "2 hours" is the
 // separate, hardcoded CANCEL_WINDOW_MS (account-deletion imminent-booking gate),
 // not the admin-editable cancelHours below — see the CLAUDE.md gotcha.
+//
+// CHAT-AGENT-P3-01: the «Tu calendario de Google» / "Your Google Calendar" privacy
+// section is what Google's OAuth verification of the calendar.freebusy scope reads.
+// It must stay accurate to the chat's «Comparar con mi calendario» (CHAT-AGENT-P3-02):
+// busy intervals only, read from the browser for the proposed slots' days, never sent
+// to our servers or the assistant, the access token kept in memory only, the grant
+// kept until the user revokes it (decision Q4). Keep the Limited Use statement.
 
 import { Link } from "@/i18n/navigation";
 
@@ -57,6 +64,17 @@ function PrivacidadContentEs() {
         <li><strong>Zoom</strong> — tecnología de aula virtual integrada en la plataforma para la realización de las sesiones. <a href="https://explore.zoom.us/es/privacy/" target="_blank" rel="noopener noreferrer">Política de Zoom</a>.</li>
         <li><strong>Supabase</strong> — base de datos donde se almacenan de forma segura las reservas, el saldo de créditos y los datos de cuenta.</li>
       </ul>
+
+      <h3>Tu calendario de Google (opcional)</h3>
+      <p>El asistente de IA del sitio puede proponerte horarios para el encuentro gratuito de 15 minutos. Si has iniciado sesión, puedes pulsar «Comparar con mi calendario» para ocultar los horarios que coinciden con algo de tu agenda. Solo en ese momento Google te pide permiso para ver tu disponibilidad (permiso <code>calendar.freebusy</code>, de solo lectura).</p>
+      <ul>
+        <li><strong>Qué se lee:</strong> solo los intervalos en los que tu calendario principal figura como ocupado, y solo en los días de los horarios propuestos. No se pide ni se lee el título, la descripción, los participantes ni ningún otro detalle de tus eventos.</li>
+        <li><strong>Cuándo:</strong> solo cuando pulsas el botón y aceptas el permiso. Al iniciar sesión nunca se pide acceso a tu calendario.</li>
+        <li><strong>Dónde se usa:</strong> la consulta a Google se hace desde tu navegador, que es el que filtra la lista de horarios. Los datos de tu calendario no se envían a los servidores de gustavoai.dev ni al asistente de IA, y no se comparten con nadie.</li>
+        <li><strong>Cuánto tiempo se guardan:</strong> no se guardan. Los intervalos ocupados y el código de acceso temporal que entrega Google (válido como máximo una hora) solo existen en la memoria de la página y se descartan al cerrarla o recargarla.</li>
+        <li><strong>Cómo retirar el permiso:</strong> el permiso que concedes en Google se mantiene para que la próxima comparación sea un solo clic. Puedes retirarlo cuando quieras en <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>.</li>
+      </ul>
+      <p>El uso que gustavoai.dev hace de la información recibida de las API de Google, y su transferencia a cualquier otra aplicación, se ajusta a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Política de datos de usuario de los servicios de API de Google</a> (Google API Services User Data Policy), incluidos los requisitos de uso limitado (<em>Limited Use</em>).</p>
 
       <h3>Tus derechos</h3>
       <p>Puedes <strong>eliminar tu cuenta y todos tus datos</strong> tú mismo desde tu <strong>área personal</strong>, en la sección «Eliminar cuenta». El borrado es <strong>inmediato y no se puede deshacer</strong>: se eliminan de forma permanente tu cuenta y tus datos personales, tus reservas y todo tu historial de clases, tu saldo de créditos, tu progreso en los cursos y tus registros de pago. No se conserva ninguna copia ni existe un período de gracia para recuperarlos.</p>
@@ -239,6 +257,17 @@ function PrivacidadContentEn() {
         <li><strong>Zoom</strong> — virtual classroom technology integrated into the platform for conducting sessions. <a href="https://explore.zoom.us/en/privacy/" target="_blank" rel="noopener noreferrer">Zoom Privacy Policy</a>.</li>
         <li><strong>Supabase</strong> — database where bookings, credit balances and account data are stored securely.</li>
       </ul>
+
+      <h3>Your Google Calendar (optional)</h3>
+      <p>The site&apos;s AI assistant can suggest times for the free 15-minute intro call. If you are signed in, you can tap &quot;Compare with my calendar&quot; to hide the times that clash with something in your schedule. Only then does Google ask for your permission to see your availability (the read-only <code>calendar.freebusy</code> permission).</p>
+      <ul>
+        <li><strong>What is read:</strong> only the intervals in which your primary calendar shows you as busy, and only on the days of the suggested times. The title, description, attendees and every other detail of your events are never requested or read.</li>
+        <li><strong>When:</strong> only when you tap the button and grant the permission. Access to your calendar is never requested at sign-in.</li>
+        <li><strong>Where it is used:</strong> the request to Google is made from your browser, which filters the list of times itself. Your calendar data is not sent to gustavoai.dev&apos;s servers or to the AI assistant, and is not shared with anyone.</li>
+        <li><strong>How long it is kept:</strong> it is not kept. The busy intervals and the temporary access code Google issues (valid for one hour at most) exist only in the page&apos;s memory and are discarded when you close or reload it.</li>
+        <li><strong>How to withdraw the permission:</strong> the permission you grant in Google stays in place so that your next comparison takes a single click. You can revoke it at any time at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>.</li>
+      </ul>
+      <p>gustavoai.dev&apos;s use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
 
       <h3>Your rights</h3>
       <p>You can <strong>delete your account and all of your data</strong> yourself from your <strong>personal area</strong>, under &quot;Delete account&quot;. Deletion is <strong>immediate and cannot be undone</strong>: your account and personal details, your bookings and entire class history, your credit balance, your course progress and your payment records are permanently erased. No copy is kept and there is no grace period in which to recover them.</p>
