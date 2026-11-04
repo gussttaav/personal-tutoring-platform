@@ -737,7 +737,26 @@
     "closeAssistant": "Close AI assistant",
     "assistantLabel": "Gustavo Torres virtual assistant",
     "error": "An error occurred. Please try again.",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "actions": {
+      "slotsLabel": "Free slots for the intro call",
+      "pickSlot": "I'd like {day} at {time}",
+      "proposalTitle": "Free intro call · 15 min",
+      "proposalLabel": "Free intro call proposal: {when}",
+      "timezone": "{city} time",
+      "signInFirst": "To book, sign in with Google. Then confirm the booking right here.",
+      "signIn": "Continue with Google",
+      "confirm": "Confirm booking",
+      "booking": "Booking…",
+      "booked": "Booked. We've emailed you the link to the classroom.",
+      "bookedNoEmail": "Booked. We couldn't send you the email; the classroom link is in your personal area.",
+      "goToPersonalArea": "Go to my personal area",
+      "slotTaken": "That slot has just been taken.",
+      "findAnother": "Find another slot",
+      "findAnotherMessage": "That slot is no longer free. What other slots do you have for the intro call?",
+      "expired": "This time can no longer be booked. Ask the assistant for another.",
+      "superseded": "Earlier proposal. Confirm the latest one."
+    }
   },
   "postClassReview": {
     "ratings": [

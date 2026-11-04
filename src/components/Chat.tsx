@@ -31,6 +31,13 @@
  * the page beside it stays usable. Closed, it is `inert` (and `visibility: hidden` once it has
  * slid out), so its input is no longer a hidden tab stop. Escape and ✕ close it and hand focus
  * back to whatever opened it. «Nueva conversación» drops the thread and the server session id.
+ *
+ * CHAT-AGENT-P1-04: each message sends the visitor's `timezone` (only a SUPPORTED_TIMEZONES value,
+ * else none and the tools use the tutor's), and a bot message keeps the `actions` its reply
+ * returned, with the timezone the tools used, persisted with it. A `slots` action renders as
+ * chips that send the pick as the next message; a `proposal` as a confirmation card whose
+ * Confirmar is the one booking write (`api.book.post`). Only the LATEST proposal in the thread
+ * is live, and a booked one stays booked across reloads (`booking` on its message).
  */
 
 import {
@@ -39,6 +46,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  Fragment,
   type KeyboardEvent,
 } from "react";
 import { useTranslations } from "next-intl";
@@ -47,12 +55,22 @@ import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import ChatAvatarIcon from "@/components/icons/ChatAvatarIcon";
 import { useChat } from "@/hooks/useChat";
+import type { ChatAction } from "@/infrastructure/anthropic/IChatModelClient";
+import SlotChips from "@/components/chat/SlotChips";
+import FreeCallProposalCard, { type ProposalOutcome } from "@/components/chat/FreeCallProposalCard";
+import { browserTimezone, chatRequestTimezone } from "@/components/chat/slot-format";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Message {
   role: "user" | "bot";
   text: string;
+  /** CHAT-AGENT-P1-04: what the reply offered (chips, a proposal card). */
+  actions?:  ChatAction[];
+  /** The timezone the tools used for `actions`. */
+  timezone?: string;
+  /** Set when this message's proposal card booked the call. */
+  booking?:  ProposalOutcome;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -149,6 +167,8 @@ export default function Chat() {
   const [input,           setInput]           = useState("");
   const [isLoading,       setIsLoading]       = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  // CHAT-AGENT-P1-04: render-time "now" for the chips' past-slot filter (the card re-checks on tap).
+  const [mountedAt]                           = useState(() => Date.now());
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
@@ -216,7 +236,7 @@ export default function Chat() {
       const res  = await fetch("/api/chat", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ message: trimmed, sessionId }),
+        body:    JSON.stringify({ message: trimmed, sessionId, timezone: chatRequestTimezone() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t("unknownError"));
@@ -227,7 +247,13 @@ export default function Chat() {
         localStorage.setItem(LOCAL_STORAGE_KEY, data.sessionId);
       }
 
-      setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+      const actions: ChatAction[] = Array.isArray(data.actions) ? data.actions : [];
+      setMessages((prev) => [
+        ...prev,
+        actions.length > 0
+          ? { role: "bot", text: data.reply, actions, timezone: typeof data.timezone === "string" ? data.timezone : undefined }
+          : { role: "bot", text: data.reply },
+      ]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -237,6 +263,41 @@ export default function Chat() {
       setIsLoading(false);
     }
   }, [isLoading, sessionId]);
+
+  // Only the latest proposal in the thread is live (a scroll-back tap can't book a slot the
+  // conversation moved past).
+  const latestProposalIndex = messages.reduce(
+    (last, m, i) => (m.actions?.some((a) => a.type === "proposal") ? i : last),
+    -1,
+  );
+
+  function markBooked(index: number, outcome: ProposalOutcome) {
+    setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, booking: outcome } : m)));
+  }
+
+  function renderActions(msg: Message, index: number) {
+    const timezone = msg.timezone ?? browserTimezone() ?? "Europe/Madrid";
+    return msg.actions?.map((action, j) => {
+      if (action.type === "slots" && Array.isArray(action.slots)) {
+        return (
+          <SlotChips
+            key={j} slots={action.slots} timezone={timezone} nowMs={mountedAt}
+            disabled={isLoading} onPick={sendMessage}
+          />
+        );
+      }
+      if (action.type === "proposal") {
+        return (
+          <FreeCallProposalCard
+            key={j} startIso={action.startIso} endIso={action.endIso} timezone={timezone}
+            live={index === latestProposalIndex} booked={msg.booking ?? null} chatBusy={isLoading}
+            onBooked={(outcome) => markBooked(index, outcome)} onFindAnother={sendMessage}
+          />
+        );
+      }
+      return null;
+    });
+  }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
@@ -276,9 +337,14 @@ export default function Chat() {
 
       <div className="chat-messages" role="log" aria-live="polite">
         {messages.map((msg, i) => (
-          <div key={i} className={`chat-msg chat-msg--${msg.role}`}>
-            {msg.role === "bot" ? <BotMessage text={msg.text} /> : msg.text}
-          </div>
+          <Fragment key={i}>
+            <div className={`chat-msg chat-msg--${msg.role}`}>
+              {msg.role === "bot" ? <BotMessage text={msg.text} /> : msg.text}
+            </div>
+            {msg.role === "bot" && msg.actions && msg.actions.length > 0 && (
+              <div className="chat-actions">{renderActions(msg, i)}</div>
+            )}
+          </Fragment>
         ))}
         {isLoading && <div className="chat-typing" aria-label={t("status")}><span /><span /><span /></div>}
         <div ref={messagesEndRef} />

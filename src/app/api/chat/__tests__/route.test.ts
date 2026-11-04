@@ -6,6 +6,7 @@
 // the ToolContext comes from the server session and never from the body, the
 // response carries `actions`, and the daily kill switch counts model calls.
 // CHAT-AGENT-P1-03: the route passes a per-request contextNote built from that context.
+// CHAT-AGENT-P1-04: the response also names the timezone the tools used.
 import { NextRequest } from "next/server";
 
 jest.mock("@/lib/ratelimit", () => ({
@@ -84,11 +85,13 @@ beforeEach(() => {
 });
 
 describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
-  it("answers { reply, sessionId, actions } with actions: [] when no tool ran", async () => {
+  it("answers { reply, sessionId, actions, timezone } with actions: [] when no tool ran", async () => {
     const res = await POST(postReq({ message: "  hola  ", sessionId: SESSION_ID }));
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ reply: "Hola", sessionId: SESSION_ID, actions: [] });
+    expect(await res.json()).toEqual({
+      reply: "Hola", sessionId: SESSION_ID, actions: [], timezone: "Europe/Madrid",
+    });
     expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({
       message: "hola", sessionId: SESSION_ID, systemPrompt: "PROMPT",
     }));
@@ -104,6 +107,12 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
     const res = await POST(postReq({ message: "martes", sessionId: SESSION_ID }));
 
     expect((await res.json()).actions).toEqual([proposal]);
+  });
+
+  it("answers the visitor's timezone when one was sent (CHAT-AGENT-P1-04)", async () => {
+    const res = await POST(postReq({ message: "hola", timezone: "America/Bogota" }));
+
+    expect((await res.json()).timezone).toBe("America/Bogota");
   });
 
   it("rejects a timezone outside SUPPORTED_TIMEZONES with a 400", async () => {

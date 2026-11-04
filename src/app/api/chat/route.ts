@@ -22,6 +22,9 @@
  *           in their timezone, the timezone, signed in or not, the UI language), so
  *           the model can resolve «mañana» / «el jueves» for the free-call tools.
  *           It rides as a mid-conversation system message, out of the cached prompt.
+ *   CHAT-AGENT-P1-04: the answer also carries `timezone`, the one the tools used (the
+ *           visitor's, or the tutor's when none was sent), so the chat writes its slot
+ *           chips and proposal card on the same clock as the reply.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -212,6 +215,7 @@ async function postHandler(req: NextRequest) {
       reply:     result.reply,
       sessionId: result.sessionId,
       actions:   result.actions,
+      timezone:  toolContext.timezone, // CHAT-AGENT-P1-04
     });
   } catch (err) {
     // A failed turn counts as one call, as every request did before the tool loop.
