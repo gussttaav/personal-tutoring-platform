@@ -1,6 +1,6 @@
 # P3-01: Google scope and verification
 
-**Tag:** `CHAT-AGENT-P3-01` · **Effort:** S (work) / weeks (Google's review) · **Owner:** Gustavo + Claude · **Status:** ⬜
+**Tag:** `CHAT-AGENT-P3-01` · **Effort:** S (work) / weeks (Google's review) · **Owner:** Gustavo + Claude · **Status:** ✅ (scope non-sensitive: no verification needed, see STATUS.md 2026-11-04)
 
 ## TL;DR
 

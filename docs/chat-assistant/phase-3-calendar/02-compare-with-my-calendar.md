@@ -1,6 +1,6 @@
 # P3-02: Compare with my calendar
 
-**Tag:** `CHAT-AGENT-P3-02` · **Effort:** M · **Owner:** Claude · **Status:** ⏸ (P3-01 test users at least) · **Q4:** keep the grant
+**Tag:** `CHAT-AGENT-P3-02` · **Effort:** M · **Owner:** Claude · **Status:** ⬜ (P3-01 done; the scope is non-sensitive, so any signed-in user can grant it) · **Q4:** keep the grant
 
 ## TL;DR
 
