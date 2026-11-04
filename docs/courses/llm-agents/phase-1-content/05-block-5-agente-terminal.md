@@ -106,6 +106,20 @@ machine, which the lesson 39 cloud run covers.
   around it (single quotes) or measure it as is, and say which. Also seen: regex alternations in
   `buscar`'s literal `patron` (`"error|fail|failed"`), a switch to English after reading code, and
   90–270 words of narration per turno (lesson 35's motivation). Transcripts in lesson 34.
+- **Lesson 35's two voices, 2026-11-03 (same machine, after a reboot: 8–230 s per turno).** On
+  this machine only `python3` exists, so `AGENTE.md`'s `python -m unittest` exits 127 (the lesson
+  tells the student to edit the file, as the author did). The one-line Block 4 prompt with the test
+  command removed from the pedido: 47–154 words of narration per turno, three turnos of `buscar`
+  guesswork, then a guessed `python3 -m unittest test_compra.py`. A first `SISTEMA` that ended
+  «di … qué has cambiado y cómo lo has comprobado»: **3 of 5 runs read the file once and answered
+  with an invented report** (fixed, tests run and passing), no other llamada. The shipped `SISTEMA`:
+  no narration in 3/3, no bug fixed in 3/3, and the false final claim survives (1 «los tests han
+  pasado» without an `ejecutar`, 1 «he corregido» after failed citas, 1 honest «no puedo»).
+  **The double quote is unreliable, not impossible:** one run cited `split(",")` exactly (with
+  a `nuevo` identical to `antiguo`). For lesson 39 the consequence stands, plus one: the scorer
+  must read the entorno (run the tests itself), never the final text. Fixed prefix by `coste.py`:
+  tools 705, prompt de sistema 189, `AGENTE.md` 97, 1001 of 8192. Transcripts:
+  [`05-lesson35-runs-2026-11-03.log`](05-lesson35-runs-2026-11-03.log).
 - **Gotcha found on the way:** an `ANTHROPIC_BASE_URL` already set in the shell (here, to the
   cloud API) silently redirects the course's code; the first run got a 401 from the cloud with a
   dummy key. Lesson 32 warns about it before the run.
@@ -142,7 +156,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [x] 32. `preparar-la-maquina`
 - [x] 33. `el-bucle-con-un-modelo-real`
 - [x] 34. `herramientas-de-ficheros`
-- [ ] 35. `prompt-de-sistema-y-fichero-de-proyecto`
+- [x] 35. `prompt-de-sistema-y-fichero-de-proyecto`
 - [ ] 36. `compactacion`
 - [ ] 37. `permisos-y-sandbox`
 - [ ] 38. `subagentes`
