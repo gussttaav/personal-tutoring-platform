@@ -38,6 +38,13 @@
  * chips that send the pick as the next message; a `proposal` as a confirmation card whose
  * Confirmar is the one booking write (`api.book.post`). Only the LATEST proposal in the thread
  * is live, and a booked one stays booked across reloads (`booking` on its message).
+ *
+ * CHAT-AGENT-P2-01: a microphone button left of «send» dictates into the input through the
+ * browser's speech engine (`useDictation`). Only rendered where the API exists (not Firefox).
+ * The interim transcript shows greyed in the input; the final one is appended to what was
+ * there, and the user edits and sends it as usual (no auto-send: dates and times get misheard).
+ * Dictation is dropped when the panel closes, on «Nueva conversación», on send and on unmount.
+ * `voiceTurnRef` marks a message that was dictated, for P2-02's read-aloud and its metrics.
  */
 
 import {
@@ -49,7 +56,7 @@ import {
   Fragment,
   type KeyboardEvent,
 } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
@@ -59,6 +66,7 @@ import type { ChatAction } from "@/infrastructure/anthropic/IChatModelClient";
 import SlotChips from "@/components/chat/SlotChips";
 import FreeCallProposalCard, { type ProposalOutcome } from "@/components/chat/FreeCallProposalCard";
 import { browserTimezone, chatRequestTimezone } from "@/components/chat/slot-format";
+import { useDictation } from "@/hooks/useDictation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -146,6 +154,7 @@ function BotMessage({ text }: { text: string }) {
 
 export default function Chat() {
   const t = useTranslations("chat");
+  const locale = useLocale();
   const suggestions = useMemo(() => t.raw("suggestions") as string[], [t]);
   const initialMessages = useMemo<Message[]>(() => [
     { role: "bot", text: t("initialMessage") },
@@ -175,6 +184,17 @@ export default function Chat() {
   // CHAT-DRAWER-01: the element that had focus when the panel opened (a Navbar button, the
   // Footer link, a landing CTA): closing from inside the panel hands focus back to it.
   const openerRef      = useRef<HTMLElement | null>(null);
+  // CHAT-AGENT-P2-01: true once a dictated transcript lands in the input, until it is sent or
+  // the conversation is reset. P2-02 reads it to answer aloud and count voice turns.
+  const voiceTurnRef   = useRef(false);
+
+  const appendTranscript = useCallback((text: string) => {
+    voiceTurnRef.current = true;
+    setInput((prev) => (prev.trim() ? `${prev.trimEnd()} ${text}` : text).slice(0, 1000));
+    inputRef.current?.focus();
+  }, []);
+  const dictation = useDictation({ locale, onFinal: appendTranscript });
+  const { cancel: cancelDictation } = dictation;
 
   // UX-04: Persist messages to sessionStorage whenever they change.
   // We skip the initial INITIAL_MESSAGES-only state to avoid a no-op write
@@ -188,6 +208,11 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  // CHAT-AGENT-P2-01: closing the panel (from inside or from the Navbar) stops listening.
+  useEffect(() => {
+    if (!isOpen) cancelDictation();
+  }, [isOpen, cancelDictation]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -210,6 +235,9 @@ export default function Chat() {
   }
 
   function startNewConversation() {
+    cancelDictation();
+    dictation.clearError();
+    voiceTurnRef.current = false;
     setMessages(initialMessages);
     setShowSuggestions(true);
     setInput("");
@@ -227,6 +255,8 @@ export default function Chat() {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
+    cancelDictation();
+    voiceTurnRef.current = false;
     setShowSuggestions(false);
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
@@ -262,7 +292,7 @@ export default function Chat() {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, sessionId]);
+  }, [isLoading, sessionId, cancelDictation]);
 
   // Only the latest proposal in the thread is live (a scroll-back tap can't book a slot the
   // conversation moved past).
@@ -302,6 +332,18 @@ export default function Chat() {
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
   }
+
+  function toggleDictation() {
+    if (dictation.listening) dictation.stop();
+    else dictation.start();
+  }
+
+  const voiceHint =
+    dictation.error === "not-allowed" ? t("voice.denied")
+    : dictation.error === "no-speech" ? t("voice.noSpeech")
+    : dictation.error === "unsupported" ? t("voice.unsupported")
+    : null;
+  const showInterim = dictation.listening && dictation.interim !== "";
 
   return (
     <div
@@ -361,16 +403,35 @@ export default function Chat() {
       <div className="chat-composer">
         <div className="chat-input-row">
           <input
-            ref={inputRef} className="chat-input" type="text" placeholder={t("placeholder")}
-            value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}
+            ref={inputRef} className={`chat-input${showInterim ? " chat-input--interim" : ""}`} type="text"
+            placeholder={dictation.listening ? t("voice.listening") : t("placeholder")}
+            value={showInterim ? (input.trim() ? `${input.trimEnd()} ${dictation.interim}` : dictation.interim) : input}
+            onChange={(e) => { setInput(e.target.value); if (dictation.error) dictation.clearError(); }}
+            onKeyDown={handleKeyDown}
+            readOnly={dictation.listening}
             disabled={isLoading} maxLength={1000} aria-label={t("placeholderShort")}
           />
-          <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} aria-label={t("send")}>
+          {dictation.supported && (
+            <button
+              type="button"
+              className={`chat-mic${dictation.listening ? " chat-mic--listening" : ""}`}
+              onClick={toggleDictation} disabled={isLoading}
+              aria-pressed={dictation.listening}
+              aria-label={dictation.listening ? t("voice.stop") : t("voice.start")}
+              title={dictation.listening ? t("voice.stop") : t("voice.start")}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v1a7 7 0 0 0 14 0v-1" /><line x1="12" y1="18" x2="12" y2="22" />
+              </svg>
+            </button>
+          )}
+          <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || dictation.listening || !input.trim()} aria-label={t("send")}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
           </button>
         </div>
+        {voiceHint && <p className="chat-voice-hint" role="status">{voiceHint}</p>}
         <p className="chat-disclaimer">{t("disclaimer")}</p>
       </div>
     </div>

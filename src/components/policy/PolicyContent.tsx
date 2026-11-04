@@ -31,6 +31,11 @@
 // src/services/ChatService.ts), not in Supabase, the model gets "signed
 // in: yes/no" but never the email (src/lib/chat-context-note.ts), and the browser keeps
 // the last messages per tab (sessionStorage) plus the conversation id (localStorage).
+//
+// CHAT-AGENT-P2-01: the «Dictado por voz» / "Voice dictation" item in that section must match
+// the chat's microphone (src/hooks/useDictation.ts): the browser's own speech service does the
+// transcription (Google in Chrome, Apple in Safari), only the text the user then sends reaches
+// us, no audio is recorded or stored. A server speech pipeline (P2-03) would change this copy.
 
 import { Link } from "@/i18n/navigation";
 
@@ -77,6 +82,7 @@ function PrivacidadContentEs() {
         <li><strong>Qué se envía:</strong> los mensajes que escribes se envían a Anthropic, que genera la respuesta con su modelo Claude. Junto a ellos solo van tu fecha, hora y zona horaria, el idioma de la página y si has iniciado sesión o no. Tu nombre y tu email no se envían al modelo.</li>
         <li><strong>Cuánto tiempo se guarda:</strong> la conversación se guarda en una memoria temporal del servidor para que el asistente recuerde lo que habéis hablado, y se borra automáticamente una hora después de tu último mensaje. No se guarda en la base de datos ni se asocia a tu cuenta. Tu navegador conserva los últimos mensajes mientras la pestaña esté abierta.</li>
         <li><strong>Límites de uso:</strong> para evitar abusos se cuenta, de forma temporal, cuántos mensajes se envían desde cada dirección IP o, si has iniciado sesión, desde cada cuenta.</li>
+        <li><strong>Dictado por voz:</strong> si pulsas el micrófono, tu voz la transcribe el servicio de reconocimiento de voz de tu propio navegador (por ejemplo, el de Google en Chrome o el de Apple en Safari), según las condiciones de ese servicio. A gustavoai.dev solo llega el texto que envías después, igual que si lo hubieras escrito. No grabamos ni guardamos tu voz.</li>
         <li><strong>Reservas:</strong> el asistente no puede reservar nada por sí solo. Si te propone un horario, la reserva solo se hace cuando tú pulsas «Confirmar», con tu sesión iniciada.</li>
       </ul>
       <p>Anthropic trata estos mensajes como proveedor del servicio, según sus condiciones comerciales, que no le permiten usarlos para entrenar sus modelos. Te recomendamos no escribir en el chat datos sensibles (de salud, bancarios, contraseñas).</p>
@@ -281,6 +287,7 @@ function PrivacidadContentEn() {
         <li><strong>What is sent:</strong> the messages you type are sent to Anthropic, which writes the reply with its Claude model. The only other things sent with them are your date, time and time zone, the page language and whether you are signed in. Your name and email are not sent to the model.</li>
         <li><strong>How long it is kept:</strong> the conversation is held in temporary server memory so the assistant remembers what you have discussed, and it is deleted automatically one hour after your last message. It is not saved in the database or linked to your account. Your browser keeps the latest messages while the tab is open.</li>
         <li><strong>Usage limits:</strong> to prevent abuse, the number of messages sent from each IP address or, if you are signed in, from each account is counted temporarily.</li>
+        <li><strong>Voice dictation:</strong> if you tap the microphone, your voice is transcribed by your own browser&apos;s speech recognition service (for example Google&apos;s in Chrome or Apple&apos;s in Safari), under that service&apos;s terms. gustavoai.dev only receives the text you then send, just as if you had typed it. We do not record or store your voice.</li>
         <li><strong>Bookings:</strong> the assistant cannot book anything by itself. If it suggests a time, the booking is only made when you tap &quot;Confirm&quot; while signed in.</li>
       </ul>
       <p>Anthropic processes these messages as a service provider under its commercial terms, which do not allow it to use them to train its models. Please don&apos;t type sensitive information (health or bank details, passwords) in the chat.</p>

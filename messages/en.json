@@ -756,6 +756,14 @@
       "findAnotherMessage": "That slot is no longer free. What other slots do you have for the intro call?",
       "expired": "This time can no longer be booked. Ask the assistant for another.",
       "superseded": "Earlier proposal. Confirm the latest one."
+    },
+    "voice": {
+      "start": "Dictate a message",
+      "stop": "Stop listening",
+      "listening": "Listening…",
+      "denied": "Your browser isn't allowed to use the microphone. Turn it on in the site settings (the icon next to the address), then tap the microphone again.",
+      "noSpeech": "I didn't hear anything. Tap the microphone and try again.",
+      "unsupported": "This browser can't take dictation. You can type your message instead."
     }
   },
   "postClassReview": {

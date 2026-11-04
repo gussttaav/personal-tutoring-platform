@@ -756,6 +756,14 @@
       "findAnotherMessage": "Ese hueco ya no está libre. ¿Qué otros huecos tienes para el encuentro inicial?",
       "expired": "Este horario ya no se puede reservar. Pide otro al asistente.",
       "superseded": "Propuesta anterior. Confirma la más reciente."
+    },
+    "voice": {
+      "start": "Dictar mensaje",
+      "stop": "Dejar de escuchar",
+      "listening": "Te escucho…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Actívalo en los ajustes del sitio (el icono junto a la dirección) y vuelve a pulsar el micrófono.",
+      "noSpeech": "No te he oído. Pulsa el micrófono e inténtalo de nuevo.",
+      "unsupported": "Este navegador no permite dictar. Puedes escribir tu mensaje."
     }
   },
   "postClassReview": {

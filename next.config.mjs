@@ -94,7 +94,9 @@ const nextConfig = {
         ];
 
     return [
-      // Global headers — camera/mic denied by default everywhere
+      // Global headers — camera denied everywhere; the mic allowed for this origin only
+      // (CHAT-AGENT-P2-01: the chat, mounted on every page, dictates through the browser's
+      // SpeechRecognition, which `microphone=()` blocks). /sesion below adds the camera.
       {
         source: "/(.*)",
         headers: [
@@ -102,7 +104,7 @@ const nextConfig = {
           { key: "X-Frame-Options",           value: "DENY" },
           { key: "X-XSS-Protection",          value: "1; mode=block" },
           { key: "Referrer-Policy",           value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy",        value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Permissions-Policy",        value: "camera=(), microphone=(self), geolocation=()" },
           { key: "Content-Security-Policy",   value: csp.join("; ") },
         ],
       },
