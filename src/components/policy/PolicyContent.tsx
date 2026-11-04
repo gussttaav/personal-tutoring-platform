@@ -26,6 +26,11 @@
 // busy intervals only, read from the browser for the proposed slots' days, never sent
 // to our servers or the assistant, the access token kept in memory only, the grant
 // kept until the user revokes it (decision Q4). Keep the Limited Use statement.
+// The «Asistente de IA» / "AI assistant" section, added with it, must match the chat:
+// messages go to Anthropic, the history lives in Redis for HISTORY_TTL_SEC (1 h idle,
+// src/services/ChatService.ts), not in Supabase, the model gets "signed
+// in: yes/no" but never the email (src/lib/chat-context-note.ts), and the browser keeps
+// the last messages per tab (sessionStorage) plus the conversation id (localStorage).
 
 import { Link } from "@/i18n/navigation";
 
@@ -60,10 +65,21 @@ function PrivacidadContentEs() {
       <h3>Servicios de terceros</h3>
       <ul>
         <li><strong>Google OAuth</strong> — inicio de sesión. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Política de Google</a>.</li>
+        <li><strong>Anthropic (Claude)</strong> — modelo de IA que genera las respuestas del asistente del sitio. <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">Política de Anthropic</a>.</li>
         <li><strong>Stripe</strong> — procesamiento de pagos. <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener noreferrer">Política de Stripe</a>.</li>
         <li><strong>Zoom</strong> — tecnología de aula virtual integrada en la plataforma para la realización de las sesiones. <a href="https://explore.zoom.us/es/privacy/" target="_blank" rel="noopener noreferrer">Política de Zoom</a>.</li>
         <li><strong>Supabase</strong> — base de datos donde se almacenan de forma segura las reservas, el saldo de créditos y los datos de cuenta.</li>
       </ul>
+
+      <h3>Asistente de IA</h3>
+      <p>El asistente del sitio responde preguntas sobre las clases, los cursos y el blog, y puede proponerte horarios para el encuentro gratuito de 15 minutos. Funciona así:</p>
+      <ul>
+        <li><strong>Qué se envía:</strong> los mensajes que escribes se envían a Anthropic, que genera la respuesta con su modelo Claude. Junto a ellos solo van tu fecha, hora y zona horaria, el idioma de la página y si has iniciado sesión o no. Tu nombre y tu email no se envían al modelo.</li>
+        <li><strong>Cuánto tiempo se guarda:</strong> la conversación se guarda en una memoria temporal del servidor para que el asistente recuerde lo que habéis hablado, y se borra automáticamente una hora después de tu último mensaje. No se guarda en la base de datos ni se asocia a tu cuenta. Tu navegador conserva los últimos mensajes mientras la pestaña esté abierta.</li>
+        <li><strong>Límites de uso:</strong> para evitar abusos se cuenta, de forma temporal, cuántos mensajes se envían desde cada dirección IP o, si has iniciado sesión, desde cada cuenta.</li>
+        <li><strong>Reservas:</strong> el asistente no puede reservar nada por sí solo. Si te propone un horario, la reserva solo se hace cuando tú pulsas «Confirmar», con tu sesión iniciada.</li>
+      </ul>
+      <p>Anthropic trata estos mensajes como proveedor del servicio, según sus condiciones comerciales, que no le permiten usarlos para entrenar sus modelos. Te recomendamos no escribir en el chat datos sensibles (de salud, bancarios, contraseñas).</p>
 
       <h3>Tu calendario de Google (opcional)</h3>
       <p>El asistente de IA del sitio puede proponerte horarios para el encuentro gratuito de 15 minutos. Si has iniciado sesión, puedes pulsar «Comparar con mi calendario» para ocultar los horarios que coinciden con algo de tu agenda. Solo en ese momento Google te pide permiso para ver tu disponibilidad (permiso <code>calendar.freebusy</code>, de solo lectura).</p>
@@ -253,10 +269,21 @@ function PrivacidadContentEn() {
       <h3>Third-party services</h3>
       <ul>
         <li><strong>Google OAuth</strong> — sign-in. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</li>
+        <li><strong>Anthropic (Claude)</strong> — AI model that writes the site assistant&apos;s replies. <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">Anthropic Privacy Policy</a>.</li>
         <li><strong>Stripe</strong> — payment processing. <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe Privacy Policy</a>.</li>
         <li><strong>Zoom</strong> — virtual classroom technology integrated into the platform for conducting sessions. <a href="https://explore.zoom.us/en/privacy/" target="_blank" rel="noopener noreferrer">Zoom Privacy Policy</a>.</li>
         <li><strong>Supabase</strong> — database where bookings, credit balances and account data are stored securely.</li>
       </ul>
+
+      <h3>AI assistant</h3>
+      <p>The site&apos;s assistant answers questions about the classes, the courses and the blog, and can suggest times for the free 15-minute intro call. This is how it works:</p>
+      <ul>
+        <li><strong>What is sent:</strong> the messages you type are sent to Anthropic, which writes the reply with its Claude model. The only other things sent with them are your date, time and time zone, the page language and whether you are signed in. Your name and email are not sent to the model.</li>
+        <li><strong>How long it is kept:</strong> the conversation is held in temporary server memory so the assistant remembers what you have discussed, and it is deleted automatically one hour after your last message. It is not saved in the database or linked to your account. Your browser keeps the latest messages while the tab is open.</li>
+        <li><strong>Usage limits:</strong> to prevent abuse, the number of messages sent from each IP address or, if you are signed in, from each account is counted temporarily.</li>
+        <li><strong>Bookings:</strong> the assistant cannot book anything by itself. If it suggests a time, the booking is only made when you tap &quot;Confirm&quot; while signed in.</li>
+      </ul>
+      <p>Anthropic processes these messages as a service provider under its commercial terms, which do not allow it to use them to train its models. Please don&apos;t type sensitive information (health or bank details, passwords) in the chat.</p>
 
       <h3>Your Google Calendar (optional)</h3>
       <p>The site&apos;s AI assistant can suggest times for the free 15-minute intro call. If you are signed in, you can tap &quot;Compare with my calendar&quot; to hide the times that clash with something in your schedule. Only then does Google ask for your permission to see your availability (the read-only <code>calendar.freebusy</code> permission).</p>
