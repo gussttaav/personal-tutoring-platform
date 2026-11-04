@@ -627,3 +627,15 @@ stderr\n…` for any código, and `TimeoutError("no ha terminado en 30 s y se ha
 expected observaciones are Block 4's, except the tortilla's `t6`, now an `editar`.
 `correr.py <carpeta> <pedido>` runs on a `tempfile.mkdtemp()` copy and its usuario is `input()`
 at the terminal (`[s/N]`), the real permiso prompt still being lesson 37's.
+
+**From lesson 35 on, M starts with two `sistema` mensajes when the carpeta has a project file**
+(`COURSE-C2-P1-05`, lesson 35, tag `b5-l4`). `inicio(pedido, entorno=None)` in `agente.py` returns
+`[("sistema", SISTEMA), ("sistema", "El fichero de proyecto, AGENTE.md:\n\n" + text), ("usuario",
+pedido)]`, the middle one only if `PROYECTO = "AGENTE.md"` exists in `entorno`; read once, before
+the first turno. `api.peticion` already joined every `sistema` mensaje into `system` with a blank
+line, so the adapter does not change. `entorno` is optional so the tests' guiones, built with
+`inicio(pedido)`, are unchanged; `tests/test_inicio.py` checks both cases and the joined `system`.
+`SISTEMA` is six rules (Spanish, no narration, read before editing and cite `antiguo` verbatim, never
+repeat a failed llamada unchanged, nothing counts as done that is not in a llamada, close with one
+sentence once the tests pass). `coste.py <carpeta>` measures each fixed piece by difference with
+`max_tokens = 1` through `api.enviar` (not `ModeloAPI`, which rejects a cut respuesta).
