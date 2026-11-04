@@ -1,5 +1,9 @@
 # P3-01 kit: Google console steps, justification and demo script
 
+> **Outcome (2026-11-04):** the console shows `calendar.freebusy` under **non-sensitive** scopes, so
+> steps 1-5 were enough and **steps 4 (Search Console) and 6 (submit), the justification and the
+> demo video are not needed**. Kept for reference in case a sensitive scope is ever added.
+
 `CHAT-AGENT-P3-01`. Everything Gustavo needs in Google Cloud console. Claude wrote the privacy policy
 section (`src/components/policy/PolicyContent.tsx`, «Tu calendario de Google» / "Your Google
 Calendar") on `chat-agent/p3-01-google-verification`; it must be **live on gustavoai.dev** before
