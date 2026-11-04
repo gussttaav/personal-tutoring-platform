@@ -182,7 +182,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [x] 33. `el-bucle-con-un-modelo-real`
 - [x] 34. `herramientas-de-ficheros`
 - [x] 35. `prompt-de-sistema-y-fichero-de-proyecto`
-- [ ] 36. `compactacion`
+- [x] 36. `compactacion`
 - [ ] 37. `permisos-y-sandbox`
 - [ ] 38. `subagentes`
 - [ ] 39. `mini-benchmark`
