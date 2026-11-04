@@ -594,6 +594,55 @@ body::after {
 .chat-send:active { transform: scale(0.95); }
 .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* CHAT-AGENT-P2-01: dictation. The mic is a quiet secondary button beside «send»; while it
+   listens it turns green and pulses (still, with reduced motion), and the interim transcript
+   shows greyed in the input until the engine settles on the final one. */
+.chat-mic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface-container);
+  border: 1px solid var(--border-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  padding: 0;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.chat-mic:hover:not(:disabled) { color: var(--text); border-color: rgba(78, 222, 163, 0.4); }
+.chat-mic:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.chat-mic--listening,
+.chat-mic--listening:hover:not(:disabled) {
+  color: #4edea3;
+  background: rgba(78, 222, 163, 0.12);
+  border-color: rgba(78, 222, 163, 0.6);
+  animation: chat-mic-pulse 1.4s ease-out infinite;
+}
+
+@keyframes chat-mic-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0.45); }
+  100% { box-shadow: 0 0 0 10px rgba(78, 222, 163, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-mic--listening,
+  .chat-mic--listening:hover:not(:disabled) { animation: none; }
+}
+
+.chat-input--interim { color: var(--text-dim); }
+
+.chat-voice-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
 .chat-disclaimer {
   margin: 0;
   font-size: 11px;
@@ -794,7 +843,8 @@ body::after {
   .chat-suggestions { padding: 0 16px 12px; }
   .chat-composer { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
   .chat-input { height: 48px; font-size: 16px; }
-  .chat-send { width: 48px; height: 48px; }
+  .chat-send,
+  .chat-mic { width: 48px; height: 48px; }
   .chat-actions { max-width: 100%; } /* CHAT-AGENT-P1-04: the card's date fits on one line */
 }
 
