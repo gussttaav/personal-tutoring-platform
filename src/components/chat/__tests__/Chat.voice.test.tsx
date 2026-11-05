@@ -295,7 +295,7 @@ describe("CHAT-AGENT-P2-02: read-aloud", () => {
       fireEvent.click(screen.getByRole("button", { name: "chat.voice.stop" }));
       act(() => FakeRecognition.last!.onend?.());
 
-      expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("hola, quería preguntar");
+      expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("hola, quería preguntar");
       expect(calls).toHaveLength(0);
     });
 
@@ -306,8 +306,23 @@ describe("CHAT-AGENT-P2-02: read-aloud", () => {
 
       dictate("me quedé callado");
 
-      expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("me quedé callado");
+      expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("me quedé callado");
       expect(calls).toHaveLength(0);
+    });
+
+    it("the composer is a textarea: Shift+Enter keeps a line break, Enter sends it", async () => {
+      const { calls } = mockChatReply({ reply: "ok", sessionId: null, actions: [] });
+      render(<Chat />);
+      const box = screen.getByRole("textbox");
+      expect(box.tagName).toBe("TEXTAREA");
+
+      fireEvent.change(box, { target: { value: "Hola.\nTengo una duda" } });
+      fireEvent.keyDown(box, { key: "Enter", shiftKey: true });
+      expect(calls).toHaveLength(0);
+      fireEvent.keyDown(box, { key: "Enter" });
+
+      await screen.findByText("ok");
+      expect(calls[0].message).toBe("Hola.\nTengo una duda");
     });
 
     it("the touch send keeps what was typed before dictating", async () => {

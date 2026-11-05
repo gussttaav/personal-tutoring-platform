@@ -63,12 +63,16 @@
  * on a desktop it lands in the input to review, as before. A dictation the browser ended by
  * itself (a long silence) never sends. The stop tap primes the speech engine, since the send
  * comes a moment later, from the engine's `end` event, outside the gesture iOS needs.
+ * The composer is a one-row textarea that grows with its text up to ~5 lines (`.chat-input`
+ * max-height), then scrolls, so a long explanation, typed or dictated, can be read back before
+ * sending. Enter sends, Shift+Enter is a new line; a user message keeps its line breaks.
  */
 
 import {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useMemo,
   Fragment,
@@ -222,7 +226,7 @@ export default function Chat() {
   const [mountedAt]                           = useState(() => Date.now());
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef       = useRef<HTMLInputElement>(null);
+  const inputRef       = useRef<HTMLTextAreaElement>(null);
   // CHAT-DRAWER-01: the element that had focus when the panel opened (a Navbar button, the
   // Footer link, a landing CTA): closing from inside the panel hands focus back to it.
   const openerRef      = useRef<HTMLElement | null>(null);
@@ -279,11 +283,22 @@ export default function Chat() {
     if (!isOpen) { cancelDictation(); cancelSpeech(); }
   }, [isOpen, cancelDictation, cancelSpeech]);
 
-  // CHAT-AGENT-P2-01b: a long dictation runs past the one-line input; keep its end in view.
-  useEffect(() => {
+  // CHAT-AGENT-P2-01b: the textarea grows with its text (CSS max-height caps it, then it
+  // scrolls), and while dictating its end stays in view.
+  const shownInput = dictation.listening && dictation.interim !== ""
+    ? (input.trim() ? `${input.trimEnd()} ${dictation.interim}` : dictation.interim)
+    : input;
+  useLayoutEffect(() => {
     const el = inputRef.current;
-    if (el && dictation.listening) el.scrollLeft = el.scrollWidth;
-  }, [dictation.listening, dictation.interim]);
+    if (!el) return;
+    // Measured with overflow hidden: a scrollbar showing at the collapsed height narrows the
+    // box and adds a wrapped line to the measurement.
+    el.style.overflowY = "hidden";
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
+    el.style.overflowY = "";
+    if (dictation.listening) el.scrollTop = el.scrollHeight;
+  }, [shownInput, dictation.listening]);
 
   // CHAT-AGENT-P2-02: the chat opened where the mic can't be offered (P2-03 gate metric).
   useEffect(() => {
@@ -422,7 +437,7 @@ export default function Chat() {
     });
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
   }
 
@@ -520,10 +535,10 @@ export default function Chat() {
 
       <div className="chat-composer">
         <div className="chat-input-row">
-          <input
-            ref={inputRef} className={`chat-input${showInterim ? " chat-input--interim" : ""}`} type="text"
+          <textarea
+            ref={inputRef} className={`chat-input${showInterim ? " chat-input--interim" : ""}`} rows={1}
             placeholder={dictation.listening ? t("voice.listening") : t("placeholder")}
-            value={showInterim ? (input.trim() ? `${input.trimEnd()} ${dictation.interim}` : dictation.interim) : input}
+            value={shownInput}
             onChange={(e) => { setInput(e.target.value); cancelSpeech(); if (dictation.error) dictation.clearError(); }}
             onKeyDown={handleKeyDown}
             readOnly={dictation.listening}
