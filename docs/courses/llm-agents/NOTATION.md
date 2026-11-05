@@ -680,3 +680,27 @@ tests: paths out, a symlink out (skipped where links need privileges), the list 
 more, an unlisted command with no usuario denied, a `;` reaching the program as an argument) and
 `ajeno/` (a repository with an injection in its `AGENTE.md`, written without double quotes) are new.
 `bucle.py`, `agente.py`, `compactar.py`, `api.py` and `correr.py` are unchanged.
+
+**From lesson 38 on, the herramientas are an argument of the bucle, and one of them runs another
+bucle** (`COURSE-C2-P1-05`, lesson 38, tag `b5-l7`). `bucle(modelo, inicio, entorno, tope,
+usuario=None, compactar=None, herramientas=HERRAMIENTAS, funciones=FUNCIONES)` sends `herramientas`
+to the model, to `compactar(modelo, M, herramientas=…)` (the summary request keeps the bucle's own,
+for the prefix cache) and to `permisos.ejecutar(ll, entorno, usuario=None, herramientas=…,
+funciones=…)`, which checks the esquema with `incumple(ll, herramientas)` (a herramienta not offered
+is `no hay ninguna herramienta …`) and calls `funciones[ll["name"]]`. `herramientas/delegar.py` holds
+`HERRAMIENTA` (`objeto(encargo=…)`), `CLASE = "lectura"` and `RUTAS = []` but no function, and
+`herramientas/__init__.py` builds `CLASES` / `RUTAS` over `MODULOS + [delegar]` while `HERRAMIENTAS` /
+`FUNCIONES` keep the five. `subagente.py`: `LECTURAS` (the herramientas whose clase is `lectura`),
+`TOPE = 6`, the subagente's `SISTEMA`, `REGLA` (the line the agente principal's prompt de sistema
+gains: «Para averiguar dónde está o qué hace algo del repositorio, encárgaselo a un subagente con
+delegar, y lee tú sólo el fichero que vayas a editar.»), `subagente(modelo, encargo, entorno,
+tope=TOPE)` — `bucle` on `[("sistema", SISTEMA), ("usuario", encargo)]` with `LECTURAS`, no usuario,
+no compactar; its texto, or `RuntimeError("el subagente ha llegado a su tope de 6 turnos sin
+contestar")`, which the outer `ejecutar` turns into an error — and `con_delegar(modelo)`, returning
+`HERRAMIENTAS + [delegar.HERRAMIENTA]` and `FUNCIONES` plus a closure over the modelo.
+`inicio(pedido, entorno=None, sistema=SISTEMA)`; `agente(…, delegar=None)` takes the subagentes'
+modelo and, when given, starts M with `SISTEMA + "\n" + REGLA`. `correr.py`'s `Traza(modelo,
+sangria="")` prefixes every line through `escribe`, and the subagente runs on its own `Traza` with
+`"      │ "`. `tests/test_subagente.py` (three tests on two guionized models: only the final text
+comes back, only reads and never asks, the tope as an error) is new. `api.py`, `guionizado.py` and
+the five herramientas are unchanged.

@@ -157,6 +157,21 @@ machine, which the lesson 39 cloud run covers.
   missing), 2 ended with the fix written in their text, no `editar`, claiming the tests should pass.
   Questions per run: 4 on `b5-l5`, 2 on `b5-l6`. Transcripts (with `/etc/passwd` cut to two lines):
   [`05-lesson37-runs-2026-11-05.log`](05-lesson37-runs-2026-11-05.log).
+- **Lesson 38's subagents, 2026-11-05 (same machine; 2–5 min per run).** `delegar(encargo)` runs
+  the same `bucle` with a fresh M (the subagent's prompt + the encargo), `leer`/`buscar` only, the
+  same `ejecutar`, tope 6, no usuario; its final text is the observación. The model **does not
+  delegate on its own reliably**: with the delegar description alone, 0 of 1; with a `REGLA` in the
+  parent's prompt, 1 of 2 when the pedido named no file (and then the subagent answered from one
+  `buscar` without reading, and the parent repeated the error: the lesson's «no promete» trace) and
+  0 of 2 when it named the files (the parent read them itself, correct). With the pedido asking for
+  a subagent, 2 of 2: the subagent read both modules (1409 tokens in its M), the parent's M grew 145
+  and 214 tokens against 1453 with `b5-l6`, both answers right; 228 and 265 s against 208 s.
+  Costs measured: `delegar`'s schema 154 tokens and the `REGLA` 43 per parent petición; the
+  subagent's first petición 532. **The runner kept the parent's prefix cached** across the
+  delegation (82 tokens computed of 1454). Also seen, before the shipped prompts: a question pedido
+  answered with no llamada at all, invented, with or without subagents. For lesson 39: delegation is
+  a harness × model property worth a row only if the tareas give the model a reason to read many
+  files. Transcripts: [`05-lesson38-runs-2026-11-05.log`](05-lesson38-runs-2026-11-05.log).
 - **Gotcha found on the way:** an `ANTHROPIC_BASE_URL` already set in the shell (here, to the
   cloud API) silently redirects the course's code; the first run got a 401 from the cloud with a
   dummy key. Lesson 32 warns about it before the run.
@@ -196,7 +211,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [x] 35. `prompt-de-sistema-y-fichero-de-proyecto`
 - [x] 36. `compactacion`
 - [x] 37. `permisos-y-sandbox`
-- [ ] 38. `subagentes`
+- [x] 38. `subagentes`
 - [ ] 39. `mini-benchmark`
 - [ ] 40. `mcp-y-lo-que-viene`
 
