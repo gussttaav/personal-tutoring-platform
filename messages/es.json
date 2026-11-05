@@ -759,13 +759,16 @@
     },
     "voice": {
       "start": "Dictar mensaje",
-      "stop": "Dejar de escuchar",
+      "stop": "Terminar de dictar",
       "listening": "Te escucho…",
       "denied": "El navegador no tiene permiso para usar el micrófono. Actívalo en los ajustes del sitio (el icono junto a la dirección) y vuelve a pulsar el micrófono.",
       "noSpeech": "No te he oído. Pulsa el micrófono e inténtalo de nuevo.",
       "unsupported": "Este navegador no permite dictar. Puedes escribir tu mensaje.",
       "readAloudOn": "Lectura en voz alta: activada",
-      "readAloudOff": "Lectura en voz alta: desactivada"
+      "readAloudOff": "Lectura en voz alta: desactivada",
+      "stopAndSend": "Terminar y enviar",
+      "listeningHintSend": "Pulsa ■ cuando termines y se enviará.",
+      "listeningHintReview": "Pulsa ■ cuando termines; podrás revisar el texto antes de enviarlo."
     }
   },
   "postClassReview": {

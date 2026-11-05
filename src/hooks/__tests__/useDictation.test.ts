@@ -4,10 +4,14 @@
 // CHAT-AGENT-P2-01: the dictation hook's state machine against a fake SpeechRecognition
 // (no browser in Jest has a real one): start → interim → final → end, the errors the user
 // can act on, cancel / unmount dropping what was heard, and "unsupported" when start() throws.
+// CHAT-AGENT-P2-01b: continuous mode — finals joined across pauses (Android's cumulative
+// results deduplicated), `interim` is the whole text heard so far, and `onFinal` says whether
+// the user's stop ended the dictation.
 import { act, renderHook } from "@testing-library/react";
 import {
   useDictation,
   dictationLang,
+  joinSegments,
   readTranscript,
   type SpeechRecognitionLike,
   type SpeechRecognitionEventLike,
@@ -72,6 +76,13 @@ function setup(locale = "es") {
 }
 
 describe("pure helpers", () => {
+  it("joins segments with one space and lets a repeating segment replace what it repeats", () => {
+    expect(joinSegments(["uno", " dos ", "", "tres"])).toBe("uno dos tres");
+    expect(joinSegments(["Hola", "hola que tal"])).toBe("hola que tal");
+    expect(joinSegments(["sí", "sí"])).toBe("sí");
+    expect(joinSegments([])).toBe("");
+  });
+
   it("listens in British English on /en and Spanish otherwise", () => {
     expect(dictationLang("en")).toBe("en-GB");
     expect(dictationLang("es")).toBe("es-ES");
@@ -111,7 +122,7 @@ describe("useDictation", () => {
     expect(rec.started).toBe(true);
     expect(rec.lang).toBe("en-GB");
     expect(rec.interimResults).toBe(true);
-    expect(rec.continuous).toBe(false);
+    expect(rec.continuous).toBe(true);
     expect(hook.result.current.listening).toBe(true);
 
     act(() => rec.emit([["any free slot", false]]));
@@ -119,12 +130,12 @@ describe("useDictation", () => {
     expect(onFinal).not.toHaveBeenCalled();
 
     act(() => rec.emit([["any free slot on Tuesday afternoon", true]]));
-    expect(hook.result.current.interim).toBe("");
+    expect(hook.result.current.interim).toBe("any free slot on Tuesday afternoon");
     expect(onFinal).not.toHaveBeenCalled();
 
     act(() => rec.end());
     expect(onFinal).toHaveBeenCalledTimes(1);
-    expect(onFinal).toHaveBeenCalledWith("any free slot on Tuesday afternoon");
+    expect(onFinal).toHaveBeenCalledWith("any free slot on Tuesday afternoon", { byUser: false });
     expect(hook.result.current.listening).toBe(false);
     expect(hook.result.current.error).toBeNull();
   });
@@ -144,7 +155,28 @@ describe("useDictation", () => {
     expect(rec.stopped).toBe(true);
     act(() => rec.emit([["¿tienes hueco el martes por la tarde?", true]]));
     act(() => rec.end());
-    expect(onFinal).toHaveBeenCalledWith("¿tienes hueco el martes por la tarde?");
+    expect(onFinal).toHaveBeenCalledWith("¿tienes hueco el martes por la tarde?", { byUser: true });
+  });
+
+  it("keeps listening across pauses: finals are joined, and the input sees all of it", () => {
+    const { hook, onFinal } = setup();
+    act(() => hook.result.current.start());
+    const rec = last();
+    act(() => rec.emit([["Estoy estudiando ingeniería", true], ["y me cuesta", false]]));
+    expect(hook.result.current.interim).toBe("Estoy estudiando ingeniería y me cuesta");
+    act(() => rec.emit([["Estoy estudiando ingeniería", true], [" y me cuesta el cálculo.", true]]));
+    act(() => hook.result.current.stop());
+    act(() => rec.end());
+    expect(onFinal).toHaveBeenCalledWith("Estoy estudiando ingeniería y me cuesta el cálculo.", { byUser: true });
+  });
+
+  it("deduplicates Android's cumulative results", () => {
+    const { hook, onFinal } = setup();
+    act(() => hook.result.current.start());
+    const rec = last();
+    act(() => rec.emit([["hola", true], ["hola qué tal", true], ["hola qué tal tienes hueco", true]]));
+    act(() => rec.end());
+    expect(onFinal).toHaveBeenCalledWith("hola qué tal tienes hueco", { byUser: false });
   });
 
   it("cancel() drops what was heard and can start again afterwards", () => {
@@ -237,6 +269,6 @@ describe("useDictation", () => {
     hook.rerender({ cb: second });
     act(() => { last().emit([["hola", true]]); last().end(); });
     expect(first).not.toHaveBeenCalled();
-    expect(second).toHaveBeenCalledWith("hola");
+    expect(second).toHaveBeenCalledWith("hola", { byUser: false });
   });
 });

@@ -759,13 +759,16 @@
     },
     "voice": {
       "start": "Dictate a message",
-      "stop": "Stop listening",
+      "stop": "Finish dictating",
       "listening": "Listening…",
       "denied": "Your browser isn't allowed to use the microphone. Turn it on in the site settings (the icon next to the address), then tap the microphone again.",
       "noSpeech": "I didn't hear anything. Tap the microphone and try again.",
       "unsupported": "This browser can't take dictation. You can type your message instead.",
       "readAloudOn": "Read replies aloud: on",
-      "readAloudOff": "Read replies aloud: off"
+      "readAloudOff": "Read replies aloud: off",
+      "stopAndSend": "Finish and send",
+      "listeningHintSend": "Tap ■ when you're done and it will be sent.",
+      "listeningHintReview": "Press ■ when you're done; you can check the text before sending it."
     }
   },
   "postClassReview": {
