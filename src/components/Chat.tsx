@@ -55,6 +55,14 @@
  * panel closed isn't spoken. iOS only speaks after a gesture, so the send handler primes the
  * engine. A user message keeps `voice` (persisted), so a booking from the card counts as a
  * voice booking in the adoption events (`chat-analytics.ts`), even after a reload.
+ *
+ * CHAT-AGENT-P2-01b: dictation is continuous (it listens through pauses until the user taps
+ * stop), and the whole text heard so far shows greyed in the input. While listening the mic
+ * turns into a stop square and a hint says to tap it when done. On a touch device
+ * (`useCoarsePointer`) the user's stop SENDS the message (input + transcript, as a voice turn);
+ * on a desktop it lands in the input to review, as before. A dictation the browser ended by
+ * itself (a long silence) never sends. The stop tap primes the speech engine, since the send
+ * comes a moment later, from the engine's `end` event, outside the gesture iOS needs.
  */
 
 import {
@@ -77,6 +85,7 @@ import SlotChips from "@/components/chat/SlotChips";
 import FreeCallProposalCard, { type ProposalOutcome } from "@/components/chat/FreeCallProposalCard";
 import { browserTimezone, chatRequestTimezone } from "@/components/chat/slot-format";
 import { useDictation } from "@/hooks/useDictation";
+import { useCoarsePointer } from "@/hooks/useCoarsePointer";
 import { useReadAloud } from "@/hooks/useReadAloud";
 import { toSpeakableText } from "@/lib/chat-speech";
 import { trackChatMessage, trackVoiceBooking, trackVoiceUnsupported } from "@/lib/chat-analytics";
@@ -221,9 +230,21 @@ export default function Chat() {
   // the conversation is reset. P2-02 reads it to answer aloud and count voice turns.
   const voiceTurnRef   = useRef(false);
 
-  const appendTranscript = useCallback((text: string) => {
+  // CHAT-AGENT-P2-01b: the latest input value and sendMessage, for a send from the engine's `end`.
+  const inputValueRef  = useRef("");
+  const sendMessageRef = useRef<(text: string, opts?: { dictated?: boolean }) => void>(() => {});
+  const touch          = useCoarsePointer();
+  const touchRef       = useRef(touch);
+  useEffect(() => { inputValueRef.current = input; }, [input]);
+  useEffect(() => { touchRef.current = touch; }, [touch]);
+
+  const appendTranscript = useCallback((text: string, { byUser }: { byUser: boolean }) => {
     voiceTurnRef.current = true;
-    setInput((prev) => (prev.trim() ? `${prev.trimEnd()} ${text}` : text).slice(0, 1000));
+    const prev = inputValueRef.current;
+    const next = (prev.trim() ? `${prev.trimEnd()} ${text}` : text).slice(0, 1000);
+    // CHAT-AGENT-P2-01b: on a phone, the stop tap means «send it».
+    if (byUser && touchRef.current) { sendMessageRef.current(next, { dictated: true }); return; }
+    setInput(next);
     inputRef.current?.focus();
   }, []);
   const dictation = useDictation({ locale, onFinal: appendTranscript });
@@ -257,6 +278,12 @@ export default function Chat() {
   useEffect(() => {
     if (!isOpen) { cancelDictation(); cancelSpeech(); }
   }, [isOpen, cancelDictation, cancelSpeech]);
+
+  // CHAT-AGENT-P2-01b: a long dictation runs past the one-line input; keep its end in view.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (el && dictation.listening) el.scrollLeft = el.scrollWidth;
+  }, [dictation.listening, dictation.interim]);
 
   // CHAT-AGENT-P2-02: the chat opened where the mic can't be offered (P2-03 gate metric).
   useEffect(() => {
@@ -301,13 +328,13 @@ export default function Chat() {
     inputRef.current?.focus();
   }
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, opts?: { dictated?: boolean }) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
     cancelDictation();
     // CHAT-AGENT-P2-02: a chip or suggestion tap after dictating something is not a voice turn.
-    const voice = voiceTurnRef.current && text === inputRef.current?.value;
+    const voice = opts?.dictated ?? (voiceTurnRef.current && text === inputRef.current?.value);
     voiceTurnRef.current = false;
     // Toggle off → the reply is read, not heard: keep the normal one (links included).
     const spoken = voice && readAloudRef.current;
@@ -357,6 +384,7 @@ export default function Chat() {
       setIsLoading(false);
     }
   }, [isLoading, sessionId, cancelDictation, cancelSpeech, speech]);
+  useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
 
   // Only the latest proposal in the thread is live (a scroll-back tap can't book a slot the
   // conversation moved past).
@@ -399,8 +427,11 @@ export default function Chat() {
   }
 
   function toggleDictation() {
-    if (dictation.listening) dictation.stop();
-    else { cancelSpeech(); dictation.start(); }
+    if (dictation.listening) {
+      // CHAT-AGENT-P2-01b: this tap is the gesture the send that follows on a phone speaks from.
+      if (touch && readAloud) speech.prime();
+      dictation.stop();
+    } else { cancelSpeech(); dictation.start(); }
   }
 
   function toggleReadAloud() {
@@ -416,6 +447,7 @@ export default function Chat() {
     : dictation.error === "unsupported" ? t("voice.unsupported")
     : null;
   const showInterim = dictation.listening && dictation.interim !== "";
+  const stopLabel   = touch ? t("voice.stopAndSend") : t("voice.stop"); // CHAT-AGENT-P2-01b
 
   return (
     <div
@@ -503,12 +535,18 @@ export default function Chat() {
               className={`chat-mic${dictation.listening ? " chat-mic--listening" : ""}`}
               onClick={toggleDictation} disabled={isLoading}
               aria-pressed={dictation.listening}
-              aria-label={dictation.listening ? t("voice.stop") : t("voice.start")}
-              title={dictation.listening ? t("voice.stop") : t("voice.start")}
+              aria-label={dictation.listening ? stopLabel : t("voice.start")}
+              title={dictation.listening ? stopLabel : t("voice.start")}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v1a7 7 0 0 0 14 0v-1" /><line x1="12" y1="18" x2="12" y2="22" />
-              </svg>
+              {dictation.listening ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <rect x="5" y="5" width="14" height="14" rx="2.5" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v1a7 7 0 0 0 14 0v-1" /><line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+              )}
             </button>
           )}
           <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || dictation.listening || !input.trim()} aria-label={t("send")}>
@@ -518,6 +556,9 @@ export default function Chat() {
           </button>
         </div>
         {voiceHint && <p className="chat-voice-hint" role="status">{voiceHint}</p>}
+        {!voiceHint && dictation.listening && (
+          <p className="chat-voice-hint">{touch ? t("voice.listeningHintSend") : t("voice.listeningHintReview")}</p>
+        )}
         <p className="chat-disclaimer">{t("disclaimer")}</p>
       </div>
     </div>

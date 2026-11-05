@@ -19,6 +19,15 @@
  * aborts and drops whatever was heard (panel closed, «Nueva conversación», a sent message);
  * the hook aborts by itself on unmount. No state is set synchronously by `cancel()`: the
  * engine's `end` event does it, so it is safe to call from an effect.
+ *
+ * CHAT-AGENT-P2-01b: `continuous = true` (asked by Gustavo): a student explaining their
+ * situation pauses mid-thought, and one-utterance mode cut them off at the first pause. The
+ * engine now keeps listening until the user taps stop (or the browser ends the session itself:
+ * a long silence, an error). Final segments are joined with spaces, and a segment that repeats
+ * the text before it replaces it (Android Chrome reports each result cumulatively in continuous
+ * mode). `interim` is everything heard so far in this dictation, finals included, so the input
+ * shows the whole text while listening. `onFinal` says whether the user's stop ended it
+ * (`byUser`): the chat sends on a touch device then, and only then.
  */
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -70,16 +79,30 @@ export function dictationLang(locale: string): string {
   return locale === "en" ? "en-GB" : "es-ES";
 }
 
+/**
+ * Joins transcript segments with single spaces. A segment that starts with everything before
+ * it replaces it instead (Android Chrome repeats earlier results in each new one).
+ */
+export function joinSegments(segments: readonly string[]): string {
+  let out = "";
+  for (const raw of segments) {
+    const seg = raw.trim();
+    if (!seg) continue;
+    if (out && !seg.toLowerCase().startsWith(out.toLowerCase())) out = `${out} ${seg}`;
+    else out = seg;
+  }
+  return out;
+}
+
 /** Splits a result list into its final and interim text (rebuilt whole on every event). */
 export function readTranscript(results: SpeechRecognitionResultListLike): { final: string; interim: string } {
-  let final = "";
-  let interim = "";
+  const final: string[] = [];
+  const interim: string[] = [];
   for (let i = 0; i < results.length; i++) {
     const text = results[i][0]?.transcript ?? "";
-    if (results[i].isFinal) final += text;
-    else interim += text;
+    (results[i].isFinal ? final : interim).push(text);
   }
-  return { final: final.trim(), interim: interim.trim() };
+  return { final: joinSegments(final), interim: joinSegments(interim) };
 }
 
 const emptySubscribe = () => () => {};
@@ -87,14 +110,17 @@ const emptySubscribe = () => () => {};
 export interface UseDictationOptions {
   /** The page locale (`es` / `en`). */
   locale: string;
-  /** Called once per utterance with the final transcript (never empty). */
-  onFinal: (text: string) => void;
+  /**
+   * Called once per dictation with the final transcript (never empty). `byUser`: the user's
+   * `stop()` ended it, not the browser.
+   */
+  onFinal: (text: string, info: { byUser: boolean }) => void;
 }
 
 export interface Dictation {
   supported: boolean;
   listening: boolean;
-  /** What the engine has heard so far and may still revise. Empty when not listening. */
+  /** Everything heard so far in this dictation; its tail may still change. Empty when not listening. */
   interim: string;
   error: DictationError | null;
   start(): void;
@@ -112,8 +138,9 @@ export function useDictation({ locale, onFinal }: UseDictationOptions): Dictatio
   const [interim,   setInterim]   = useState("");
   const [error,     setError]     = useState<DictationError | null>(null);
 
-  // The utterance in progress: `discard` is set by `cancel()` and read by its `end` handler.
-  const sessionRef     = useRef<{ recognition: SpeechRecognitionLike; discard: boolean } | null>(null);
+  // The dictation in progress: `discard` is set by `cancel()`, `byUser` by `stop()`, and both
+  // are read by its `end` handler.
+  const sessionRef     = useRef<{ recognition: SpeechRecognitionLike; discard: boolean; byUser: boolean } | null>(null);
   const onFinalRef     = useRef(onFinal);
   useEffect(() => { onFinalRef.current = onFinal; }, [onFinal]);
 
@@ -124,16 +151,16 @@ export function useDictation({ locale, onFinal }: UseDictationOptions): Dictatio
     const recognition = new Ctor();
     recognition.lang            = dictationLang(locale);
     recognition.interimResults  = true;
-    recognition.continuous      = false;
+    recognition.continuous      = true; // CHAT-AGENT-P2-01b
     recognition.maxAlternatives = 1;
 
-    const session = { recognition, discard: false };
+    const session = { recognition, discard: false, byUser: false };
     let heard = "";
 
     recognition.onresult = (e) => {
       const { final, interim: pending } = readTranscript(e.results);
       heard = final;
-      setInterim(pending);
+      setInterim(joinSegments([final, pending]));
     };
     recognition.onerror = (e) => {
       if (e.error === "not-allowed") setError("not-allowed");
@@ -144,7 +171,7 @@ export function useDictation({ locale, onFinal }: UseDictationOptions): Dictatio
       if (sessionRef.current === session) sessionRef.current = null;
       setListening(false);
       setInterim("");
-      if (!session.discard && heard) onFinalRef.current(heard);
+      if (!session.discard && heard) onFinalRef.current(heard, { byUser: session.byUser });
     };
 
     try {
@@ -161,7 +188,10 @@ export function useDictation({ locale, onFinal }: UseDictationOptions): Dictatio
   }, [locale]);
 
   const stop = useCallback(() => {
-    sessionRef.current?.recognition.stop();
+    const session = sessionRef.current;
+    if (!session) return;
+    session.byUser = true;
+    session.recognition.stop();
   }, []);
 
   const cancel = useCallback(() => {

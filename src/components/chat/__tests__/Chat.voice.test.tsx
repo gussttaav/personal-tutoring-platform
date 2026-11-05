@@ -6,6 +6,9 @@
 // the tap and has its reply spoken as speakable text; a typed one is neither; the header toggle
 // silences it and survives a remount; a reply landing after the panel closed is not spoken;
 // the adoption events fire (message, voice input, unsupported, voice booking).
+// CHAT-AGENT-P2-01b: while listening the mic is a stop square with a hint; on a touch device the
+// user's stop sends the message as a voice turn, on a desktop it lands in the input, and a
+// dictation the browser ended by itself never sends.
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("next-intl", () => ({
@@ -62,8 +65,11 @@ class FakeRecognition {
   start() {}
   stop()  {}
   abort() { this.onend?.(); }
-  say(text: string) {
+  hear(text: string) {
     this.onresult?.({ results: [Object.assign([{ transcript: text }], { isFinal: true })] });
+  }
+  say(text: string) {
+    this.hear(text);
     this.onend?.();
   }
 }
@@ -131,6 +137,15 @@ function clickSend() {
 }
 
 const spokenTexts = () => synth.spoken.map((u) => u.text);
+
+let touchMode = false;
+beforeEach(() => {
+  touchMode = false;
+  window.matchMedia = ((query: string) => ({
+    matches: query === "(pointer: coarse)" && touchMode,
+    addEventListener: () => {}, removeEventListener: () => {},
+  })) as unknown as typeof window.matchMedia;
+});
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -247,5 +262,66 @@ describe("CHAT-AGENT-P2-02: read-aloud", () => {
     expect(screen.queryByRole("button", { name: "chat.voice.start" })).toBeNull();
     expect(screen.queryByRole("button", { name: /chat\.voice\.readAloud/ })).toBeNull();
     expect(mockTrackUnsupported).toHaveBeenCalled();
+  });
+
+  describe("CHAT-AGENT-P2-01b: continuous dictation", () => {
+    function listenAndHear(text: string) {
+      fireEvent.click(screen.getByRole("button", { name: "chat.voice.start" }));
+      act(() => FakeRecognition.last!.hear(text));
+    }
+
+    it("on a touch device the stop tap sends the dictated text as a voice turn", async () => {
+      touchMode = true;
+      const { calls } = mockChatReply({ reply: "Te ayudo", sessionId: null, actions: [] });
+      render(<Chat />);
+
+      listenAndHear("Estoy en primero de ingeniería y me cuesta el cálculo");
+      expect(screen.getByText("chat.voice.listeningHintSend")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "chat.voice.stopAndSend" }));
+      expect(spokenTexts()).toEqual([""]); // primed inside the stop tap
+      act(() => FakeRecognition.last!.onend?.());
+
+      await screen.findByText("Te ayudo");
+      expect(calls[0]).toMatchObject({ message: "Estoy en primero de ingeniería y me cuesta el cálculo", voice: true });
+      expect(mockTrackMessage).toHaveBeenCalledWith(true);
+    });
+
+    it("on a desktop the stop tap leaves the text in the input to review", () => {
+      const { calls } = mockChatReply({ reply: "x", sessionId: null, actions: [] });
+      render(<Chat />);
+
+      listenAndHear("hola, quería preguntar");
+      expect(screen.getByText("chat.voice.listeningHintReview")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "chat.voice.stop" }));
+      act(() => FakeRecognition.last!.onend?.());
+
+      expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("hola, quería preguntar");
+      expect(calls).toHaveLength(0);
+    });
+
+    it("on a touch device a dictation the browser ended by itself is not sent", () => {
+      touchMode = true;
+      const { calls } = mockChatReply({ reply: "x", sessionId: null, actions: [] });
+      render(<Chat />);
+
+      dictate("me quedé callado");
+
+      expect((screen.getByRole("textbox") as HTMLInputElement).value).toBe("me quedé callado");
+      expect(calls).toHaveLength(0);
+    });
+
+    it("the touch send keeps what was typed before dictating", async () => {
+      touchMode = true;
+      const { calls } = mockChatReply({ reply: "ok", sessionId: null, actions: [] });
+      render(<Chat />);
+
+      fireEvent.change(screen.getByRole("textbox"), { target: { value: "Hola." } });
+      listenAndHear("Necesito ayuda con Python");
+      fireEvent.click(screen.getByRole("button", { name: "chat.voice.stopAndSend" }));
+      act(() => FakeRecognition.last!.onend?.());
+
+      await screen.findByText("ok");
+      expect(calls[0].message).toBe("Hola. Necesito ayuda con Python");
+    });
   });
 });
