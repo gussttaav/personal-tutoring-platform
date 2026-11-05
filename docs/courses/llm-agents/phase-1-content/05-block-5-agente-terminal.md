@@ -195,7 +195,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [x] 34. `herramientas-de-ficheros`
 - [x] 35. `prompt-de-sistema-y-fichero-de-proyecto`
 - [x] 36. `compactacion`
-- [ ] 37. `permisos-y-sandbox`
+- [x] 37. `permisos-y-sandbox`
 - [ ] 38. `subagentes`
 - [ ] 39. `mini-benchmark`
 - [ ] 40. `mcp-y-lo-que-viene`
