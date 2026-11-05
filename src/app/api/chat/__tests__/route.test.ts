@@ -7,6 +7,7 @@
 // response carries `actions`, and the daily kill switch counts model calls.
 // CHAT-AGENT-P1-03: the route passes a per-request contextNote built from that context.
 // CHAT-AGENT-P1-04: the response also names the timezone the tools used.
+// CHAT-AGENT-P2-02: `voice: true` appends the voice-mode line to the context note.
 import { NextRequest } from "next/server";
 
 jest.mock("@/lib/ratelimit", () => ({
@@ -173,6 +174,14 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
     expect(mockAsk.mock.calls[0][0].contextNote).toMatch(
       /^Fecha y hora actual del usuario: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}-05:00 \(\p{L}+\)\. Zona horaria del usuario: America\/Bogota\. Sesión iniciada: sí\. Idioma: es\.$/u,
     );
+  });
+
+  it("adds the voice-mode line to the context note on a dictated turn only (CHAT-AGENT-P2-02)", async () => {
+    await POST(postReq({ message: "hola", voice: true }));
+    await POST(postReq({ message: "hola" }));
+
+    expect(mockAsk.mock.calls[0][0].contextNote).toMatch(/Idioma: es\. El usuario ha dictado este mensaje.*sin markdown, sin enlaces, sin listas\./);
+    expect(mockAsk.mock.calls[1][0].contextNote).toMatch(/Idioma: es\.$/);
   });
 
   it("counts the reply's model calls in the kill switch", async () => {

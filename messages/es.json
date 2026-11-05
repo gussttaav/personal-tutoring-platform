@@ -763,7 +763,9 @@
       "listening": "Te escucho…",
       "denied": "El navegador no tiene permiso para usar el micrófono. Actívalo en los ajustes del sitio (el icono junto a la dirección) y vuelve a pulsar el micrófono.",
       "noSpeech": "No te he oído. Pulsa el micrófono e inténtalo de nuevo.",
-      "unsupported": "Este navegador no permite dictar. Puedes escribir tu mensaje."
+      "unsupported": "Este navegador no permite dictar. Puedes escribir tu mensaje.",
+      "readAloudOn": "Lectura en voz alta: activada",
+      "readAloudOff": "Lectura en voz alta: desactivada"
     }
   },
   "postClassReview": {

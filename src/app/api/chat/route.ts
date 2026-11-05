@@ -25,6 +25,8 @@
  *   CHAT-AGENT-P1-04: the answer also carries `timezone`, the one the tools used (the
  *           visitor's, or the tutor's when none was sent), so the chat writes its slot
  *           chips and proposal card on the same clock as the reply.
+ *   CHAT-AGENT-P2-02: `voice: true` (a dictated turn) adds the voice-mode line to the
+ *           contextNote (short, no markdown / links / lists), since the reply is read aloud.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -139,7 +141,7 @@ async function postHandler(req: NextRequest) {
       :                              "El mensaje no puede estar vacío";
     return NextResponse.json({ error }, { status: 400 });
   }
-  const { message, sessionId, timezone } = parsed.data;
+  const { message, sessionId, timezone, voice } = parsed.data;
 
   let modelCalls = 0;
   try {
@@ -205,7 +207,7 @@ async function postHandler(req: NextRequest) {
       sessionId: sessionId ?? null,
       systemPrompt,
       toolContext,
-      contextNote: buildContextNote(toolContext),
+      contextNote: buildContextNote(toolContext, { voice }), // CHAT-AGENT-P2-02: voice mode
     });
     modelCalls = result.modelCalls;
     log("info", "Chat reply", {
