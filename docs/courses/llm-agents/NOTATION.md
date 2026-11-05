@@ -626,7 +626,7 @@ stderr\n…` for any código, and `TimeoutError("no ha terminado en 30 s y se ha
 `tempfile.TemporaryDirectory()` and compare `ficheros(carpeta)` with the expected dict; their
 expected observaciones are Block 4's, except the tortilla's `t6`, now an `editar`.
 `correr.py <carpeta> <pedido>` runs on a `tempfile.mkdtemp()` copy and its usuario is `input()`
-at the terminal (`[s/N]`), the real permiso prompt still being lesson 37's.
+at the terminal (`[s/N]`); lesson 37 changes which llamadas reach it, not how it asks.
 
 **From lesson 35 on, M starts with two `sistema` mensajes when the carpeta has a project file**
 (`COURSE-C2-P1-05`, lesson 35, tag `b5-l4`). `inicio(pedido, entorno=None)` in `agente.py` returns
@@ -660,3 +660,23 @@ cover a petición recalculated after a compaction). `tests/test_compactar.py` (f
 model with a set `usage`) and `recetario/` (five files, three bugs in two modules, sized to fill the
 window) are new; the `context-window` widget's `compactacion` preset is the measured tenth petición
 of the lesson's opening run, with `margin = 3072` so "compact" fires at the umbral.
+
+**From lesson 37 on, `permisos.ejecutar` checks four things, and paths are confined**
+(`COURSE-C2-P1-05`, lesson 37, tag `b5-l6`). Order: esquema → sandbox → permiso → function, the first
+failure returning its error. Each herramienta declares `RUTAS` beside `CLASE` (`["ruta"]` for `leer`,
+`buscar`, `editar`, `escribir`; `[]` for `ejecutar`), collected by `herramientas/__init__.py` as
+`RUTAS`. `herramientas/comun.py` gains `dentro(entorno, ruta)`: `Path(raiz, ruta).resolve()
+.is_relative_to(raiz)` with `raiz = Path(entorno).resolve()`, `False` on `OSError` / `ValueError`.
+`permisos.fuera(ll, entorno)` returns the first declared ruta not `dentro`, and the error is
+`no se ha ejecutado: <ruta> está fuera de la carpeta de trabajo`, never asked. `buscar` also skips the
+files it walks that resolve outside. `permiso(ll, permisos=PERMISOS, comandos=COMANDOS)` returns
+`permitir` for a llamada of clase `ejecución` whose `comando` is `en_la_lista`, i.e. `partes(comando)`
+equals `partes(c)` for some `c` in `COMANDOS = ["python -m unittest", "python3 -m unittest"]`
+(an unclosed quote is in no list); otherwise the Block 4 table. `herramientas/ejecutar.py` runs
+without a shell: `partes(comando)` is `shlex.split` (POSIX rules on every OS), an empty command is a
+`ValueError`, a missing program `FileNotFoundError("no existe el programa …")`, and the description
+tells the model there are no pipes, redirections, `;` or `&&`. `tests/test_permisos.py` (five
+tests: paths out, a symlink out (skipped where links need privileges), the list whole and nothing
+more, an unlisted command with no usuario denied, a `;` reaching the program as an argument) and
+`ajeno/` (a repository with an injection in its `AGENTE.md`, written without double quotes) are new.
+`bucle.py`, `agente.py`, `compactar.py`, `api.py` and `correr.py` are unchanged.
