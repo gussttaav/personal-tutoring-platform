@@ -45,6 +45,16 @@
  * there, and the user edits and sends it as usual (no auto-send: dates and times get misheard).
  * Dictation is dropped when the panel closes, on «Nueva conversación», on send and on unmount.
  * `voiceTurnRef` marks a message that was dictated, for P2-02's read-aloud and its metrics.
+ *
+ * CHAT-AGENT-P2-02: a dictated message is sent with `voice: true` (the route asks the model for
+ * a short reply without markdown, links or lists) and its reply is read aloud (`useReadAloud`,
+ * through `toSpeakableText`); a typed one is not. With read-aloud off, a dictated message goes
+ * without `voice` (the reply is read on screen, so it keeps its links). The header's speaker toggle turns read-aloud
+ * off, persisted in localStorage. Speech is cancelled on a new message, when dictation starts,
+ * on typing, on close, on «Nueva conversación» and on unmount; a reply that lands after the
+ * panel closed isn't spoken. iOS only speaks after a gesture, so the send handler primes the
+ * engine. A user message keeps `voice` (persisted), so a booking from the card counts as a
+ * voice booking in the adoption events (`chat-analytics.ts`), even after a reload.
  */
 
 import {
@@ -67,6 +77,9 @@ import SlotChips from "@/components/chat/SlotChips";
 import FreeCallProposalCard, { type ProposalOutcome } from "@/components/chat/FreeCallProposalCard";
 import { browserTimezone, chatRequestTimezone } from "@/components/chat/slot-format";
 import { useDictation } from "@/hooks/useDictation";
+import { useReadAloud } from "@/hooks/useReadAloud";
+import { toSpeakableText } from "@/lib/chat-speech";
+import { trackChatMessage, trackVoiceBooking, trackVoiceUnsupported } from "@/lib/chat-analytics";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,6 +92,8 @@ interface Message {
   timezone?: string;
   /** Set when this message's proposal card booked the call. */
   booking?:  ProposalOutcome;
+  /** CHAT-AGENT-P2-02: a user message that was dictated. */
+  voice?:    true;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -88,6 +103,7 @@ const INITIAL_MESSAGES_COUNT = 2; // number of initial bot greeting messages
 const SESSION_STORAGE_KEY = "chat:messages";
 const LOCAL_STORAGE_KEY   = "chat:sessionId";
 const MAX_PERSISTED       = 20; // cap to avoid bloating sessionStorage
+const READ_ALOUD_KEY      = "chat:readAloud"; // CHAT-AGENT-P2-02: "off" when the user turned it off
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +116,23 @@ function loadFromSession(): Message[] | null {
     return parsed;
   } catch {
     return null;
+  }
+}
+
+function loadReadAloud(): boolean {
+  try {
+    return localStorage.getItem(READ_ALOUD_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+function saveReadAloud(on: boolean): void {
+  try {
+    if (on) localStorage.removeItem(READ_ALOUD_KEY);
+    else localStorage.setItem(READ_ALOUD_KEY, "off");
+  } catch {
+    // storage unavailable: the choice lasts until the page reloads
   }
 }
 
@@ -196,6 +229,16 @@ export default function Chat() {
   const dictation = useDictation({ locale, onFinal: appendTranscript });
   const { cancel: cancelDictation } = dictation;
 
+  // CHAT-AGENT-P2-02: read-aloud of the replies to dictated turns.
+  const speech = useReadAloud(locale);
+  const { cancel: cancelSpeech } = speech;
+  const [readAloud, setReadAloud] = useState(loadReadAloud);
+  // Read when the reply lands, not when it was asked: a toggle-off or a close meanwhile wins.
+  const readAloudRef = useRef(readAloud);
+  const isOpenRef    = useRef(isOpen);
+  useEffect(() => { readAloudRef.current = readAloud; }, [readAloud]);
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+
   // UX-04: Persist messages to sessionStorage whenever they change.
   // We skip the initial INITIAL_MESSAGES-only state to avoid a no-op write
   // on first load, but we persist everything once the user has sent a message.
@@ -210,9 +253,15 @@ export default function Chat() {
   }, [messages, isLoading]);
 
   // CHAT-AGENT-P2-01: closing the panel (from inside or from the Navbar) stops listening.
+  // CHAT-AGENT-P2-02: and reading.
   useEffect(() => {
-    if (!isOpen) cancelDictation();
-  }, [isOpen, cancelDictation]);
+    if (!isOpen) { cancelDictation(); cancelSpeech(); }
+  }, [isOpen, cancelDictation, cancelSpeech]);
+
+  // CHAT-AGENT-P2-02: the chat opened where the mic can't be offered (P2-03 gate metric).
+  useEffect(() => {
+    if (isOpen && !dictation.supported) trackVoiceUnsupported();
+  }, [isOpen, dictation.supported]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -236,6 +285,7 @@ export default function Chat() {
 
   function startNewConversation() {
     cancelDictation();
+    cancelSpeech();
     dictation.clearError();
     voiceTurnRef.current = false;
     setMessages(initialMessages);
@@ -256,17 +306,31 @@ export default function Chat() {
     if (!trimmed || isLoading) return;
 
     cancelDictation();
+    // CHAT-AGENT-P2-02: a chip or suggestion tap after dictating something is not a voice turn.
+    const voice = voiceTurnRef.current && text === inputRef.current?.value;
     voiceTurnRef.current = false;
+    // Toggle off → the reply is read, not heard: keep the normal one (links included).
+    const spoken = voice && readAloudRef.current;
+    // Still inside the tap / Enter: iOS lets the reply be spoken later only if this speaks now.
+    if (spoken) speech.prime();
+    else cancelSpeech();
+    trackChatMessage(voice);
     setShowSuggestions(false);
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
+    setMessages((prev) => [...prev, voice ? { role: "user", text: trimmed, voice: true } : { role: "user", text: trimmed }]);
     setIsLoading(true);
+    const speakReply = (reply: string) => {
+      if (spoken && readAloudRef.current && isOpenRef.current) speech.speak(toSpeakableText(reply));
+    };
 
     try {
       const res  = await fetch("/api/chat", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ message: trimmed, sessionId, timezone: chatRequestTimezone() }),
+        body:    JSON.stringify({
+          message: trimmed, sessionId, timezone: chatRequestTimezone(),
+          ...(spoken ? { voice: true } : {}), // CHAT-AGENT-P2-02
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t("unknownError"));
@@ -284,15 +348,15 @@ export default function Chat() {
           ? { role: "bot", text: data.reply, actions, timezone: typeof data.timezone === "string" ? data.timezone : undefined }
           : { role: "bot", text: data.reply },
       ]);
+      speakReply(data.reply);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "bot", text: err instanceof Error ? err.message : t("error") },
-      ]);
+      const message = err instanceof Error ? err.message : t("error");
+      setMessages((prev) => [...prev, { role: "bot", text: message }]);
+      speakReply(message);
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, sessionId, cancelDictation]);
+  }, [isLoading, sessionId, cancelDictation, cancelSpeech, speech]);
 
   // Only the latest proposal in the thread is live (a scroll-back tap can't book a slot the
   // conversation moved past).
@@ -302,6 +366,7 @@ export default function Chat() {
   );
 
   function markBooked(index: number, outcome: ProposalOutcome) {
+    if (messages.some((m) => m.role === "user" && m.voice)) trackVoiceBooking(); // CHAT-AGENT-P2-02
     setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, booking: outcome } : m)));
   }
 
@@ -335,7 +400,14 @@ export default function Chat() {
 
   function toggleDictation() {
     if (dictation.listening) dictation.stop();
-    else dictation.start();
+    else { cancelSpeech(); dictation.start(); }
+  }
+
+  function toggleReadAloud() {
+    const next = !readAloud;
+    if (!next) cancelSpeech();
+    setReadAloud(next);
+    saveReadAloud(next);
   }
 
   const voiceHint =
@@ -360,6 +432,20 @@ export default function Chat() {
           <div className="chat-header-status">{t("status")}</div>
         </div>
         <div className="chat-header-actions">
+          {dictation.supported && speech.supported && (
+            <button
+              type="button" className="chat-new-btn chat-read-aloud-btn" onClick={toggleReadAloud}
+              aria-label={readAloud ? t("voice.readAloudOn") : t("voice.readAloudOff")}
+              title={readAloud ? t("voice.readAloudOn") : t("voice.readAloudOff")}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                {readAloud
+                  ? <><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M19 5a10 10 0 0 1 0 14" /></>
+                  : <><line x1="22" y1="9" x2="16" y2="15" /><line x1="16" y1="9" x2="22" y2="15" /></>}
+              </svg>
+            </button>
+          )}
           <button
             className="chat-new-btn" onClick={startNewConversation}
             disabled={isLoading || messages.length <= INITIAL_MESSAGES_COUNT}
@@ -406,7 +492,7 @@ export default function Chat() {
             ref={inputRef} className={`chat-input${showInterim ? " chat-input--interim" : ""}`} type="text"
             placeholder={dictation.listening ? t("voice.listening") : t("placeholder")}
             value={showInterim ? (input.trim() ? `${input.trimEnd()} ${dictation.interim}` : dictation.interim) : input}
-            onChange={(e) => { setInput(e.target.value); if (dictation.error) dictation.clearError(); }}
+            onChange={(e) => { setInput(e.target.value); cancelSpeech(); if (dictation.error) dictation.clearError(); }}
             onKeyDown={handleKeyDown}
             readOnly={dictation.listening}
             disabled={isLoading} maxLength={1000} aria-label={t("placeholderShort")}

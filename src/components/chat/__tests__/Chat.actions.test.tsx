@@ -38,6 +38,10 @@ jest.mock("@/lib/api-client", () => {
   return { ...actual, api: { book: { post: (...args: unknown[]) => mockBookPost(...args) } } };
 });
 jest.mock("@/lib/booking-analytics", () => ({ trackBooking: jest.fn() }));
+// CHAT-AGENT-P2-02: Chat imports the chat events (@vercel/analytics is ESM, not loadable here).
+jest.mock("@/lib/chat-analytics", () => ({
+  trackChatMessage: jest.fn(), trackVoiceUnsupported: jest.fn(), trackVoiceBooking: jest.fn(),
+}));
 
 import Chat from "@/components/Chat";
 
