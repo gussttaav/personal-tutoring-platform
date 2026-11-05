@@ -719,6 +719,7 @@
     "initialMessage": "¡Hola! 👋 Soy el asistente de **Gustavo Torres**. Puedo contarte sobre sus clases, áreas de especialidad, cómo reservar una sesión o cualquier otra duda.",
     "initialQuestion": "¿En qué puedo ayudarte?",
     "suggestions": [
+      "¿Tienes hueco mañana para el encuentro gratuito?",
       "¿Qué asignaturas impartes?",
       "¿Cómo reservo una sesión?",
       "¿Qué incluye el pack?",
