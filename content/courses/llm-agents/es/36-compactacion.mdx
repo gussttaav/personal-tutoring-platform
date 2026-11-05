@@ -540,15 +540,11 @@ mide bastante menos que la que la precedió.
 
 El agente ya no se queda sin ventana a mitad de pedido: cuando se acerca, hace sitio él solo, y un
 pedido puede durar todos los turnos del tope, o más si subes el tope. Lo que no ha cambiado es
-quién vigila lo que hace en esos turnos. Cada escritura y cada orden te las pregunta una a una, y
-fuera de esa pregunta no hay nada: `ejecutar` lanza cualquier orden con la shell, y una ruta con
+quién vigila lo que hace en esos turnos. Cada escritura y cada comando te los pregunta uno a uno, y
+fuera de esa pregunta no hay nada: `ejecutar` lanza cualquier comando con la shell, y una ruta con
 <W>../</W> sale de la carpeta de trabajo sin que ninguna herramienta lo note.
 
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección siguiente
-    (slug permisos-y-sandbox), envolver «La lección siguiente» en su Leccion slug=…; el lint falla
-    con un slug que no resuelve, también dentro de un comentario. */}
-
-Un agente que trabaja más tiempo solo es un agente que puede hacer más daño sin que mires. La
-lección siguiente, sobre los permisos y el *sandbox*, cambia esa pregunta de cada turno por una
-tabla que sabe qué órdenes no hace falta preguntar, y por un límite que ninguna llamada puede
-cruzar: toda ruta, dentro de la carpeta de trabajo.
+Un agente que trabaja más tiempo solo es un agente que puede hacer más daño sin que mires.
+<Leccion slug="permisos-y-sandbox">La lección siguiente, sobre los permisos y el *sandbox*</Leccion>,
+cambia esa pregunta de cada turno por una tabla que sabe qué comandos no hace falta preguntar, y por
+un límite que ninguna llamada puede cruzar: toda ruta, dentro de la carpeta de trabajo.
