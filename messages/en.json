@@ -719,6 +719,7 @@
     "initialMessage": "Hi! 👋 I'm **Gustavo Torres**'s assistant. I can tell you about his classes, areas of expertise, how to book a session, or anything else you'd like to know.",
     "initialQuestion": "How can I help you?",
     "suggestions": [
+      "Any time tomorrow for the free intro call?",
       "What subjects do you teach?",
       "How do I book a session?",
       "What's included in the pack?",
