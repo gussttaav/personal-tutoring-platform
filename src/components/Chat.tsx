@@ -65,7 +65,9 @@
  * comes a moment later, from the engine's `end` event, outside the gesture iOS needs.
  * The composer is a one-row textarea that grows with its text up to ~5 lines (`.chat-input`
  * max-height), then scrolls, so a long explanation, typed or dictated, can be read back before
- * sending. Enter sends, Shift+Enter is a new line; a user message keeps its line breaks.
+ * sending. Enter sends, Shift+Enter is a new line; on a touch device Enter is a new line too
+ * (the on-screen keyboard has no Shift+Enter) and only «send» sends. A user message keeps its
+ * line breaks.
  */
 
 import {
@@ -438,6 +440,7 @@ export default function Chat() {
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (touch) return; // CHAT-AGENT-P2-01b: on a phone Enter is a new line; «send» sends
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
   }
 
@@ -537,6 +540,7 @@ export default function Chat() {
         <div className="chat-input-row">
           <textarea
             ref={inputRef} className={`chat-input${showInterim ? " chat-input--interim" : ""}`} rows={1}
+            enterKeyHint={touch ? "enter" : "send"}
             placeholder={dictation.listening ? t("voice.listening") : t("placeholder")}
             value={shownInput}
             onChange={(e) => { setInput(e.target.value); cancelSpeech(); if (dictation.error) dictation.clearError(); }}

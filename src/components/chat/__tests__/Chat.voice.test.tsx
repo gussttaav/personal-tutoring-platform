@@ -325,6 +325,24 @@ describe("CHAT-AGENT-P2-02: read-aloud", () => {
       expect(calls[0].message).toBe("Hola.\nTengo una duda");
     });
 
+    it("on a touch device Enter is a new line, and only the send button sends", async () => {
+      touchMode = true;
+      const { calls } = mockChatReply({ reply: "ok", sessionId: null, actions: [] });
+      render(<Chat />);
+      const box = screen.getByRole("textbox");
+      expect(box.getAttribute("enterkeyhint")).toBe("enter");
+
+      fireEvent.change(box, { target: { value: "Hola." } });
+      const enter = fireEvent.keyDown(box, { key: "Enter" });
+      expect(enter).toBe(true); // not prevented: the browser inserts the line break
+      expect(calls).toHaveLength(0);
+
+      fireEvent.change(box, { target: { value: "Hola.\nTengo una duda" } });
+      clickSend();
+      await screen.findByText("ok");
+      expect(calls[0].message).toBe("Hola.\nTengo una duda");
+    });
+
     it("the touch send keeps what was typed before dictating", async () => {
       touchMode = true;
       const { calls } = mockChatReply({ reply: "ok", sessionId: null, actions: [] });
