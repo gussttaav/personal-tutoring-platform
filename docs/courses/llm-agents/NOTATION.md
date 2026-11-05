@@ -639,3 +639,24 @@ line, so the adapter does not change. `entorno` is optional so the tests' guione
 repeat a failed llamada unchanged, nothing counts as done that is not in a llamada, close with one
 sentence once the tests pass). `coste.py <carpeta>` measures each fixed piece by difference with
 `max_tokens = 1` through `api.enviar` (not `ModeloAPI`, which rejects a cut respuesta).
+
+**From lesson 36 on, the bucle has one more step, and M can shrink** (`COURSE-C2-P1-05`, lesson
+36, tag `b5-l5`). `bucle(modelo, inicio, entorno, tope, usuario=None, compactar=None)` calls
+`M = compactar(modelo, M)` right after appending the respuesta and checking it has llamadas, before
+`ejecutar`: M ends on that respuesta, its `tool_use` still unanswered, and `llamadas` comes from `r`,
+which stays in M. `agente` gains `compactar=None` and passes it through; `correr.py` passes
+`compactar.compactar`. In `compactar.py`: `tokens(modelo)` is `modelo.usage` (`input_tokens` +
+`cache_read_input_tokens` + `output_tokens`, the last petición and its respuesta; the runner has no
+token-count endpoint), `UMBRAL = 4096` (8192 − 1024 − 3072), `RECIENTES = 2`, and `INSTRUCCION`, the
+fixed instrucción. Above the umbral, `p` is one past the first `usuario` mensaje (the pedido) and
+`corte = len(M) − (2k − 1)`; if `corte − p < 2` nothing is compacted; else the summary request is
+`M[:corte] + [("usuario", INSTRUCCION)]` with `HERRAMIENTAS` (kept for the prefix cache; the runner
+ignores `tool_choice`), its text bloques joined are the resumen, no text means M unchanged, and the
+result is `M[:p] + [("usuario", "Resumen de tus turnos anteriores, escrito por ti al compactar:\n\n"
++ resumen)] + M[corte:]`. `M[:corte]` is, mensaje by mensaje, the petición of $k − 1$ turnos earlier.
+A second compaction folds the previous resumen into the new one. `Traza` keeps `usage` and labels the
+summary request `resumen`, not counted as a turno; `api.py`'s `urlopen` waits 900 s (300 did not
+cover a petición recalculated after a compaction). `tests/test_compactar.py` (four tests, a `Contado`
+model with a set `usage`) and `recetario/` (five files, three bugs in two modules, sized to fill the
+window) are new; the `context-window` widget's `compactacion` preset is the measured tenth petición
+of the lesson's opening run, with `margin = 3072` so "compact" fires at the umbral.

@@ -120,6 +120,31 @@ machine, which the lesson 39 cloud run covers.
   must read the entorno (run the tests itself), never the final text. Fixed prefix by `coste.py`:
   tools 705, prompt de sistema 189, `AGENTE.md` 97, 1001 of 8192. Transcripts:
   [`05-lesson35-runs-2026-11-03.log`](05-lesson35-runs-2026-11-03.log).
+- **Lesson 36's compaction, 2026-11-04 (same machine, swapping: 241 MB free, 5.4 GB of swap;
+  prefill ≈10.5 tok/s, generation 2.6 tok/s at 1K tokens of M and 0.6 at 7K).** The window stays
+  8192; the umbral is **4096** (`compactar.UMBRAL` = 8192 − 1024 reserva − 3072 for the turno in
+  progress, whose observaciones arrive after the check), k = 2. No `count_tokens` endpoint on the
+  runner (404), so `tokens(M)` is the last petición's `usage` (input + cache_read + output), read
+  right after the respuesta; the runner **ignores `tool_choice: none`** (a tool_use came back
+  anyway), so the summary request keeps the tools (the prefix cache) and a respuesta with no text
+  leaves M unchanged; two `user` mensajes in a row are accepted. `recetario/` (5 files, 3 bugs in 2
+  modules) was sized by trial: a 10 KB first version timed out on turno 2 (two files in one turno,
+  ≈2900 new tokens, > api.py's 300 s); a 5 KB one never passed 2962 tokens in 8 turnos. With the
+  shipped 9 KB one: **baseline, compaction off — tope at turno 10 with 7471 tokens of input**, three
+  of them `leer recetario.py` after failed `editar` citas (the quotes again: `"""` and «» written as
+  `\"`), the next petición 8278 > 8192; 36 min. **Run B1, compaction on — fired after turnos 5, 7
+  and 10; peak petición 4898; each summary request prefilled exactly 111 tokens (the instrucción),
+  the petición after a compaction ≈1700 (158 s)**; tope, nothing fixed, 50 min. All three summaries
+  were wrong in a way that steered the agent: (1) «`ingredientes` normaliza a minúsculas» (its
+  docstring says so, its code does not) and the bug placed in `compra.py`; (2) turno 7 cites a
+  `veces` that exists nowhere, written from the summary without re-reading; (3) «he modificado
+  compra.py» with every edit refused. Two earlier attempts on the 9 KB project with `timeout=300`
+  both died on turno 5 (4874 tokens, 141 tokens generated at ≈1 tok/s): **b5-l5's `api.py` waits
+  900 s**. Every run past two minutes: the block's «under two minutes» target cannot hold for a
+  lesson whose point is filling 8K on this CPU; said in the lesson's Callout (36 and 50 min).
+  For lesson 39: the acceptance «compaction fires during the benchmark's second task» is
+  unverifiable until `tareas/` exists. Transcripts:
+  [`05-lesson36-runs-2026-11-04.log`](05-lesson36-runs-2026-11-04.log).
 - **Gotcha found on the way:** an `ANTHROPIC_BASE_URL` already set in the shell (here, to the
   cloud API) silently redirects the course's code; the first run got a 401 from the cloud with a
   dummy key. Lesson 32 warns about it before the run.
@@ -157,7 +182,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [x] 33. `el-bucle-con-un-modelo-real`
 - [x] 34. `herramientas-de-ficheros`
 - [x] 35. `prompt-de-sistema-y-fichero-de-proyecto`
-- [ ] 36. `compactacion`
+- [x] 36. `compactacion`
 - [ ] 37. `permisos-y-sandbox`
 - [ ] 38. `subagentes`
 - [ ] 39. `mini-benchmark`
