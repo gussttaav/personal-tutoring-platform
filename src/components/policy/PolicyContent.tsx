@@ -36,6 +36,10 @@
 // the chat's microphone (src/hooks/useDictation.ts): the browser's own speech service does the
 // transcription (Google in Chrome, Apple in Safari), only the text the user then sends reaches
 // us, no audio is recorded or stored. A server speech pipeline (P2-03) would change this copy.
+// CHAT-AGENT-P2-02: the «Lectura en voz alta» / "Read-aloud" item must match useReadAloud
+// (src/hooks/useReadAloud.ts): the browser's speech synthesis reads the reply to a dictated
+// message, a voice on the device is preferred, but a network voice (Chrome's «Google …») sends
+// the reply text to its provider; the header's speaker button turns it off.
 
 import { Link } from "@/i18n/navigation";
 
@@ -83,6 +87,7 @@ function PrivacidadContentEs() {
         <li><strong>Cuánto tiempo se guarda:</strong> la conversación se guarda en una memoria temporal del servidor para que el asistente recuerde lo que habéis hablado, y se borra automáticamente una hora después de tu último mensaje. No se guarda en la base de datos ni se asocia a tu cuenta. Tu navegador conserva los últimos mensajes mientras la pestaña esté abierta.</li>
         <li><strong>Límites de uso:</strong> para evitar abusos se cuenta, de forma temporal, cuántos mensajes se envían desde cada dirección IP o, si has iniciado sesión, desde cada cuenta.</li>
         <li><strong>Dictado por voz:</strong> si pulsas el micrófono, tu voz la transcribe el servicio de reconocimiento de voz de tu propio navegador (por ejemplo, el de Google en Chrome o el de Apple en Safari), según las condiciones de ese servicio. A gustavoai.dev solo llega el texto que envías después, igual que si lo hubieras escrito. No grabamos ni guardamos tu voz.</li>
+        <li><strong>Lectura en voz alta:</strong> si dictas un mensaje, la respuesta la lee en voz alta la función de síntesis de voz de tu navegador. Siempre que haya una, se usa una voz instalada en tu dispositivo; algunas voces (por ejemplo, las «Google» de Chrome) funcionan en los servidores de su proveedor, que en ese caso recibe el texto de la respuesta para leerlo. Puedes desactivar la lectura con el botón del altavoz del chat.</li>
         <li><strong>Reservas:</strong> el asistente no puede reservar nada por sí solo. Si te propone un horario, la reserva solo se hace cuando tú pulsas «Confirmar», con tu sesión iniciada.</li>
       </ul>
       <p>Anthropic trata estos mensajes como proveedor del servicio, según sus condiciones comerciales, que no le permiten usarlos para entrenar sus modelos. Te recomendamos no escribir en el chat datos sensibles (de salud, bancarios, contraseñas).</p>
@@ -288,6 +293,7 @@ function PrivacidadContentEn() {
         <li><strong>How long it is kept:</strong> the conversation is held in temporary server memory so the assistant remembers what you have discussed, and it is deleted automatically one hour after your last message. It is not saved in the database or linked to your account. Your browser keeps the latest messages while the tab is open.</li>
         <li><strong>Usage limits:</strong> to prevent abuse, the number of messages sent from each IP address or, if you are signed in, from each account is counted temporarily.</li>
         <li><strong>Voice dictation:</strong> if you tap the microphone, your voice is transcribed by your own browser&apos;s speech recognition service (for example Google&apos;s in Chrome or Apple&apos;s in Safari), under that service&apos;s terms. gustavoai.dev only receives the text you then send, just as if you had typed it. We do not record or store your voice.</li>
+        <li><strong>Read-aloud:</strong> if you dictate a message, the reply is read aloud by your browser&apos;s speech synthesis. Whenever one is available, a voice installed on your device is used; some voices (for example Chrome&apos;s &quot;Google&quot; voices) run on their provider&apos;s servers, which then receive the text of the reply in order to read it. You can turn read-aloud off with the speaker button in the chat.</li>
         <li><strong>Bookings:</strong> the assistant cannot book anything by itself. If it suggests a time, the booking is only made when you tap &quot;Confirm&quot; while signed in.</li>
       </ul>
       <p>Anthropic processes these messages as a service provider under its commercial terms, which do not allow it to use them to train its models. Please don&apos;t type sensitive information (health or bank details, passwords) in the chat.</p>
