@@ -243,7 +243,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [x] 36. `compactacion`
 - [x] 37. `permisos-y-sandbox`
 - [x] 38. `subagentes`
-- [ ] 39. `mini-benchmark`
+- [x] 39. `mini-benchmark`
 - [ ] 40. `mcp-y-lo-que-viene`
 
 ## The precise statements
