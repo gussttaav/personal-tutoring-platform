@@ -33,6 +33,8 @@ doc:
 > say so. A bigger model is a `FROM` line in the repo's `Modelfile`, the student's option and
 > unverified. It is measured **once**, for lesson 39's table, on a rented 16 GB cloud machine (CPU
 > only); that same run re-verifies every lesson's tag on a machine that is not the author's.
+> *Amended 2026-11-06:* the run used a free Kaggle CPU notebook (4 vCPU, 30 GB), not a rented
+> machine, and measured lesson 39's rows only; the tags were not re-verified there.
 
 - [ ] Runner and version (Ollama ≥ 0.14, the version that serves the Anthropic Messages API)
 - [ ] Default model tag and quantisation; disk; tokens/s on CPU for the course's model
@@ -172,6 +174,35 @@ machine, which the lesson 39 cloud run covers.
   answered with no llamada at all, invented, with or without subagents. For lesson 39: delegation is
   a harness × model property worth a row only if the tareas give the model a reason to read many
   files. Transcripts: [`05-lesson38-runs-2026-11-05.log`](05-lesson38-runs-2026-11-05.log).
+- **Lesson 39's benchmark, 2026-11-05.** `banco/` (not `tareas/`: the course's term is `banco de
+  pruebas`, and `tarea` is Block 1's ω), five pruebas, each `repo/` + `pedido.txt` + `evaluador.py`
+  + `solucion/`, no double quote anywhere; `tests/test_banco.py` checks every evaluador gives 0 to the
+  untouched repo and 1 with the solution. `medir.py`'s usuario says yes to escritura and no to any
+  command outside `COMANDOS`. **Row 1, this machine, `qwen3:4b-instruct` at 8K, 3 passes: 3 of 15,
+  Wilson [0.070, 0.452]**; per prueba 2/3, 0/3, 0/3, 0/3, 1/3; 5 of 15 end in `fin` with a false
+  «done» (8 of 15 if the final text were trusted); 61, 70 and 66 min per pass. Failures: `2-despensa`
+  blames `gastar` 3 of 3 and twice a respuesta outlasts `api.py`'s 900 s (excepción, scored 0);
+  `3-renombrar` reaches the tope twice mid-rename; `4-anadir` a subagente copies `'kg': 100-00` and the
+  parent chases it; `5-proyecto` cites the test file without one of its two blank lines until the tope;
+  `1-tiempos` fails once by writing the fix in its text. **Compaction fired once in 15** (2-despensa,
+  pass 2), so the acceptance «fires during the benchmark's second task» holds for 1 intento of 3, not
+  as a rule. Rows 2 and 3 ran on a free Kaggle CPU notebook (4 vCPU Xeon @ 2.2 GHz, 31 GB, Python
+  3.13), not a rented 16 GB machine (decided with the author the same day). The real agent's first
+  petición on `1-tiempos` is 10 669 tokens (the course's agent: 1 232), so it runs on a 32K `Modelfile`;
+  it drops a request at exactly 6 min whatever `API_TIMEOUT_MS` says, and gets through only because
+  Ollama's prefix cache keeps the partial prefill (each prueba's first petición ≈ 30 min there); the
+  attempts run in one fixed folder so its system prompt (which names the folder) stays cacheable.
+  **Row 2, `qwen3:8b` at 8K, same harness, Kaggle: 5 of 15, Wilson [0.152, 0.583]** (3/3, 0/3, 0/3,
+  2/3, 0/3; 3 h 26 min); 1 false «done»; 19 test runs vs 8, 29 rejected cites vs 9, 2 esquema errors
+  vs 0, 1 delegation vs 5; **compaction fired in 2-despensa 3 of 3** (it reads all four files, then
+  patches the sort in `avisos.py`, the symptom, not `fechas.py`). Paired difference vs row 1 (intento
+  i of each prueba): 0.133, [−0.119, 0.386]. **Row 3, the real agent (Claude Code 2.1.318, `-p`,
+  `acceptEdits`, Bash only for the unittest commands, `--max-turns 25`, 90 min per intento) on
+  `qwen3:4b-instruct` at 32K: 1 of 3, Wilson [0.061, 0.792]** — 1-tiempos in 49 min, 2-despensa and
+  3-renombrar at the 90-min limit, the 4th cut when Kaggle closed the interactive session for
+  «inactivity» (it counts edits, not runs: ~40 min). Cause: at ~11K tokens of context the model
+  generates 0.5 tok/s there (the 8B at row 2's context: 1.5), and every streamed request past 6 min
+  comes back 500, so no reply over ~180 tokens completes. Recorded as is; not re-run. Transcripts: [`05-lesson39-runs-2026-11-05.log`](05-lesson39-runs-2026-11-05.log).
 - **Gotcha found on the way:** an `ANTHROPIC_BASE_URL` already set in the shell (here, to the
   cloud API) silently redirects the course's code; the first run got a 401 from the cloud with a
   dummy key. Lesson 32 warns about it before the run.

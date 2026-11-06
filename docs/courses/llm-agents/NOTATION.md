@@ -704,3 +704,23 @@ sangria="")` prefixes every line through `escribe`, and the subagente runs on it
 `"      │ "`. `tests/test_subagente.py` (three tests on two guionized models: only the final text
 comes back, only reads and never asks, the tope as an error) is new. `api.py`, `guionizado.py` and
 the five herramientas are unchanged.
+
+**From lesson 39 on, the agent is measured, and nothing of it changes** (`COURSE-C2-P1-05`, lesson
+39, tag `b5-l8`). `banco/` holds five pruebas, one folder each (`1-tiempos`, `2-despensa`,
+`3-renombrar`, `4-anadir`, `5-proyecto`): `pedido.txt`, `repo/` (what the agent gets: `AGENTE.md`,
+the code, its tests), `evaluador.py` (a `unittest` module the agent never sees) and `solucion/` (the
+files of one good fix). No file of the banco has a double quote (lesson 34's finding). `medir.py`:
+`evaluar(prueba, entorno)` copies `evaluador.py` into the copy and runs `sys.executable -m unittest`
+and `sys.executable -m unittest evaluador` there, `LIMITE = 60` s each; 1 iff both exit 0, 0 on any
+other code or a timeout. `usuario(ll)` is `CLASES[ll["name"]] == "escritura"` (yes to `editar` /
+`escribir`, which the sandbox confines to the copy; no to any command outside `COMANDOS`).
+`Cuenta(modelo)` wraps a modelo like `Traza` without printing: `turnos`, `compactaciones` (a petición
+whose last mensaje is `INSTRUCCION`), `pico` (the largest `input_tokens + cache_read_input_tokens`),
+and `usage` for `compactar`. `intento(prueba)` runs `agente(Cuenta(ModeloAPI()), pedido, copia,
+usuario=usuario, compactar=compactar, delegar=Cuenta(ModeloAPI()))` on a `TemporaryDirectory` copy
+of `repo/`; any exception becomes the motivo `excepción (…)`, and `evaluar` runs whatever the agent
+ended on. `wilson(k, n)` is lesson 23's. `python medir.py R` loops repetitions outside, pruebas
+inside, prints one line per intento, `k de R` per prueba, the acierto with its Wilson interval, and
+the intentos that end in `fin` and score 0. `tests/test_banco.py` (four tests: five pruebas with
+their pieces, 0 on the untouched repo, 1 with `solucion/`, the usuario) is new. Every earlier file
+is unchanged.

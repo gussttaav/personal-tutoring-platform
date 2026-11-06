@@ -44,7 +44,7 @@ faq:
   - q: "Is there as much maths as in the first course?"
     a: "At the start yes, at the end no, and that is on purpose. Blocks 1 and 2 derive; block 3 mixes; blocks 4 and 5 are engineering: contracts, protocols and a program that grows lesson by lesson. The title goes from the maths to the systems, and so does the course."
   - q: "Do I build a real Claude Code?"
-    a: "You build a coding agent in the terminal with the same pieces: the loop, the tools, the system prompt, context compaction, permissions, subagents. Much smaller, and with a local model. The last lesson points the real tool at the same model and compares the two on the same tasks."
+    a: "You build a coding agent in the terminal with the same pieces: the loop, the tools, the system prompt, context compaction, permissions, subagents. Much smaller, and with a local model. The mini-benchmark lesson points the real tool at the same model and measures both on the same tests."
 # COURSE-BUILD-01: `lessons` is the PLANNED lesson count, mirrored from course.es.yml — it is
 # locale-invariant, and the canonical (Spanish) manifest is the one that owns it.
 blocks:

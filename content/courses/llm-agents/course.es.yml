@@ -43,7 +43,7 @@ faq:
   - q: "¿Está en inglés?"
     dynamic: english-translation-status
   - q: "¿Construyo un Claude Code de verdad?"
-    a: "Construyes un agente de programación en la terminal con las mismas piezas: el bucle, las herramientas, el prompt de sistema, la compactación del contexto, los permisos, los subagentes. Mucho más pequeño, y con un modelo local. La última lección apunta la herramienta real al mismo modelo y compara las dos con las mismas tareas."
+    a: "Construyes un agente de programación en la terminal con las mismas piezas: el bucle, las herramientas, el prompt de sistema, la compactación del contexto, los permisos, los subagentes. Mucho más pequeño, y con un modelo local. La lección del mini-benchmark apunta la herramienta real al mismo modelo y mide las dos con las mismas pruebas."
 # COURSE-BUILD-01: `lessons` is the PLANNED lesson count — how many lessons the block has when
 # it is finished. Locale-invariant like `id` (the canonical Spanish manifest owns it), and the
 # reference for "is this course done?": the Spanish version is finished when every block has
