@@ -626,4 +626,101 @@ stderr\n…` for any código, and `TimeoutError("no ha terminado en 30 s y se ha
 `tempfile.TemporaryDirectory()` and compare `ficheros(carpeta)` with the expected dict; their
 expected observaciones are Block 4's, except the tortilla's `t6`, now an `editar`.
 `correr.py <carpeta> <pedido>` runs on a `tempfile.mkdtemp()` copy and its usuario is `input()`
-at the terminal (`[s/N]`), the real permiso prompt still being lesson 37's.
+at the terminal (`[s/N]`); lesson 37 changes which llamadas reach it, not how it asks.
+
+**From lesson 35 on, M starts with two `sistema` mensajes when the carpeta has a project file**
+(`COURSE-C2-P1-05`, lesson 35, tag `b5-l4`). `inicio(pedido, entorno=None)` in `agente.py` returns
+`[("sistema", SISTEMA), ("sistema", "El fichero de proyecto, AGENTE.md:\n\n" + text), ("usuario",
+pedido)]`, the middle one only if `PROYECTO = "AGENTE.md"` exists in `entorno`; read once, before
+the first turno. `api.peticion` already joined every `sistema` mensaje into `system` with a blank
+line, so the adapter does not change. `entorno` is optional so the tests' guiones, built with
+`inicio(pedido)`, are unchanged; `tests/test_inicio.py` checks both cases and the joined `system`.
+`SISTEMA` is six rules (Spanish, no narration, read before editing and cite `antiguo` verbatim, never
+repeat a failed llamada unchanged, nothing counts as done that is not in a llamada, close with one
+sentence once the tests pass). `coste.py <carpeta>` measures each fixed piece by difference with
+`max_tokens = 1` through `api.enviar` (not `ModeloAPI`, which rejects a cut respuesta).
+
+**From lesson 36 on, the bucle has one more step, and M can shrink** (`COURSE-C2-P1-05`, lesson
+36, tag `b5-l5`). `bucle(modelo, inicio, entorno, tope, usuario=None, compactar=None)` calls
+`M = compactar(modelo, M)` right after appending the respuesta and checking it has llamadas, before
+`ejecutar`: M ends on that respuesta, its `tool_use` still unanswered, and `llamadas` comes from `r`,
+which stays in M. `agente` gains `compactar=None` and passes it through; `correr.py` passes
+`compactar.compactar`. In `compactar.py`: `tokens(modelo)` is `modelo.usage` (`input_tokens` +
+`cache_read_input_tokens` + `output_tokens`, the last petición and its respuesta; the runner has no
+token-count endpoint), `UMBRAL = 4096` (8192 − 1024 − 3072), `RECIENTES = 2`, and `INSTRUCCION`, the
+fixed instrucción. Above the umbral, `p` is one past the first `usuario` mensaje (the pedido) and
+`corte = len(M) − (2k − 1)`; if `corte − p < 2` nothing is compacted; else the summary request is
+`M[:corte] + [("usuario", INSTRUCCION)]` with `HERRAMIENTAS` (kept for the prefix cache; the runner
+ignores `tool_choice`), its text bloques joined are the resumen, no text means M unchanged, and the
+result is `M[:p] + [("usuario", "Resumen de tus turnos anteriores, escrito por ti al compactar:\n\n"
++ resumen)] + M[corte:]`. `M[:corte]` is, mensaje by mensaje, the petición of $k − 1$ turnos earlier.
+A second compaction folds the previous resumen into the new one. `Traza` keeps `usage` and labels the
+summary request `resumen`, not counted as a turno; `api.py`'s `urlopen` waits 900 s (300 did not
+cover a petición recalculated after a compaction). `tests/test_compactar.py` (four tests, a `Contado`
+model with a set `usage`) and `recetario/` (five files, three bugs in two modules, sized to fill the
+window) are new; the `context-window` widget's `compactacion` preset is the measured tenth petición
+of the lesson's opening run, with `margin = 3072` so "compact" fires at the umbral.
+
+**From lesson 37 on, `permisos.ejecutar` checks four things, and paths are confined**
+(`COURSE-C2-P1-05`, lesson 37, tag `b5-l6`). Order: esquema → sandbox → permiso → function, the first
+failure returning its error. Each herramienta declares `RUTAS` beside `CLASE` (`["ruta"]` for `leer`,
+`buscar`, `editar`, `escribir`; `[]` for `ejecutar`), collected by `herramientas/__init__.py` as
+`RUTAS`. `herramientas/comun.py` gains `dentro(entorno, ruta)`: `Path(raiz, ruta).resolve()
+.is_relative_to(raiz)` with `raiz = Path(entorno).resolve()`, `False` on `OSError` / `ValueError`.
+`permisos.fuera(ll, entorno)` returns the first declared ruta not `dentro`, and the error is
+`no se ha ejecutado: <ruta> está fuera de la carpeta de trabajo`, never asked. `buscar` also skips the
+files it walks that resolve outside. `permiso(ll, permisos=PERMISOS, comandos=COMANDOS)` returns
+`permitir` for a llamada of clase `ejecución` whose `comando` is `en_la_lista`, i.e. `partes(comando)`
+equals `partes(c)` for some `c` in `COMANDOS = ["python -m unittest", "python3 -m unittest"]`
+(an unclosed quote is in no list); otherwise the Block 4 table. `herramientas/ejecutar.py` runs
+without a shell: `partes(comando)` is `shlex.split` (POSIX rules on every OS), an empty command is a
+`ValueError`, a missing program `FileNotFoundError("no existe el programa …")`, and the description
+tells the model there are no pipes, redirections, `;` or `&&`. `tests/test_permisos.py` (five
+tests: paths out, a symlink out (skipped where links need privileges), the list whole and nothing
+more, an unlisted command with no usuario denied, a `;` reaching the program as an argument) and
+`ajeno/` (a repository with an injection in its `AGENTE.md`, written without double quotes) are new.
+`bucle.py`, `agente.py`, `compactar.py`, `api.py` and `correr.py` are unchanged.
+
+**From lesson 38 on, the herramientas are an argument of the bucle, and one of them runs another
+bucle** (`COURSE-C2-P1-05`, lesson 38, tag `b5-l7`). `bucle(modelo, inicio, entorno, tope,
+usuario=None, compactar=None, herramientas=HERRAMIENTAS, funciones=FUNCIONES)` sends `herramientas`
+to the model, to `compactar(modelo, M, herramientas=…)` (the summary request keeps the bucle's own,
+for the prefix cache) and to `permisos.ejecutar(ll, entorno, usuario=None, herramientas=…,
+funciones=…)`, which checks the esquema with `incumple(ll, herramientas)` (a herramienta not offered
+is `no hay ninguna herramienta …`) and calls `funciones[ll["name"]]`. `herramientas/delegar.py` holds
+`HERRAMIENTA` (`objeto(encargo=…)`), `CLASE = "lectura"` and `RUTAS = []` but no function, and
+`herramientas/__init__.py` builds `CLASES` / `RUTAS` over `MODULOS + [delegar]` while `HERRAMIENTAS` /
+`FUNCIONES` keep the five. `subagente.py`: `LECTURAS` (the herramientas whose clase is `lectura`),
+`TOPE = 6`, the subagente's `SISTEMA`, `REGLA` (the line the agente principal's prompt de sistema
+gains: «Para averiguar dónde está o qué hace algo del repositorio, encárgaselo a un subagente con
+delegar, y lee tú sólo el fichero que vayas a editar.»), `subagente(modelo, encargo, entorno,
+tope=TOPE)` — `bucle` on `[("sistema", SISTEMA), ("usuario", encargo)]` with `LECTURAS`, no usuario,
+no compactar; its texto, or `RuntimeError("el subagente ha llegado a su tope de 6 turnos sin
+contestar")`, which the outer `ejecutar` turns into an error — and `con_delegar(modelo)`, returning
+`HERRAMIENTAS + [delegar.HERRAMIENTA]` and `FUNCIONES` plus a closure over the modelo.
+`inicio(pedido, entorno=None, sistema=SISTEMA)`; `agente(…, delegar=None)` takes the subagentes'
+modelo and, when given, starts M with `SISTEMA + "\n" + REGLA`. `correr.py`'s `Traza(modelo,
+sangria="")` prefixes every line through `escribe`, and the subagente runs on its own `Traza` with
+`"      │ "`. `tests/test_subagente.py` (three tests on two guionized models: only the final text
+comes back, only reads and never asks, the tope as an error) is new. `api.py`, `guionizado.py` and
+the five herramientas are unchanged.
+
+**From lesson 39 on, the agent is measured, and nothing of it changes** (`COURSE-C2-P1-05`, lesson
+39, tag `b5-l8`). `banco/` holds five pruebas, one folder each (`1-tiempos`, `2-despensa`,
+`3-renombrar`, `4-anadir`, `5-proyecto`): `pedido.txt`, `repo/` (what the agent gets: `AGENTE.md`,
+the code, its tests), `evaluador.py` (a `unittest` module the agent never sees) and `solucion/` (the
+files of one good fix). No file of the banco has a double quote (lesson 34's finding). `medir.py`:
+`evaluar(prueba, entorno)` copies `evaluador.py` into the copy and runs `sys.executable -m unittest`
+and `sys.executable -m unittest evaluador` there, `LIMITE = 60` s each; 1 iff both exit 0, 0 on any
+other code or a timeout. `usuario(ll)` is `CLASES[ll["name"]] == "escritura"` (yes to `editar` /
+`escribir`, which the sandbox confines to the copy; no to any command outside `COMANDOS`).
+`Cuenta(modelo)` wraps a modelo like `Traza` without printing: `turnos`, `compactaciones` (a petición
+whose last mensaje is `INSTRUCCION`), `pico` (the largest `input_tokens + cache_read_input_tokens`),
+and `usage` for `compactar`. `intento(prueba)` runs `agente(Cuenta(ModeloAPI()), pedido, copia,
+usuario=usuario, compactar=compactar, delegar=Cuenta(ModeloAPI()))` on a `TemporaryDirectory` copy
+of `repo/`; any exception becomes the motivo `excepción (…)`, and `evaluar` runs whatever the agent
+ended on. `wilson(k, n)` is lesson 23's. `python medir.py R` loops repetitions outside, pruebas
+inside, prints one line per intento, `k de R` per prueba, the acierto with its Wilson interval, and
+the intentos that end in `fin` and score 0. `tests/test_banco.py` (four tests: five pruebas with
+their pieces, 0 on the untouched repo, 1 with `solucion/`, the usuario) is new. Every earlier file
+is unchanged.

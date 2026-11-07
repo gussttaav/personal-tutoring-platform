@@ -13,11 +13,17 @@
  * COURSE-C2-P1-04 — the same two checks for the `agente` preset (Block 4 lesson 6), plus the
  * rule it needs: segments sharing a drop rank leave together, so "drop" never leaves a
  * turno's llamadas without their observaciones.
+ *
+ * COURSE-C2-P1-05 — the `compactacion` preset (Block 5 lesson 5): its measured sizes add up to
+ * the petición the lesson's trace reports, "compact" keeps `compactar.py`'s contract (the
+ * inicio and the last two turnos verbatim, never half a turno) at every window, and the
+ * `margin` makes it fire at the umbral, while everything still fits.
  */
 
 import {
   AGENT_PRESET,
   ASSISTANT_PRESET,
+  COMPACTION_PRESET,
   SUMMARY_ID,
   dropGroups,
   fitWindow,
@@ -278,5 +284,76 @@ describe("context-window — agente: the numbers the lesson reads", () => {
     const fit = fitWindow(A, 1_536, "drop");
     expect(fit.fits).toBe(false);
     expect(fit.used).toBe(280 + 620 + 60 + 600);
+  });
+});
+
+describe("context-window — compactacion: the measured petición", () => {
+  const C = COMPACTION_PRESET;
+  const prompt = C.segments.filter((s) => s.kind !== "respuesta");
+
+  it("is the tenth petición of the trace: 7 471 tokens, the inicio 1 044 of them", () => {
+    expect(sum(prompt.map((s) => s.tokens))).toBe(7_471);
+    expect(sum(prompt.filter((s) => s.drop === undefined).map((s) => s.tokens))).toBe(1_044);
+    expect(C.segments[C.segments.length - 1]).toMatchObject({ kind: "respuesta", tokens: 1_024 });
+    expect((C.tCtxDefault - C.tCtxMin) % C.tCtxStep).toBe(0);
+    expect((C.tCtxMax - C.tCtxMin) % C.tCtxStep).toBe(0);
+  });
+
+  it("the margin puts the umbral where compactar.py has it: 8 192 − 1 024 − 3 072 = 4 096", () => {
+    expect(C.tCtxDefault - 1_024 - C.margin!).toBe(4_096);
+  });
+});
+
+describe("context-window — compactacion, at every window", () => {
+  const C = COMPACTION_PRESET;
+  const total = sum(C.segments.map((s) => s.tokens));
+  const all: number[] = [];
+  for (let t = C.tCtxMin; t <= C.tCtxMax; t += C.tCtxStep) all.push(t);
+
+  it.each(all)("tCtx = %i: compact keeps the inicio and turnos 8 and 9, and never splits a turno", (tCtx) => {
+    const fit = fitWindow(C, tCtx, "compact");
+    for (const id of ["sistema", "herramientas", "proyecto", "pedido", "respuesta"]) expect(status(fit, id)).toBe("whole");
+    for (let n = 1; n <= 9; n++) expect(status(fit, `llamadas-${n}`)).toBe(status(fit, `observaciones-${n}`));
+    if (fit.summary) for (const n of [8, 9]) expect(status(fit, `observaciones-${n}`)).toBe("whole");
+    if (fit.fits) expect(fit.used).toBeLessThanOrEqual(tCtx);
+  });
+
+  it.each(all)("tCtx = %i: compact fires exactly when what the call leaves free is under the margin", (tCtx) => {
+    const fit = fitWindow(C, tCtx, "compact");
+    expect(fit.summary !== undefined).toBe(total + C.margin! > tCtx);
+  });
+});
+
+describe("context-window — compactacion: the numbers the lesson reads at 8 192 tokens", () => {
+  const C = COMPACTION_PRESET;
+  const tCtx = C.tCtxDefault;
+
+  it("the call, reserve included, is 8 495 tokens: 303 too many", () => {
+    expect(fitWindow(C, tCtx, "drop").total).toBe(8_495);
+  });
+
+  it("front: the prompt de sistema falls off and the herramientas lose their first 114 tokens", () => {
+    const fit = fitWindow(C, tCtx, "front");
+    expect(status(fit, "sistema")).toBe("dropped");
+    expect(status(fit, "herramientas")).toBe("cut");
+    expect(fit.placed.find((p) => p.segment.id === "herramientas")?.kept).toBe(705 - 114);
+  });
+
+  it("drop: only turno 1 goes, and the call is 7 318 tokens", () => {
+    const fit = fitWindow(C, tCtx, "drop");
+    expect(fit.placed.filter((p) => p.status === "dropped").map((p) => p.segment.id)).toEqual(["llamadas-1", "observaciones-1"]);
+    expect(fit.used).toBe(7_318);
+  });
+
+  it("compact: turnos 1 to 7, 5 316 tokens, become one summary", () => {
+    const fit = fitWindow(C, tCtx, "compact");
+    expect(fit.summary?.replaced).toBe(5_316);
+    expect(fit.used).toBe(1_044 + C.summaryTokens + 807 + 304 + 1_024);
+  });
+
+  it("at 12 288, nobody has to decide anything, and compact still fires", () => {
+    expect(fitWindow(C, 12_288, "drop").placed.every((p) => p.status === "whole")).toBe(true);
+    expect(fitWindow(C, 11_520, "compact").summary).toBeDefined();
+    expect(fitWindow(C, 11_776, "compact").summary).toBeUndefined();
   });
 });

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 214" width="760" height="214" role="img"
+ aria-label="An allowed write that runs later, outside. On the left, inside the sandbox, today: the agent writes a file in the working folder, a git hook in .git/hooks/pre-commit, and the policy allows it because it is inside the folder. The file stays on disk and crosses the boundary without anyone reviewing it. On the right, outside the sandbox, tomorrow: you run git commit in your terminal, git runs the hook with your permissions, and the hook reaches everything you can: the home directory, the keys and the network.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ln { fill: none; stroke: #3b3b3e; stroke-width: 1.5; }
+  .ln.x { stroke: #ffb4ab; stroke-dasharray: 4 3; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx d" x="20.0" y="30.0" width="250.0" height="170.0" rx="10"/>
+<text class="hd" x="32.0" y="48.0" style="text-anchor:start">INSIDE THE SANDBOX, TODAY</text>
+<rect class="bx x" x="55.0" y="62.0" width="180.0" height="44.0" rx="6"/>
+<text class="lb x" x="145.0" y="82.0">Agent</text>
+<text class="sb" x="145.0" y="96.0">writes in the folder</text>
+<path class="ar" d="M145.0,106.0 L145.0,128.0"/>
+<rect class="bx m" x="55.0" y="132.0" width="180.0" height="48.0" rx="6"/>
+<text class="lb m" x="145.0" y="154.0">.git/hooks/pre-commit</text>
+<text class="sb" x="145.0" y="168.0">allowed: it's inside</text>
+<path class="ar w" d="M235.0,156.0 L392.0,156.0"/>
+<text class="sb w" x="332.0" y="134.0">crosses the boundary</text>
+<text class="sb w" x="332.0" y="148.0">unreviewed</text>
+<text class="hd" x="560.0" y="26.0">OUTSIDE, TOMORROW</text>
+<rect class="bx " x="396.0" y="40.0" width="150.0" height="44.0" rx="6"/>
+<text class="lb" x="471.0" y="60.0">You: git commit</text>
+<text class="sb" x="471.0" y="74.0">in your terminal</text>
+<path class="ar" d="M471.0,84.0 L471.0,130.0"/>
+<rect class="bx w" x="396.0" y="134.0" width="150.0" height="46.0" rx="6"/>
+<text class="lb w" x="471.0" y="155.0">git runs the hook</text>
+<text class="sb" x="471.0" y="169.0">with your permissions</text>
+<path class="ar x" d="M546.0,157.0 L582.0,157.0"/>
+<rect class="bx x" x="586.0" y="128.0" width="160.0" height="58.0" rx="6"/>
+<text class="lb x" x="666.0" y="155.0">Keys, files, network</text>
+<text class="sb" x="666.0" y="169.0">everything you can reach</text>
+</svg>

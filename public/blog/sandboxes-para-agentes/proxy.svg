@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 262" width="760" height="262" role="img"
+ aria-label="La política de un agente local, dibujada. A la izquierda, dentro de una línea discontinua que marca la frontera del sandbox, el agente y las órdenes que ejecuta. Dentro sólo hay la carpeta de trabajo, en lectura y escritura; el directorio personal no está, y la red se reduce a la interfaz local. La única salida es un socket Unix hacia un proxy que se ejecuta fuera del sandbox. El proxy compara cada destino con una lista de dominios: deja pasar el registro de paquetes y rechaza un dominio desconocido. Encima del proxy, una persona aprueba los dominios nuevos; debajo, las credenciales, que se añaden a la petición en el proxy y nunca entran en el sandbox.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ln { fill: none; stroke: #3b3b3e; stroke-width: 1.5; }
+  .ln.x { stroke: #ffb4ab; stroke-dasharray: 4 3; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx d" x="20.0" y="30.0" width="300.0" height="216.0" rx="10"/>
+<text class="hd" x="32.0" y="48.0" style="text-anchor:start">SANDBOX</text>
+<rect class="bx x" x="40.0" y="60.0" width="170.0" height="48.0" rx="6"/>
+<text class="lb x" x="125.0" y="82.0">Agente</text>
+<text class="sb" x="125.0" y="96.0">y las órdenes que ejecuta</text>
+<rect class="bx " x="40.0" y="128.0" width="170.0" height="30.0" rx="6"/>
+<text class="lb" x="125.0" y="141.0">Carpeta de trabajo</text>
+<text class="sb m" x="125.0" y="153.0">lectura y escritura</text>
+<rect class="bx " x="40.0" y="166.0" width="170.0" height="30.0" rx="6"/>
+<text class="lb" x="125.0" y="179.0">Directorio personal</text>
+<text class="sb x" x="125.0" y="191.0">no está</text>
+<rect class="bx " x="40.0" y="204.0" width="170.0" height="30.0" rx="6"/>
+<text class="lb" x="125.0" y="217.0">Red</text>
+<text class="sb x" x="125.0" y="229.0">sólo la interfaz local</text>
+<path class="ar w" d="M210.0,84.0 L346.0,84.0 L346.0,138.0 L392.0,138.0"/>
+<text class="sb w" x="266.0" y="76.0">socket Unix</text>
+<text class="hd" x="560.0" y="20.0">FUERA DEL SANDBOX</text>
+<rect class="bx w" x="396.0" y="112.0" width="150.0" height="52.0" rx="6"/>
+<text class="lb w" x="471.0" y="136.0">Proxy</text>
+<text class="sb" x="471.0" y="150.0">lista de dominios</text>
+<rect class="bx " x="396.0" y="30.0" width="150.0" height="44.0" rx="6"/>
+<text class="lb" x="471.0" y="50.0">Una persona</text>
+<text class="sb" x="471.0" y="64.0">aprueba un dominio nuevo</text>
+<path class="ar" d="M471.0,74.0 L471.0,108.0"/>
+<rect class="bx m" x="396.0" y="200.0" width="150.0" height="44.0" rx="6"/>
+<text class="lb m" x="471.0" y="220.0">Credenciales</text>
+<text class="sb" x="471.0" y="234.0">se añaden aquí, fuera</text>
+<path class="ar m" d="M471.0,200.0 L471.0,168.0"/>
+<rect class="bx m" x="600.0" y="92.0" width="140.0" height="36.0" rx="6"/>
+<text class="lb m" x="670.0" y="114.0">registro de paquetes</text>
+<rect class="bx x" x="600.0" y="150.0" width="140.0" height="36.0" rx="6"/>
+<text class="lb x" x="670.0" y="172.0">dominio desconocido</text>
+<path class="ar m" d="M546.0,130.0 L572.0,130.0 L572.0,110.0 L596.0,110.0"/>
+<path class="ar x" d="M546.0,146.0 L572.0,146.0 L572.0,168.0 L596.0,168.0"/>
+</svg>

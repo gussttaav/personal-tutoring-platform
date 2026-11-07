@@ -1,0 +1,549 @@
+---
+slug: subagentes
+title: "Subagentes: un bucle dentro de otro"
+block: 5
+order: 7
+minutes: 25
+summary: "Todo lo que el agente lee para averiguar algo se queda en M, aunque de dos ficheros sólo le hicieran falta dos líneas. La lección le da una herramienta más, delegar: el mismo bucle, con una M nueva, sólo herramientas de lectura y el mismo ejecutar, que contesta un encargo con su texto final. Al agente principal sólo le llega ese texto."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-el-encargo
+    type: single
+    prompt: 'En el turno 4 de un pedido, después de leer `compra.py`, el agente principal llama a `delegar {"encargo": "Mira si en el otro fichero pasa lo mismo."}`. ¿Con qué empieza a trabajar el subagente?'
+    options:
+      - { id: a, text: 'Con su prompt de sistema y esa frase, y nada más. No sabe qué es «lo mismo» ni cuál es «el otro fichero»: eso está en la M del agente principal, que no ve. Leerá algo, adivinará, y su texto volverá como si contestara.' }
+      - { id: b, text: 'Con la M del agente principal hasta el turno 4, que es donde se entiende la frase.' }
+      - { id: c, text: 'Con el pedido del usuario y el encargo, para que sepa para qué trabaja.' }
+      - { id: d, text: 'Con el fichero de proyecto, que el harness lee para cada bucle.' }
+    answer: a
+    explanation: 'La (a). Es la primera cláusula del contrato: la M del subagente empieza de cero. Por eso la descripción de `delegar` le pide al modelo un encargo entero, que se entienda solo, y por eso el subagente tampoco puede preguntar qué se quería decir: no tiene a quién.'
+  - id: q-un-subagente-que-edita
+    type: single
+    prompt: 'Para que el subagente arregle lo que encuentre, alguien le da también `editar` y le pasa el usuario, y tú contestas que sí a una edición de `compra.py` en mitad de una delegación. El agente principal había leído `compra.py` dos turnos antes. ¿Qué tiene ahora en M?'
+    options:
+      - { id: a, text: 'Una lectura de `compra.py` desactualizada, y nada que lo diga salvo lo que cuente el texto final del subagente. Y `delegar` ha dejado de ser de lectura: su clase es la de la herramienta más fuerte que tenga el subagente.' }
+      - { id: b, text: 'La edición, porque toda llamada aprobada por el usuario entra en la M de fuera.' }
+      - { id: c, text: 'Nada nuevo, y no pasa nada: la lectura vieja sigue siendo verdad hasta que el agente vuelva a leer.' }
+      - { id: d, text: 'Un error, porque el sandbox no deja escribir a un subagente.' }
+    answer: a
+    explanation: 'La (a). <Leccion slug="estado-y-memoria">La lección del estado y la memoria</Leccion> llamó desactualizada a la observación que deja de decir lo que hay en el entorno. Aquí cambia el entorno alguien que el agente principal no ve, y sólo le llega el resumen que el subagente quiera escribir. El sandbox no tiene nada que ver: la ruta está dentro. Por eso el subagente del curso sólo lee.'
+  - id: q-cuando-no-compensa
+    type: single
+    prompt: 'El pedido es: <W>Cambia el mensaje del KeyError de menu para que diga «receta desconocida».</W> El agente principal delega primero un encargo que localiza la línea en `compra.py`, y después edita. ¿Qué se ha ahorrado M?'
+    options:
+      - { id: a, text: 'Nada, y ha gastado dos peticiones más. Para editar tiene que citar `antiguo` tal cual, y su prompt de sistema le pide leer el fichero antes; `compra.py` entra en M igualmente.' }
+      - { id: b, text: 'La lectura de `compra.py`, porque el subagente le ha dado la línea copiada.' }
+      - { id: c, text: 'La mitad del fichero, porque el subagente sólo devuelve la función.' }
+      - { id: d, text: 'El pedido, que ya no hace falta en M después de delegar.' }
+    answer: a
+    explanation: 'La (a). Delegar ahorra lo que se lee para tirarlo. Lo que se lee para usarlo entra en M de todos modos. Es la segunda mitad de la regla que el harness añade al prompt de sistema: «lee tú sólo el fichero que vayas a editar». Fiarse de la línea que copia el subagente es fiarse de un resumen; si la copia mal, `editar` lo rechaza, pero el modelo no sabría por qué.'
+  - id: q-el-tope-del-subagente
+    type: single
+    prompt: 'Un subagente lee cinco ficheros sin dar con la respuesta y llega a su tope de seis turnos. ¿Qué entra en la M del agente principal?'
+    options:
+      - { id: a, text: 'Una observación, un error: <W>el subagente ha llegado a su tope de 6 turnos sin contestar</W>. Ninguna de las cinco lecturas.' }
+      - { id: b, text: 'Las cinco lecturas, para que el agente principal no tenga que repetirlas.' }
+      - { id: c, text: 'Nada: el bucle de fuera se detiene con la excepción del subagente.' }
+      - { id: d, text: 'Un resumen de las cinco lecturas que el harness escribe al llegar al tope.' }
+    answer: a
+    explanation: 'La (a). La función de `delegar` lanza la excepción, y el `ejecutar` de fuera la convierte en un error, como cualquier otro. Las lecturas se tiran con la M del subagente. Con el error, el modelo puede delegar un encargo más concreto o leer él mismo: es la decisión que <Leccion slug="errores-como-observaciones">la lección de los errores</Leccion> dejó en sus manos.'
+challenges: []
+reading:
+  - kind: blog
+    title: 'How we built our multi-agent research system'
+    authors: 'Hadfield, Zhang, Lien, Scholz, Fox y Ford'
+    year: '2025'
+    venue: 'Anthropic Engineering'
+    lang: en
+    url: 'https://www.anthropic.com/engineering/multi-agent-research-system'
+    note: 'Subagentes que buscan en paralelo, cada uno con su ventana, y vuelven con lo esencial. Pone número a lo que esta lección mide en pequeño: con varios agentes, unas quince veces los tokens de un chat.'
+  - kind: blog
+    title: 'Don’t Build Multi-Agents'
+    authors: 'Walden Yan'
+    year: '2025'
+    venue: 'Blog de Cognition'
+    lang: en
+    url: 'https://cognition.com/blog/dont-build-multi-agents'
+    note: 'El argumento en contra: un subagente que no ve la conversación decide sin contexto, y dos que escriben chocan. Por eso, dice, los subagentes que funcionan contestan preguntas y no escriben código, como el de esta lección.'
+  - kind: blog
+    title: 'Create custom subagents'
+    authors: 'Anthropic'
+    venue: 'Documentación de Claude Code'
+    lang: en
+    url: 'https://code.claude.com/docs/en/sub-agents'
+    note: 'Los subagentes de un agente de programación real: cada uno con su ventana, su prompt de sistema, sus herramientas y sus permisos, y sólo el resumen de vuelta. Compara lo que hereda con lo que hereda el tuyo.'
+---
+
+{/* COURSE-C2-P1-05 — Bloque 5, lección 7. Terminal: sin celdas (hasCode: false). Punto de
+    control de partida b5-l6, de llegada b5-l7: herramientas/delegar.py y subagente.py (nuevos),
+    bucle.py y permisos.ejecutar (las herramientas y sus funciones, argumentos), entorno.incumple
+    (el esquema de las herramientas ofrecidas), compactar.py (las herramientas del bucle),
+    agente.py (delegar=, la regla en el prompt de sistema), correr.py (la traza del subagente,
+    con sangría) y tests/test_subagente.py. api.py, guionizado.py y las cinco herramientas no
+    cambian. Las trazas son las que obtuve con el modelo del Callout, recortadas (cada … es un
+    trozo quitado) y sin retocar lo que queda. */}
+
+<Callout type="warning" title="Esta lección corre en tu terminal">
+Verificada el 5 de noviembre de 2026 con Ollama 0.40.13 y Python 3.14, con el modelo
+<W>qwen3:4b-instruct</W>, que funciona en un ordenador de 8 GB de RAM sin GPU. El código de esta
+lección no se ejecuta en el navegador: lo escribes en tu repositorio y lo corres en tu terminal
+contra un modelo local. Los minutos de arriba son de lectura y escritura; la espera del modelo va
+aparte: en mi máquina, cada ejecución de esta lección tardó entre tres y cinco minutos.
+</Callout>
+
+Con <Leccion slug="permisos-y-sandbox">el sandbox y la lista de comandos</Leccion>, el agente ya no
+abre nada fuera de su carpeta, y de lo que hace dentro sólo te pregunta por lo que cambia algo. Sus
+lecturas, en cambio, van todas al mismo sitio. Cada una entra entera en la petición siguiente y en
+todas las que vienen detrás, sirva o no para lo que se pedía, hasta que la compactación la cambia
+por un resumen.
+
+Esta lección prueba lo contrario: que la lectura ocurra en otra M, que se tire al terminar, y que
+de ella vuelva sólo lo que el agente necesitaba saber. Para eso no hace falta una pieza nueva del
+harness, sino el bucle que ya tienes, llamado desde dentro de una herramienta. Lo que sí hace falta
+es decir qué entra en esa segunda M, qué sale de ella y qué puede hacer mientras tanto.
+
+El repositorio es `recetario/`, el de la compactación, y esta vez el pedido es una pregunta:
+<W>Lee compra.py y recetario.py y dime qué hace menu cuando una receta del menú no está en el
+recetario, y de qué función del otro fichero se sirve para eso. No cambies nada.</W> Ésta es la
+ejecución con el código de la lección anterior, recortada:
+
+```text
+turno 1  33 s  1089 tokens de entrada
+  ←  llamada      leer {"ruta": "compra.py"}
+  ←  llamada      leer {"ruta": "recetario.py"}
+  →  observación  """La lista de la compra de un menú, a partir del recetario de recetario.py."""
+                  …
+  →  observación  """El recetario de casa: qué recetas hay y qué lleva cada una.
+                  …
+turno 2  176 s  2542 tokens de entrada
+  ←  texto        Cuando una receta del menú no está en el recetario, `menu` lanza un `KeyError` con un mensaje que incluye sugerencias de recetas similares. Esto se hace utilizando la función `parecidas` del fichero `recetario.py`, que compara el nombre de la receta con los nombres de las recetas disponibles en el recetario para encontrar coincidencias similares.
+fin · 6 mensajes en M · la copia está en /tmp/tmpe_jkvp35
+```
+
+La respuesta es buena: `menu` lanza un `KeyError`, y las sugerencias salen de `parecidas`. Pero
+mira lo que costó. Los dos ficheros son 1453 tokens, más que todo el inicio de M, y de sus 129
+líneas la respuesta usa dos: el `raise` de `menu` y el `return` de `parecidas`. El resto se queda
+en M. Si el pedido siguiera (arregla esto, ejecuta los tests), cada turno que viniera detrás
+volvería a mandar esos 1453 tokens. Con este mismo proyecto, la compactación saltó en el turno 5.
+
+<Callout type="intuition" title="La idea en una frase">
+Un subagente es el mismo bucle, con una M que empieza de cero: el agente principal le hace un
+encargo con una llamada, el subagente lee lo que haga falta en su propia M, y al agente principal
+sólo le vuelve su texto final, como la observación de esa llamada. Lo que el subagente leyó se tira
+con su M.
+</Callout>
+
+## Un bucle con una M nueva
+
+Con precisión, `delegar(encargo)` es una herramienta más del **agente principal**, el que recibe tu
+pedido. Es de clase lectura, no tiene rutas, y su función hace esto:
+
+```text
+delegar(encargo):
+    M' ← [(sistema, el prompt de sistema del subagente), (usuario, encargo)]
+    motivo, texto, M' ← bucle(modelo, M', entorno, tope = 6, herramientas = leer y buscar)
+    si motivo = fin:   la observación es texto
+    si motivo = tope:  la observación es un error
+    M' se tira
+```
+
+El **subagente** es ese segundo bucle, y su contrato tiene cinco cláusulas:
+
+- **Empieza de cero.** Su M no trae nada de la del agente principal: ni el pedido, ni el fichero de
+  proyecto, ni lo que ya se haya leído. Sabe lo que dice el **encargo** y lo que lea él. Por eso el
+  encargo lo escribe el modelo entero, y la descripción de la herramienta se lo pide.
+- **Sólo vuelve su texto final.** Es la observación de la llamada a `delegar`, como el contenido de
+  un fichero es la de un `leer`. Ninguna observación del subagente entra en la M de fuera.
+- **El mismo `ejecutar`, con menos herramientas.** Sus llamadas pasan por el esquema, el sandbox, el
+  permiso y la función, como las del agente principal. Pero sus herramientas son `leer` y `buscar`,
+  y una herramienta que no se le ofrece no existe: `escribir`, `ejecutar` o `delegar` fallan en el
+  esquema. De ahí la clase de `delegar`: es la de la herramienta más fuerte que tiene el subagente,
+  y aquí es lectura. Y de ahí que haya un solo nivel, porque un subagente no puede delegar.
+- **Nadie le contesta.** Su bucle corre sin usuario. Lo que lee está permitido y lo demás falla antes
+  del permiso, así que nunca llega a preguntar, y si llegara, preguntar contaría como denegar.
+- **Siempre vuelve.** Tiene su propio tope, y llegar a él es un error para el agente principal.
+  Cualquier otra excepción dentro (un 400 si su M no cabe en la ventana) también, porque su bucle
+  corre dentro del `ejecutar` de fuera. El bucle principal nunca ve caer al subagente.
+
+### Lo que cuesta
+
+Un subagente no ahorra tokens. Los mueve. Las lecturas se calculan igual, en la M de dentro, y
+alrededor de ellas aparecen tres gastos que antes no había. El subagente tiene su propio inicio, su
+prompt de sistema y dos herramientas: con el encargo, 532 tokens en su primera petición. Cada turno suyo es una
+petición más. Y el agente principal lleva en cada petición la descripción de `delegar` y una regla
+nueva en su prompt de sistema: 197 tokens que paga también en los pedidos que no delegan.
+
+Lo que compra es otra cosa: que la M que dura todo el pedido no crezca con lo que sólo hacía falta
+para contestar una pregunta. Compensa cuando lo leído se iba a tirar. Cuando no, cuesta y no ahorra:
+para editar un fichero, el agente tiene que citarlo tal cual, y lo lee él de todos modos. Por eso
+la regla del prompt de sistema tiene dos mitades: que encargue las averiguaciones, y que lea él sólo
+el fichero que vaya a editar.
+
+### Lo que el subagente no promete
+
+No promete que su texto sea verdad. El agente principal no ve los turnos del subagente, ni siquiera
+resumidos: ve una frase que otro modelo escribió leyendo, o sin leer, y no tiene contra qué
+comprobarla salvo el entorno. Comprobarla es leer, y leer es lo que delegar quería ahorrar. Ésta es
+una ejecución de la primera versión del pedido, que no nombraba los ficheros, con el código de esta
+lección:
+
+```text
+turno 1  29 s  1294 tokens de entrada
+  ←  llamada      delegar {"encargo": "Busca en el código qué hace menu cuando una receta del menú no está en el recetario, y de qué función de otro fichero se sirve para eso. Contesta con los ficheros y las funciones por su nombre. No cambies nada."}
+      │ turno 1  41 s  544 tokens de entrada
+      │   ←  llamada      buscar {"patron": "menu", "ruta": "."}
+      │   →  observación  compra.py:5: def menu(recetario, nombres):
+      │                   …
+      │ turno 2  27 s  714 tokens de entrada
+      │   ←  texto        compra.py:menu(recetario, nombres) se sirve de una función externa para manejar recetas no en el recetario. La función se encuentra en compra.py, línea 5. No se especifica directamente la función externa en el contenido proporcionado.
+  →  observación  compra.py:menu(recetario, nombres) se sirve de una función externa para manejar recetas no en el recetario. La función se encuentra en compra.py, línea 5. No se especifica directamente la función externa en el contenido proporcionado.
+turno 2  27 s  1441 tokens de entrada
+  ←  texto        El menú en `compra.py` se sirve de una función externa definida en el mismo fichero `compra.py`, en la línea 5, para manejar recetas que no están en el recetario.
+```
+
+El subagente no abrió ningún fichero, aunque su prompt de sistema le pide leer antes de decir qué
+hace una función. Contestó con lo que veía en las líneas de `buscar`, y el agente principal lo
+repitió con más seguridad de la que traía. M quedó pequeña, y la respuesta, equivocada.
+
+Tampoco promete que el modelo delegue. La regla está en el prompt de sistema, y el modelo la sigue
+cuando quiere. Con este código hice cuatro ejecuciones de pedidos que no pedían un subagente. En
+las dos que no nombraban los ficheros, delegó una vez, la de arriba. En las dos que los nombraban,
+los leyó él. Lo que el harness promete es lo que pasa cuando el modelo delega, no que lo haga.
+
+## El subagente, en Python
+
+El código parte del punto de control en que terminó la lección anterior:
+
+<RepoLink tag="b5-l6">Al empezar esta lección</RepoLink>
+
+Todo lo que sigue corre contra el modelo local del aviso del principio. Lo que lee el modelo y lo
+que lee el permiso van en `herramientas/delegar.py`, como en las demás herramientas. La función no
+cabe ahí, porque necesita un modelo y una herramienta sólo recibe la carpeta:
+
+```python
+"""delegar(encargo): otro bucle, que lee por el agente y le devuelve su texto final. Lección 38.
+
+Lo que lee el modelo y lo que lee el permiso están aquí, como en las demás herramientas. La
+función no: necesita un modelo, y una herramienta sólo recibe la carpeta. La escribe
+subagente.py, y agente.py se la da al bucle junto con las otras cinco.
+"""
+from herramientas.comun import objeto
+
+CLASE = "lectura"                    # el subagente sólo tiene herramientas de lectura
+RUTAS = []                           # el encargo no es una ruta
+HERRAMIENTA = {"name": "delegar", "description": "Encarga a un subagente una pregunta sobre el "
+               "repositorio que exige leer o buscar en varios ficheros. El subagente sólo lee, "
+               "con su propia conversación, y te devuelve su respuesta en pocas líneas: lo que "
+               "él lea no ocupa la tuya. No ve esta conversación, así que escribe el encargo "
+               "entero: qué quieres saber y dónde buscarlo.",
+               "input_schema": objeto(encargo="la pregunta, completa, que el subagente contesta")}
+```
+
+En `herramientas/__init__.py`, `delegar` se importa con las demás, y `CLASES` y `RUTAS` se
+construyen sobre `MODULOS + [delegar]`. `HERRAMIENTAS` y `FUNCIONES` se quedan con las cinco: son
+las de un agente sin subagentes.
+
+El bucle es el de siempre, con dos argumentos más. Un subagente lo corre con menos herramientas y
+el agente principal con una más, así que las herramientas, y las funciones que las ejecutan, dejan
+de ser fijas:
+
+```python
+"""El bucle del agente. Lección 27 del curso, sin tocar salvo por el usuario y la compactación.
+
+Lección 38: las herramientas son un argumento, porque un subagente corre este mismo bucle con
+menos herramientas, y el agente principal con una más.
+"""
+from entorno import FUNCIONES, HERRAMIENTAS
+from permisos import ejecutar
+
+
+def bucle(modelo, inicio, entorno, tope, usuario=None, compactar=None,
+          herramientas=HERRAMIENTAS, funciones=FUNCIONES):
+    """Hasta que el modelo no pida nada, o el tope: (motivo, texto, M)."""
+    M = list(inicio)
+    for turno in range(tope):
+        r = modelo(M, herramientas)
+        M.append(("asistente", r))
+        llamadas = [b for b in r if b["type"] == "tool_use"]
+        if not llamadas:
+            return "fin", " ".join(b["text"] for b in r if b["type"] == "text"), M
+        if compactar is not None:                    # lección 36: antes de las observaciones
+            M = compactar(modelo, M, herramientas=herramientas)
+        M.append(("usuario", [ejecutar(ll, entorno, usuario, herramientas, funciones)
+                               for ll in llamadas]))
+    return "tope", None, M
+```
+
+Los dos argumentos llegan a tres sitios. `ejecutar`, en `permisos.py`, los recibe con los mismos
+valores por defecto, pasa `herramientas` al esquema (`incumple(ll, herramientas)`) y llama a
+`funciones[ll["name"]]` en vez de a `FUNCIONES`. `incumple`, en `entorno.py`, busca la herramienta
+en `herramientas`, así que una que no se ofreció es una que no existe. Y `compactar` gana
+`herramientas=HERRAMIENTAS` y las manda con la petición del resumen: con otras herramientas, el
+principio de la petición cambiaría, y la caché del servidor no serviría.
+
+El subagente está en un fichero nuevo, `subagente.py`. Primero, sus piezas fijas:
+
+```python
+"""El subagente: el mismo bucle, con una M nueva, que contesta un encargo. Lección 38 del curso.
+
+M empieza con el prompt de sistema del subagente y el encargo, y nada más: ni el pedido, ni el
+fichero de proyecto, ni lo que el agente principal haya leído. Sus herramientas son las de
+lectura, y sus llamadas pasan por el mismo ejecutar, con el sandbox. Al agente principal sólo
+le vuelve el texto final; la M del subagente se tira.
+"""
+from bucle import bucle
+from entorno import FUNCIONES, HERRAMIENTAS
+from herramientas import CLASES, delegar
+
+REGLA = ("- Para averiguar dónde está o qué hace algo del repositorio, encárgaselo a un "
+         "subagente con delegar, y lee tú sólo el fichero que vayas a editar.")  # al prompt de sistema
+LECTURAS = [h for h in HERRAMIENTAS if CLASES[h["name"]] == "lectura"]    # leer y buscar
+TOPE = 6
+SISTEMA = """Eres un subagente. Otro agente te ha hecho un encargo sobre un repositorio, la carpeta de trabajo (.), y sólo verá el texto con el que termines. Puedes leer y buscar; no puedes cambiar nada.
+
+- Escribe en español.
+- No expliques lo que vas a hacer: haz la llamada.
+- buscar dice dónde está algo, no qué hace: antes de contestar qué hace una función, lee el fichero donde está.
+- Cuando sepas la respuesta, termina con ella, en menos de 100 palabras: los ficheros y las funciones por su nombre, y las líneas que importen copiadas tal cual.
+- Si no la encuentras, dilo, y di qué has mirado."""
+```
+
+`LECTURAS` sale de las clases, no de una lista de nombres: si mañana escribes otra herramienta de
+lectura, el subagente la tendrá. Después, las dos funciones:
+
+```python
+def subagente(modelo, encargo, entorno, tope=TOPE):
+    """El texto final de otro bucle, que empieza de cero con el encargo y sólo puede leer."""
+    motivo, texto, _ = bucle(modelo, [("sistema", SISTEMA), ("usuario", encargo)], entorno, tope,
+                             herramientas=LECTURAS)
+    if motivo == "tope":
+        raise RuntimeError("el subagente ha llegado a su tope de %d turnos sin contestar" % tope)
+    return texto
+
+
+def con_delegar(modelo):
+    """Las herramientas del agente principal y sus funciones: las cinco y delegar."""
+    def f(entorno, encargo):
+        return subagente(modelo, encargo, entorno)
+    return HERRAMIENTAS + [delegar.HERRAMIENTA], dict(FUNCIONES, delegar=f)
+```
+
+El `_` es la M del subagente, que no sale de aquí. `subagente` no pasa usuario ni compactación, y
+el `RuntimeError` del tope lo convierte en error el `ejecutar` de fuera, con su `except`. Ninguna
+cláusula del contrato necesita más código que éste.
+
+En `agente.py`, `inicio` gana un argumento, `sistema=SISTEMA`, que es el prompt de sistema con que
+empieza M, y `agente` gana `delegar`, el modelo de los subagentes:
+
+```python
+def agente(modelo, pedido, entorno, tope=10, usuario=None, compactar=None, delegar=None):
+    """Un pedido, hasta que el modelo no pida nada o se acabe el tope: (motivo, texto, M).
+
+    Lección 38: con delegar, el modelo de los subagentes, el agente tiene una herramienta más,
+    y su prompt de sistema, una regla que dice para qué.
+    """
+    if delegar is None:
+        return bucle(modelo, inicio(pedido, entorno), entorno, tope, usuario, compactar)
+    herramientas, funciones = con_delegar(delegar)
+    return bucle(modelo, inicio(pedido, entorno, SISTEMA + "\n" + REGLA), entorno, tope, usuario,
+                 compactar, herramientas, funciones)
+```
+
+Que el modelo de los subagentes sea un argumento aparte deja usar uno distinto, más pequeño, por
+ejemplo. Aquí es el mismo servidor con otra `Traza`, para que se vea qué petición es de quién. En
+`correr.py`, `Traza` gana `sangria=""` y un método, `escribe(s)`, que antepone la sangría a cada
+línea de `s`; sus tres `print` pasan a ser `self.escribe(...)`. La llamada al agente queda así:
+
+```python
+motivo, texto, M = agente(Traza(ModeloAPI()), pedido, entorno, usuario=usuario, compactar=compactar,
+                          delegar=Traza(ModeloAPI(), "      │ "))
+```
+
+`tests/test_subagente.py` fija los dos modelos con un guion. El guion del subagente empieza en su
+prompt de sistema y el encargo, así que si su M trajera algo de fuera, el modelo guionizado
+fallaría en el primer turno:
+
+```python
+"""El contrato del subagente, con los dos modelos fijados por un guion. Lección 38 del curso.
+
+Como en la batería de la lección 31, las observaciones están escritas a mano, a partir del
+contrato de cada herramienta, del de ejecutar y del de delegar.
+"""
+import tempfile
+import unittest
+
+from agente import SISTEMA as PRINCIPAL, agente, inicio
+from entorno import ENTORNO, error, llamada, resultado, texto
+from guionizado import ModeloGuionizado, guion_de
+from herramientas.escribir import escribir
+from subagente import REGLA, SISTEMA, TOPE
+from tests.test_agente import ficheros
+
+PEDIDO = "¿Qué me falta para la tortilla?"
+ENCARGO = "¿Qué ingredientes lleva la receta de tortilla? Las recetas están en recetas/."
+DELEGA = [llamada("t1", "delegar", encargo=ENCARGO)]
+FINAL = [texto("Te faltan huevos y cebolla.")]
+
+
+def correr(sub_respuestas, sub_observaciones, devuelve):
+    """Un pedido con una delegación: (motivo, texto, M del principal, entorno, preguntas)."""
+    principal = ModeloGuionizado(guion_de(inicio(PEDIDO, sistema=PRINCIPAL + "\n" + REGLA),
+                                          [DELEGA, FINAL], [[devuelve], None]))
+    sub = ModeloGuionizado(guion_de([("sistema", SISTEMA), ("usuario", ENCARGO)],
+                                    sub_respuestas, sub_observaciones))
+    preguntas = []
+    def usuario(ll):
+        preguntas.append(ll["id"])
+        return True
+    with tempfile.TemporaryDirectory() as entorno:
+        for ruta, contenido in ENTORNO.items():
+            escribir(entorno, ruta, contenido)
+        motivo, final, M = agente(principal, PEDIDO, entorno, usuario=usuario, delegar=sub)
+        despues = ficheros(entorno)
+    assert principal.turno == 2 and sub.turno == len(sub.guion), "los guiones no se han acabado"
+    return motivo, final, M, despues, preguntas
+```
+
+`devuelve` es la observación que el agente principal tiene que recibir de `delegar`, escrita a
+mano. Los tres tests son tres cláusulas: que sólo vuelve el texto final, que el subagente sólo lee
+y no pregunta (aunque el usuario del test diga que sí a todo), y que su tope llega fuera como un
+error:
+
+```python
+class TestSubagente(unittest.TestCase):
+    def test_empieza_de_cero_y_solo_vuelve_su_texto(self):
+        respuestas = [[llamada("s1", "leer", ruta="recetas/tortilla.txt")],
+                      [texto("Huevos, patatas y cebolla (recetas/tortilla.txt).")]]
+        observaciones = [[resultado("s1", "Tortilla: huevos, patatas, cebolla.")], None]
+        motivo, final, M, _, _ = correr(respuestas, observaciones, resultado(
+            "t1", "Huevos, patatas y cebolla (recetas/tortilla.txt)."))
+        self.assertEqual((motivo, final), ("fin", "Te faltan huevos y cebolla."))
+        self.assertEqual(len(M), 5)              # la lectura del subagente no está en M
+        self.assertNotIn("s1", str(M))
+
+    def test_solo_lee_y_no_pregunta(self):
+        respuestas = [[llamada("s1", "escribir", ruta="notas.txt", contenido="Tortilla."),
+                       llamada("s2", "delegar", encargo=ENCARGO),
+                       llamada("s3", "leer", ruta="/etc/passwd")],
+                      [texto("No he podido leer la receta.")]]
+        observaciones = [[error("s1", "no se ha ejecutado: no hay ninguna herramienta 'escribir'"),
+                          error("s2", "no se ha ejecutado: no hay ninguna herramienta 'delegar'"),
+                          error("s3", "no se ha ejecutado: /etc/passwd está fuera de la carpeta "
+                                      "de trabajo")],
+                         None]
+        _, _, _, despues, preguntas = correr(respuestas, observaciones,
+                                             resultado("t1", "No he podido leer la receta."))
+        self.assertEqual(despues, ENTORNO)
+        self.assertEqual(preguntas, [])
+
+    def test_su_tope_es_un_error_para_el_agente_principal(self):
+        respuestas = [[llamada("s%d" % i, "leer", ruta="recetas")] for i in range(1, TOPE + 1)]
+        observaciones = [[resultado("s%d" % i, "recetas/gazpacho.txt\nrecetas/tortilla.txt")]
+                         for i in range(1, TOPE + 1)]
+        _, _, M, _, _ = correr(respuestas, observaciones, error(
+            "t1", "el subagente ha llegado a su tope de %d turnos sin contestar" % TOPE))
+        self.assertTrue(M[-2][1][0]["is_error"])
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+Ni las cinco herramientas, ni el adaptador, ni el modelo guionizado se han tocado, y esta orden no
+tiene que imprimir nada:
+
+```bash
+git diff --stat b5-l6 -- api.py guionizado.py herramientas/leer.py herramientas/buscar.py herramientas/editar.py herramientas/escribir.py herramientas/ejecutar.py
+```
+
+Si te has perdido, este es el punto de control al final de la lección, con `delegar`, el
+subagente y sus tests:
+
+<RepoLink tag="b5-l7">Al terminar esta lección</RepoLink>
+
+## La misma pregunta, en otra M
+
+Primero, los tests, que ya son veinticuatro:
+
+```bash
+python -m unittest
+```
+
+```text
+........................
+----------------------------------------------------------------------
+Ran 24 tests in 0.068s
+
+OK
+```
+
+Después, con el servidor en marcha (y sin una `ANTHROPIC_BASE_URL` que apunte a otro sitio), haz
+la pregunta del principio, esta vez pidiendo quién tiene que leer:
+
+```bash
+python correr.py recetario "Encarga a un subagente que lea compra.py y recetario.py y averigüe qué hace menu cuando una receta del menú no está en el recetario, y de qué función del otro fichero se sirve para eso. Con lo que te diga, contéstame. No cambies nada."
+```
+
+No te preguntará nada: todo lo que corre es de lectura. Ésta es la mía, recortada como las de
+arriba:
+
+```text
+turno 1  32 s  1309 tokens de entrada
+  ←  llamada      delegar {"encargo": "Lee compra.py y recetario.py y averigua qué hace menu cuando una receta del menú no está en el recetario, y de qué función del otro fichero se sirve para eso."}
+      │ turno 1  15 s  532 tokens de entrada
+      │   ←  llamada      leer {"ruta": "compra.py"}
+      │   ←  llamada      leer {"ruta": "recetario.py"}
+      │   →  observación  """La lista de la compra de un menú, a partir del recetario de recetario.py."""
+      │                   …
+      │   →  observación  """El recetario de casa: qué recetas hay y qué lleva cada una.
+      │                   …
+      │ turno 2  141 s  1985 tokens de entrada
+      │   ←  texto        En `menu` cuando una receta no está en el recetario, lanza un `KeyError` con sugerencias de recetas similares. Esto se hace mediante la función `parecidas` del módulo `recetario.py`, que usa `difflib.get_close_matches` para encontrar nombres similares.
+  →  observación  En `menu` cuando una receta no está en el recetario, lanza un `KeyError` con sugerencias de recetas similares. Esto se hace mediante la función `parecidas` del módulo `recetario.py`, que usa `difflib.get_close_matches` para encontrar nombres similares.
+turno 2  39 s  1454 tokens de entrada
+  ←  texto        Cuando una receta del menú no está en el recetario, el módulo `menu` lanza un `KeyError` y muestra sugerencias de recetas similares. Esto se realiza mediante la función `parecidas` del fichero `recetario.py`, que utiliza `difflib.get_close_matches` para encontrar nombres de recetas similares.
+fin · 6 mensajes en M · la copia está en /tmp/tmp79f49r99
+```
+
+Mira primero el encargo. El modelo quitó del pedido lo que era para él (el subagente, la respuesta,
+el <W>No cambies nada</W>) y dejó lo que necesita quien no ha visto la conversación: qué leer y qué
+averiguar. Las líneas con `│` son la M del subagente. Su primera petición son 532 tokens, su
+inicio y el encargo; la segunda, 1985, con los dos ficheros dentro. Es la misma lectura que la del
+principio, 1409 tokens nuevos que el servidor tardó 141 segundos en calcular, y ahora ocurre en
+una M que se tira cuando el subagente contesta.
+
+Ahora mira la M de fuera. Su segunda petición son 1454 tokens, 145 más que la primera: la llamada y
+la observación. Con el código de la lección anterior fueron 1453 más. La respuesta final es la
+misma, y es buena: el `KeyError` y `parecidas`, con `difflib` de propina.
+
+El precio está a la vista. Son cuatro peticiones en vez de dos, y 228 segundos en vez de 208. Mi
+servidor guardó en su caché el principio de la M de fuera mientras corría la de dentro, y la
+segunda petición del agente principal sólo tuvo que calcular 82 tokens nuevos. Un servidor que
+guarde una sola conversación tendría que volver a calcularla entera, y entonces el turno 2 sería el
+caro. Tu ejecución será otra, porque el modelo sortea. En la otra que hice con este pedido, el
+subagente copió además las dos líneas que importaban, y la M de fuera creció 214 tokens. Lo que
+tiene que coincidir es el contrato: las lecturas aparecen sólo con `│`, y a la M de fuera llega una
+observación.
+
+<Quiz id="q-el-encargo" />
+
+<Quiz id="q-un-subagente-que-edita" />
+
+<Quiz id="q-cuando-no-compensa" />
+
+<Quiz id="q-el-tope-del-subagente" />
+
+---
+
+El agente ya tiene todas las piezas de este bloque: el bucle, cinco herramientas, dos voces, la
+compactación, el sandbox y, ahora, otro bucle dentro. Lo que no tiene es una forma de saber si una
+pieza mejora algo. Cada lección la ha juzgado con dos o tres ejecuciones, leídas a ojo: el modelo
+delegó una vez de cuatro, el arreglo salió bien en una de tres. Con un modelo que sortea, eso es
+una anécdota, no una medida.
+
+<Leccion slug="mini-benchmark">La lección siguiente, sobre el mini-benchmark</Leccion>, convierte esa lectura a ojo en un número: cinco
+repositorios diminutos, cada uno con un pedido, un evaluador que ejecuta sus tests en vez de creer
+el texto final, y una tasa de acierto con su intervalo. Medirá lo que el bloque ha ido viendo de pasada, que
+lo que sale de un agente depende a la vez del harness y del modelo.

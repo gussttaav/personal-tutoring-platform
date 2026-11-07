@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 272" width="760" height="272" role="img"
+ aria-label="La tríada letal, como un triángulo. En los vértices, los tres ingredientes: el contenido no fiable (issues, páginas web, ficheros del repositorio), los datos privados (claves, tokens, código privado) y la comunicación externa (la red, una petición de cambios, un correo). Con los tres a la vez, una inyección puede leer algo y enviarlo fuera. Junto a cada vértice, cómo se corta: el contenido no fiable casi nunca se puede quitar, porque leerlo es el trabajo; los datos privados se quitan no montando el directorio personal y dejando los secretos fuera; la comunicación externa, con la red cerrada o un proxy con una lista de dominios.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ln { fill: none; stroke: #3b3b3e; stroke-width: 1.5; }
+  .ln.x { stroke: #ffb4ab; stroke-dasharray: 4 3; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx w" x="280.0" y="20.0" width="200.0" height="52.0" rx="6"/>
+<text class="lb w" x="380.0" y="44.0">Contenido no fiable</text>
+<text class="sb" x="380.0" y="58.0">issues, webs, ficheros del repo</text>
+<rect class="bx x" x="60.0" y="176.0" width="200.0" height="52.0" rx="6"/>
+<text class="lb x" x="160.0" y="200.0">Datos privados</text>
+<text class="sb" x="160.0" y="214.0">claves, tokens, código privado</text>
+<rect class="bx x" x="500.0" y="176.0" width="200.0" height="52.0" rx="6"/>
+<text class="lb x" x="600.0" y="200.0">Comunicación externa</text>
+<text class="sb" x="600.0" y="214.0">red, petición de cambios, correo</text>
+<path class="ln" d="M310.0,72.0 L200.0,176.0"/>
+<path class="ln" d="M450.0,72.0 L560.0,176.0"/>
+<path class="ln" d="M260.0,202.0 L500.0,202.0"/>
+<text class="sb" x="380.0" y="124.0">Los tres a la vez:</text>
+<text class="sb" x="380.0" y="138.0">una inyección lee algo</text>
+<text class="sb" x="380.0" y="152.0">y lo envía fuera</text>
+<text class="hd" x="740.0" y="26.0" style="text-anchor:end">CÓMO SE CORTA</text>
+<text class="tx" x="496.0" y="44.0" style="text-anchor:start">Casi nunca se puede quitar:</text>
+<text class="tx" x="496.0" y="58.0" style="text-anchor:start">leerlo es el trabajo.</text>
+<text class="sb m" x="160.0" y="248.0">No montar el directorio personal;</text>
+<text class="sb m" x="160.0" y="262.0">los secretos, fuera del sandbox.</text>
+<text class="sb m" x="600.0" y="248.0">Red cerrada, o un proxy</text>
+<text class="sb m" x="600.0" y="262.0">con una lista de dominios.</text>
+</svg>
