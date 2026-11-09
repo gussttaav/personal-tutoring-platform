@@ -502,6 +502,7 @@ body::after {
 }
 
 .chat-msg--user {
+  white-space: pre-wrap; /* CHAT-AGENT-P2-01b: keep the composer's line breaks */
   background: var(--green);
   border-radius: 14px 14px 4px 14px;
   color: #003824;
@@ -544,9 +545,11 @@ body::after {
   flex-shrink: 0;
 }
 
+/* CHAT-AGENT-P2-01b: the input is a textarea that grows (Chat.tsx sets its height) from one
+   line to ~5, then scrolls; the buttons stay at the bottom of the row. */
 .chat-input-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
 }
 
@@ -554,12 +557,17 @@ body::after {
   flex: 1;
   min-width: 0;
   height: 44px;
+  min-height: 44px;
+  max-height: 124px; /* 5 lines × 20px + padding + border */
+  overflow-y: auto;
   box-sizing: border-box;
   background: var(--surface-container);
   border: 1px solid var(--border-variant);
   border-radius: 12px;
-  padding: 0 16px;
+  padding: 11px 16px;
   font-size: 14px;
+  line-height: 20px;
+  display: block;
   color: var(--text);
   font-family: inherit;
   outline: none;
@@ -593,6 +601,55 @@ body::after {
 .chat-send:hover { background: var(--green-container); }
 .chat-send:active { transform: scale(0.95); }
 .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* CHAT-AGENT-P2-01: dictation. The mic is a quiet secondary button beside «send»; while it
+   listens it turns green and pulses (still, with reduced motion), and the interim transcript
+   shows greyed in the input until the engine settles on the final one. */
+.chat-mic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface-container);
+  border: 1px solid var(--border-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  padding: 0;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.chat-mic:hover:not(:disabled) { color: var(--text); border-color: rgba(78, 222, 163, 0.4); }
+.chat-mic:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.chat-mic--listening,
+.chat-mic--listening:hover:not(:disabled) {
+  color: #4edea3;
+  background: rgba(78, 222, 163, 0.12);
+  border-color: rgba(78, 222, 163, 0.6);
+  animation: chat-mic-pulse 1.4s ease-out infinite;
+}
+
+@keyframes chat-mic-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0.45); }
+  100% { box-shadow: 0 0 0 10px rgba(78, 222, 163, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-mic--listening,
+  .chat-mic--listening:hover:not(:disabled) { animation: none; }
+}
+
+.chat-input--interim { color: var(--text-dim); }
+
+.chat-voice-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
 
 .chat-disclaimer {
   margin: 0;
@@ -636,14 +693,201 @@ body::after {
   cursor: not-allowed;
 }
 
+/* CHAT-AGENT-P1-04: what a bot reply offers, under its bubble: slot chips (send the pick as a
+   message) and the free-call confirmation card (its Confirmar is the one booking write). */
+.chat-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: stretch;
+  max-width: 86%;
+  margin-top: -4px;
+}
+
+.chat-slot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chat-slot-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 13px;
+  background: var(--green-dim);
+  border: 1px solid var(--green-mid);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--green);
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.chat-slot-chip:hover:not(:disabled) {
+  background: rgba(78, 222, 163, 0.18);
+  border-color: rgba(78, 222, 163, 0.4);
+}
+
+.chat-slot-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* CHAT-AGENT-P3-02: «Comparar con mi calendario» under the chips, a quiet text button, and the
+   one-line note that says the row was filtered (or why it wasn't). */
+.chat-slot-chips-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.chat-slot-calendar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 2px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--green);
+  cursor: pointer;
+}
+
+.chat-slot-calendar-btn:hover:not(:disabled) { text-decoration: underline; }
+.chat-slot-calendar-btn:disabled { opacity: 0.6; cursor: progress; }
+
+.chat-slot-calendar-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.chat-proposal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--surface-container);
+  border: 1px solid var(--green-mid);
+  border-radius: 14px;
+  animation: fadeUp 0.2s ease both;
+}
+
+.chat-proposal-card--inactive {
+  border-color: var(--border-variant);
+  opacity: 0.7;
+}
+
+.chat-proposal-card p { margin: 0; }
+
+.chat-proposal-card__title {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.chat-proposal-card__when {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-proposal-card__when::first-letter { text-transform: uppercase; }
+.chat-proposal-card__time { white-space: nowrap; }
+
+.chat-proposal-card__tz {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.chat-proposal-card__result {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.chat-proposal-card__note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.chat-proposal-card__success {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--green);
+}
+
+.chat-proposal-card__error {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--error);
+}
+
+.chat-proposal-card__confirm {
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green);
+  color: var(--green-on);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.chat-proposal-card__confirm:hover:not(:disabled) { background: var(--green-container); }
+.chat-proposal-card__confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.chat-proposal-card__secondary {
+  min-height: 40px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1px solid var(--green-mid);
+  border-radius: 10px;
+  color: var(--green);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chat-proposal-card__secondary:hover:not(:disabled) { background: var(--green-dim); }
+.chat-proposal-card__secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.chat-proposal-card__link {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* Phone: tighter side padding, 48px controls, and 16px input text (iOS Safari zooms the page
    into any smaller field it focuses). After the base rules, which it overrides. */
 @media (max-width: 640px) {
   .chat-messages { padding: 18px 16px; }
   .chat-suggestions { padding: 0 16px 12px; }
   .chat-composer { padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
-  .chat-input { height: 48px; font-size: 16px; }
-  .chat-send { width: 48px; height: 48px; }
+  .chat-input { height: 48px; min-height: 48px; max-height: 136px; padding: 12px 16px; font-size: 16px; line-height: 22px; }
+  .chat-send,
+  .chat-mic { width: 48px; height: 48px; }
+  .chat-actions { max-width: 100%; } /* CHAT-AGENT-P1-04: the card's date fits on one line */
 }
 
 /* ─── Policy pages ───────────────────────────────────────────────────────── */

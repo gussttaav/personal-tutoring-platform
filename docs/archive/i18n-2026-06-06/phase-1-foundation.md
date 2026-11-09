@@ -19,7 +19,7 @@ git checkout -b feat/i18n-phase-1-foundation
 
 - Next.js 14.2.5 App Router. React 18.
 - No existing middleware, no existing i18n config.
-- Current root layout at [src/app/layout.tsx](../../src/app/layout.tsx) hardcodes `<html lang="es">`, wraps children in `AuthProvider`, loads Manrope + Inter fonts.
+- Current root layout at [src/app/layout.tsx](../../../src/app/layout.tsx) hardcodes `<html lang="es">`, wraps children in `AuthProvider`, loads Manrope + Inter fonts.
 - API routes under `src/app/api/` must **not** be locale-rewritten (Stripe webhook, NextAuth `/api/auth/*`, QStash callback, Resend callback all hit fixed URLs).
 - NextAuth v5 beta. Current app gates pages via server-side `auth()` calls inside the pages, **not** via middleware. Do not change this.
 
@@ -84,7 +84,7 @@ export const config = {
 
 ### 4. Wrap `next.config.mjs` with the plugin
 
-Edit [next.config.mjs](../../next.config.mjs) — wrap the existing default export:
+Edit [next.config.mjs](../../../next.config.mjs) — wrap the existing default export:
 
 ```js
 import createNextIntlPlugin from 'next-intl/plugin';

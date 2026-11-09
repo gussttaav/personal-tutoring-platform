@@ -16,7 +16,7 @@ git checkout -b feat/i18n-phase-4-formatting-emails
 ## Background
 
 Current state:
-- [src/infrastructure/resend/email-functions.ts](../../src/infrastructure/resend/email-functions.ts) has inline HTML strings in Spanish, dates formatted with `toLocaleDateString('es-ES', ...)`, timezone pinned to `Europe/Madrid`.
+- [src/infrastructure/resend/email-functions.ts](../../../src/infrastructure/resend/email-functions.ts) has inline HTML strings in Spanish, dates formatted with `toLocaleDateString('es-ES', ...)`, timezone pinned to `Europe/Madrid`.
 - Scattered `Intl.DateTimeFormat('es-ES', ...)` calls in components.
 - No central formatter helper.
 

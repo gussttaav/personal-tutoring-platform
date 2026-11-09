@@ -19,6 +19,27 @@
 // don't drift from those without updating this copy too. Its "2 hours" is the
 // separate, hardcoded CANCEL_WINDOW_MS (account-deletion imminent-booking gate),
 // not the admin-editable cancelHours below — see the CLAUDE.md gotcha.
+//
+// CHAT-AGENT-P3-01: the «Tu calendario de Google» / "Your Google Calendar" privacy
+// section is what Google's OAuth verification of the calendar.freebusy scope reads.
+// It must stay accurate to the chat's «Comparar con mi calendario» (CHAT-AGENT-P3-02):
+// busy intervals only, read from the browser for the proposed slots' days, never sent
+// to our servers or the assistant, the access token kept in memory only, the grant
+// kept until the user revokes it (decision Q4). Keep the Limited Use statement.
+// The «Asistente de IA» / "AI assistant" section, added with it, must match the chat:
+// messages go to Anthropic, the history lives in Redis for HISTORY_TTL_SEC (1 h idle,
+// src/services/ChatService.ts), not in Supabase, the model gets "signed
+// in: yes/no" but never the email (src/lib/chat-context-note.ts), and the browser keeps
+// the last messages per tab (sessionStorage) plus the conversation id (localStorage).
+//
+// CHAT-AGENT-P2-01: the «Dictado por voz» / "Voice dictation" item in that section must match
+// the chat's microphone (src/hooks/useDictation.ts): the browser's own speech service does the
+// transcription (Google in Chrome, Apple in Safari), only the text the user then sends reaches
+// us, no audio is recorded or stored. A server speech pipeline (P2-03) would change this copy.
+// CHAT-AGENT-P2-02: the «Lectura en voz alta» / "Read-aloud" item must match useReadAloud
+// (src/hooks/useReadAloud.ts): the browser's speech synthesis reads the reply to a dictated
+// message, a voice on the device is preferred, but a network voice (Chrome's «Google …») sends
+// the reply text to its provider; the header's speaker button turns it off.
 
 import { Link } from "@/i18n/navigation";
 
@@ -53,10 +74,34 @@ function PrivacidadContentEs() {
       <h3>Servicios de terceros</h3>
       <ul>
         <li><strong>Google OAuth</strong> — inicio de sesión. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Política de Google</a>.</li>
+        <li><strong>Anthropic (Claude)</strong> — modelo de IA que genera las respuestas del asistente del sitio. <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">Política de Anthropic</a>.</li>
         <li><strong>Stripe</strong> — procesamiento de pagos. <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener noreferrer">Política de Stripe</a>.</li>
         <li><strong>Zoom</strong> — tecnología de aula virtual integrada en la plataforma para la realización de las sesiones. <a href="https://explore.zoom.us/es/privacy/" target="_blank" rel="noopener noreferrer">Política de Zoom</a>.</li>
         <li><strong>Supabase</strong> — base de datos donde se almacenan de forma segura las reservas, el saldo de créditos y los datos de cuenta.</li>
       </ul>
+
+      <h3>Asistente de IA</h3>
+      <p>El asistente del sitio responde preguntas sobre las clases, los cursos y el blog, y puede proponerte horarios para el encuentro gratuito de 15 minutos. Funciona así:</p>
+      <ul>
+        <li><strong>Qué se envía:</strong> los mensajes que escribes se envían a Anthropic, que genera la respuesta con su modelo Claude. Junto a ellos solo van tu fecha, hora y zona horaria, el idioma de la página y si has iniciado sesión o no. Tu nombre y tu email no se envían al modelo.</li>
+        <li><strong>Cuánto tiempo se guarda:</strong> la conversación se guarda en una memoria temporal del servidor para que el asistente recuerde lo que habéis hablado, y se borra automáticamente una hora después de tu último mensaje. No se guarda en la base de datos ni se asocia a tu cuenta. Tu navegador conserva los últimos mensajes mientras la pestaña esté abierta.</li>
+        <li><strong>Límites de uso:</strong> para evitar abusos se cuenta, de forma temporal, cuántos mensajes se envían desde cada dirección IP o, si has iniciado sesión, desde cada cuenta.</li>
+        <li><strong>Dictado por voz:</strong> si pulsas el micrófono, tu voz la transcribe el servicio de reconocimiento de voz de tu propio navegador (por ejemplo, el de Google en Chrome o el de Apple en Safari), según las condiciones de ese servicio. A gustavoai.dev solo llega el texto que envías después, igual que si lo hubieras escrito. No grabamos ni guardamos tu voz.</li>
+        <li><strong>Lectura en voz alta:</strong> si dictas un mensaje, la respuesta la lee en voz alta la función de síntesis de voz de tu navegador. Siempre que haya una, se usa una voz instalada en tu dispositivo; algunas voces (por ejemplo, las «Google» de Chrome) funcionan en los servidores de su proveedor, que en ese caso recibe el texto de la respuesta para leerlo. Puedes desactivar la lectura con el botón del altavoz del chat.</li>
+        <li><strong>Reservas:</strong> el asistente no puede reservar nada por sí solo. Si te propone un horario, la reserva solo se hace cuando tú pulsas «Confirmar», con tu sesión iniciada.</li>
+      </ul>
+      <p>Anthropic trata estos mensajes como proveedor del servicio, según sus condiciones comerciales, que no le permiten usarlos para entrenar sus modelos. Te recomendamos no escribir en el chat datos sensibles (de salud, bancarios, contraseñas).</p>
+
+      <h3>Tu calendario de Google (opcional)</h3>
+      <p>El asistente de IA del sitio puede proponerte horarios para el encuentro gratuito de 15 minutos. Si has iniciado sesión, puedes pulsar «Comparar con mi calendario» para ocultar los horarios que coinciden con algo de tu agenda. Solo en ese momento Google te pide permiso para ver tu disponibilidad (permiso <code>calendar.freebusy</code>, de solo lectura).</p>
+      <ul>
+        <li><strong>Qué se lee:</strong> solo los intervalos en los que tu calendario principal figura como ocupado, y solo en los días de los horarios propuestos. No se pide ni se lee el título, la descripción, los participantes ni ningún otro detalle de tus eventos.</li>
+        <li><strong>Cuándo:</strong> solo cuando pulsas el botón y aceptas el permiso. Al iniciar sesión nunca se pide acceso a tu calendario.</li>
+        <li><strong>Dónde se usa:</strong> la consulta a Google se hace desde tu navegador, que es el que filtra la lista de horarios. Los datos de tu calendario no se envían a los servidores de gustavoai.dev ni al asistente de IA, y no se comparten con nadie.</li>
+        <li><strong>Cuánto tiempo se guardan:</strong> no se guardan. Los intervalos ocupados y el código de acceso temporal que entrega Google (válido como máximo una hora) solo existen en la memoria de la página y se descartan al cerrarla o recargarla.</li>
+        <li><strong>Cómo retirar el permiso:</strong> el permiso que concedes en Google se mantiene para que la próxima comparación sea un solo clic. Puedes retirarlo cuando quieras en <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>.</li>
+      </ul>
+      <p>El uso que gustavoai.dev hace de la información recibida de las API de Google, y su transferencia a cualquier otra aplicación, se ajusta a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Política de datos de usuario de los servicios de API de Google</a> (Google API Services User Data Policy), incluidos los requisitos de uso limitado (<em>Limited Use</em>).</p>
 
       <h3>Tus derechos</h3>
       <p>Puedes <strong>eliminar tu cuenta y todos tus datos</strong> tú mismo desde tu <strong>área personal</strong>, en la sección «Eliminar cuenta». El borrado es <strong>inmediato y no se puede deshacer</strong>: se eliminan de forma permanente tu cuenta y tus datos personales, tus reservas y todo tu historial de clases, tu saldo de créditos, tu progreso en los cursos y tus registros de pago. No se conserva ninguna copia ni existe un período de gracia para recuperarlos.</p>
@@ -235,10 +280,34 @@ function PrivacidadContentEn() {
       <h3>Third-party services</h3>
       <ul>
         <li><strong>Google OAuth</strong> — sign-in. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</li>
+        <li><strong>Anthropic (Claude)</strong> — AI model that writes the site assistant&apos;s replies. <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer">Anthropic Privacy Policy</a>.</li>
         <li><strong>Stripe</strong> — payment processing. <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe Privacy Policy</a>.</li>
         <li><strong>Zoom</strong> — virtual classroom technology integrated into the platform for conducting sessions. <a href="https://explore.zoom.us/en/privacy/" target="_blank" rel="noopener noreferrer">Zoom Privacy Policy</a>.</li>
         <li><strong>Supabase</strong> — database where bookings, credit balances and account data are stored securely.</li>
       </ul>
+
+      <h3>AI assistant</h3>
+      <p>The site&apos;s assistant answers questions about the classes, the courses and the blog, and can suggest times for the free 15-minute intro call. This is how it works:</p>
+      <ul>
+        <li><strong>What is sent:</strong> the messages you type are sent to Anthropic, which writes the reply with its Claude model. The only other things sent with them are your date, time and time zone, the page language and whether you are signed in. Your name and email are not sent to the model.</li>
+        <li><strong>How long it is kept:</strong> the conversation is held in temporary server memory so the assistant remembers what you have discussed, and it is deleted automatically one hour after your last message. It is not saved in the database or linked to your account. Your browser keeps the latest messages while the tab is open.</li>
+        <li><strong>Usage limits:</strong> to prevent abuse, the number of messages sent from each IP address or, if you are signed in, from each account is counted temporarily.</li>
+        <li><strong>Voice dictation:</strong> if you tap the microphone, your voice is transcribed by your own browser&apos;s speech recognition service (for example Google&apos;s in Chrome or Apple&apos;s in Safari), under that service&apos;s terms. gustavoai.dev only receives the text you then send, just as if you had typed it. We do not record or store your voice.</li>
+        <li><strong>Read-aloud:</strong> if you dictate a message, the reply is read aloud by your browser&apos;s speech synthesis. Whenever one is available, a voice installed on your device is used; some voices (for example Chrome&apos;s &quot;Google&quot; voices) run on their provider&apos;s servers, which then receive the text of the reply in order to read it. You can turn read-aloud off with the speaker button in the chat.</li>
+        <li><strong>Bookings:</strong> the assistant cannot book anything by itself. If it suggests a time, the booking is only made when you tap &quot;Confirm&quot; while signed in.</li>
+      </ul>
+      <p>Anthropic processes these messages as a service provider under its commercial terms, which do not allow it to use them to train its models. Please don&apos;t type sensitive information (health or bank details, passwords) in the chat.</p>
+
+      <h3>Your Google Calendar (optional)</h3>
+      <p>The site&apos;s AI assistant can suggest times for the free 15-minute intro call. If you are signed in, you can tap &quot;Compare with my calendar&quot; to hide the times that clash with something in your schedule. Only then does Google ask for your permission to see your availability (the read-only <code>calendar.freebusy</code> permission).</p>
+      <ul>
+        <li><strong>What is read:</strong> only the intervals in which your primary calendar shows you as busy, and only on the days of the suggested times. The title, description, attendees and every other detail of your events are never requested or read.</li>
+        <li><strong>When:</strong> only when you tap the button and grant the permission. Access to your calendar is never requested at sign-in.</li>
+        <li><strong>Where it is used:</strong> the request to Google is made from your browser, which filters the list of times itself. Your calendar data is not sent to gustavoai.dev&apos;s servers or to the AI assistant, and is not shared with anyone.</li>
+        <li><strong>How long it is kept:</strong> it is not kept. The busy intervals and the temporary access code Google issues (valid for one hour at most) exist only in the page&apos;s memory and are discarded when you close or reload it.</li>
+        <li><strong>How to withdraw the permission:</strong> the permission you grant in Google stays in place so that your next comparison takes a single click. You can revoke it at any time at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>.</li>
+      </ul>
+      <p>gustavoai.dev&apos;s use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
 
       <h3>Your rights</h3>
       <p>You can <strong>delete your account and all of your data</strong> yourself from your <strong>personal area</strong>, under &quot;Delete account&quot;. Deletion is <strong>immediate and cannot be undone</strong>: your account and personal details, your bookings and entire class history, your credit balance, your course progress and your payment records are permanently erased. No copy is kept and there is no grace period in which to recover them.</p>

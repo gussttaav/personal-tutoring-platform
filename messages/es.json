@@ -719,6 +719,7 @@
     "initialMessage": "¡Hola! 👋 Soy el asistente de **Gustavo Torres**. Puedo contarte sobre sus clases, áreas de especialidad, cómo reservar una sesión o cualquier otra duda.",
     "initialQuestion": "¿En qué puedo ayudarte?",
     "suggestions": [
+      "¿Tienes hueco mañana para el encuentro gratuito?",
       "¿Qué asignaturas impartes?",
       "¿Cómo reservo una sesión?",
       "¿Qué incluye el pack?",
@@ -737,7 +738,48 @@
     "closeAssistant": "Cerrar asistente IA",
     "assistantLabel": "Asistente virtual de Gustavo Torres",
     "error": "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
-    "unknownError": "Error desconocido"
+    "unknownError": "Error desconocido",
+    "actions": {
+      "slotsLabel": "Huecos libres para el encuentro inicial",
+      "pickSlot": "Prefiero el {day} a las {time}",
+      "proposalTitle": "Encuentro inicial gratuito · 15 min",
+      "proposalLabel": "Propuesta de encuentro inicial gratuito: {when}",
+      "timezone": "Hora de {city}",
+      "signInFirst": "Para reservar, inicia sesión con Google. Después confirma la reserva aquí mismo.",
+      "signIn": "Continuar con Google",
+      "confirm": "Confirmar reserva",
+      "booking": "Reservando…",
+      "booked": "Reservado. Te hemos enviado un email con el enlace al aula.",
+      "bookedNoEmail": "Reservado. No hemos podido enviarte el email; tienes el enlace al aula en tu área personal.",
+      "goToPersonalArea": "Ir a mi área personal",
+      "slotTaken": "Ese hueco acaba de ocuparse.",
+      "findAnother": "Buscar otro hueco",
+      "findAnotherMessage": "Ese hueco ya no está libre. ¿Qué otros huecos tienes para el encuentro inicial?",
+      "expired": "Este horario ya no se puede reservar. Pide otro al asistente.",
+      "superseded": "Propuesta anterior. Confirma la más reciente."
+    },
+    "calendar": {
+      "compare": "Comparar con mi calendario",
+      "comparing": "Leyendo tu calendario…",
+      "filtered": "{count, plural, one {Según tu calendario, te encaja # de estos huecos.} other {Según tu calendario, te encajan # de estos huecos.}}",
+      "none": "Según tu calendario, no te encaja ninguno de estos huecos. Pídeme otros días u otra hora.",
+      "filteredLabel": "Huecos libres filtrados con tu calendario",
+      "blocked": "Tu organización no permite este acceso a tu calendario.",
+      "failed": "No he podido leer tu calendario. Puedes volver a intentarlo."
+    },
+    "voice": {
+      "start": "Dictar mensaje",
+      "stop": "Terminar de dictar",
+      "listening": "Te escucho…",
+      "denied": "El navegador no tiene permiso para usar el micrófono. Actívalo en los ajustes del sitio (el icono junto a la dirección) y vuelve a pulsar el micrófono.",
+      "noSpeech": "No te he oído. Pulsa el micrófono e inténtalo de nuevo.",
+      "unsupported": "Este navegador no permite dictar. Puedes escribir tu mensaje.",
+      "readAloudOn": "Lectura en voz alta: activada",
+      "readAloudOff": "Lectura en voz alta: desactivada",
+      "stopAndSend": "Terminar y enviar",
+      "listeningHintSend": "Pulsa ■ cuando termines y se enviará.",
+      "listeningHintReview": "Pulsa ■ cuando termines; podrás revisar el texto antes de enviarlo."
+    }
   },
   "postClassReview": {
     "ratings": [

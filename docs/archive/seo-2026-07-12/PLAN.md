@@ -1,5 +1,7 @@
 # SEO Optimization — Plan & Status
 
+**Archived 2026-11-09:** every task done; the table was reconciled at archive time from git history. See [SUMMARY.md](SUMMARY.md).
+
 **Date:** 2026-07-09
 **Trigger:** Google Search Console email — some pages could not be indexed (email lost; diagnosis
 re-derived from code). Root cause: the middleware 307-redirected the canonical Spanish root `/`
@@ -16,12 +18,12 @@ WeeklyCalendar/AvailabilityModal dedupe, ScheduleService caching (R3-P3-02), rat
 |------|------|----|--------|
 | SEO-00 | This tracking doc | PR 1 | ✅ Done |
 | SEO-01 | Remove Accept-Language locale redirect (strip header in middleware; detection = pathname → NEXT_LOCALE cookie → es). THE indexing fix. | PR 1 | ✅ Done |
-| SEO-02 | `noindex, nofollow` metadata on transactional/auth/admin pages (pass-through layouts for client pages) | PR 2 | ⬜ Pending |
-| SEO-03 | OpenGraph + Twitter card metadata in root layout + `public/og.png` (1200×630) | PR 3 | ⬜ Pending |
-| SEO-04 | JSON-LD structured data (`Person` + `Service`, price-free) on home | PR 3 | ⬜ Pending |
-| SEO-05 | Sitemap `x-default` + www/non-www host default consistency | PR 4 | ⬜ Pending |
+| SEO-02 | `noindex, nofollow` metadata on transactional/auth/admin pages (pass-through layouts for client pages) | PR 2 | ✅ Done — `127e228` |
+| SEO-03 | OpenGraph + Twitter card metadata in root layout + `public/og.png` (1200×630) | PR 3 | ✅ Done — `c358138`; image follow-ups `f15007a`, `f635a6a`, locale-specific `d448833` |
+| SEO-04 | JSON-LD structured data (`Person` + `Service`, price-free) on home | PR 3 | ✅ Done — `c358138` |
+| SEO-05 | Sitemap `x-default` + www/non-www host default consistency | PR 4 | ✅ Done — `92e7c63`, then `0d5df05` (`x-default` → English) |
 | SEO-06 | Verify home/legal pages stay prerendered (build route table) — verification only, no code | PR 1 | ✅ Done — `/[locale]`, `/[locale]/privacidad`, `/[locale]/terminos` all ● SSG (1h revalidate); only auth-gated routes are dynamic |
-| SEO-07 | GSC workflow: validate diagnosis, request reindexing, resubmit sitemap (manual, post-deploy) | — | ⬜ Pending |
+| SEO-07 | GSC workflow: validate diagnosis, request reindexing, resubmit sitemap (manual, post-deploy) | — | ✅ Done by Gustavo (confirmed 2026-11-09, date not recorded) |
 
 ## Behavior change (SEO-01)
 

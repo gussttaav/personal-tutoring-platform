@@ -719,6 +719,7 @@
     "initialMessage": "Hi! 👋 I'm **Gustavo Torres**'s assistant. I can tell you about his classes, areas of expertise, how to book a session, or anything else you'd like to know.",
     "initialQuestion": "How can I help you?",
     "suggestions": [
+      "Any time tomorrow for the free intro call?",
       "What subjects do you teach?",
       "How do I book a session?",
       "What's included in the pack?",
@@ -737,7 +738,48 @@
     "closeAssistant": "Close AI assistant",
     "assistantLabel": "Gustavo Torres virtual assistant",
     "error": "An error occurred. Please try again.",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "actions": {
+      "slotsLabel": "Free slots for the intro call",
+      "pickSlot": "I'd like {day} at {time}",
+      "proposalTitle": "Free intro call · 15 min",
+      "proposalLabel": "Free intro call proposal: {when}",
+      "timezone": "{city} time",
+      "signInFirst": "To book, sign in with Google. Then confirm the booking right here.",
+      "signIn": "Continue with Google",
+      "confirm": "Confirm booking",
+      "booking": "Booking…",
+      "booked": "Booked. We've emailed you the link to the classroom.",
+      "bookedNoEmail": "Booked. We couldn't send you the email; the classroom link is in your personal area.",
+      "goToPersonalArea": "Go to my personal area",
+      "slotTaken": "That slot has just been taken.",
+      "findAnother": "Find another slot",
+      "findAnotherMessage": "That slot is no longer free. What other slots do you have for the intro call?",
+      "expired": "This time can no longer be booked. Ask the assistant for another.",
+      "superseded": "Earlier proposal. Confirm the latest one."
+    },
+    "calendar": {
+      "compare": "Compare with my calendar",
+      "comparing": "Reading your calendar…",
+      "filtered": "{count, plural, one {According to your calendar, # of these slots fits.} other {According to your calendar, # of these slots fit.}}",
+      "none": "According to your calendar, none of these slots fit. Ask me for other days or times.",
+      "filteredLabel": "Free slots filtered with your calendar",
+      "blocked": "Your organisation doesn't allow this access to your calendar.",
+      "failed": "I couldn't read your calendar. You can try again."
+    },
+    "voice": {
+      "start": "Dictate a message",
+      "stop": "Finish dictating",
+      "listening": "Listening…",
+      "denied": "Your browser isn't allowed to use the microphone. Turn it on in the site settings (the icon next to the address), then tap the microphone again.",
+      "noSpeech": "I didn't hear anything. Tap the microphone and try again.",
+      "unsupported": "This browser can't take dictation. You can type your message instead.",
+      "readAloudOn": "Read replies aloud: on",
+      "readAloudOff": "Read replies aloud: off",
+      "stopAndSend": "Finish and send",
+      "listeningHintSend": "Tap ■ when you're done and it will be sent.",
+      "listeningHintReview": "Press ■ when you're done; you can check the text before sending it."
+    }
   },
   "postClassReview": {
     "ratings": [
