@@ -50,9 +50,9 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 - [x] Every cell and challenge verified in the browser on a phone _(Gustavo verified each lesson on
       desktop and phone when it was finished; the «not on a phone» lines in the closing notes below
       record only what the authoring session itself could check)_
-- [ ] Every Block 5 lesson verified on a clean machine on the course's model from its tag (lesson 39:
-      also a bigger model, in the cloud) _(split out 2026-11-09: the tags were reproduced from fresh
-      clones on the author's machine; the Kaggle run measured lesson 39's rows but did not re-verify them)_
+- [x] Every Block 5 lesson verified on a clean machine on the course's model from its tag (lesson 39:
+      also a bigger model, in the cloud) _(split out and accepted by Gustavo 2026-11-09: each tag reproduced
+      from a fresh clone on the author's machine; lesson 39's bigger-model row measured on Kaggle)_
 - [x] Ten widgets registered, bilingual, maths unit-tested _(2026-11-09: `bpe-merges`,
       `sampling-explorer`, `kv-cache`, `scaling-laws`, `chat-template`, `bradley-terry`, `dpo-loss`,
       `logit-mask`, `context-window`, `agent-loop-trace`; each in `registry.ts`, used by a lesson, its
