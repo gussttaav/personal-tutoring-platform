@@ -17,9 +17,12 @@
  * this stops firing on its own" — it just now stops firing lesson by lesson rather than at the
  * first one.
  *
- * The third test covers the other axis: a course still being WRITTEN (`llm-agents`, declared at 40
- * lessons and not all published yet) has to advertise what nobody has written yet, because before
- * COURSE-BUILD-01 the card said "1 módulo" and the landing showed a one-block syllabus.
+ * The third test covers the other axis: a course still being WRITTEN (some block has published
+ * fewer lessons than its declared `lessons:`) has to advertise what nobody has written yet,
+ * because before COURSE-BUILD-01 the card said "1 módulo" and the landing showed a one-block
+ * syllabus. It was written against `llm-agents`; since that course was finished (lesson 40,
+ * 2026-11-09) the course is derived from the content tree (`IN_PROGRESS_SLUG`), and with none
+ * being written the test is SKIPPED, visibly, until the next course publishes its first lesson.
  *
  * The cross-locale fallback — an `/en` URL that still serves Spanish prose — has NOT gone away;
  * it just moved down the syllabus to whatever lesson is still untranslated (`UNTRANSLATED_LESSON`,
@@ -49,7 +52,7 @@
  * production build these are all far quicker; don't trim them to what a prod run gets away with.
  */
 
-import { readdirSync, readFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { test, expect } from "@playwright/test";
 import { dict } from "./helpers/dict";
@@ -95,9 +98,25 @@ if (!UNTRANSLATED_LESSON) {
 /*
  * COURSE-BUILD-01 — the course being written in public. Derived from the content tree for the
  * same reason `UNTRANSLATED_LESSON` is: the numbers move as blocks get published, and a test
- * that hard-codes them goes quietly green against a stale expectation.
+ * that hard-codes them goes quietly green against a stale expectation. Only courses with a
+ * published Spanish lesson count (an `es/` directory): before that, a course has no catalog card.
+ * `null` when every published course is complete; the test then skips (reported, not silent).
  */
-const IN_PROGRESS_SLUG = "llm-agents";
+const COURSES_ROOT = join(process.cwd(), "content/courses");
+const IN_PROGRESS_SLUG: string | null =
+  readdirSync(COURSES_ROOT, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(COURSES_ROOT, e.name, "es")))
+    .map((e) => e.name)
+    .sort()
+    .find((slug) => isStillBeingWritten(slug, "es")) ?? null;
+
+/** The manifest's course title up to its colon («Modelos de Lenguaje»), for finding its card. */
+function courseTitleHead(slug: string, locale: "es" | "en"): string {
+  const src = readFileSync(join(COURSES_ROOT, slug, `course.${locale}.yml`), "utf-8");
+  const title = src.match(/^title: "(.+)"$/m)?.[1];
+  if (!title) throw new Error(`courses-navigation.spec: no top-level title in ${slug}/course.${locale}.yml`);
+  return title.split(":")[0].trim();
+}
 
 /** A manifest's block titles, in order. The block list is the tail of the file and its titles
  *  are the only four-space-indented `title:` scalars in it — a regex is enough here too. */
@@ -213,24 +232,23 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
   });
 
   test("COURSE-BUILD-01: a course still being written shows every block and says so", async ({ page }) => {
-    const d = dict.es;
-    const titles  = blockTitles(IN_PROGRESS_SLUG, "es");
-    const started = startedBlocks(IN_PROGRESS_SLUG, "es");
+    // No course is being written (every published course matches its declared `lessons:` plan):
+    // nothing to pin. A visible skip, never a silent pass; it comes back on its own with the next
+    // course's first published lesson.
+    test.skip(IN_PROGRESS_SLUG === null, "no course is being written right now: every published course is complete");
+    const slug = IN_PROGRESS_SLUG!;
 
-    // When `llm-agents` is finished this stops being an in-progress course and the assertions
-    // below stop describing it: point them at whatever course is being written then, or retire
-    // them. A silent pass is the one outcome worth ruling out. Measured against the declared
-    // `lessons:` plan, not against "every block has a lesson" (Block 5 started long before it
-    // was done).
-    expect(isStillBeingWritten(IN_PROGRESS_SLUG, "es")).toBe(true);
+    const d = dict.es;
+    const titles  = blockTitles(slug, "es");
+    const started = startedBlocks(slug, "es");
 
     await page.goto("/cursos");
     await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
-    const card = page.locator(".course-card").filter({ hasText: /Modelos de Lenguaje/ });
+    const card = page.locator(".course-card").filter({ hasText: courseTitleHead(slug, "es") });
     await expect(card.getByText(d.courses.catalog.card.inProgress)).toBeVisible();
 
-    await page.goto(`/cursos/${IN_PROGRESS_SLUG}`);
-    await expect(page).toHaveURL(new RegExp(`/cursos/${IN_PROGRESS_SLUG}$`), { timeout: 30_000 });
+    await page.goto(`/cursos/${slug}`);
+    await expect(page).toHaveURL(new RegExp(`/cursos/${slug}$`), { timeout: 30_000 });
 
     // Says out loud that it is unfinished…
     await expect(
