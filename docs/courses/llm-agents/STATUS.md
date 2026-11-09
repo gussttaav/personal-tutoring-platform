@@ -40,10 +40,10 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ✅ (8/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ✅ (7/7) | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ✅ (7/7) | _tbd_ | |
-| [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | 🔄 (8/9) | _tbd_ | |
+| [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ✅ (9/9) | _tbd_ | |
 
 **Exit criteria**
-- [ ] All five blocks published; Block 1 flipped as a unit with P2-01
+- [x] All five blocks published; Block 1 flipped as a unit with P2-01 _(2026-11-07: 40 of 40 lessons, every one `draft: false`)_
 - [ ] Every lesson within budget; `pnpm lint:content` green in CI
 - [ ] Every cell and challenge verified in the browser on a phone; every Block 5 lesson verified
       on a clean machine on the course's model from its tag (lesson 39: also a bigger model, in the cloud)
@@ -1651,3 +1651,28 @@ Gustavo at review (2026-10-30):
   its message and an unknown-tool test also passes (CPython); the widget's 23 steps read as the
   prose says, tope 4 stops with the list written; no horizontal page scroll at 375 px. Quiz not
   answered in the browser. Not on a phone.
+
+**COURSE-C2-P1-05** — Done (started 2026-10-30, finished 2026-11-07), and with it the course's content: 40 of
+40 lessons published. Lesson 40 `mcp-y-lo-que-viene`, the last, authored on
+`course/llm-agents-l40-mcp-y-lo-que-viene`. 2 248 words (over the 2 000 target, like lessons 35–39), no
+widget, no cell, 3 quiz, 4 readings (the MCP spec 2026-07-28, Invariant Labs on tool poisoning, SWE-Gym,
+DeepSWE; URLs and figures checked). Runs on the local model, `qwen3:4b-instruct` on Ollama 0.40.13.
+- **The spec moved under the plan:** the current revision, `2026-07-28`, has no `initialize`
+  handshake. The lesson teaches the stateless revision (`server/discover`, `_meta` per request) and
+  names the old handshake in a clause; the client refuses older servers rather than falling back.
+- **The content:** the five clauses of what the harness does not take on trust (offers only what
+  `incumple` can check and never a name of its own; the clase is the usuario's, in `AJENAS`; the
+  sandbox does not reach a server; everything comes back as an observación; a description is
+  contenido no fiable). The bridge closes the course: Block 1's single column and the first course's
+  neuron behind every llamada, and the door left at the literature (reasoning models, RL over an
+  agent's trajectories, lesson 39's evaluador as a verifiable reward), now with a harness to test it in.
+- **Applied after review:** delta §4 rows `servidor MCP` and `herramienta ajena`; `NOTATION.md`'s
+  Block 5 section records lesson 40's code; the block md records the chain-test measurements.
+  Lesson 39's bridge now links this lesson. Companion repo: `b5-l9` committed, tagged and pushed.
+- Verified: `pnpm lint:content` (only the word-count warning), `pnpm build` green; tag `b5-l9` from a
+  fresh clone: 33 tests, the hand trace, both model runs; interop with the official library both
+  ways; rendered with no horizontal page scroll at 360 px. Quiz not answered in the browser. Not on
+  a phone, not on a clean machine.
+- **Side effect:** with block 5 complete, `courseBuildStatus()` reports the course finished, so the
+  catalog card and the landing lose «En construcción».
+

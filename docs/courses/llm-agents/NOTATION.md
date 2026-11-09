@@ -724,3 +724,28 @@ inside, prints one line per intento, `k de R` per prueba, the acierto with its W
 the intentos that end in `fin` and score 0. `tests/test_banco.py` (four tests: five pruebas with
 their pieces, 0 on the untouched repo, 1 with `solucion/`, the usuario) is new. Every earlier file
 is unchanged.
+
+**From lesson 40 on, the harness can have a servidor MCP, and the bucle still does not change**
+(`COURSE-C2-P1-05`, lesson 40, tag `b5-l9`). The protocol revision is `2026-07-28`, which is
+stateless: no `initialize`; every request carries in `_meta` `io.modelcontextprotocol/protocolVersion`
+and `io.modelcontextprotocol/clientCapabilities` (and `clientInfo`, a SHOULD); every result carries a
+`resultType`; `server/discover` and `tools/list` results carry `ttlMs` and `cacheScope`.
+`servidor_incidencias.py` is a stdlib stdio server with one herramienta, `incidencias(estado)`, over
+`incidencias.json` (outside the carpeta de trabajo); it answers `server/discover`, `tools/list` and
+`tools/call`, rejects a request without its `_meta` fields with `-32602`, a version it does not speak
+with `-32022` (`data.supported`), an unknown tool with `-32602` and an unknown method with `-32601`; a
+failure of the herramienta is a `result` with `isError`. `cliente_mcp.py`: `ServidorMCP(*comando,
+traza=False)` launches the subprocess, reads its stdout in a thread into a queue (`LIMITE = 30` s per
+response; a late response of an earlier `id` is skipped), discovers at construction (a server that
+does not list `2026-07-28` or `tools` is closed and refused) and offers `pedir`, `herramientas`
+(refuses a `nextCursor`), `llamar` (text blocks joined; `isError`, or a `resultType` other than
+`complete`, raise `RuntimeError`) and `cerrar` (close stdin, wait 5 s, kill, join the thread).
+`herramienta(t)` translates `inputSchema` to `input_schema` and returns `None` for a schema `incumple`
+cannot check (not an object, or a property outside `TIPOS`); `con_servidor(servidor, herramientas,
+funciones)` adds the translated tools and one closure per tool, and raises `ValueError` if a name
+clashes with the agent's. `permisos.AJENAS` (`{"incidencias": "lectura"}`) is consulted after
+`CLASES`; `fuera` uses `RUTAS.get(name, [])`. `agente(…, servidor=None)` composes `delegar` and
+`servidor`; `correr.py` takes what follows the pedido as the comando of the server and closes it in a
+`finally`. `mcp_a_mano.py <comando>` traces `server/discover`, `tools/list` and two `tools/call`.
+`tests/test_mcp.py` (five tests, 33 in all) launches the real server. `bucle.py`, `api.py`,
+`compactar.py`, `subagente.py`, `entorno.py`, the herramientas, `medir.py` and `banco/` are unchanged.
