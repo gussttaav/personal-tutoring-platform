@@ -1,0 +1,643 @@
+---
+slug: problema-de-la-parada
+title: "The halting problem: exactly what it rules out, and what it doesn't"
+date: "2026-11-14"
+minutes: 21
+summary: "In 1936 Alan Turing proved that no algorithm can decide, for every program, whether it finishes or runs forever. What that result actually says, how to prove it in ten lines of Python, what it doesn't say, why it follows that almost no question about what a program does has a general algorithm, how compilers, verifiers and tests get around it every day, and why people don't escape it either."
+draft: false
+reading:
+  - kind: paper
+    title: "On Computable Numbers, with an Application to the Entscheidungsproblem"
+    authors: "Alan M. Turing"
+    year: "1936"
+    venue: "Proceedings of the London Mathematical Society"
+    lang: en
+    url: "https://www.cs.virginia.edu/~robins/Turing_Paper_1936.pdf"
+    note: "The original paper. Section 8 is the proof, and it reads more easily than its reputation suggests; sections 1 to 3 describe the machine with an example you can follow with a pencil."
+  - kind: libro
+    title: "The Annotated Turing"
+    authors: "Charles Petzold"
+    year: "2008"
+    venue: "Wiley"
+    lang: en
+    url: "https://www.charlespetzold.com/books/"
+    note: "Turing's paper sentence by sentence, with everything you need to read it. The most comfortable way into the original if you have no background in logic."
+  - kind: paper
+    title: "The origins of the halting problem"
+    authors: "Salvador Lucas"
+    year: "2021"
+    venue: "Journal of Logical and Algebraic Methods in Programming"
+    lang: en
+    url: "https://riunet.upv.es/bitstream/10251/189460/1/Lucas%20-%20The%20origins%20of%20the%20halting%20problem.pdf"
+    note: "Who stated the halting problem the way we state it today, and when. Turing never used the word \"halt\": the modern version is Kleene's and the name is Martin Davis's."
+  - kind: paper
+    title: "Classes of Recursively Enumerable Sets and Their Decision Problems"
+    authors: "Henry Gordon Rice"
+    year: "1953"
+    venue: "Transactions of the American Mathematical Society"
+    lang: en
+    url: "https://doi.org/10.1090/S0002-9947-1953-0053041-6"
+    note: "Rice's theorem in its original form: no non-trivial property of what a program does is decidable. Nine pages, and the statement fits on one line."
+  - kind: paper
+    title: "Proving Program Termination"
+    authors: "Byron Cook, Andreas Podelski and Andrey Rybalchenko"
+    year: "2011"
+    venue: "Communications of the ACM"
+    lang: en
+    url: "https://doi.org/10.1145/1941487.1941509"
+    note: "How termination is proved in practice, told by the authors of Terminator, the tool that did it for Windows drivers. The best answer to \"but wasn't that impossible?\"."
+  - kind: paper
+    title: "Abstract Interpretation: A Unified Lattice Model for Static Analysis of Programs"
+    authors: "Patrick Cousot and Radhia Cousot"
+    year: "1977"
+    venue: "POPL 1977"
+    lang: en
+    url: "https://doi.org/10.1145/512950.512973"
+    note: "The basis of analysers that never pass a program that fails, at the price of false alarms. It's dense; the introduction is enough to understand the trade-off."
+  - kind: paper
+    title: "Total Functional Programming"
+    authors: "David A. Turner"
+    year: "2004"
+    venue: "Journal of Universal Computer Science"
+    lang: en
+    url: "https://www.jucs.org/jucs_10_7/total_functional_programming"
+    note: "The case for languages in which every program terminates, and what you give up with them. Sections 1 and 2 make sense without knowing Haskell."
+  - kind: paper
+    title: "The Busy Beaver Frontier"
+    authors: "Scott Aaronson"
+    year: "2020"
+    venue: "SIGACT News"
+    lang: en
+    url: "https://www.scottaaronson.com/papers/bb.pdf"
+    note: "A tour of the busy beaver function and why its values mark how far mathematics can reach. Section 1 explains the link to Goldbach and Riemann without any jargon."
+  - kind: paper
+    title: "Determination of the fifth Busy Beaver value"
+    authors: "The bbchallenge Collaboration"
+    year: "2025"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2509.12337"
+    note: "How an open collaboration decided, one by one, which of 181 million five-state machines halt, and checked it all in Coq. The introduction tells the story from 1962 onwards."
+  - kind: paper
+    title: "A Relatively Small Turing Machine Whose Behavior Is Independent of Set Theory"
+    authors: "Adam Yedidia and Scott Aaronson"
+    year: "2016"
+    venue: "Complex Systems"
+    lang: en
+    url: "https://arxiv.org/abs/1605.04343"
+    note: "A concrete machine whose halting ordinary mathematics cannot settle. Section 2 explains why such a machine must exist before building one."
+areas: ["matematicas", "programacion"]
+cover: "/blog/problema-de-la-parada/trilema.en.svg"
+tags: ["computabilidad", "lenguajes"]
+aiImages: true
+---
+
+{/*
+  BLOG-24: The halting problem, exactly what it rules out, and what it doesn't.
+  English version of content/blog/es/problema-de-la-parada.mdx; the Spanish file's header holds the
+  author notes (thesis, every cited figure with its source, and how the figures are generated).
+
+  The alt of each <img> is the English aria-label written by
+  scripts/figures/problema-de-la-parada/make_svgs.py: change one, change the other.
+*/}
+
+Two claims about artificial intelligence are doing the rounds at the same time, and they contradict
+each other. The first: an artificial general intelligence will be able to review any program and
+tell us whether it has bugs. The second: no machine will ever be truly intelligent, because Turing
+proved there are things machines can't compute. Both cite the same result, from 1936, and both
+misread it.
+
+The result is the **halting problem**: there is no algorithm that, given any program and any
+input, says whether the program finishes or runs forever. It's one of the most cited theorems in
+computer science, and one of the most often cited for things it doesn't say.
+
+This article covers exactly what it says, how to prove it in ten lines of Python, and what it
+doesn't say. Then why it follows that almost no question about what a program does has a general
+algorithm, how compilers, verifiers and tests get around it every day, and what happens when the
+one trying to decide is a person.
+
+## The question
+
+In 1928, David Hilbert and Wilhelm Ackermann posed, in a logic textbook, what they called the
+*Entscheidungsproblem*, the "decision problem": find a mechanical procedure that, given any
+statement of logic, says whether it can be proved or not. Hilbert was convinced one existed. In
+September 1930, in Königsberg, he ended a speech with the words that would end up on his
+gravestone: "We must know. We will know." The day before, in the same city, at a conference on the
+foundations of mathematics, a 24-year-old logician named Kurt Gödel had mentioned, almost in
+passing during a round-table discussion, his incompleteness theorem, which already pointed the
+other way.
+
+The problem had a prior difficulty: nobody had defined what a "mechanical procedure" is. As long as
+the answer was "yes, this one", it was enough to show the procedure. Proving that none exists
+needed a precise definition of every possible procedure. In 1936 two arrived almost at once. In the
+spring, Alonzo Church, at Princeton, published his, the lambda calculus, and with it the first
+negative answer. In May, the 23-year-old Alan Turing sent
+[*On Computable Numbers*](https://www.cs.virginia.edu/~robins/Turing_Paper_1936.pdf) to the London
+Mathematical Society, with a different definition and the same answer.
+
+Turing's definition is the one that stuck, because it looks like what a person does with pencil
+and paper. A **Turing machine** has an infinite tape divided into cells, each holding a symbol, a
+head that reads one cell at a time, and a finite table of rules of the form "if you're in state A
+and you read a 0, write a 1, move right and go to state B". That's all. Turing argued that any
+calculation someone can carry out by following instructions can be carried out by one of these
+machines, and also that there is a **universal** machine, able to simulate any other if it's given
+that machine's rule table written on the tape. That universal machine is, ninety years ahead of its
+time, a computer running programs.
+
+Turing never talked about "halting". His machines computed the infinitely many digits of a number,
+and what he proved is that no machine can decide, for every other machine, whether it will keep
+writing digits forever or get stuck. The version taught today, with programs that finish or don't,
+was written down by Stephen Kleene in 1952, and the name "halting problem" was popularised by
+Martin Davis in a 1958 book. That's why historians argue over whether Turing proved exactly the
+halting problem;
+[Salvador Lucas](https://riunet.upv.es/bitstream/10251/189460/1/Lucas%20-%20The%20origins%20of%20the%20halting%20problem.pdf)
+has pieced that history together. The idea of the proof, at any rate, is Turing's.
+
+Before going on, it's worth pinning down what **deciding** means, because it's the most
+misunderstood word in all of this. An algorithm decides a question if, for **every** case, it
+**finishes** and gives the **correct** answer. All three conditions at once. An algorithm that gets
+almost every case right doesn't decide; nor does one that is always right but sometimes never
+finishes.
+
+## The proof, in Python
+
+Suppose someone hands us a function that solves the problem:
+
+```python
+def halts(program, input):
+    """True if program(input) finishes; False if it runs forever.
+    It always answers, and it is never wrong."""
+    ...
+```
+
+It doesn't matter how it works inside: it might analyse the code, simulate it, consult an oracle.
+All we're going to use is that it exists and does what it promises. With it, we can write this
+program:
+
+```python
+def paradox(program):
+    if halts(program, program):
+        while True:   # if the program halts on itself, never halt
+            pass
+    else:
+        return        # if it doesn't, halt
+```
+
+`paradox` takes a program, asks what that program would do if it received its own code as input,
+and does the opposite. Now the question is what happens with `paradox(paradox)`.
+
+- If `halts(paradox, paradox)` returns `True`, then `paradox(paradox)` finishes. But in that case
+  `paradox` enters the `while True` and never finishes.
+- If it returns `False`, then `paradox(paradox)` doesn't finish. But in that case `paradox` runs
+  the `return` and finishes.
+
+Either way `halts` is wrong, and there is no third case. So the function `halts` can't exist: no
+program, however clever, answers correctly about every program. That's the whole proof.
+
+Passing a program its own code as input might look like a trick, but it's perfectly ordinary. A
+program is text, and any program that reads text can read that text: GCC, the most widely used C
+compiler, compiles itself, and a Python interpreter can read any `.py` file, its own included. In
+the formal version, `halts` receives the source code as a string; here, to keep it readable, it
+receives the function.
+
+The argument has a name: **diagonalisation**. Georg Cantor invented it in 1891 to prove that there
+are more real numbers than natural numbers, and it works whenever you want to build something
+different from every item on a list. Put every program in the rows of a table, every program again
+in the columns, and in each cell whether the row's program finishes when given the column's program
+as input: `paradox` is the row that does the opposite of the diagonal. It differs from each program
+on the list in exactly one cell, its own, so it can't be on the list. But if `halts` existed,
+`paradox` would be just another program, and it would have to be there.
+
+<figure>
+  <img
+    src="/blog/problema-de-la-parada/diagonal.en.svg"
+    alt="A table with five programs in the rows and the same five programs as inputs in the columns. Each cell says whether the program in the row halts on that input or runs forever. The cells on the diagonal, where each program receives its own code, are highlighted. Below, one more row, paradox's, which in each column does the opposite of what the diagonal says: where the diagonal halts, paradox runs forever, and the other way round. That is why paradox differs from every row of the table in at least one cell and cannot be any of them."
+    width="760"
+    height="268"
+  />
+  <figcaption>
+    If `halts` existed, the table could be filled in, and `paradox` would be one more row. But
+    `paradox` is built to match none of them.
+  </figcaption>
+</figure>
+
+There's one consequence worth keeping in mind from the start. The only general way to find out
+whether a program finishes is to run it, and that only gives you half the answer. If it finishes,
+you see it finish. If it doesn't, the moment when you can be sure never comes: a program that has
+been running for an hour might finish in minute 61. This asymmetry has a name: the problem is
+**semi-decidable**. There's a procedure that confirms the "yes, it finishes" cases, but none that
+always confirms the "no" ones.
+
+## What the theorem doesn't say
+
+The statement is short, and the quantifiers are everything: **no** algorithm, **any** program,
+**always**. Changing any one of them leads to claims the theorem doesn't make.
+
+**It doesn't say you can't know whether a particular program finishes.** Almost always you can.
+This loop finishes, and you can see it at a glance:
+
+```python
+for i in range(10):
+    print(i)
+```
+
+What the theorem rules out is a single method that works for all of them. In fact, for each
+particular program there is always an algorithm that gets it right: either the one that prints
+"yes" or the one that prints "no". The problem isn't that the answer doesn't exist, but that no
+procedure finds it in every case.
+
+**It doesn't say you need a weird program for it to be hard.** Quite the opposite: some of the
+shortest programs there are turn out to be the hardest. We'll see one further down, four lines
+long, that nobody knows whether it finishes.
+
+**Real computers being finite is no way out.** It's a common objection: a computer with finite
+memory has a finite number of states, so if it runs for more steps than it has states, it must
+repeat one, and from there it repeats forever. That's enough to decide whether it finishes. True,
+and useless: a computer with 16 GB of memory has about $2^{137{,}000{,}000{,}000}$ possible states.
+The procedure exists, but going through those states doesn't fit in the entire lifetime of the
+universe.
+
+**It isn't about what's hard, but about what's impossible.** Some problems can be solved, but take
+so long that in practice they can't: trying every combination in a timetabling problem, for
+example. That's **complexity**, and it's a different question. The halting problem can't be solved
+even with unlimited time up front, because no algorithm knows how long to wait.
+
+## Rice's theorem: almost nothing can be decided
+
+The halting problem looks like a curiosity about infinite loops, but its main consequence is far
+broader. In 1953, Henry Gordon Rice proved that **any non-trivial property of what a program does**
+is undecidable. "Non-trivial" just means that some programs have it and others don't. "Of what it
+does" means it's about the program's behaviour, not its text.
+
+The proof reuses the one above. Suppose there's a function that decides some property, for example
+whether a program returns 42 for some input. With it, we can decide halting:
+
+```python
+def returns_42(program):
+    """True if there is some input for which program returns 42."""
+    ...
+
+def halts(program, input):
+    def wrapper(_):
+        program(input)   # if this never finishes, wrapper never returns anything
+        return 42
+    return returns_42(wrapper)
+```
+
+`wrapper` returns 42 if `program(input)` finishes, and returns nothing if it doesn't. So knowing
+whether `wrapper` returns 42 means knowing whether `program(input)` finishes, and we already know
+that's impossible. Swap the `return 42` for something else and the same trick works for almost any
+property.
+
+The list of what falls outside is long, and it's the list of what we'd want a tool to do:
+
+- Does this program have a bug that makes it fail on some input?
+- Does it meet its specification?
+- Does it leak data it shouldn't?
+- Do these two programs do the same thing?
+- Is this program a virus? Fred Cohen proved that undecidable in 1984, in the first paper to give a
+  formal definition of a computer virus, with the same diagonal argument.
+
+None of these questions has an algorithm that always answers it, without mistakes, for any
+program. Questions about the text, on the other hand, can be decided: whether the program has more
+than a hundred lines, whether it calls `eval`, whether it uses a particular library. That's why so
+many security tools look at the text: it's what can be decided, even if it isn't what matters.
+
+## General, total, exact: pick two
+
+If almost nothing can be decided, how do compilers that warn about errors work, or the verifiers
+that certify aircraft software, or tests? Because none of them decides anything in the strict
+sense. The theorem rules out a procedure that has three properties **at once**:
+
+- **General**: it works on any program.
+- **Total**: it always finishes and answers "yes" or "no".
+- **Exact**: it never gives a wrong answer.
+
+You can have two, and every useful tool out there has chosen which of the three to sacrifice.
+
+<figure>
+  <img
+    src="/blog/problema-de-la-parada/trilema.en.svg"
+    alt="A triangle with one property at each corner: general, it works on any program; total, it always answers yes or no; and exact, it is never wrong. In the middle, in red, the procedure that has all three, which the theorem rules out. Each side joins two properties and gives up the third. Between general and exact, giving up always answering: running the program, analysers that say possible error, and time limits. Between total and exact, giving up generality: languages in which every program halts, such as Lean, and the eBPF verifier. Between general and total, giving up exactness: tests, fuzzing and whoever guesses."
+    width="760"
+    height="400"
+  />
+  <figcaption>
+    Each side of the triangle is a way around the theorem. What doesn't exist is the middle.
+  </figcaption>
+</figure>
+
+### Narrow the question
+
+The first way out is not to accept just any program. If the language only lets you write programs
+that finish, the question stops making sense.
+
+That's what proof assistants such as [Lean](https://lean-lang.org/), Coq (now called Rocq) or Agda
+do: they are programming languages and, at the same time, systems for writing mathematical proofs
+that the computer checks. When you define a recursive function, Lean insists on seeing that it
+finishes: that some argument gets smaller with each call, or a proof that it does. If it can't
+find one, it rejects the function, and the only way to define it is to mark it `partial`, which
+keeps it out of proofs. This isn't fussiness. If Lean accepted `def f (n : Nat) : Nat := f n + 1`,
+you could derive `f n = f n + 1`, subtract `f n` from both sides and prove that $0 = 1$. In a logical
+system, a program that never finishes is a contradiction.
+
+The Linux kernel does the same for a different reason. eBPF programs (*extended Berkeley Packet
+Filter*) are small programs that any application with permission can load into the kernel to
+filter network packets, measure or monitor, and a program stuck in a loop inside the kernel would
+freeze the machine. Before loading one, a [verifier](https://docs.kernel.org/bpf/verifier.html)
+walks every path through it. Until Linux 5.3, in 2019, it rejected any program with a loop; since
+then it accepts loops if, walking through them, it can check that they end, with a budget of one
+million analysed instructions. If the budget runs out, it rejects the program, even if it would
+have finished.
+
+The price of this way out is that no such language contains every program that finishes. The
+reason is the diagonal again: the interpreter for a language in which everything finishes is a
+program that also always finishes, yet it can't be written in that language. There's even a
+historical example. A language whose only loops are `for` loops with the number of iterations fixed
+before they start always finishes (it computes what logicians call primitive recursive functions),
+and in 1928 the same Ackermann of the *Entscheidungsproblem* defined a function that always
+finishes, that can be computed, and that can't be written in it.
+
+### Answer "I don't know"
+
+The second way out is to allow a third answer. The procedure still works on any program and is
+never wrong when it says "yes" or "no", but sometimes it says "I don't know".
+
+The most everyday example is a type checker. Here's a TypeScript program that never fails, and
+that the compiler rejects:
+
+```typescript
+function alwaysOne(): number {
+  if (1 + 1 === 2) return 1;
+  return "never gets here";   // error: Type 'string' is not assignable to type 'number'
+}
+```
+
+The last line never runs, but the compiler doesn't know that, and rather than take the risk it
+rejects the program. A type system is a procedure that says "this program will have no type
+errors" only when it can guarantee it, and "I don't know" in every other case, even if it presents
+that as an error.
+
+The industrial version of the same idea is **abstract interpretation**, formulated by
+[Patrick and Radhia Cousot](https://doi.org/10.1145/512950.512973) in 1977: instead of running the
+program with concrete values, you run it with approximations, such as "this number is between 0
+and 100" or "this pointer may be null", which cover every possible value at once. If the
+approximation says something can't fail, it doesn't. If it says it can, maybe it does and maybe it
+doesn't, and that's a possible false alarm. [Astrée](https://www.absint.com/astree/index.htm), an
+analyser built this way, proved in 2003, fully automatically, that the primary flight control
+software of the Airbus A340, more than a hundred thousand lines of C, had no runtime errors
+(divisions by zero, overflows, out-of-bounds array accesses). That doesn't contradict the theorem:
+Astrée was tuned for that kind of program, and its own authors warn that the first analysis of a
+new program usually produces false alarms, "possible error" on lines that are fine, which someone
+has to go through by hand.
+
+Termination works the same way. Tools such as Terminator, from Microsoft Research, which in 2006
+proved that Windows device drivers of more than 20,000 lines terminated, look for a termination
+argument and answer "terminates", "doesn't terminate" or "I don't know". A time limit is the
+simplest version: if there's no answer within fifteen minutes, the answer is "I don't know". And
+running the program belongs to this family too: if it finishes, "yes", with complete certainty; if
+not, it keeps waiting.
+
+### Be wrong sometimes
+
+The third way out is to accept mistakes. The procedure works on any program and always answers,
+but sometimes it answers wrongly.
+
+That's what **tests** do. If a program passes a hundred tests, it's taken to be fine, even if it
+fails on input one hundred and one. Edsger Dijkstra summed it up more than fifty years ago: testing
+can show that there are bugs, never that there aren't. *Fuzzing*, which generates millions of
+random or mutated inputs looking for one that breaks the program, is the same bet on a large scale.
+And it's what anyone does who looks at a program and says "this finishes" without proving it:
+almost always right, and not always.
+
+| Gives up | Examples | What it guarantees |
+| --- | --- | --- |
+| Generality | Lean, Coq, Agda; the eBPF verifier | An exact answer, only for the programs it accepts |
+| Always answering | Type systems, abstract interpretation, Terminator, a time limit, running the program | If it says "yes" or "no", it's true; sometimes it says "I don't know" |
+| Exactness | Tests, *fuzzing*, the intuition of whoever reviews the code | It always answers, and is sometimes wrong |
+
+Faced with any tool, or any claim about what something can check, the useful question isn't
+whether it "solves" the problem, but which of the three it gives up. They all give up one.
+
+## Searching isn't checking
+
+There's one idea that makes the second way out work much better than it seems, and that explains
+why real programs can be verified despite the theorem: **finding a proof can be impossible in
+general, but checking one is mechanical**.
+
+An example. This function computes the greatest common divisor with Euclid's algorithm:
+
+```python
+def gcd(a, b):         # a and b integers, b >= 0
+    while b != 0:
+        a, b = b, a % b
+    return a
+```
+
+Does it always finish? The classic proof is to find a **ranking function**: a quantity that can't
+drop below zero and that goes down on every pass through the loop. If one exists, the loop can't go
+round forever, because an integer quantity that keeps going down and never drops below zero runs
+out. Here the quantity is `b`: while the loop continues, `b` is positive, and the new value,
+`a % b`, lies between 0 and `b - 1`.
+
+Finding that function takes ingenuity, and there's no algorithm that finds one whenever one
+exists: if there were, you could always confirm that a program finishes on every input, and that
+is impossible too. But once one has been proposed, checking that it's valid is another matter. The
+check is a concrete arithmetic claim, and there are programs that decide claims of that kind:
+**SMT solvers** (*satisfiability modulo theories*), which say whether a formula over numbers,
+arrays or bits has any solution. For some kinds of formula, they too sometimes answer "I don't
+know". With [Z3](https://github.com/Z3Prover/z3), Microsoft's SMT solver, the check looks like
+this:
+
+```python
+from z3 import Ints, Solver, And, Not
+
+a, b = Ints("a b")
+s = Solver()
+# Is there a state where the loop continues and b doesn't go down, or goes negative?
+s.add(b > 0, Not(And(a % b >= 0, a % b < b)))
+print(s.check())   # unsat: there isn't, so gcd always finishes
+```
+
+`unsat` (*unsatisfiable*) means there's no counterexample at all. The ranking function is a
+**certificate**: an object that someone had to find, and that anyone can check without repeating
+the search.
+
+<figure>
+  <img
+    src="/blog/problema-de-la-parada/certificado.en.svg"
+    alt="Two boxes joined by an arrow. On the left, the searcher: it takes the program and tries to find a certificate, such as a ranking function or a proof. It may take a long time, may never find one and may propose a wrong one, which is why it can be a person, a heuristic or any other method. It passes its proposal to the right, to the checker: a small program that always halts and accepts or rejects the certificate. If it accepts, the conclusion is certain even if the searcher cannot be trusted. If it rejects, the searcher tries again or the answer is I don't know."
+    width="760"
+    height="230"
+  />
+  <figcaption>
+    The searcher can be anything, even something that is often wrong, because the guarantee comes
+    from the checker.
+  </figcaption>
+</figure>
+
+This asymmetry is everywhere. In Lean, the kernel that checks proofs is a small program that always
+finishes, and all the trust rests on it; the tactics that search for proofs can be as complicated
+and as unreliable as they need to be. Tools like Terminator work the same way: one part searches
+for ranking functions with heuristics, and another checks each candidate with a solver.
+
+And it explains how the second way out divides up. For a program that finishes on a particular
+input, the simplest certificate is the run itself. For stronger claims, such as "it finishes on
+every input" or "it never finishes", a certificate that can be found doesn't always exist, but
+often one does, and when it does, searching for it by any method and checking it with a reliable
+one gives a certain answer. The theorem says the search will sometimes fail, not that it isn't
+worth trying.
+
+## What about us?
+
+Everything so far has been about algorithms. The obvious question is whether a person, who isn't a
+program, can do what no program can.
+
+The standard answer is the **Church-Turing thesis**: anything that can be computed by following a
+mechanical method is computed by a Turing machine. It isn't a theorem, because "mechanical method"
+isn't a mathematical concept, but in ninety years nobody has found a counterexample, and every
+alternative definition that has been proposed has turned out to be equivalent. If the brain works
+according to physical laws that a computer can simulate, however slowly, the theorem applies to us
+too. But you don't need to accept that hypothesis to see that, in practice, we don't decide halting
+either.
+
+This program is four lines long:
+
+```python
+def collatz(n):        # n a positive integer
+    while n != 1:
+        n = n // 2 if n % 2 == 0 else 3 * n + 1
+```
+
+If `n` is even, halve it; if it's odd, multiply it by three and add one. Starting from 6, the
+sequence is 6, 3, 10, 5, 16, 8, 4, 2, 1, and it finishes. The **Collatz conjecture**, from 1937,
+says it finishes for every `n`. It has been checked by computer for every number up to $2^{71}$,
+about $2.36 \cdot 10^{21}$, and nobody has managed to prove it. Paul Erdős said that mathematics
+wasn't ready for problems like this.
+
+### The busy beaver
+
+There's a way to measure how far we get. In 1962, Tibor Radó defined the **busy beaver**: among all
+Turing machines with $n$ states that, starting from a blank tape, eventually halt, how many steps
+does the slowest one take? That number is written $BB(n)$.
+
+Knowing $BB(n)$ would solve the halting problem for every machine with $n$ states: run each one for
+$BB(n)$ steps, and if it hasn't halted by then, it never will. That's why $BB(n)$ can't be computed
+in general, and why it grows faster than any computable function. But for small $n$ you can try,
+machine by machine, and it's a direct experiment in how much people can decide:
+
+- $BB(1) = 1$, $BB(2) = 6$ and $BB(3) = 21$ have been known since the 1960s.
+- $BB(4) = 107$ was proved by Allen Brady in 1983.
+- $BB(5) = 47{,}176{,}870$. Heiner Marxen and Jürgen Buntrock found the machine that takes that many
+  steps in 1989, but proving that no other five-state machine halts later took 35 years. It was
+  done in 2024 by [bbchallenge](https://arxiv.org/abs/2509.12337), an open collaboration, mostly of
+  amateurs, which decided one by one which of 181,385,789 machines halt and checked the entire
+  proof in Coq. It's the same asymmetry again: the techniques for deciding each machine were found
+  however people could, and the checker guarantees they're all correct.
+
+With six states, everything changes. The best machine known, from June 2025, takes more than
+$2 \uparrow\uparrow\uparrow 5$ steps, a number so large that not even the height of the tower of
+powers of 2 that represents it can be written out in digits. And among the machines nobody yet
+knows whether they halt is [Antihydra](https://bbchallenge.org/antihydra), a six-state machine
+singled out in 2024 whose behaviour, translated into Python, is this:
+
+```python
+h, c = 8, 0
+while c != -1:
+    c += 2 if h % 2 == 0 else -1
+    h += h // 2
+```
+
+`h` grows by a factor of a little under 1.5 on each pass, and `c` goes up by two when `h` is even
+and down by one when it's odd. The program halts if the odd values ever add up to more than twice
+the even ones. If the parity of `h` behaves like a coin toss, `c` rises on average and it gets ever
+harder for it to come back down: it has been simulated for more than $2^{38}$ passes, `c` is already
+above $2^{37}$, and the probability of it reaching $-1$ from there is negligible. But proving that
+it never will is a problem of the same kind as Collatz, and nobody knows how. Until someone does,
+nobody knows $BB(6)$.
+
+A little further out are the famous conjectures. A 15-state machine halts if and only if a
+conjecture of Erdős about powers of 2 written in base 3 is false, so knowing $BB(15)$ would settle
+it. Machines have been published with 27 states for the Goldbach conjecture and 744 for the
+Riemann hypothesis, though without a formal proof that they are correct.
+
+<figure>
+  <img
+    src="/blog/problema-de-la-parada/frontera.en.svg"
+    alt="A horizontal axis, not to scale, with the number of states of a Turing machine. From 1 to 5 states, in green, the busy beaver values that are known: 1, 6, 21, 107 and 47,176,870, the last one proved in Coq in 2024. At 6 states, in orange, the unknown begins: Antihydra, a Collatz-like problem. Further right, machines that halt if and only if a conjecture is false: Erdős's with 15 states, Goldbach's with 27 and the Riemann hypothesis with 744. At 643 states, in red, a machine for which the usual set theory, ZFC, cannot prove whether it halts."
+    width="760"
+    height="230"
+  />
+  <figcaption>
+    How far what we can decide reaches. The border between the known and the open is at six
+    states; the border of what can't even be proved is at 643 at most.
+  </figcaption>
+</figure>
+
+### What can't even be proved
+
+The last point in the figure is of a different kind. Nobody knowing whether Antihydra halts might
+be a lack of ingenuity: someone may find the proof tomorrow. But there are machines for which
+ingenuity isn't the issue.
+
+The reason is the link between Turing's theorem and Gödel's. Today's mathematics rests on a
+particular set of axioms, Zermelo-Fraenkel set theory with the axiom of choice (ZFC). Proving
+something means chaining steps from those axioms, and checking a proof is mechanical. If ZFC could
+prove, for every machine that doesn't halt, that it doesn't halt, there would be an algorithm for
+the halting problem: run the machine and, in parallel, search through every possible proof that it
+doesn't halt, until one of the two happens. Since that algorithm doesn't exist, ZFC has to leave
+some statements of the form "this machine doesn't halt" unproved, even when they're true. That's
+one version of Gödel's incompleteness theorem.
+
+In 2016, [Adam Yedidia and Scott Aaronson](https://arxiv.org/abs/1605.04343) built a concrete
+machine, with 7910 states, that searches for a contradiction in ZFC and halts if it finds one. If
+ZFC has no contradictions, as almost every mathematician believes, the machine never halts. But
+ZFC can't prove that it has no contradictions (that's Gödel's second theorem), so it can't prove
+that the machine never halts either. It has been shrunk since: 745 states in 2023, 643 in 2024. So
+the value of $BB(643)$ can't be determined with the mathematics we use, and not for lack of time or
+ingenuity. Neither a person nor a machine reasoning within ZFC can do it.
+
+### The opposite argument
+
+There's a famous objection to all this. In 1961 the philosopher John Lucas, and in 1989 the
+physicist Roger Penrose, in *The Emperor's New Mind*, argued that the human mind can't be an
+algorithm, precisely because of Gödel: for any formal system, a person can "see" that its Gödel
+sentence is true, even though the system can't prove it.
+
+Most logicians and philosophers don't accept it, and the reason lies in what it takes to "see"
+that truth. A system's Gödel sentence is true only if the system has no contradictions. To see it,
+a person would need to know that the system describing them has no contradictions, and there's no
+reason to think we know that; in fact, we make mistakes and contradict ourselves. Collatz,
+Antihydra and the ZFC machine are the practical argument: if people could see what no algorithm
+sees, these would be good places to show it.
+
+This cuts both ways. If the theorem limits us just as it limits machines, it's no argument that
+machines can't become as capable as we are either. The halting problem doesn't separate people
+from computers. It separates the questions that have a general method from the ones that don't,
+for anyone who tries to answer them.
+
+## What to take away
+
+If you take away one thing, make it this: **the theorem doesn't rule out knowing whether a program
+finishes, or checking that a program is correct. It rules out a single procedure that works on any
+program, always answers and is never wrong.** Everything that works in practice gives up one of
+the three.
+
+And if you take away three more, make them these:
+
+**Almost everything interesting about a program is undecidable.** Rice's theorem extends the
+halting problem to any question about what a program does: whether it has bugs, whether it's safe,
+whether it meets its specification. What can be decided are questions about its text.
+
+**The practical way out is the certificate.** Searching for a proof may never end, but checking
+one is mechanical. A tool that finds certificates and a small, reliable one that checks them give
+certain answers for many real programs, and "I don't know" for the rest.
+
+**People don't escape it.** A four-line program, Collatz's, has gone without an answer for almost
+ninety years, and there are machines with a few hundred states whose halting the mathematics we use
+can't prove either way.
+
+Faced with any claim that something, a tool, a method or an artificial intelligence, "verifies
+programs", three questions are enough to place it: on any program, or on those of a particular
+class? Does it always answer, or does it sometimes say "I don't know"? And when it answers, is there
+a certificate someone can check, or do you have to take its word for it?

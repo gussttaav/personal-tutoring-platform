@@ -550,6 +550,7 @@ export type BlogArea = "ia" | "bases-de-datos" | "matematicas" | "programacion";
 /** BLOG-13 — the closed list of post tags, listed in `BLOG_TOPICS`. */
 export type BlogTopic =
   | "agentes"
+  | "computabilidad"
   | "deep-learning"
   | "embeddings"
   | "estructuras-de-datos"
