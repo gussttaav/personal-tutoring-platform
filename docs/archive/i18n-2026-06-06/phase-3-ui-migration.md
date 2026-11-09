@@ -23,7 +23,7 @@ git checkout -b feat/i18n-phase-3-ui-migration
 
 ### Components (`src/components/`)
 - 33 `.tsx` files. Walk through each — anything user-visible gets moved to a dictionary key.
-- Notable: [BookingModeView.tsx](../../src/components/BookingModeView.tsx), [PaymentForm.tsx](../../src/components/PaymentForm.tsx), [PreJoinSetup.tsx](../../src/components/PreJoinSetup.tsx), [SingleSessionBooking.tsx](../../src/components/SingleSessionBooking.tsx).
+- Notable: [BookingModeView.tsx](../../../src/components/BookingModeView.tsx), [PaymentForm.tsx](../../../src/components/PaymentForm.tsx), [PreJoinSetup.tsx](../../../src/components/PreJoinSetup.tsx), [SingleSessionBooking.tsx](../../../src/components/SingleSessionBooking.tsx).
 - `aria-label` attributes are user-facing — translate them.
 
 ### Features (`src/features/`)
@@ -35,9 +35,9 @@ git checkout -b feat/i18n-phase-3-ui-migration
 - Each page's `metadata` export becomes `generateMetadata` reading from `meta.<page>` namespace.
 
 ### Errors
-- [src/constants/errors.ts](../../src/constants/errors.ts) — HTTP status → message map. Convert message **values** to translation **keys** under `errors.http.*`. Update consumers to call `t(key)` at render time instead of pulling the string straight out of the map.
-- [src/domain/errors.ts](../../src/domain/errors.ts) — **refactor**: each domain error class now carries a stable `code` (e.g. `BOOKING_CONFLICT`, `NO_CREDITS`, `LINK_EXPIRED`) instead of a Spanish message. The class can still expose a `message` for logs (English, developer-facing — these are not user-facing).
-  - Update [src/lib/http-errors.ts](../../src/lib/http-errors.ts) to map codes to HTTP status + the i18n key. The API responds with `{ code: 'BOOKING_CONFLICT', status: 409 }`; the client translates via `errors.domain.bookingConflict` (or similar).
+- [src/constants/errors.ts](../../../src/constants/errors.ts) — HTTP status → message map. Convert message **values** to translation **keys** under `errors.http.*`. Update consumers to call `t(key)` at render time instead of pulling the string straight out of the map.
+- [src/domain/errors.ts](../../../src/domain/errors.ts) — **refactor**: each domain error class now carries a stable `code` (e.g. `BOOKING_CONFLICT`, `NO_CREDITS`, `LINK_EXPIRED`) instead of a Spanish message. The class can still expose a `message` for logs (English, developer-facing — these are not user-facing).
+  - Update [src/lib/http-errors.ts](../../../src/lib/http-errors.ts) to map codes to HTTP status + the i18n key. The API responds with `{ code: 'BOOKING_CONFLICT', status: 409 }`; the client translates via `errors.domain.bookingConflict` (or similar).
   - This aligns with the project's layered architecture rule (CLAUDE.md): the domain layer has zero external dependencies — including no notion of UI language.
 
 ### Admin (out of scope)
@@ -110,7 +110,7 @@ await expect(page.getByRole('heading')).toHaveText(dict[locale].areaPersonal.tit
 
 Pick one and stay consistent. If tests already have many Spanish assertions, Option A scales better.
 
-Update [playwright.config.ts](../../playwright.config.ts) or per-test fixtures if you need to set the locale cookie / Accept-Language for `/en` runs.
+Update [playwright.config.ts](../../../playwright.config.ts) or per-test fixtures if you need to set the locale cookie / Accept-Language for `/en` runs.
 
 ## Exit criteria
 

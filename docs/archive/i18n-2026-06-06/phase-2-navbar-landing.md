@@ -48,7 +48,7 @@ Create `messages/es.json` and `messages/en.json` at the repo root (next-intl's d
 
 ### 2. Wire dictionaries into the request config
 
-Replace the placeholder in [src/i18n/request.ts](../../src/i18n/request.ts):
+Replace the placeholder in [src/i18n/request.ts](../../../src/i18n/request.ts):
 
 ```ts
 import { getRequestConfig } from 'next-intl/server';
@@ -112,7 +112,7 @@ next-intl writes the `NEXT_LOCALE` cookie automatically when `router.replace` ru
 
 ### 4. Migrate the navbar
 
-Edit [src/components/Navbar.tsx](../../src/components/Navbar.tsx):
+Edit [src/components/Navbar.tsx](../../../src/components/Navbar.tsx):
 
 - Add `const t = useTranslations('nav');` at the top.
 - Replace each hardcoded literal (`"Cursos"`, `"Mentoría"`, `"Blog"`, `"Área Personal"`, `"Panel de admin"`, `"Iniciar sesión"`, `"Cerrar sesión"`) with `t('courses')`, etc.
@@ -146,7 +146,7 @@ next-intl's middleware reads `Accept-Language` on the first request (no cookie s
 
 ## Persistence + NextAuth
 
-Cookie only. **Do not** modify [src/auth.ts](../../src/auth.ts) session shape or run a Supabase migration. Switching language while logged in writes the cookie and refreshes the route; the NextAuth session is untouched.
+Cookie only. **Do not** modify [src/auth.ts](../../../src/auth.ts) session shape or run a Supabase migration. Switching language while logged in writes the cookie and refreshes the route; the NextAuth session is untouched.
 
 ## Exit criteria
 
