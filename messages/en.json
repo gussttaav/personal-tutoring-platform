@@ -758,6 +758,15 @@
       "expired": "This time can no longer be booked. Ask the assistant for another.",
       "superseded": "Earlier proposal. Confirm the latest one."
     },
+    "calendar": {
+      "compare": "Compare with my calendar",
+      "comparing": "Reading your calendar…",
+      "filtered": "{count, plural, one {According to your calendar, # of these slots fits.} other {According to your calendar, # of these slots fit.}}",
+      "none": "According to your calendar, none of these slots fit. Ask me for other days or times.",
+      "filteredLabel": "Free slots filtered with your calendar",
+      "blocked": "Your organisation doesn't allow this access to your calendar.",
+      "failed": "I couldn't read your calendar. You can try again."
+    },
     "voice": {
       "start": "Dictate a message",
       "stop": "Finish dictating",

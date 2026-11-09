@@ -758,6 +758,15 @@
       "expired": "Este horario ya no se puede reservar. Pide otro al asistente.",
       "superseded": "Propuesta anterior. Confirma la más reciente."
     },
+    "calendar": {
+      "compare": "Comparar con mi calendario",
+      "comparing": "Leyendo tu calendario…",
+      "filtered": "{count, plural, one {Según tu calendario, te encaja # de estos huecos.} other {Según tu calendario, te encajan # de estos huecos.}}",
+      "none": "Según tu calendario, no te encaja ninguno de estos huecos. Pídeme otros días u otra hora.",
+      "filteredLabel": "Huecos libres filtrados con tu calendario",
+      "blocked": "Tu organización no permite este acceso a tu calendario.",
+      "failed": "No he podido leer tu calendario. Puedes volver a intentarlo."
+    },
     "voice": {
       "start": "Dictar mensaje",
       "stop": "Terminar de dictar",
