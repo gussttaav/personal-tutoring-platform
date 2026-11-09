@@ -1,6 +1,10 @@
 # P2-03: Server speech pipeline (gated)
 
-**Tag:** `CHAT-AGENT-P2-03` · **Effort:** M · **Owner:** Claude · **Status:** ⏸ (gate in [README](README.md), Q3)
+**Tag:** `CHAT-AGENT-P2-03` · **Effort:** M · **Owner:** Claude · **Status:** Deferred (Q3, 2026-11-09)
+
+> **Deferred.** Gustavo decided to keep voice on the browser's speech engines, with no STT or TTS
+> provider for now. Why, and when to reconsider: [README](README.md#why-p2-03-is-deferred). This
+> page is kept as the design note to start from if it comes back; read "If it comes back" first.
 
 ## TL;DR
 
@@ -38,6 +42,31 @@ MediaRecorder (webm/opus, ≤ 60 s) ──POST /api/chat/voice (multipart)──
 `src/lib/ratelimit.ts` (`chatVoiceRatelimit`), CSP unchanged (server-side calls), `Chat.tsx`
 switches from `useDictation` / `useReadAloud` to the recorder + audio playback when the server
 pipeline is enabled (env flag).
+
+## If it comes back
+
+Evaluated on 2026-11-09, before the deferral:
+
+- **Split it in two.** STT and TTS solve different problems and needn't ship together.
+  - **P2-03a, server STT.** This is where the real gaps are: Firefox and iOS with Siri off have
+    no `SpeechRecognition`, and dates/times can be misheard. Groq Whisper is the candidate
+    (Gustavo has a free-tier key). Shape: `POST /api/chat/transcribe` (multipart) → transcript,
+    then the normal `/api/chat`; the browser engine can stay where it exists, with the server as
+    the fallback, or replace it if device tests show it mishears times.
+  - **P2-03b, server TTS, gated separately.** It reaches no new browser (`speechSynthesis` exists
+    in Firefox), so its only gain is voice quality: one voice on every device, and better
+    pronunciation of the English terms in Spanish replies («machine learning», «NLP»), where
+    Windows' local voices and Linux's espeak are weakest. Its costs: a round trip before the
+    first word on every spoken turn (`/api/chat` answers JSON, nothing to stream into), a second
+    vendor (Groq has no good es-ES TTS that we know of), a new iOS autoplay unlock in place of
+    `prime()`, base64 audio (+33%) in the response, and the reply text always leaving the device
+    (today a local voice is preferred). Money is the smallest cost: a ~250-char spoken reply at
+    typical neural TTS prices (~15 dollars per million characters, check at the time) is well
+    under a cent. Build it only with evidence the browser voices put people off: add a
+    `chat_read_aloud_off` event on the header toggle (with OS family) first.
+- **Cheaper steps before buying TTS:** have the voice-mode note ask the model to avoid English
+  terms where a Spanish one exists, and let `pickVoice` prefer the Microsoft «Online (Natural)»
+  voices Edge exposes on Windows (network voices, which it ranks below local ones today).
 
 ## Out of scope until decided
 

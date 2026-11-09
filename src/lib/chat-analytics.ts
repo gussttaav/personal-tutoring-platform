@@ -1,8 +1,9 @@
 /**
  * lib/chat-analytics.ts — CHAT-AGENT-P2-02
  *
- * Vercel Web Analytics custom events for the chat assistant's voice adoption: the numbers the
- * P2-03 gate reads (docs/chat-assistant/phase-2-voice/README.md) after four weeks in production.
+ * Vercel Web Analytics custom events for the chat assistant's voice adoption: the numbers P2-03
+ * (deferred 2026-11-09) is revisited with, four weeks after the cycle reaches production
+ * (docs/chat-assistant/phase-2-voice/README.md, «When to revisit P2-03»).
  *
  *   chat_message_sent       — any message sent to the assistant (`voice`: dictated or not)
  *   chat_voice_input        — a dictated message was sent

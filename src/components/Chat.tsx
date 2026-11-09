@@ -302,7 +302,7 @@ export default function Chat() {
     if (dictation.listening) el.scrollTop = el.scrollHeight;
   }, [shownInput, dictation.listening]);
 
-  // CHAT-AGENT-P2-02: the chat opened where the mic can't be offered (P2-03 gate metric).
+  // CHAT-AGENT-P2-02: the chat opened where the mic can't be offered (a P2-03 revisit metric).
   useEffect(() => {
     if (isOpen && !dictation.supported) trackVoiceUnsupported();
   }, [isOpen, dictation.supported]);

@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-// CHAT-AGENT-P2-02: the voice-adoption events the P2-03 gate reads. No message text is sent;
+// CHAT-AGENT-P2-02: the voice-adoption events P2-03 is revisited with (deferred, 2026-11-09). No message text is sent;
 // `chat_voice_unsupported` counts once per browser tab.
 const mockTrack = jest.fn();
 jest.mock("@vercel/analytics", () => ({ track: (...a: unknown[]) => mockTrack(...a) }));
