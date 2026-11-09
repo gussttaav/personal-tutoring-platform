@@ -112,7 +112,7 @@ export async function generateMetadata({
   );
   // COURSE-P6-01: per-lesson OpenGraph so shares carry the lesson's own title/description
   // instead of inheriting the site-level card from the layout. The og image is still the
-  // generic /og.png (a known placeholder — a per-course image is out of scope, docs/seo).
+  // generic /og.png (a known placeholder — a per-course image is out of scope, docs/archive/seo-2026-07-12).
   const ogImage = locale === "en" ? "/og-en.png" : "/og.png";
   return {
     title: `${lesson.title} — ${course.title}`,

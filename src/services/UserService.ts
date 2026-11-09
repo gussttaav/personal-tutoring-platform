@@ -14,7 +14,7 @@ export class UserService {
 
   // i18n: account-level locale preference. Read by the email path (fallback 'es')
   // and seeded into the NEXT_LOCALE cookie at login — never read on the render
-  // hot path. See docs/i18n and the seedLocaleOnLogin reconciliation below.
+  // hot path. See docs/archive/i18n-2026-06-06 and the seedLocaleOnLogin reconciliation below.
   async getLocale(email: string): Promise<"es" | "en" | null> {
     return this.users.getLocale(email.toLowerCase().trim());
   }

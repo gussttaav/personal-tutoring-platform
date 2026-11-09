@@ -17,7 +17,7 @@ git checkout -b feat/i18n-phase-5-validation-seo
 
 ### 1. Zod messages as keys
 
-Edit [src/lib/schemas.ts](../../src/lib/schemas.ts). Replace any hardcoded messages with stable keys:
+Edit [src/lib/schemas.ts](../../../src/lib/schemas.ts). Replace any hardcoded messages with stable keys:
 
 ```ts
 z.string({ message: 'errors.validation.required' }).email({ message: 'errors.validation.email' })
