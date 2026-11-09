@@ -25,6 +25,7 @@ export const BLOG_AREAS = [
 
 export const BLOG_TOPICS = [
   "agentes",
+  "computabilidad",
   "deep-learning",
   "embeddings",
   "estructuras-de-datos",
