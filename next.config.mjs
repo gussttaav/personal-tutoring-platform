@@ -49,11 +49,17 @@ const nextConfig = {
     // PYODIDE_CDN_BASE at it, and delete this origin from all three directives.
     const pyodideOrigin = "https://cdn.jsdelivr.net";
 
+    // CHAT-AGENT-P3-02: Google Identity Services (the chat's «Comparar con mi calendario»)
+    // loads its token client from accounts.google.com/gsi/client. Its consent screen is a
+    // popup (no frame-src), and the freeBusy call goes to www.googleapis.com (already in
+    // connect-src).
+    const gisOrigin = "https://accounts.google.com";
+
     const csp = isDev
       ? [
           // Dev: relaxed — allows Next.js HMR, webpack eval, etc.
           "default-src 'self'",
-          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} blob:`,
+          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} ${gisOrigin} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
           `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -77,7 +83,7 @@ const nextConfig = {
           // use new Function() for their codec pipeline (screen share encoding + AI features).
           // https://vercel.live is Vercel's deployment feedback widget, injected
           // on preview/staging deployments only (not production).
-          `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} blob:`,
+          `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} ${gisOrigin} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
           `connect-src 'self' https://www.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",

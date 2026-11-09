@@ -68,6 +68,11 @@
  * sending. Enter sends, Shift+Enter is a new line; on a touch device Enter is a new line too
  * (the on-screen keyboard has no Shift+Enter) and only «send» sends. A user message keeps its
  * line breaks.
+ *
+ * CHAT-AGENT-P3-02: a signed-in visitor can compare a row of slot chips with their own Google
+ * Calendar (`SlotChips`, «Comparar con mi calendario»). The free/busy token is held here, in a
+ * ref (memory only, never persisted, never sent to /api/chat), for the whole conversation, and
+ * dropped on «Nueva conversación» and on unmount. The busy times stay inside the chips.
  */
 
 import {
@@ -95,6 +100,7 @@ import { useCoarsePointer } from "@/hooks/useCoarsePointer";
 import { useReadAloud } from "@/hooks/useReadAloud";
 import { toSpeakableText } from "@/lib/chat-speech";
 import { trackChatMessage, trackVoiceBooking, trackVoiceUnsupported } from "@/lib/chat-analytics";
+import type { FreeBusyToken } from "@/lib/google-calendar-freebusy";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -235,6 +241,9 @@ export default function Chat() {
   // CHAT-AGENT-P2-01: true once a dictated transcript lands in the input, until it is sent or
   // the conversation is reset. P2-02 reads it to answer aloud and count voice turns.
   const voiceTurnRef   = useRef(false);
+  // CHAT-AGENT-P3-02: the conversation's Google free/busy token (≤ 1 h), memory only, so a
+  // second «Comparar con mi calendario» opens no popup. Dropped on «Nueva conversación».
+  const calendarTokenRef = useRef<FreeBusyToken | null>(null);
 
   // CHAT-AGENT-P2-01b: the latest input value and sendMessage, for a send from the engine's `end`.
   const inputValueRef  = useRef("");
@@ -332,6 +341,7 @@ export default function Chat() {
     cancelSpeech();
     dictation.clearError();
     voiceTurnRef.current = false;
+    calendarTokenRef.current = null;
     setMessages(initialMessages);
     setShowSuggestions(true);
     setInput("");
@@ -422,7 +432,7 @@ export default function Chat() {
         return (
           <SlotChips
             key={j} slots={action.slots} timezone={timezone} nowMs={mountedAt}
-            disabled={isLoading} onPick={sendMessage}
+            disabled={isLoading} onPick={sendMessage} calendarTokenRef={calendarTokenRef}
           />
         );
       }
