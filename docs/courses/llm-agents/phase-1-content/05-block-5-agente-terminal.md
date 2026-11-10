@@ -1,6 +1,6 @@
 # P1-05 — Block 5: Un agente de programación en la terminal
 
-**Tag:** `COURSE-C2-P1-05` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-C2-P1-05` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ✅
 **Depends on:** P1-04 · P0-05 (the companion repository) · the **chain test** (below)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** systems
 **Runs on:** a local model over the Messages API, **in the student's terminal** — no `<PyCell>`
@@ -203,6 +203,18 @@ machine, which the lesson 39 cloud run covers.
   «inactivity» (it counts edits, not runs: ~40 min). Cause: at ~11K tokens of context the model
   generates 0.5 tok/s there (the 8B at row 2's context: 1.5), and every streamed request past 6 min
   comes back 500, so no reply over ~180 tokens completes. Recorded as is; not re-run. Transcripts: [`05-lesson39-runs-2026-11-05.log`](05-lesson39-runs-2026-11-05.log).
+- **Lesson 40's MCP, 2026-11-07 (same machine).** Read the live spec first: the current revision,
+  `2026-07-28`, is stateless, so the handshake the plan assumed (`initialize` +
+  `notifications/initialized`) is gone; the lesson teaches `server/discover` and per-request `_meta`,
+  and says in a clause that older revisions opened with the handshake. Cross-checked both ways with
+  the official Python library (`mcp` 2.3.0, released 2026-10-02): our client discovers, lists and
+  calls a server built with it, and its client does the same with ours. The pedido «¿Qué incidencias
+  abiertas hay, y cuál afecta a compra.py?» on `ejemplo/`: `incidencias {"estado": "abierta"}` at the
+  first attempt in all three runs; turno 1 161 s and 140 s cold, 11 s with the prefix cached; the
+  answer 55–61 s. The tool costs 86 tokens per petición (schema + description, by difference with
+  `max_tokens = 1`, as `coste.py`). With `AJENAS = {}` (denied), 3 of 3 runs delegated to a subagent
+  that grepped file contents and answered that no open incidencia mentions `compra.py` (wrong: #5
+  does). Transcripts: [`05-lesson40-runs-2026-11-07.log`](05-lesson40-runs-2026-11-07.log).
 - **Gotcha found on the way:** an `ANTHROPIC_BASE_URL` already set in the shell (here, to the
   cloud API) silently redirects the course's code; the first run got a 401 from the cloud with a
   dummy key. Lesson 32 warns about it before the run.
@@ -244,7 +256,7 @@ first course left it — in front of the literature, now with a harness to test 
 - [x] 37. `permisos-y-sandbox`
 - [x] 38. `subagentes`
 - [x] 39. `mini-benchmark`
-- [ ] 40. `mcp-y-lo-que-viene`
+- [x] 40. `mcp-y-lo-que-viene`
 
 ## The precise statements
 

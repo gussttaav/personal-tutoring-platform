@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 400" width="760" height="400" role="img"
+ aria-label="A triangle with one property at each corner: general, it works on any program; total, it always answers yes or no; and exact, it is never wrong. In the middle, in red, the procedure that has all three, which the theorem rules out. Each side joins two properties and gives up the third. Between general and exact, giving up always answering: running the program, analysers that say possible error, and time limits. Between total and exact, giving up generality: languages in which every program halts, such as Lean, and the eBPF verifier. Between general and total, giving up exactness: tests, fuzzing and whoever guesses.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .bx.o { fill: #131315; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ln { fill: none; stroke: #86948a; stroke-width: 1.2; }
+  .ln.m { stroke: #4edea3; }
+  .ln.w { stroke: #e8a24c; }
+  .ln.x { stroke: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<path class="ln" d="M380.0,62.0 L210.0,300.0 L550.0,300.0 Z" style="stroke:#3b3b3e"/>
+<path class="ln w" d="M380.0,62.0 L210.0,300.0"/>
+<path class="ln m" d="M380.0,62.0 L550.0,300.0"/>
+<path class="ln m" d="M210.0,300.0 L550.0,300.0"/>
+<rect class="bx o" x="300.0" y="32.0" width="160.0" height="44.0" rx="6"/>
+<text class="lb" x="380.0" y="52.0">General</text>
+<text class="sb" x="380.0" y="66.0">any program</text>
+<rect class="bx o" x="110.0" y="296.0" width="170.0" height="44.0" rx="6"/>
+<text class="lb" x="195.0" y="316.0">Total</text>
+<text class="sb" x="195.0" y="330.0">always answers yes or no</text>
+<rect class="bx o" x="480.0" y="296.0" width="170.0" height="44.0" rx="6"/>
+<text class="lb" x="565.0" y="316.0">Exact</text>
+<text class="sb" x="565.0" y="330.0">never wrong</text>
+<rect class="bx x" x="328.0" y="179.0" width="104.0" height="52.0" rx="8"/>
+<text class="lb x" x="380.0" y="197.0">all three</text>
+<text class="lb x" x="380.0" y="211.0">at once</text>
+<text class="sb" x="380.0" y="225.0">does not exist</text>
+<text class="hd w" x="150.0" y="150.0" style="text-anchor:end">NOT EXACT</text>
+<text class="tx" x="150.0" y="166.0" style="text-anchor:end">tests, fuzzing,</text>
+<text class="tx" x="150.0" y="180.0" style="text-anchor:end">whoever guesses</text>
+<text class="hd m" x="610.0" y="150.0" style="text-anchor:start">DOES NOT ALWAYS ANSWER</text>
+<text class="tx" x="610.0" y="166.0" style="text-anchor:start">running the program,</text>
+<text class="tx" x="610.0" y="180.0" style="text-anchor:start">“possible error”,</text>
+<text class="tx" x="610.0" y="194.0" style="text-anchor:start">time limits</text>
+<text class="hd m" x="380.0" y="372.0" style="text-anchor:middle">NOT GENERAL</text>
+<text class="tx" x="380.0" y="388.0" style="text-anchor:middle">languages in which everything halts (Lean), the eBPF verifier</text>
+<path class="ln w" d="M158.0,162.0 L285.0,182.0"/>
+<path class="ln m" d="M602.0,162.0 L475.0,182.0"/>
+<path class="ln m" d="M380.0,360.0 L380.0,302.0"/>
+</svg>

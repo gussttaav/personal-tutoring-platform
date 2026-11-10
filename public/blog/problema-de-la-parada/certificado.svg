@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" width="760" height="230" role="img"
+ aria-label="Dos cajas unidas por una flecha. A la izquierda, el buscador: recibe el programa e intenta encontrar un certificado, como una función de ranking o una demostración. Puede tardar mucho, puede no encontrarlo nunca y puede proponer uno incorrecto, y por eso puede ser una persona, una heurística o cualquier otro método. Le pasa su propuesta a la derecha, al comprobador: un programa pequeño que siempre termina y que acepta o rechaza el certificado. Si lo acepta, la conclusión es segura aunque el buscador no sea de fiar. Si lo rechaza, el buscador vuelve a intentarlo o la respuesta es no lo sé.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .bx.o { fill: #131315; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ln { fill: none; stroke: #86948a; stroke-width: 1.2; }
+  .ln.m { stroke: #4edea3; }
+  .ln.w { stroke: #e8a24c; }
+  .ln.x { stroke: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="tx" x="10.0" y="102.0" style="text-anchor:start">programa</text>
+<path class="ar" d="M68.0,98.0 L98.0,98.0"/>
+<text class="hd w" x="102.0" y="50.0" style="text-anchor:start">PUEDE FALLAR</text>
+<rect class="bx w" x="102.0" y="64.0" width="200.0" height="68.0" rx="6"/>
+<text class="lb w" x="202.0" y="96.0">Buscador</text>
+<text class="sb" x="202.0" y="110.0">persona, heurística, lo que sea</text>
+<text class="sb" x="202.0" y="150.0">puede tardar mucho,</text>
+<text class="sb" x="202.0" y="164.0">no encontrarlo nunca</text>
+<text class="sb" x="202.0" y="178.0">o proponer uno malo</text>
+<path class="ar" d="M304.0,98.0 L420.0,98.0"/>
+<text class="sb" x="362.0" y="88.0">certificado propuesto</text>
+<text class="sb" x="362.0" y="116.0">ranking, demostración</text>
+<text class="hd m" x="424.0" y="50.0" style="text-anchor:start">DE FIAR</text>
+<rect class="bx m" x="424.0" y="64.0" width="170.0" height="68.0" rx="6"/>
+<text class="lb m" x="509.0" y="96.0">Comprobador</text>
+<text class="sb" x="509.0" y="110.0">pequeño, siempre termina</text>
+<path class="ar m" d="M596.0,80.0 L620.0,80.0 L620.0,58.0 L636.0,58.0"/>
+<text class="lb m" x="642.0" y="54.0" style="text-anchor:start">acepta</text>
+<text class="sb" x="642.0" y="68.0" style="text-anchor:start">conclusión segura</text>
+<path class="ar w" d="M509.0,134.0 L509.0,205.0 L202.0,205.0 L202.0,194.0"/>
+<text class="lb w" x="519.0" y="168.0" style="text-anchor:start">rechaza</text>
+<text class="sb" x="519.0" y="182.0" style="text-anchor:start">otra vez, o «no lo sé»</text>
+</svg>

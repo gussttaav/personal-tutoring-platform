@@ -94,7 +94,7 @@ that drives traffic.)
 - **Manual:** build, inspect `/sitemap.xml`, spot-check hreflang tags in built lesson HTML,
   validate JSON-LD.
 - **Post-deploy:** submit the sitemap in Google Search Console and check for "alternate page"
-  errors after crawling. (Per `docs/seo/PLAN.md`, GSC steps are still pending from the SEO cycle —
+  errors after crawling. (Per `docs/archive/seo-2026-07-12/PLAN.md`, GSC steps are still pending from the SEO cycle —
   fold these in there.)
 
 ## Notes / gotchas
@@ -111,5 +111,5 @@ that drives traffic.)
 ## Out of scope
 
 - Per-course OG image design (worth doing; not blocking).
-- GSC submission itself (operational, tracked in `docs/seo/PLAN.md`).
+- GSC submission itself (operational, tracked in `docs/archive/seo-2026-07-12/PLAN.md`).
 - English content or its hreflang (the helper handles it when it exists).

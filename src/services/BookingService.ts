@@ -49,6 +49,9 @@
 // write-once). It runs at the very end, after the booking committed, and is best-effort:
 // a failure is logged, never a reason to fail a booking that already exists. A reschedule
 // moves an existing class, so it never records.
+//
+// CHAT-AGENT-P1-03: hasActiveFreeSession — thin delegate, so the chat assistant's tools
+// can tell a visitor they already hold their free call before proposing one.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -635,6 +638,12 @@ export class BookingService {
   // Thin delegate — see IBookingRepository.hasBookingForPayment.
   async hasBookingForPayment(paymentIntentId: string): Promise<boolean> {
     return this.bookings.hasBookingForPayment(paymentIntentId);
+  }
+
+  // CHAT-AGENT-P1-03: the free-call cap's read (one non-cancelled free15min per user),
+  // for the chat tools. Thin delegate — see IBookingRepository.hasActiveFreeSession.
+  async hasActiveFreeSession(email: string): Promise<boolean> {
+    return this.bookings.hasActiveFreeSession(email);
   }
 
   // REFACTOR-R4-P1-03: best-effort by design — once the new booking exists we never roll
