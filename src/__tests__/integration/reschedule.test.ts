@@ -4,6 +4,8 @@
 // REFACTOR-R4-P1-01: slots come from fixtures/slots (aligned, the right length).
 // REFACTOR-R4-P1-03: a pack reschedule moves the original's credit (no restore + decrement);
 // a failure after the old token's claim leaves the original booking in place, retryable.
+// REFACTOR-R5-P1-01: a reschedule token only works for its owner — another signed-in
+// account is refused with the original untouched, and the owner can still use the token.
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
@@ -287,5 +289,32 @@ describe("REFACTOR-R4-P1-03: a successful reschedule", () => {
     expect((await bookings.findByCancelToken(rescheduled.cancelToken))?.stripePaymentId).toBe("pi_paid_001");
     expect((await bookings.findByStripePaymentId("pi_paid_001"))?.eventId).toBe(rescheduled.eventId);
     expect(await bookings.hasBookingForPayment("pi_paid_001")).toBe(true);
+  });
+});
+
+// ─── REFACTOR-R5-P1-01 ────────────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P1-01: a reschedule token only works for its owner", () => {
+  it("refuses another account, leaves the original intact, then works for the owner", async () => {
+    const ctx = await bookOriginalPack();
+    const { service, credits, original } = ctx;
+
+    await expect(
+      service.createBooking({
+        ...packInput(24),
+        email:           "mallory@example.com",
+        name:            "Mallory",
+        rescheduleToken: original.cancelToken,
+      }),
+    ).rejects.toMatchObject({ code: "RESCHEDULE_NOT_OWNER" });
+
+    await expectOriginalIntact(ctx);
+    expect((await credits.getBalance("carol@example.com"))?.credits).toBe(4);
+
+    const rescheduled = await service.createBooking({
+      ...packInput(24), rescheduleToken: original.cancelToken,
+    });
+    expect(rescheduled.eventId).not.toBe(original.eventId);
+    expect((await credits.getBalance("carol@example.com"))?.credits).toBe(4);
   });
 });

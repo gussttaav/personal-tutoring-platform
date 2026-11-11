@@ -52,6 +52,11 @@
 //
 // CHAT-AGENT-P1-03: hasActiveFreeSession — thin delegate, so the chat assistant's tools
 // can tell a visitor they already hold their free call before proposing one.
+//
+// REFACTOR-R5-P1-01: a reschedule token only works for its owner. The token is HMAC-bound
+// to the owner's email, so the original booking's email is compared with the caller's
+// right after the lookup, before the claim: anyone else gets RescheduleNotOwnerError and
+// nothing is consumed, torn down or moved.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -63,7 +68,8 @@ import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "./CreditService";
 import { ScheduleService } from "./ScheduleService";
 import {
-  DomainError, FreeSessionAlreadyUsedError, InvalidSlotError, SlotUnavailableError,
+  DomainError, FreeSessionAlreadyUsedError, InvalidSlotError, RescheduleNotOwnerError,
+  SlotUnavailableError,
 } from "@/domain/errors";
 import { log } from "@/lib/logger";
 import { invalidate as invalidateAvailability } from "@/lib/availability-cache";
@@ -71,6 +77,9 @@ import {
   SESSION_DURATION_MINUTES, SLOT_ALIGNMENT_MINUTES, isWithinBlocks,
 } from "@/lib/booking-config";
 import { toZonedTime } from "date-fns-tz";
+
+// REFACTOR-R5-P1-01: emails compare case- and whitespace-insensitively.
+const normalizeEmail = (email: string) => email.toLowerCase().trim();
 
 // ─── Input / output types ─────────────────────────────────────────────────────
 
@@ -245,6 +254,15 @@ export class BookingService {
             "Reschedule token is invalid or already used.",
             "INVALID_RESCHEDULE_TOKEN",
           );
+        }
+        // REFACTOR-R5-P1-01: the token is HMAC-bound to its owner's email (findByCancelToken
+        // verified it against users.email). Refuse anyone else BEFORE the claim, so nothing is
+        // consumed, torn down or moved, and the owner's link keeps working.
+        if (normalizeEmail(oldRecord.email) !== normalizeEmail(input.email)) {
+          log("warn", "Reschedule refused: caller is not the booking's owner", {
+            service: "BookingService", eventId: oldRecord.eventId,
+          });
+          throw new RescheduleNotOwnerError();
         }
         // Reuse the config already fetched above (no second read). cancelMinNoticeHours
         // governs both cancellation and rescheduling.

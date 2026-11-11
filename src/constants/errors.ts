@@ -6,6 +6,7 @@
  *
  * REFACTOR-R4-P1-01: INVALID_SLOT + FREE_SESSION_ALREADY_USED (server-side slot validation).
  * SESSION-JOIN-01: CLASSROOM_NOT_OPEN (a student joining before the classroom opens).
+ * REFACTOR-R5-P1-01: RESCHEDULE_NOT_OWNER (a reschedule link opened from another account).
  */
 
 /**
@@ -31,6 +32,7 @@ export const ERROR_CODE_I18N_KEY: Record<string, string> = {
   OUTSIDE_RESCHEDULE_WINDOW: "errors.domain.outsideRescheduleWindow",
   SESSION_TYPE_MISMATCH:     "errors.domain.sessionTypeMismatch",
   RESCHEDULE_TOKEN_CONSUMED: "errors.domain.rescheduleTokenConsumed",
+  RESCHEDULE_NOT_OWNER:      "errors.domain.rescheduleNotOwner",        // REFACTOR-R5-P1-01
   REQUIRES_PAYMENT:          "errors.domain.requiresPayment",
   INVALID_CANCEL_TOKEN:      "errors.domain.invalidCancelToken",
   OUTSIDE_CANCEL_WINDOW:     "errors.domain.outsideCancelWindow",

@@ -876,6 +876,7 @@
       "outsideRescheduleWindow": "El plazo para reprogramar ha finalizado.",
       "sessionTypeMismatch": "El tipo de sesión no coincide con la reserva original.",
       "rescheduleTokenConsumed": "Este enlace de reprogramación ya ha sido usado.",
+      "rescheduleNotOwner": "Esta clase se reservó con otra cuenta. Inicia sesión con la cuenta con la que la reservaste para reprogramarla.",
       "requiresPayment": "Esta reserva requiere pago.",
       "invalidCancelToken": "El enlace de cancelación no es válido.",
       "outsideCancelWindow": "El plazo para cancelar ha finalizado.",

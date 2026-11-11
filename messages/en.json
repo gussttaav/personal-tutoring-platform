@@ -876,6 +876,7 @@
       "outsideRescheduleWindow": "The reschedule window has closed.",
       "sessionTypeMismatch": "The session type doesn't match the original booking.",
       "rescheduleTokenConsumed": "This reschedule link has already been used.",
+      "rescheduleNotOwner": "This class was booked with a different account. Sign in with the account you booked it with to reschedule it.",
       "requiresPayment": "This booking requires payment.",
       "invalidCancelToken": "The cancellation link is not valid.",
       "outsideCancelWindow": "The cancellation window has closed.",

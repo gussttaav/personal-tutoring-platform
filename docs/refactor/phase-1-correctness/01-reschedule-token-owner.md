@@ -1,6 +1,6 @@
 # P1-01 — A reschedule token only works for its owner
 
-**Tag:** `REFACTOR-R5-P1-01` · **Severity:** 🟠 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P1-01` · **Severity:** 🟠 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
@@ -85,12 +85,12 @@ The message must not reveal the owner's email.
 
 ## Acceptance criteria
 
-- [ ] `createBooking` with a valid token whose owner ≠ `input.email` rejects with `RescheduleNotOwnerError`
-- [ ] In that case `consumeCancelToken`, `useCredit`, `calendar.createEvent` and `bookings.createBooking` are never called; the lock is still released (`finally`)
-- [ ] The same token then succeeds for its owner
-- [ ] The comparison is case- and whitespace-insensitive (`Ana@x.com ` == `ana@x.com`)
-- [ ] `POST /api/book` maps it to 403 with code `RESCHEDULE_NOT_OWNER`; `errors.domain.rescheduleNotOwner` exists in both message files and `pnpm check:messages` passes
-- [ ] File-top comment blocks of every touched source file carry `REFACTOR-R5-P1-01`
+- [x] `createBooking` with a valid token whose owner ≠ `input.email` rejects with `RescheduleNotOwnerError`
+- [x] In that case `consumeCancelToken`, `useCredit`, `calendar.createEvent` and `bookings.createBooking` are never called; the lock is still released (`finally`)
+- [x] The same token then succeeds for its owner
+- [x] The comparison is case- and whitespace-insensitive (`Ana@x.com ` == `ana@x.com`)
+- [x] `POST /api/book` maps it to 403 with code `RESCHEDULE_NOT_OWNER`; `errors.domain.rescheduleNotOwner` exists in both message files and `pnpm check:messages` passes
+- [x] File-top comment blocks of every touched source file carry `REFACTOR-R5-P1-01`
 
 ## Test plan
 

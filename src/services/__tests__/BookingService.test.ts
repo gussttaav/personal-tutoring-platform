@@ -11,6 +11,8 @@
 // getLocale rejection must not fail a cancellation that already committed.
 // BOOKING-ATTRIBUTION-01: a first booking records its type + source on the user
 // (best-effort, never on a reschedule or a failed booking).
+// REFACTOR-R5-P1-01: a reschedule token only works for its owner — refused for another
+// account before any write, and still usable by the owner afterwards.
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
@@ -19,7 +21,7 @@ jest.mock("@/lib/availability-cache", () => ({
 }));
 
 import { BookingService } from "../BookingService";
-import { InvalidCursorError } from "@/domain/errors";
+import { InvalidCursorError, RescheduleNotOwnerError } from "@/domain/errors";
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
@@ -208,8 +210,10 @@ const baseFreeInput = () => ({
   sessionType: "free15min" as const,
 });
 
+// REFACTOR-R5-P1-01: the record belongs to the same student as the inputs above — a
+// reschedule only works for the token's owner, so a mismatch here would be a refusal.
 const baseCancelRecord = (overrides: Partial<BookingRecord> = {}): BookingRecord => ({
-  eventId: "evt1", email: "s@t.com", name: "S",
+  eventId: "evt1", email: "student@test.com", name: "S",
   sessionType: "pack", startsAt: hoursFromNow(5), endsAt: hoursFromNow(6),
   used: false, ...overrides,
 });
@@ -480,6 +484,60 @@ describe("BookingService.createBooking (reschedule)", () => {
     const notifyCall  = email.sendNewBookingNotification.mock.calls[0]?.[0];
     expect(confirmCall?.sessionLabel).toBe("Pack class");
     expect(notifyCall?.sessionLabel).toBe("Clase de pack");
+  });
+});
+
+// ─── REFACTOR-R5-P1-01: a reschedule token only works for its owner ──────────
+
+describe("REFACTOR-R5-P1-01: a reschedule token only works for its owner", () => {
+  const ownersPack = () => baseCancelRecord({
+    eventId: "old-evt", email: "ana@x.com", sessionType: "pack", startsAt: hoursFromNow(5),
+    packSize: 10, creditPackId: "pack-orig",
+  });
+
+  it("refuses another account before any write, and still releases the lock", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(ownersPack());
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    const service     = makeService({
+      bookings, calendar, credits: new CreditService(creditsRepo, mockAuditRepo()),
+    });
+    const input = { ...basePackInput(), email: "bob@y.com", rescheduleToken: "tkn" };
+
+    await expect(service.createBooking(input)).rejects.toThrow(RescheduleNotOwnerError);
+    await expect(service.createBooking(input)).rejects.toMatchObject({ code: "RESCHEDULE_NOT_OWNER" });
+
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+    expect(bookings.releaseSlotLock).toHaveBeenCalledWith(input.startIso);
+  });
+
+  it("the same token then works for its owner", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(ownersPack());
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking({ ...basePackInput(), email: "bob@y.com", rescheduleToken: "tkn" }))
+      .rejects.toThrow(RescheduleNotOwnerError);
+    await expect(service.createBooking({ ...basePackInput(), email: "ana@x.com", rescheduleToken: "tkn" }))
+      .resolves.toBeDefined();
+
+    expect(bookings.consumeCancelToken).toHaveBeenCalledTimes(1);
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
+  });
+
+  it("compares case- and whitespace-insensitively", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(ownersPack());
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking({ ...basePackInput(), email: "Ana@X.com ", rescheduleToken: "tkn" }))
+      .resolves.toBeDefined();
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
   });
 });
 
@@ -882,7 +940,7 @@ describe("BookingService.cancelByToken", () => {
 
     await service.cancelByToken("tkn", "es");
 
-    expect(users.getLocale).toHaveBeenCalledWith("s@t.com");
+    expect(users.getLocale).toHaveBeenCalledWith("student@test.com");
     expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "en" })
     );
@@ -986,7 +1044,7 @@ describe("REFACTOR-R4-P1-04: cancelByToken reports what the RPC did", () => {
     expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ creditsRestored: true }),
     );
-    expect(audit.append).toHaveBeenCalledWith("s@t.com", {
+    expect(audit.append).toHaveBeenCalledWith("student@test.com", {
       action: "restore", credits: 7, packId: "pack-other",
     });
   });
