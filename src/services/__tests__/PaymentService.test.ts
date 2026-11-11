@@ -15,6 +15,8 @@
 // refund record replays it), and the checkout keys carry the amount — suite at the end.
 // BOOKING-ATTRIBUTION-01: the student's source rides the PaymentIntent metadata from
 // checkout to the webhook's createBooking (and the admin retry's).
+// REFACTOR-R5-P1-02: markProcessed failing after a committed booking is not a failed
+// booking — webhook + admin-retry cases in the resolution and reprocess suites.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -571,6 +573,43 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
     expect(bookings.createBooking).not.toHaveBeenCalled();
   });
 
+  // REFACTOR-R5-P1-02: markProcessed failing AFTER createBooking committed must not
+  // dead-letter a class that exists. The webhook answers 200 as a normal booking, and the
+  // next redelivery heals the marker through the booking-exists gate.
+  it("treats a markProcessed failure after a committed booking as booked, and a redelivery heals it", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(fullBooking);
+    paymentRepo.markProcessed.mockRejectedValueOnce(new Error("postgres blip"));
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
+
+    expect(bookings.createBooking).toHaveBeenCalledTimes(1);
+    expect(paymentRepo.recordFailedBooking).not.toHaveBeenCalled();
+    expect(mockSendDeadLetterEmail).not.toHaveBeenCalled();
+    expect(paymentRepo.recordPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ stripePaymentId: "pi_single_123", checkoutType: "single" }),
+    );
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledTimes(1);
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledWith(
+      "pi_single_123", expect.objectContaining({ status: "confirmed" }),
+    );
+    expect(paymentRepo.broadcastSingleSessionResolved).not.toHaveBeenCalledWith(
+      "pi_single_123", { status: "failed" },
+    );
+
+    // Stripe redelivers: the marker is still missing, but the booking now exists.
+    (bookings.hasBookingForPayment as jest.Mock).mockResolvedValue(true);
+    paymentRepo.markProcessed.mockClear();
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
+
+    expect(paymentRepo.markProcessed).toHaveBeenCalledWith("pi_single_123");
+    expect(bookings.createBooking).toHaveBeenCalledTimes(1);
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(paymentRepo.recordFailedBooking).not.toHaveBeenCalled();
+  });
+
   // 6. Dead-letter → failed (broadcast + polling).
   it("broadcasts status:failed and polling reports failed when booking dead-letters", async () => {
     const { service, paymentRepo, bookings } = makeService();
@@ -828,6 +867,35 @@ describe("PaymentService.reprocessFailedBooking", () => {
 
     expect(result).toEqual({ ok: true, outcome: "booked" });
     expect(paymentRepo.clearFailedBooking).toHaveBeenCalledWith("pi_single_123");
+  });
+
+  // REFACTOR-R5-P1-02: the retry books, then the marker write fails — still a success, the
+  // entry is cleared, and no fresh dead-letter is written over it.
+  it("returns ok:true and clears the entry when markProcessed fails after the retry booked", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.listFailedBookings.mockResolvedValue([deadLetterEntry]);
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.markProcessed.mockRejectedValue(new Error("postgres blip"));
+    paymentRepo.clearFailedBooking.mockResolvedValue(undefined);
+    stripe.retrievePaymentIntent.mockResolvedValue({
+      id:       "pi_single_123",
+      metadata: {
+        student_email:    "student@test.com",
+        student_name:     "Student",
+        start_iso:        "2099-12-01T10:00:00.000Z",
+        end_iso:          "2099-12-01T11:00:00.000Z",
+        session_duration: "1h",
+        reschedule_token: "",
+      },
+    } as unknown as Stripe.PaymentIntent);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+
+    const result = await service.reprocessFailedBooking("pi_single_123");
+
+    expect(result).toEqual({ ok: true, outcome: "booked" });
+    expect(paymentRepo.clearFailedBooking).toHaveBeenCalledWith("pi_single_123");
+    expect(paymentRepo.recordFailedBooking).not.toHaveBeenCalled();
+    expect(mockSendDeadLetterEmail).not.toHaveBeenCalled();
   });
 
   // REFACTOR-R3-P1-02: a throwing re-check must surface as { ok: false }, not an

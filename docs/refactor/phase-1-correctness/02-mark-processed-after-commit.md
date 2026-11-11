@@ -1,6 +1,6 @@
 # P1-02 — `markProcessed` after the commit is best-effort
 
-**Tag:** `REFACTOR-R5-P1-02` · **Severity:** 🟠 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P1-02` · **Severity:** 🟠 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

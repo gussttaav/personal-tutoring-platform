@@ -64,6 +64,16 @@
  * (webhook, admin retry) reads it back and hands it to createBooking. Metadata is part of
  * the request Stripe compares on an idempotent replay, so a non-empty source also goes
  * into the checkout key (as a short hash; keys without a source are unchanged).
+ *
+ * REFACTOR-R5-P1-02: in processSingleSession only createBooking can dead-letter. The
+ * processed marker used to share its `try`, so a markProcessed blip after the booking
+ * committed wrote a dead-letter, mailed the admin «booking failed», skipped the payments
+ * row and broadcast `failed` for a class that existed. It is now best-effort after the
+ * commit: the booking-exists gate (REFACTOR-R3-P1-03) heals the marker on a redelivery and
+ * the reconcile cron counts the booking as proof. Known gap, left alone: the legacy
+ * checkout.session.completed path keys on the session id and may lack a payment_intent,
+ * so the gate can't heal it there — a redelivery would reach the slot re-check and refund.
+ * That path has had no traffic since the embedded PaymentElement shipped.
  */
 
 import type Stripe from "stripe";
@@ -84,6 +94,7 @@ import { SESSION_DURATION_MINUTES } from "@/lib/booking-config";
 import { sendDeadLetterNotificationEmail } from "@/infrastructure/resend/email-functions";
 import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";
+import type { CreateBookingOutput } from "./BookingService";
 import { UserService } from "./UserService";
 import { PricingService } from "./PricingService";
 import { ScheduleService } from "./ScheduleService";
@@ -678,10 +689,13 @@ export class PaymentService {
     // dead-letter entry can reference users.id even if createBooking fails.
     const userId = await this.userService.ensureUser(email, name);
 
+    // REFACTOR-R5-P1-02: only createBooking can fail the booking. Everything after it is
+    // post-commit and best-effort — a throw there used to dead-letter a class that existed.
+    let booking: CreateBookingOutput;
     try {
       // SINGLE-SESSION-CONFIRM-01: capture the booking output (previously discarded) so the
       // success broadcast can carry the join capability + timing the mobile S08 screen needs.
-      const booking = await this.bookings.createBooking({
+      booking = await this.bookings.createBooking({
         email,
         name,
         startIso,
@@ -691,31 +705,6 @@ export class PaymentService {
         stripePaymentId:  paymentIntentId,
         attribution:      input.attribution,
       });
-      await this.paymentRepo.markProcessed(idempotencyKey);
-      log("info", "Single session booked", { service: "payment", email, startIso });
-
-      // PAYMENTS-AUDIT-01: paymentIntentId is the booking's stripe_payment_id, the
-      // key the history/admin surfaces join `payments` on. Only the successful-booking
-      // path records — refund/slot-taken/dead-letter exits above deliberately do not.
-      await this.recordPaymentRow({
-        email, name, stripePaymentId: paymentIntentId ?? idempotencyKey,
-        amountCents: input.amountCents, currency: input.currency, checkoutType: "single",
-      });
-
-      // SINGLE-SESSION-CONFIRM-01: best-effort confirmation broadcast (persistence above
-      // already committed the booking; polling catches up if this is missed).
-      if (paymentIntentId) {
-        await this.broadcastResolved(paymentIntentId, {
-          status:      "confirmed",
-          eventId:     booking.eventId,
-          startIso,
-          endIso:      endIsoSafe,
-          sessionType,
-          joinToken:   booking.joinToken,
-          emailFailed: booking.emailFailed,
-        });
-      }
-      return { status: "booked" };
     } catch (err) {
       log("error", "Booking failed after payment — writing dead-letter", { service: "payment", email, startIso, idempotencyKey, error: String(err) });
       await this.writeDeadLetter(idempotencyKey, userId, startIso, err, email);
@@ -726,6 +715,39 @@ export class PaymentService {
       }
       return { status: "dead_lettered", error: String(err) };
     }
+
+    // REFACTOR-R5-P1-02: the booking is committed. A missing marker is healed by the
+    // booking-exists gate on any redelivery (REFACTOR-R3-P1-03), and the reconcile cron
+    // counts the booking as proof.
+    await this.paymentRepo.markProcessed(idempotencyKey).catch((err) =>
+      log("warn", "markProcessed failed after a committed booking (gate will heal it)", {
+        service: "payment", idempotencyKey, error: String(err),
+      }),
+    );
+    log("info", "Single session booked", { service: "payment", email, startIso });
+
+    // PAYMENTS-AUDIT-01: paymentIntentId is the booking's stripe_payment_id, the
+    // key the history/admin surfaces join `payments` on. Only the successful-booking
+    // path records — refund/slot-taken/dead-letter exits above deliberately do not.
+    await this.recordPaymentRow({
+      email, name, stripePaymentId: paymentIntentId ?? idempotencyKey,
+      amountCents: input.amountCents, currency: input.currency, checkoutType: "single",
+    });
+
+    // SINGLE-SESSION-CONFIRM-01: best-effort confirmation broadcast (persistence above
+    // already committed the booking; polling catches up if this is missed).
+    if (paymentIntentId) {
+      await this.broadcastResolved(paymentIntentId, {
+        status:      "confirmed",
+        eventId:     booking.eventId,
+        startIso,
+        endIso:      endIsoSafe,
+        sessionType,
+        joinToken:   booking.joinToken,
+        emailFailed: booking.emailFailed,
+      });
+    }
+    return { status: "booked" };
   }
 
   // SINGLE-SESSION-CONFIRM-01: best-effort single-session resolution broadcast. Mirrors
