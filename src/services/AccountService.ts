@@ -9,6 +9,9 @@
 // deleteAccount() re-runs that check itself. The GET preflight exists so clients
 // can render the right state, but it is advisory: the account state can change
 // between the preflight and the DELETE, so the service never trusts it.
+//
+// REFACTOR-R5-P3-01: the availability cache is invalidated on the tutor's local dates
+// (BookingService.getTimezone + invalidateForWindow), not the UTC date of the start.
 
 import type { AccountDeletionCounts, IUserRepository } from "@/domain/repositories/IUserRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
@@ -21,7 +24,7 @@ import {
   DeletionNotConfirmedError,
 } from "@/domain/errors";
 import { log } from "@/lib/logger";
-import { invalidate as invalidateAvailability } from "@/lib/availability-cache";
+import { invalidateForWindow } from "@/lib/availability-cache";
 
 // Re-exported because callers already import these from this service.
 export type { DeletionBlockReason, DeletionEligibility };
@@ -95,6 +98,8 @@ export class AccountService {
     // outage must not block erasure: the DB rows go either way, and a stranded
     // Calendar event is a smaller problem than a half-deleted account.
     const { imminent } = await this.partitionUpcoming(email);
+    // Best-effort like the invalidation itself: a config read error must not block erasure.
+    const timezone = imminent.length > 0 ? await this.bookings.getTimezone().catch(() => null) : null;
     for (const booking of imminent) {
       if (booking.eventId) {
         try {
@@ -105,7 +110,9 @@ export class AccountService {
           });
         }
       }
-      await invalidateAvailability(booking.startsAt.slice(0, 10)).catch(() => {});
+      if (timezone) {
+        await invalidateForWindow(booking.startsAt, booking.endsAt, timezone).catch(() => {});
+      }
     }
 
     const counts: AccountDeletionCounts = await this.users.deleteAccount(email);

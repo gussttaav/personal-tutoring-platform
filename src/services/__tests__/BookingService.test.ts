@@ -15,9 +15,12 @@
 // account before any write, and still usable by the owner afterwards.
 // REFACTOR-R5-P1-03: the insert itself can refuse a second free call (the DB index behind
 // the cap) — the saga undoes the calendar event and the error reaches the caller as is.
+// REFACTOR-R5-P3-01: availability invalidation gets the booking window + tutor timezone
+// (invalidateForWindow), never the UTC date of the start.
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
+  invalidateForWindow: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
   setCached:  jest.fn().mockResolvedValue(undefined),
 }));
@@ -39,7 +42,8 @@ import {
   InvalidSlotError, FreeSessionAlreadyUsedError,
 } from "@/domain/errors";
 import type { BookingRecord, WeeklyHours } from "@/domain/types";
-import { alignedSlot, allDaySchedule } from "@/__tests__/fixtures/slots";
+import { alignedSlot, allDaySchedule, slotAtLocal } from "@/__tests__/fixtures/slots";
+import { invalidateForWindow } from "@/lib/availability-cache";
 import { log } from "@/lib/logger";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
@@ -1842,4 +1846,60 @@ describe("REFACTOR-R5-P2-02: the claim marks the original, the email knows the s
       );
     },
   );
+});
+
+// ─── REFACTOR-R5-P3-01 ────────────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P3-01: availability is invalidated on the tutor's dates", () => {
+  beforeEach(() => (invalidateForWindow as jest.Mock).mockClear());
+
+  it("createBooking near local midnight passes the window and the tutor's timezone", async () => {
+    // 00:30 Madrid = 23:30 or 22:30 UTC the previous day: slice(0, 10) would be wrong.
+    const slot    = slotAtLocal("free15min", 10, "00:30");
+    const service = makeService();
+
+    await service.createBooking({ ...baseFreeInput(), ...slot });
+
+    expect(slot.startIso.slice(11, 16)).not.toBe("00:30");
+    expect(invalidateForWindow).toHaveBeenCalledWith(slot.startIso, slot.endIso, "Europe/Madrid");
+  });
+
+  it("cancelByToken passes the booking's window and the tutor's timezone", async () => {
+    const bookings = mockBookings();
+    const record   = baseCancelRecord({ startsAt: hoursFromNow(5), endsAt: hoursFromNow(6) });
+    bookings.findByCancelToken.mockResolvedValue(record);
+    const service  = makeService({ bookings });
+
+    await service.cancelByToken("tkn");
+
+    expect(invalidateForWindow).toHaveBeenCalledWith(record.startsAt, record.endsAt, "Europe/Madrid");
+  });
+
+  it("a config read error after the cancel committed only skips the invalidation", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ startsAt: hoursFromNow(5) }));
+    const schedule = mockSchedule();
+    (schedule.getConfig as jest.Mock)
+      .mockResolvedValueOnce(await schedule.getConfig()) // the cancel-window check
+      .mockRejectedValueOnce(new Error("config unavailable"));
+    const service  = makeService({ bookings, schedule });
+
+    await expect(service.cancelByToken("tkn")).resolves.toBeDefined();
+    expect(invalidateForWindow).not.toHaveBeenCalled();
+  });
+
+  it("a reschedule invalidates the original's window too", async () => {
+    const bookings = mockBookings();
+    const original = baseCancelRecord({
+      sessionType: "free15min", startsAt: hoursFromNow(30), endsAt: hoursFromNow(30.25),
+    });
+    bookings.findByCancelToken.mockResolvedValue(original);
+    const service  = makeService({ bookings });
+
+    const input = { ...baseFreeInput(), rescheduleToken: "tkn" };
+    await service.createBooking(input);
+
+    expect(invalidateForWindow).toHaveBeenCalledWith(input.startIso, input.endIso, "Europe/Madrid");
+    expect(invalidateForWindow).toHaveBeenCalledWith(original.startsAt, original.endsAt, "Europe/Madrid");
+  });
 });

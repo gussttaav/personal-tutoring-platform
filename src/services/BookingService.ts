@@ -67,6 +67,12 @@
 // REFACTOR-R5-P2-03: the session-cleanup cron's sweep (sweepPendingTerminations) moved here
 // from its route, which now only authenticates, logs and answers. A listing error propagates
 // (the route answers 500); a per-row error is recorded on the row and counted, never thrown.
+//
+// REFACTOR-R5-P3-01: availability invalidation goes by the tutor's local dates
+// (invalidateForWindow), not the instant's UTC date: a 00:30 Madrid class is 23:30 UTC the
+// day before, and a class crossing local midnight touches two days. getTimezone() gives
+// AccountService the same timezone. cancelByToken reads it after the RPC has committed, so
+// a config read error there only skips the (best-effort) invalidation.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -82,7 +88,7 @@ import {
   SlotUnavailableError,
 } from "@/domain/errors";
 import { log } from "@/lib/logger";
-import { invalidate as invalidateAvailability } from "@/lib/availability-cache";
+import { invalidateForWindow } from "@/lib/availability-cache";
 import {
   SESSION_DURATION_MINUTES, SLOT_ALIGNMENT_MINUTES, isWithinBlocks,
 } from "@/lib/booking-config";
@@ -174,6 +180,11 @@ export class BookingService {
   async getCancelWindowMs(): Promise<number> {
     const config = await this.schedule.getConfig();
     return config.cancelMinNoticeHours * 60 * 60_000;
+  }
+
+  // REFACTOR-R5-P3-01: the tutor's timezone, which keys the availability cache by day.
+  async getTimezone(): Promise<string> {
+    return (await this.schedule.getConfig()).timezone;
   }
 
   // REFACTOR-R4-P1-01: the server decides what is bookable. Returns null when the slot
@@ -365,7 +376,7 @@ export class BookingService {
         description: `delete Calendar event ${calResult.eventId}`,
         run: async () => { await this.calendar.deleteEvent(calResult.eventId); },
       });
-      await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
+      await invalidateForWindow(input.startIso, input.endIso, config.timezone).catch(() => {});
 
       // 6. Booking record — written before the pending_terminations row (step 7), so the
       //    daily /api/internal/session-cleanup cron always finds the booking it has to mark
@@ -463,7 +474,7 @@ export class BookingService {
       //     Zoom session exist and nothing below can throw, so the claim's compensation
       //     can no longer run against an original that is half gone.
       if (oldRecord) {
-        await this.teardownRescheduledOriginal(oldRecord);
+        await this.teardownRescheduledOriginal(oldRecord, config.timezone);
       } else {
         await this.recordFirstBooking(input);
       }
@@ -521,7 +532,9 @@ export class BookingService {
       );
     }
 
-    await invalidateAvailability(record.startsAt.slice(0, 10)).catch(() => {});
+    await this.getTimezone()
+      .then(timezone => invalidateForWindow(record.startsAt, record.endsAt, timezone))
+      .catch(() => {});
 
     const isPack   = record.sessionType === "pack";
     const isSingle = record.sessionType === "session1h" || record.sessionType === "session2h";
@@ -718,7 +731,7 @@ export class BookingService {
     }
   }
 
-  private async teardownRescheduledOriginal(old: BookingRecord): Promise<void> {
+  private async teardownRescheduledOriginal(old: BookingRecord, timezone: string): Promise<void> {
     const steps: [string, () => Promise<void>][] = [
       ["calendar event",      () => this.calendar.deleteEvent(old.eventId)],
       ["zoom session",        () => this.sessions.deleteByEventId(old.eventId)],
@@ -733,7 +746,7 @@ export class BookingService {
         });
       }
     }
-    await invalidateAvailability(old.startsAt.slice(0, 10)).catch(() => {});
+    await invalidateForWindow(old.startsAt, old.endsAt, timezone).catch(() => {});
   }
 
   private async sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {

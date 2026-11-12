@@ -7,6 +7,7 @@
 // in-memory repo enforces the DB index, so exactly one books and no event is left behind.
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
+  invalidateForWindow: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
   setCached:  jest.fn().mockResolvedValue(undefined),
 }));

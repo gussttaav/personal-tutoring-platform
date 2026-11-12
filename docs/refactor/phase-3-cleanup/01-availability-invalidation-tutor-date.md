@@ -1,6 +1,6 @@
 # P3-01 — Availability invalidation on the tutor's date
 
-**Tag:** `REFACTOR-R5-P3-01` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P3-01` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
@@ -62,10 +62,10 @@ The `.catch(() => {})` at each call site stays: invalidation is best-effort by d
 
 ## Acceptance criteria
 
-- [ ] All four call sites use the tutor's timezone; no `slice(0, 10)` remains on an instant passed to the cache
-- [ ] `invalidateForWindow("2026-11-12T23:30:00Z", "2026-11-12T23:45:00Z", "Europe/Madrid")` deletes the `2026-11-13` keys
-- [ ] A window 22:00Z–00:00Z (23:00–01:00 Madrid, winter) deletes both local dates
-- [ ] File-top blocks carry `REFACTOR-R5-P3-01`
+- [x] All four call sites use the tutor's timezone; no `slice(0, 10)` remains on an instant passed to the cache
+- [x] `invalidateForWindow("2026-11-12T23:30:00Z", "2026-11-12T23:45:00Z", "Europe/Madrid")` deletes the `2026-11-13` keys
+- [x] A window 22:00Z–00:00Z (23:00–01:00 Madrid, winter) deletes both local dates
+- [x] File-top blocks carry `REFACTOR-R5-P3-01`
 
 ## Test plan
 
