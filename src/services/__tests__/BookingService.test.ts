@@ -1409,6 +1409,85 @@ describe("BookingService.finalizePastSession", () => {
   });
 });
 
+// ─── sweepPendingTerminations ─────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P2-03: BookingService.sweepPendingTerminations", () => {
+  const seedDueRows = async () => {
+    const { InMemoryBookingRepository } = await import("@/__tests__/fixtures/InMemoryBookingRepository");
+    const bookingRepo = new InMemoryBookingRepository();
+    const now = Date.now();
+    await bookingRepo.recordPendingTermination("evt-1", now - 3 * 60_000);
+    await bookingRepo.recordPendingTermination("evt-2", now - 2 * 60_000);
+    await bookingRepo.recordPendingTermination("evt-3", now - 1 * 60_000);
+    // evt-2 has already failed twice: the sweep must write attempts + 1 = 3.
+    await bookingRepo.recordPendingTerminationFailure("evt-2", 2, "earlier failure");
+    return bookingRepo;
+  };
+
+  it("clears the rows that finalize, records and counts the one that fails, keeps going", async () => {
+    const bookingRepo = await seedDueRows();
+    const recordFailure = jest.spyOn(bookingRepo, "recordPendingTerminationFailure");
+    const sessions = mockSessions();
+    sessions.deleteByEventId.mockImplementation(async (eventId: string) => {
+      if (eventId === "evt-2") throw new Error("zoom_sessions delete failed");
+    });
+    const service = makeService({
+      bookings: bookingRepo as unknown as jest.Mocked<IBookingRepository>,
+      sessions,
+    });
+
+    const result = await service.sweepPendingTerminations({ maxBatch: 50, maxAttempts: 5 });
+
+    expect(result).toEqual({ cleared: 2, failed: 1, examined: 3 });
+    // Every row was attempted, the failing middle one did not stop the third.
+    expect(sessions.deleteByEventId.mock.calls.map(([id]) => id)).toEqual(["evt-1", "evt-2", "evt-3"]);
+    expect(recordFailure).toHaveBeenCalledTimes(1);
+    expect(recordFailure).toHaveBeenCalledWith(
+      "evt-2", 3, "Error: zoom_sessions delete failed",
+    );
+    // The cleared rows are gone; the failed one stays, with its attempts incremented.
+    const pending = bookingRepo.getPendingTerminations();
+    expect([...pending.keys()]).toEqual(["evt-2"]);
+    expect(await bookingRepo.listDuePendingTerminations(50, 5)).toEqual([
+      { eventId: "evt-2", attempts: 3 },
+    ]);
+  });
+
+  it("passes maxBatch and maxAttempts to the listing", async () => {
+    const bookings = mockBookings();
+    bookings.listDuePendingTerminations.mockResolvedValue([]);
+    const service = makeService({ bookings });
+
+    const result = await service.sweepPendingTerminations({ maxBatch: 7, maxAttempts: 2 });
+
+    expect(bookings.listDuePendingTerminations).toHaveBeenCalledWith(7, 2);
+    expect(result).toEqual({ cleared: 0, failed: 0, examined: 0 });
+  });
+
+  it("propagates a listing error (the route answers 500)", async () => {
+    const bookings = mockBookings();
+    bookings.listDuePendingTerminations.mockRejectedValue(new Error("query failed"));
+    const service = makeService({ bookings });
+
+    await expect(
+      service.sweepPendingTerminations({ maxBatch: 50, maxAttempts: 5 }),
+    ).rejects.toThrow("query failed");
+    expect(bookings.recordPendingTerminationFailure).not.toHaveBeenCalled();
+  });
+
+  it("propagates a failure to record a row's failure, as the route-side loop did", async () => {
+    const bookings = mockBookings();
+    bookings.listDuePendingTerminations.mockResolvedValue([{ eventId: "evt-1", attempts: 0 }]);
+    bookings.findByEventId.mockRejectedValue(new Error("bookings read failed"));
+    bookings.recordPendingTerminationFailure.mockRejectedValue(new Error("DB down"));
+    const service = makeService({ bookings });
+
+    await expect(
+      service.sweepPendingTerminations({ maxBatch: 50, maxAttempts: 5 }),
+    ).rejects.toThrow("DB down");
+  });
+});
+
 // BOOKING-HISTORY-01. The service is a pass-through here — the enrichment and the
 // keyset live in the repository — so this asserts the wiring only. The logic that
 // can actually be got wrong is covered by the unit tests over booking-history.ts

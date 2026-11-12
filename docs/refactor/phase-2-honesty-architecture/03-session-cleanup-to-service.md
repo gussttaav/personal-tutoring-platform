@@ -1,6 +1,6 @@
 # P2-03 — Session-cleanup sweep moves into `BookingService`
 
-**Tag:** `REFACTOR-R5-P2-03` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P2-03` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
@@ -63,10 +63,10 @@ pending_terminations query failed", …)` + 500, and a success to the existing i
 
 ## Acceptance criteria
 
-- [ ] The route imports nothing from `@/infrastructure`
-- [ ] Same JSON and status codes: 403 without/with a wrong secret, 500 when listing fails, 200 `{ cleared, failed, examined }`
-- [ ] A row whose finalize throws → `recordPendingTerminationFailure(eventId, attempts + 1, msg)`, counted in `failed`, other rows still processed
-- [ ] File-top blocks carry `REFACTOR-R5-P2-03`
+- [x] The route imports nothing from `@/infrastructure`
+- [x] Same JSON and status codes: 403 without/with a wrong secret, 500 when listing fails, 200 `{ cleared, failed, examined }`
+- [x] A row whose finalize throws → `recordPendingTerminationFailure(eventId, attempts + 1, msg)`, counted in `failed`, other rows still processed
+- [x] File-top blocks carry `REFACTOR-R5-P2-03`
 
 ## Test plan
 

@@ -63,6 +63,10 @@
 // does not). The cancellation email gets the session type, so it can tell a pack class whose
 // credit couldn't be restored from a paid single session, and say nothing about money for a
 // free call.
+//
+// REFACTOR-R5-P2-03: the session-cleanup cron's sweep (sweepPendingTerminations) moved here
+// from its route, which now only authenticates, logs and answers. A listing error propagates
+// (the route answers 500); a per-row error is recorded on the row and counted, never thrown.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -621,6 +625,29 @@ export class BookingService {
       }
     }
     await this.sessions.deleteByEventId(eventId);
+  }
+
+  // REFACTOR-R5-P2-03: the session-cleanup cron's sweep (was in its route). A listing error
+  // propagates (the route answers 500); a per-row error is recorded and counted, never thrown.
+  // recordPendingTerminationFailure itself can throw (DB down): that propagates too and fails
+  // the run, as it did when the loop lived in the route.
+  async sweepPendingTerminations(opts: { maxBatch: number; maxAttempts: number }): Promise<{
+    cleared: number; failed: number; examined: number;
+  }> {
+    const rows = await this.bookings.listDuePendingTerminations(opts.maxBatch, opts.maxAttempts);
+    let cleared = 0, failed = 0;
+    for (const row of rows) {
+      try {
+        await this.finalizePastSession(row.eventId);
+        await this.bookings.deletePendingTermination(row.eventId);
+        cleared++;
+      } catch (err) {
+        await this.bookings.recordPendingTerminationFailure(row.eventId, row.attempts + 1, String(err));
+        failed++;
+        log("warn", "Cron: failed to terminate session", { eventId: row.eventId, error: String(err) });
+      }
+    }
+    return { cleared, failed, examined: rows.length };
   }
 
   async listForUser(email: string): Promise<UserBooking[]> {
