@@ -1,6 +1,6 @@
 # P2-01 — `/api/chat` becomes a thin route
 
-**Tag:** `REFACTOR-R5-P2-01` · **Severity:** 🟡 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P2-01` · **Severity:** 🟡 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

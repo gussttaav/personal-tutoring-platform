@@ -319,4 +319,32 @@ describe("PricingService", () => {
       await expect(service.hasUserOverrides("user-3")).resolves.toBe(false);
     });
   });
+
+  // ─── REFACTOR-R5-P2-01 ────────────────────────────────────────────────────
+
+  describe("getEffectivePriceCents", () => {
+    it("returns the four public prices with no userId", async () => {
+      const { service } = makeService();
+      await expect(service.getEffectivePriceCents()).resolves.toEqual({
+        session1h: 1600, session2h: 3000, pack5: 7500, pack10: 14000,
+      });
+    });
+
+    it("substitutes a student's one override, keeps the rest public, and reads user_pricing once", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+      const listForUser = jest.spyOn(pricingRepo, "listForUser");
+
+      await expect(service.getEffectivePriceCents("user-1")).resolves.toEqual({
+        session1h: 1600, session2h: 3000, pack5: 7500, pack10: 9000,
+      });
+      expect(listForUser).toHaveBeenCalledTimes(1);
+    });
+
+    it("throws when a product is not configured", async () => {
+      const { service, pricingRepo } = makeService();
+      jest.spyOn(pricingRepo, "list").mockResolvedValueOnce([]);
+      await expect(service.getEffectivePriceCents()).rejects.toThrow("No price configured for product session1h");
+    });
+  });
 });
