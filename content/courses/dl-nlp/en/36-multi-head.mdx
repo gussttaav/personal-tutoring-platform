@@ -445,9 +445,9 @@ for hh in (1, 2, 4, 8, 16):
 `} />
 
 The two rows printed are the same position seen by two heads, and they look nothing alike: the first
-puts $0.591$ on position $1$ and the second $0.531$ on position $5$, to which the first gave $0.005$.
-Here the heads have come apart only because `rng` gave them different matrices, which is also all
-that separates them in a trained model. And the table is the cancellation above, checked: the three
+puts $0.591$ on position $0$, its own, and the second $0.531$ on position $4$, to which the first
+gave $0.005$. Here the heads have come apart only because `rng` gave them different matrices, which
+is also all that separates them in a trained model. And the table is the cancellation above, checked: the three
 columns on the right don't budge from $786\,432$, $262\,144$ and $1\,048\,576$ while $d_k$ falls
 from $512$ to $32$.
 
