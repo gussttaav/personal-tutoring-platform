@@ -1,6 +1,6 @@
 # P3-02 — Pack size by join, not per row
 
-**Tag:** `REFACTOR-R5-P3-02` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P3-02` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
@@ -49,11 +49,11 @@ If the embed's inferred type is awkward, narrow it with one local type, not `any
 
 ## Acceptance criteria
 
-- [ ] `listByUser` issues 2 queries (user, bookings) for any number of bookings
-- [ ] `findByCancelToken` issues 2 queries (booking, user)
-- [ ] A pack booking still returns `packSize`; a non-pack booking returns `undefined`
-- [ ] No `getPackSize` remains
-- [ ] File-top block carries `REFACTOR-R5-P3-02`
+- [x] `listByUser` issues 2 queries (user, bookings) for any number of bookings
+- [x] `findByCancelToken` issues 2 queries (booking, user)
+- [x] A pack booking still returns `packSize`; a non-pack booking returns `undefined`
+- [x] No `getPackSize` remains
+- [x] File-top block carries `REFACTOR-R5-P3-02`
 
 ## Test plan
 

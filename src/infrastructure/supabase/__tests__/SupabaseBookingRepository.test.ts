@@ -13,6 +13,8 @@
 // REFACTOR-R5-P2-02 (migration 0030): cancel_booking writes credit_restored for pack rows
 // (true / false) and leaves it NULL otherwise; claimForReschedule sets rescheduled,
 // reinstateBooking clears it, and consumeCancelToken leaves it alone.
+// REFACTOR-R5-P3-02: listByUser and findByCancelToken read packSize through the embedded
+// credit_packs(pack_size) — two pack bookings from a 5-pack and a 10-pack keep 5 and 10.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
@@ -533,6 +535,70 @@ describeDb("SupabaseBookingRepository", () => {
       const none = { consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0 };
       expect(await repo.cancelByToken("not-a-valid-hex-token")).toEqual(none);
       expect(await repo.cancelByToken("0".repeat(64))).toEqual(none);
+    });
+  });
+
+  // ─── REFACTOR-R5-P3-02: pack size by join ─────────────────────────────────
+  describe("packSize by join", () => {
+    async function seedUser(email: string): Promise<string> {
+      const { data, error } = await supabase
+        .from("users").upsert({ email, name: "Test Student" }, { onConflict: "email" })
+        .select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    async function seedPack(userId: string, packSize: number): Promise<string> {
+      const { data, error } = await supabase.from("credit_packs").insert({
+        user_id:           userId,
+        pack_size:         packSize,
+        credits_remaining: packSize - 1,
+        stripe_payment_id: `pi_test_packsize_${Date.now()}_${recordSeq++}`,
+        expires_at:        new Date(Date.now() + 180 * 86_400_000).toISOString(),
+      }).select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    // bookings.credit_pack_id → credit_packs → users, so packs go between the two.
+    async function cleanupWithPacks(email: string) {
+      const { data: user } = await supabase
+        .from("users").select("id").eq("email", email).maybeSingle();
+      if (!user) return;
+      await supabase.from("bookings").delete().eq("user_id", user.id);
+      await supabase.from("credit_packs").delete().eq("user_id", user.id);
+      await supabase.from("users").delete().eq("id", user.id);
+    }
+
+    it("listByUser and findByCancelToken return each booking's own pack size", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const pack5  = await seedPack(userId, 5);
+      const pack10 = await seedPack(userId, 10);
+
+      try {
+        const fromFive = { ...baseRecord(), email, sessionType: "pack" as const, creditPackId: pack5 };
+        const fromTen  = { ...baseRecord(), email, sessionType: "pack" as const, creditPackId: pack10 };
+        const paid     = { ...baseRecord(), email };
+        const five = await repo.createBooking(fromFive);
+        const ten  = await repo.createBooking(fromTen);
+        const one  = await repo.createBooking(paid);
+
+        const list = await repo.listByUser(email);
+        const sizeOf = (eventId: string) => list.find(b => b.record.eventId === eventId)?.record.packSize;
+        expect(list).toHaveLength(3);
+        expect(sizeOf(fromFive.eventId)).toBe(5);
+        expect(sizeOf(fromTen.eventId)).toBe(10);
+        expect(sizeOf(paid.eventId)).toBeUndefined();
+
+        expect((await repo.findByCancelToken(five.cancelToken))?.packSize).toBe(5);
+        expect((await repo.findByCancelToken(ten.cancelToken))?.packSize).toBe(10);
+        const found = await repo.findByCancelToken(one.cancelToken);
+        expect(found).not.toBeNull();
+        expect(found!.packSize).toBeUndefined();
+      } finally {
+        await cleanupWithPacks(email);
+      }
     });
   });
 

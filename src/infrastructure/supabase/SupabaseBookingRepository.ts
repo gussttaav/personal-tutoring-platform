@@ -2,7 +2,8 @@
 // Token generation replicates the HMAC logic from booking-tokens.ts without
 // importing that module (it has Redis side-effects at module scope).
 // Separate queries are used instead of PostgREST embedded joins to avoid
-// relying on FK-hint syntax that varies across PostgREST versions.
+// relying on FK-hint syntax that varies across PostgREST versions (the pack size is the
+// exception: one unambiguous FK, no hint — REFACTOR-R5-P3-02).
 // BOOKING-HISTORY-01: listHistoryByUser — keyset-paginated past bookings.
 // REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap (fails closed on error).
 // REFACTOR-R4-P1-02: the reads that authorize a side effect fail CLOSED — listByUser and
@@ -23,6 +24,10 @@
 // (migration 0030), reinstateBooking clears it, and listHistoryByUser reads it along with
 // `credit_restored` (written by cancel_booking) — the row says what happened, so deriveAmount
 // gives a rescheduled original no amount and the history labels stop guessing.
+// REFACTOR-R5-P3-02: findByCancelToken and listByUser embed the pack size through the
+// credit_pack_id FK (`credit_packs(pack_size)`, the one bookings → credit_packs FK, so no
+// hint is needed) — was one credit_packs query per row, whose error was ignored, so a blip
+// read as "no pack". The per-row helper is gone.
 import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
@@ -56,6 +61,12 @@ const FREE_CALL_INDEX = "bookings_one_free_call_per_user";
 function isFreeCallViolation(error: { code?: string; message?: string; details?: string }): boolean {
   return error.code === "23505"
     && `${error.message ?? ""} ${error.details ?? ""}`.includes(FREE_CALL_INDEX);
+}
+
+// REFACTOR-R5-P3-02: the embedded `credit_packs(pack_size)` of a booking row — an object
+// (many-to-one) or null when the booking has no pack.
+function embeddedPackSize(pack: { pack_size: number } | null): number | undefined {
+  return pack?.pack_size ?? undefined;
 }
 
 export class SupabaseBookingRepository implements IBookingRepository {
@@ -102,7 +113,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id, credit_packs(pack_size)")
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .maybeSingle();
@@ -130,7 +141,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
     );
     if (!valid) return null;
 
-    const packSize = await this.getPackSize(booking.credit_pack_id);
+    const packSize = embeddedPackSize(booking.credit_packs);
 
     return {
       eventId,
@@ -271,34 +282,27 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data, error } = await supabase
       .from("bookings")
-      .select("calendar_event_id, session_type, starts_at, ends_at, cancel_token, join_token, credit_pack_id")
+      .select("calendar_event_id, session_type, starts_at, ends_at, cancel_token, join_token, credit_pack_id, credit_packs(pack_size)")
       .eq("user_id", user.id)
       .eq("status", "confirmed")
       .order("starts_at", { ascending: true });
 
     if (error) throw error;
 
-    const results = await Promise.all(
-      (data ?? []).map(async row => {
-        const packSize = await this.getPackSize(row.credit_pack_id);
-        return {
-          cancelToken: row.cancel_token as string,
-          joinToken:   row.join_token as string,
-          record: {
-            eventId:     (row.calendar_event_id ?? "") as string,
-            email:       normalized,
-            name:        "",
-            sessionType: row.session_type as SessionType,
-            startsAt:    row.starts_at as string,
-            endsAt:      row.ends_at as string,
-            used:        false,
-            packSize,
-          } as BookingRecord,
-        };
-      }),
-    );
-
-    return results;
+    return (data ?? []).map(row => ({
+      cancelToken: row.cancel_token as string,
+      joinToken:   row.join_token as string,
+      record: {
+        eventId:     (row.calendar_event_id ?? "") as string,
+        email:       normalized,
+        name:        "",
+        sessionType: row.session_type as SessionType,
+        startsAt:    row.starts_at as string,
+        endsAt:      row.ends_at as string,
+        used:        false,
+        packSize:    embeddedPackSize(row.credit_packs),
+      } as BookingRecord,
+    }));
   }
 
   async listHistoryByUser(
@@ -753,17 +757,5 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .single();
     if (error) throw error;
     return data.id;
-  }
-
-  private async getPackSize(
-    creditPackId: string | null,
-  ): Promise<number | undefined> {
-    if (!creditPackId) return undefined;
-    const { data } = await supabase
-      .from("credit_packs")
-      .select("pack_size")
-      .eq("id", creditPackId)
-      .maybeSingle();
-    return data?.pack_size ?? undefined;
   }
 }
