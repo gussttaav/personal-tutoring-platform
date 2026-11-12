@@ -1,6 +1,6 @@
 # P1-03 — One free call per user, enforced by the database
 
-**Tag:** `REFACTOR-R5-P1-03` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P1-03` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

@@ -3,13 +3,15 @@
 // without HTTP or external I/O. Tests state transitions that unit mocks cannot verify.
 // REFACTOR-R4-P1-01: slots come from fixtures/slots (aligned, the right length); the
 // "server-side slot validation" suite checks that a rejected slot has no side effects.
+// REFACTOR-R5-P1-03: two concurrent free calls for one user both pass the cap's read; the
+// in-memory repo enforces the DB index, so exactly one books and no event is left behind.
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
   setCached:  jest.fn().mockResolvedValue(undefined),
 }));
 
-import { InsufficientCreditsError } from "@/domain/errors";
+import { FreeSessionAlreadyUsedError, InsufficientCreditsError } from "@/domain/errors";
 import { InMemoryCreditsRepository } from "../fixtures/InMemoryCreditsRepository";
 import { InMemoryBookingRepository } from "../fixtures/InMemoryBookingRepository";
 import { FakeCalendarClient }        from "../fixtures/FakeCalendarClient";
@@ -241,5 +243,52 @@ describe("REFACTOR-R4-P1-01: free-call cap", () => {
 
     await expect(service.createBooking(freeInput(30)))
       .rejects.toMatchObject({ code: "FREE_SESSION_ALREADY_USED" });
+  });
+});
+
+describe("REFACTOR-R5-P1-03: free-call cap under concurrency", () => {
+  it("two simultaneous free calls on different slots — exactly one books, no event left behind", async () => {
+    const bookingRepo = new InMemoryBookingRepository();
+    const calendar    = new FakeCalendarClient();
+    const service     = buildTestBookingService({ bookings: bookingRepo, calendar });
+
+    const results = await Promise.allSettled([
+      service.createBooking(freeInput(6)),
+      service.createBooking(freeInput(30)),
+    ]);
+
+    const successes = results.filter(r => r.status === "fulfilled");
+    const failures  = results.filter(r => r.status === "rejected");
+    expect(successes).toHaveLength(1);
+    expect(failures).toHaveLength(1);
+    expect((failures[0] as PromiseRejectedResult).reason).toBeInstanceOf(FreeSessionAlreadyUsedError);
+
+    // Both reached the calendar (the read let both through); the loser's event was deleted.
+    expect(calendar.createdEvents.length - calendar.deletedEventIds.length).toBe(1);
+  });
+
+  it("a free-call reschedule still books (the claim cancels the original first)", async () => {
+    const bookingRepo = new InMemoryBookingRepository();
+    const service     = buildTestBookingService({ bookings: bookingRepo });
+
+    const first = await service.createBooking(freeInput(30));
+    await expect(service.createBooking({ ...freeInput(54), rescheduleToken: first.cancelToken }))
+      .resolves.toMatchObject({ eventId: expect.any(String) });
+    expect(await bookingRepo.hasActiveFreeSession("alice@example.com")).toBe(true);
+  });
+
+  it("a failed free-call reschedule reinstates the original", async () => {
+    const bookingRepo = new InMemoryBookingRepository();
+    const calendar    = new FakeCalendarClient();
+    const service     = buildTestBookingService({ bookings: bookingRepo, calendar });
+
+    const first = await service.createBooking(freeInput(30));
+    calendar.createEventShouldFail = true;
+
+    await expect(service.createBooking({ ...freeInput(54), rescheduleToken: first.cancelToken }))
+      .rejects.toThrow();
+
+    expect(await bookingRepo.findByCancelToken(first.cancelToken)).toMatchObject({ eventId: first.eventId });
+    expect(await bookingRepo.hasActiveFreeSession("alice@example.com")).toBe(true);
   });
 });

@@ -16,6 +16,10 @@
 // restore, originating pack first, in one transaction).
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the booking-payment audit's read. Three
 // queries (bookings, then their users and packs), and every error throws.
+// REFACTOR-R5-P1-03: the one-free-call cap's DB backstop (bookings_one_free_call_per_user,
+// migration 0029). createBooking maps its 23505 to FreeSessionAlreadyUsedError;
+// reinstateBooking answers false on it, like on the exclusion constraint.
+import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
@@ -39,6 +43,16 @@ function signToken(payload: string): string {
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
+
+// REFACTOR-R5-P1-03: the DB backstop of the one-free-call cap. Two concurrent requests
+// both pass hasActiveFreeSession; the second insert lands here. PostgREST names the index
+// in `message` ("duplicate key value violates unique constraint \"…\"").
+const FREE_CALL_INDEX = "bookings_one_free_call_per_user";
+
+function isFreeCallViolation(error: { code?: string; message?: string; details?: string }): boolean {
+  return error.code === "23505"
+    && `${error.message ?? ""} ${error.details ?? ""}`.includes(FREE_CALL_INDEX);
+}
 
 export class SupabaseBookingRepository implements IBookingRepository {
   // The review lookup lives here because this repository already owns the
@@ -71,7 +85,10 @@ export class SupabaseBookingRepository implements IBookingRepository {
       ...(record.creditPackId    ? { credit_pack_id:    record.creditPackId    } : {}),
     });
 
-    if (error) throw error;
+    if (error) {
+      if (isFreeCallViolation(error)) throw new FreeSessionAlreadyUsedError();
+      throw error;
+    }
 
     return { cancelToken, joinToken };
   }
@@ -213,6 +230,8 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .maybeSingle();
 
     if (error?.code === "23P01") return false; // exclusion_violation: the slot was re-taken
+    // REFACTOR-R5-P1-03: the user booked another free call while this one was claimed.
+    if (error && isFreeCallViolation(error)) return false;
     if (error) throw error;
     return data !== null;
   }

@@ -7,7 +7,11 @@
 // earliest-expiring active pack with room, then nothing; non-pack; concurrency.
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — status and time filter, the pack owner
 // and PaymentIntent join, normalized timestamps.
+// REFACTOR-R5-P1-03: bookings_one_free_call_per_user (migration 0029) — a second
+// non-cancelled free call is FreeSessionAlreadyUsedError; cancelling frees it again; a
+// reinstate that would make two answers false.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
+import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
 import { uniqueFutureSlot, purgeTestUsers } from "./slot-helpers";
@@ -242,6 +246,40 @@ describeDb("SupabaseBookingRepository", () => {
 
     await cleanup(original.email);
     await cleanup(taker.email);
+  });
+
+  // REFACTOR-R5-P1-03: the one-free-call index.
+  describe("bookings_one_free_call_per_user", () => {
+    const freeRecord = (email?: string) => {
+      const r = baseRecord();
+      return { ...r, email: email ?? r.email, sessionType: "free15min" as const };
+    };
+
+    it("refuses a second non-cancelled free call; cancelling the first frees it", async () => {
+      const first  = freeRecord();
+      const second = freeRecord(first.email);
+      const { cancelToken } = await repo.createBooking(first);
+
+      await expect(repo.createBooking(second)).rejects.toBeInstanceOf(FreeSessionAlreadyUsedError);
+
+      await repo.consumeCancelToken(cancelToken);
+      await expect(repo.createBooking(second)).resolves.toMatchObject({ cancelToken: expect.any(String) });
+
+      await cleanup(first.email);
+    });
+
+    it("reinstateBooking returns false when the user booked another free call meanwhile", async () => {
+      const original = freeRecord();
+      const { cancelToken } = await repo.createBooking(original);
+      const claimed = await repo.findByCancelToken(cancelToken);
+      await repo.consumeCancelToken(cancelToken);
+      await repo.createBooking(freeRecord(original.email));
+
+      expect(await repo.reinstateBooking(claimed!)).toBe(false);
+      expect((await repo.findByEventId(original.eventId))?.status).toBe("cancelled");
+
+      await cleanup(original.email);
+    });
   });
 
   it("findByCancelToken returns the booking's stripePaymentId", async () => {

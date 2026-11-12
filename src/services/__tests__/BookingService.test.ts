@@ -13,6 +13,8 @@
 // (best-effort, never on a reschedule or a failed booking).
 // REFACTOR-R5-P1-01: a reschedule token only works for its owner — refused for another
 // account before any write, and still usable by the owner afterwards.
+// REFACTOR-R5-P1-03: the insert itself can refuse a second free call (the DB index behind
+// the cap) — the saga undoes the calendar event and the error reaches the caller as is.
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
@@ -1687,5 +1689,21 @@ describe("REFACTOR-R4-P1-01: free-call cap", () => {
 
     await expect(service.createBooking(baseFreeInput())).rejects.toThrow("db down");
     expect(calendar.createEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("REFACTOR-R5-P1-03: free-call cap enforced by the insert", () => {
+  it("a concurrent free call that passed the read but lost the insert is compensated and refused", async () => {
+    const bookings = mockBookings();
+    bookings.createBooking.mockRejectedValue(new FreeSessionAlreadyUsedError());
+    const calendar = mockCalendar();
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toBeInstanceOf(FreeSessionAlreadyUsedError);
+
+    expect(calendar.createEvent).toHaveBeenCalledTimes(1);
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+    expect(bookings.releaseSlotLock).toHaveBeenCalled();
+    expect(bookings.recordPendingTermination).not.toHaveBeenCalled();
   });
 });
