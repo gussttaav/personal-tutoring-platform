@@ -1,6 +1,6 @@
 # P2-02 — Cancel and reschedule tell the truth about credits and payments
 
-**Tag:** `REFACTOR-R5-P2-02` · **Severity:** 🟡 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P2-02` · **Severity:** 🟡 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

@@ -10,6 +10,10 @@
  *
  * Kept free of React and next-intl so it can be unit-tested directly (this repo
  * has no jsdom, so component-level tests are not an option).
+ *
+ * REFACTOR-R5-P2-02: paymentLabel reads what the row says happened (creditRestored,
+ * rescheduled) instead of guessing that every cancelled pack class got its credit back.
+ * Rows cancelled before migration 0030 carry neither and read as before.
  */
 
 import type { BookingHistoryEntry } from "@/domain/types";
@@ -120,6 +124,9 @@ function monthKey(date: Date, timeZone?: string): string {
 /** The i18n keys `paymentLabel` can ask for, under `areaPersonal.history`. */
 export type PaymentLabel =
   | { key: "payCreditRefunded" }
+  | { key: "payCreditMoved" }        // REFACTOR-R5-P2-02
+  | { key: "payCreditNotRestored" }  // REFACTOR-R5-P2-02
+  | { key: "payRescheduled" }        // REFACTOR-R5-P2-02
   | { key: "payCredit" }
   | { key: "payCard"; amount: string }
   | { key: "payFree" };
@@ -128,18 +135,27 @@ export type PaymentLabel =
  * What the student actually paid, as a translation instruction rather than a
  * string — the component owns the dictionary lookup.
  *
- * Order matters. A cancelled pack class had its credit restored
- * (BookingService.cancelByToken), so it reads "crédito devuelto", not "1 crédito".
+ * Order matters. A cancelled pack class reads what happened to its credit: moved to
+ * the new class (a reschedule's original), not returned (no active pack had room), or
+ * returned — which is also the reading for a legacy row with no outcome recorded.
  * `packSize` is the credit-vs-card discriminator: the history endpoint has no
  * explicit payment-method field, but only pack classes carry a pack size.
  */
 export function paymentLabel(entry: BookingHistoryEntry, locale: Locale): PaymentLabel {
   const paidWithCredit = entry.packSize != null;
 
+  // REFACTOR-R5-P2-02: the row now says what happened; NULL / missing = a legacy row → old reading.
   if (paidWithCredit) {
-    return entry.status === "cancelled"
-      ? { key: "payCreditRefunded" }
-      : { key: "payCredit" };
+    if (entry.status !== "cancelled")   return { key: "payCredit" };
+    if (entry.rescheduled)              return { key: "payCreditMoved" };
+    if (entry.creditRestored === false) return { key: "payCreditNotRestored" };
+    return { key: "payCreditRefunded" };
+  }
+
+  // A rescheduled paid class: its charge is on the booking that replaced it. Not the free
+  // call, which was never paid ("Gratis" stays right for it).
+  if (entry.rescheduled && entry.status === "cancelled" && entry.sessionType !== "free15min") {
+    return { key: "payRescheduled" };
   }
 
   if (entry.amountCents != null) {

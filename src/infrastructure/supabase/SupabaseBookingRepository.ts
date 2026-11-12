@@ -19,6 +19,10 @@
 // REFACTOR-R5-P1-03: the one-free-call cap's DB backstop (bookings_one_free_call_per_user,
 // migration 0029). createBooking maps its 23505 to FreeSessionAlreadyUsedError;
 // reinstateBooking answers false on it, like on the exclusion constraint.
+// REFACTOR-R5-P2-02: claimForReschedule marks the reschedule's original `rescheduled`
+// (migration 0030), reinstateBooking clears it, and listHistoryByUser reads it along with
+// `credit_restored` (written by cancel_booking) — the row says what happened, so deriveAmount
+// gives a rescheduled original no amount and the history labels stop guessing.
 import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
@@ -174,13 +178,25 @@ export class SupabaseBookingRepository implements IBookingRepository {
   }
 
   async consumeCancelToken(token: string): Promise<boolean> {
+    return this.flipToCancelled(token, false);
+  }
+
+  // REFACTOR-R5-P2-02: the reschedule claim — the same compare-and-swap, plus the marker.
+  async claimForReschedule(token: string): Promise<boolean> {
+    return this.flipToCancelled(token, true);
+  }
+
+  private async flipToCancelled(token: string, rescheduled: boolean): Promise<boolean> {
     if (!HEX64.test(token)) return false;
 
     // UPDATE + WHERE status='confirmed' is atomic: PostgreSQL row-locks the
     // matching row, so concurrent calls can't both succeed.
     const { data, error } = await supabase
       .from("bookings")
-      .update({ status: "cancelled", cancel_token: null, join_token: null })
+      .update({
+        status: "cancelled", cancel_token: null, join_token: null,
+        ...(rescheduled ? { rescheduled: true } : {}),
+      })
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .select("id")
@@ -223,6 +239,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
         status:       "confirmed",
         cancel_token: signToken(cancelPayload),
         join_token:   signToken(`join:${cancelPayload}`),
+        rescheduled:  false, // REFACTOR-R5-P2-02
       })
       .eq("calendar_event_id", record.eventId)
       .eq("status", "cancelled")
@@ -303,7 +320,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
     //    Fetch one extra row as a has-more probe, then drop it.
     let query = supabase
       .from("bookings")
-      .select("id, calendar_event_id, session_type, starts_at, ends_at, status, note, credit_pack_id, stripe_payment_id")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, status, note, credit_pack_id, stripe_payment_id, credit_restored, rescheduled")
       .eq("user_id", user.id)
       .lt("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: false })
@@ -349,6 +366,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
         pack,
         (row.stripe_payment_id ?? null) as string | null,
         payments,
+        row.rescheduled === true, // REFACTOR-R5-P2-02
       );
 
       return {
@@ -363,6 +381,9 @@ export class SupabaseBookingRepository implements IBookingRepository {
         amountCents,
         currency,
         review:      reviews.get(row.id as string) ?? null,
+        // REFACTOR-R5-P2-02: NULL credit_restored = not a pack cancel, or a legacy row.
+        creditRestored: (row.credit_restored ?? null) as boolean | null,
+        rescheduled:    row.rescheduled === true,
       };
     });
 

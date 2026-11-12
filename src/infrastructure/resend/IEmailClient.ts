@@ -3,7 +3,8 @@
 // COURSE-ANNOUNCE-01: the course announcement (bulk), render + send.
 // REFACTOR-R4-P3-03: sendPaymentAuditReport — the booking-payment audit's findings, to the
 // tutor (NOTIFY_EMAIL, Spanish).
-import type { AnnouncementKind, BlogArea, PaymentAuditReport } from "@/domain/types";
+// REFACTOR-R5-P2-02: CancellationConfirmationParams.sessionType.
+import type { AnnouncementKind, BlogArea, PaymentAuditReport, SessionType } from "@/domain/types";
 
 export interface ConfirmationEmailParams {
   to:           string;
@@ -36,6 +37,8 @@ export interface CancellationConfirmationParams {
   studentName:     string;
   sessionLabel:    string;
   startIso:        string;
+  // REFACTOR-R5-P2-02: picks the money line — pack (restored or not) / paid single / none.
+  sessionType:     SessionType;
   creditsRestored: boolean;
   locale:          'es' | 'en';
 }

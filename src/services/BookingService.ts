@@ -57,6 +57,12 @@
 // to the owner's email, so the original booking's email is compared with the caller's
 // right after the lookup, before the claim: anyone else gets RescheduleNotOwnerError and
 // nothing is consumed, torn down or moved.
+//
+// REFACTOR-R5-P2-02: the reschedule claim goes through claimForReschedule, which marks the
+// original `rescheduled` (the new booking's own compensation keeps consumeCancelToken and
+// does not). The cancellation email gets the session type, so it can tell a pack class whose
+// credit couldn't be restored from a paid single session, and say nothing about money for a
+// free call.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -280,7 +286,8 @@ export class BookingService {
           );
         }
 
-        const consumed = await this.bookings.consumeCancelToken(input.rescheduleToken);
+        // REFACTOR-R5-P2-02: the claim also marks the row `rescheduled` (reinstate clears it).
+        const consumed = await this.bookings.claimForReschedule(input.rescheduleToken);
         if (!consumed) {
           throw new DomainError(
             "Reschedule token has already been consumed.",
@@ -578,6 +585,7 @@ export class BookingService {
         studentName:     record.name,
         sessionLabel:    emailLabel,
         startIso:        record.startsAt,
+        sessionType:     record.sessionType, // REFACTOR-R5-P2-02
         creditsRestored,
         locale:          emailLocale,
       }),

@@ -49,6 +49,8 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   findByCancelToken:          jest.fn().mockResolvedValue(null),
   findByJoinToken:            jest.fn().mockResolvedValue(null),
   consumeCancelToken:         jest.fn().mockResolvedValue(true),
+  // REFACTOR-R5-P2-02: the reschedule claim (marks the original `rescheduled`).
+  claimForReschedule:         jest.fn().mockResolvedValue(true),
   // REFACTOR-R4-P1-04: default = a pack class whose credit went back to its own pack.
   cancelByToken:              jest.fn().mockResolvedValue({
     consumed: true, restored: true, restoredPackId: "pack-1", fromOriginating: true, credits: 5,
@@ -510,7 +512,7 @@ describe("REFACTOR-R5-P1-01: a reschedule token only works for its owner", () =>
     await expect(service.createBooking(input)).rejects.toThrow(RescheduleNotOwnerError);
     await expect(service.createBooking(input)).rejects.toMatchObject({ code: "RESCHEDULE_NOT_OWNER" });
 
-    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+    expect(bookings.claimForReschedule).not.toHaveBeenCalled();
     expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
     expect(calendar.createEvent).not.toHaveBeenCalled();
     expect(bookings.createBooking).not.toHaveBeenCalled();
@@ -528,8 +530,8 @@ describe("REFACTOR-R5-P1-01: a reschedule token only works for its owner", () =>
     await expect(service.createBooking({ ...basePackInput(), email: "ana@x.com", rescheduleToken: "tkn" }))
       .resolves.toBeDefined();
 
-    expect(bookings.consumeCancelToken).toHaveBeenCalledTimes(1);
-    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
+    expect(bookings.claimForReschedule).toHaveBeenCalledTimes(1);
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
   });
 
   it("compares case- and whitespace-insensitively", async () => {
@@ -539,7 +541,7 @@ describe("REFACTOR-R5-P1-01: a reschedule token only works for its owner", () =>
 
     await expect(service.createBooking({ ...basePackInput(), email: "Ana@X.com ", rescheduleToken: "tkn" }))
       .resolves.toBeDefined();
-    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
   });
 });
 
@@ -574,7 +576,7 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
     await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
       .rejects.toThrow("Calendar down");
 
-    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
     expect(bookings.reinstateBooking).toHaveBeenCalledWith(original);
     expectOriginalUntouched(calendar, sessions, bookings);
   });
@@ -609,7 +611,7 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
     // The new booking is cancelled BEFORE the reinstate (compensations run in reverse),
     // so an overlapping original can come back without tripping the exclusion constraint.
     expect(bookings.consumeCancelToken).toHaveBeenCalledWith("ctkn");
-    const cancelNew = bookings.consumeCancelToken.mock.invocationCallOrder[1]!;
+    const cancelNew = bookings.consumeCancelToken.mock.invocationCallOrder[0]!;
     expect(cancelNew).toBeLessThan(bookings.reinstateBooking.mock.invocationCallOrder[0]!);
     expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
     expectOriginalUntouched(calendar, sessions, bookings);
@@ -653,7 +655,7 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
   it("a rejection before the claim has nothing to reinstate", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(oldPack());
-    bookings.consumeCancelToken.mockResolvedValue(false); // a concurrent reschedule won
+    bookings.claimForReschedule.mockResolvedValue(false); // a concurrent reschedule won
     const service  = makeService({ bookings });
 
     await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
@@ -1620,7 +1622,7 @@ describe("REFACTOR-R4-P1-01: createBooking validates before any side effect", ()
       email: "student@test.com", name: "Student", sessionType: "session1h", rescheduleToken: "tkn",
       startIso: s.startIso, endIso: new Date(new Date(s.startIso).getTime() + 5 * 3_600_000).toISOString(),
     })).rejects.toBeInstanceOf(InvalidSlotError);
-    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+    expect(bookings.claimForReschedule).not.toHaveBeenCalled();
   });
 
   it("locks the slot for the session type's length", async () => {
@@ -1706,4 +1708,59 @@ describe("REFACTOR-R5-P1-03: free-call cap enforced by the insert", () => {
     expect(bookings.releaseSlotLock).toHaveBeenCalled();
     expect(bookings.recordPendingTermination).not.toHaveBeenCalled();
   });
+});
+
+// ─── REFACTOR-R5-P2-02: cancel and reschedule tell the truth ─────────────────
+
+describe("REFACTOR-R5-P2-02: the claim marks the original, the email knows the session type", () => {
+  it("a reschedule claims the original with claimForReschedule, never consumeCancelToken", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5), packSize: 10, creditPackId: "pack-orig",
+    }));
+    const service = makeService({ bookings });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+  });
+
+  it("the new booking's own compensation still uses consumeCancelToken (no rescheduled mark)", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5), packSize: 10, creditPackId: "pack-orig",
+    }));
+    const sessions = mockSessions();
+    sessions.createSession.mockRejectedValue(new Error("zoom_sessions insert failed"));
+    const service = makeService({ bookings, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" })).rejects.toThrow();
+
+    expect(bookings.claimForReschedule).toHaveBeenCalledTimes(1);
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
+    expect(bookings.consumeCancelToken).toHaveBeenCalledTimes(1);
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("ctkn");
+  });
+
+  it.each(["pack", "session1h", "session2h", "free15min"] as const)(
+    "the cancellation email is told the session type (%s)",
+    async (sessionType) => {
+      const bookings = mockBookings();
+      bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ sessionType, startsAt: hoursFromNow(5) }));
+      if (sessionType !== "pack") {
+        bookings.cancelByToken.mockResolvedValue({
+          consumed: true, restored: false, restoredPackId: null, fromOriginating: false, credits: 0,
+        });
+      }
+      const email   = mockEmail();
+      const service = makeService({ bookings, email });
+
+      await service.cancelByToken("tkn");
+
+      expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionType, creditsRestored: sessionType === "pack" }),
+      );
+    },
+  );
 });

@@ -336,6 +336,9 @@
       "pillCancelled": "Cancelada",
       "payCredit": "1 crédito del pack",
       "payCreditRefunded": "crédito devuelto",
+      "payCreditMoved": "crédito pasado a la nueva clase",
+      "payCreditNotRestored": "crédito no devuelto",
+      "payRescheduled": "pagada en la clase reprogramada",
       "payCard": "{amount} · tarjeta",
       "payFree": "Gratis",
       "end": "Fin del historial",
@@ -2140,7 +2143,8 @@
       "intro": "Hola {name}, hemos cancelado tu reserva.",
       "labelSession": "Sesión cancelada",
       "creditsRestoredMsg": "✓ Tu crédito ha sido devuelto automáticamente a tu pack. Puedes reservar otra clase desde <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
-      "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles."
+      "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles.",
+      "noCreditRestoredMsg": "No hemos podido devolver el crédito a un pack activo (el pack de esta clase ha caducado). Escríbeme a contacto@gustavoai.dev y lo resolvemos."
     },
     "courseLaunch": {
       "subject": "Ya está publicado: {courseTitle}",

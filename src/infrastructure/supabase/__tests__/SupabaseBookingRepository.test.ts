@@ -10,6 +10,9 @@
 // REFACTOR-R5-P1-03: bookings_one_free_call_per_user (migration 0029) — a second
 // non-cancelled free call is FreeSessionAlreadyUsedError; cancelling frees it again; a
 // reinstate that would make two answers false.
+// REFACTOR-R5-P2-02 (migration 0030): cancel_booking writes credit_restored for pack rows
+// (true / false) and leaves it NULL otherwise; claimForReschedule sets rescheduled,
+// reinstateBooking clears it, and consumeCancelToken leaves it alone.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
@@ -248,6 +251,52 @@ describeDb("SupabaseBookingRepository", () => {
     await cleanup(taker.email);
   });
 
+  // ─── REFACTOR-R5-P2-02: the reschedule marker ─────────────────────────────
+  describe("rescheduled (0030)", () => {
+    async function outcome(eventId: string) {
+      const { data, error } = await supabase
+        .from("bookings").select("status, rescheduled, credit_restored")
+        .eq("calendar_event_id", eventId).single();
+      if (error) throw error;
+      return data;
+    }
+
+    it("claimForReschedule cancels the row and marks it rescheduled; a second claim is false", async () => {
+      const record = baseRecord();
+      const { cancelToken } = await repo.createBooking(record);
+
+      expect(await repo.claimForReschedule(cancelToken)).toBe(true);
+      expect(await repo.claimForReschedule(cancelToken)).toBe(false);
+      expect(await outcome(record.eventId)).toEqual({
+        status: "cancelled", rescheduled: true, credit_restored: null,
+      });
+
+      await cleanup(record.email);
+    });
+
+    it("reinstateBooking resets rescheduled to false", async () => {
+      const record = baseRecord();
+      const { cancelToken } = await repo.createBooking(record);
+      const claimed = await repo.findByCancelToken(cancelToken);
+
+      await repo.claimForReschedule(cancelToken);
+      expect(await repo.reinstateBooking(claimed!)).toBe(true);
+      expect(await outcome(record.eventId)).toMatchObject({ status: "confirmed", rescheduled: false });
+
+      await cleanup(record.email);
+    });
+
+    it("consumeCancelToken (the new booking's compensation) does not mark rescheduled", async () => {
+      const record = baseRecord();
+      const { cancelToken } = await repo.createBooking(record);
+
+      expect(await repo.consumeCancelToken(cancelToken)).toBe(true);
+      expect(await outcome(record.eventId)).toMatchObject({ status: "cancelled", rescheduled: false });
+
+      await cleanup(record.email);
+    });
+  });
+
   // REFACTOR-R5-P1-03: the one-free-call index.
   describe("bookings_one_free_call_per_user", () => {
     const freeRecord = (email?: string) => {
@@ -424,6 +473,59 @@ describeDb("SupabaseBookingRepository", () => {
         expect(await remaining(pack)).toBe(3);
       } finally {
         await cleanupWithPacks(email);
+      }
+    });
+
+    // REFACTOR-R5-P2-02: the outcome is persisted on the row.
+    async function creditRestoredOf(eventId: string): Promise<boolean | null> {
+      const { data, error } = await supabase
+        .from("bookings").select("credit_restored").eq("calendar_event_id", eventId).single();
+      if (error) throw error;
+      return data.credit_restored;
+    }
+
+    it("records credit_restored = true for a pack class whose pack had room", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const pack   = await seedPack(userId, inDays(90), 2);
+
+      try {
+        const record = packBooking(email, pack);
+        const { cancelToken } = await repo.createBooking(record);
+        await repo.cancelByToken(cancelToken);
+        expect(await creditRestoredOf(record.eventId)).toBe(true);
+      } finally {
+        await cleanupWithPacks(email);
+      }
+    });
+
+    it("records credit_restored = false when the originating pack expired and no other has room", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const pack   = await seedPack(userId, inDays(90), 2);
+
+      try {
+        const record = packBooking(email, pack);
+        const { cancelToken } = await repo.createBooking(record);
+        await supabase.from("credit_packs").update({ expires_at: inDays(-1) }).eq("id", pack);
+
+        expect(await repo.cancelByToken(cancelToken)).toMatchObject({ consumed: true, restored: false });
+        expect(await creditRestoredOf(record.eventId)).toBe(false);
+      } finally {
+        await cleanupWithPacks(email);
+      }
+    });
+
+    it("leaves credit_restored NULL for a session1h cancel", async () => {
+      const record = baseRecord(); // session1h
+      await seedUser(record.email);
+
+      try {
+        const { cancelToken } = await repo.createBooking(record);
+        await repo.cancelByToken(cancelToken);
+        expect(await creditRestoredOf(record.eventId)).toBeNull();
+      } finally {
+        await cleanupWithPacks(record.email);
       }
     });
 

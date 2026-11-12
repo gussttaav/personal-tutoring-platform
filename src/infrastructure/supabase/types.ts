@@ -85,10 +85,12 @@ export type Database = {
           cancel_token: string | null
           created_at: string
           credit_pack_id: string | null
+          credit_restored: boolean | null
           ends_at: string
           id: string
           join_token: string | null
           note: string | null
+          rescheduled: boolean
           session_type: string
           starts_at: string
           status: string
@@ -101,10 +103,12 @@ export type Database = {
           cancel_token?: string | null
           created_at?: string
           credit_pack_id?: string | null
+          credit_restored?: boolean | null
           ends_at: string
           id?: string
           join_token?: string | null
           note?: string | null
+          rescheduled?: boolean
           session_type: string
           starts_at: string
           status?: string
@@ -117,10 +121,12 @@ export type Database = {
           cancel_token?: string | null
           created_at?: string
           credit_pack_id?: string | null
+          credit_restored?: boolean | null
           ends_at?: string
           id?: string
           join_token?: string | null
           note?: string | null
+          rescheduled?: boolean
           session_type?: string
           starts_at?: string
           status?: string

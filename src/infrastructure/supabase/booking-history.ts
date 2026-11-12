@@ -5,6 +5,10 @@
 // this class actually cost" derivation — and keeping them free of Supabase means
 // they can be unit-tested without a live database (the repository's own tests are
 // integration tests, gated on NEXT_PUBLIC_SUPABASE_URL, and skip without one).
+//
+// REFACTOR-R5-P2-02: deriveAmount takes the row's `rescheduled` flag. A rescheduled
+// original carries the same stripe_payment_id (or credit_pack_id) as the booking that
+// replaced it, so it gets no amount: the price shows once, on the class that's going ahead.
 
 import { InvalidCursorError } from "@/domain/errors";
 import type { SessionType } from "@/domain/types";
@@ -50,6 +54,7 @@ export function buildCursor(startsAt: string, id: string): string {
  *
  *  - `free15min`            → null (never charged)
  *  - `pack`                 → the pack's charge divided across its credits
+ *  - a rescheduled original → null, whatever its type (its charge moved to the new booking)
  *  - `session1h`/`session2h`→ the booking's own charge
  *
  * Returns nulls rather than throwing when no payment row exists — legacy bookings
@@ -60,10 +65,14 @@ export function deriveAmount(
   pack:                   PackInfo | undefined,
   bookingStripePaymentId: string | null,
   payments:               Map<string, PaymentInfo>,
+  rescheduled:            boolean = false,
 ): { amountCents: number | null; currency: string | null } {
   const none = { amountCents: null, currency: null };
 
   if (sessionType === "free15min") return none;
+  // REFACTOR-R5-P2-02: the payment (or the pack credit) moved to the new booking; don't
+  // count it twice.
+  if (rescheduled) return none;
 
   if (sessionType === "pack") {
     if (!pack || pack.packSize <= 0) return none;
