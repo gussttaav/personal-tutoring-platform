@@ -40,7 +40,8 @@
  * this car are here" — `are` and `keys` plural, `this` and `car` singular — and the
  * sentence repeats no vector (no second `the`), so the unprojected diagonal wins every
  * row STRICTLY, as it does in Spanish. Every function takes the locale last and
- * defaults to `es`, which is why `multi-head` (still Spanish-only) did not change.
+ * defaults to `es`, so the Spanish callers did not change; `multi-head` passes the
+ * locale through since Block 5 lesson 4's translation.
  */
 
 import { scaledDotProductAttention } from "./attention";

@@ -30,6 +30,18 @@
  *
  * The vectors, the rules and their weights are all lesson 2's, and they are mine, set by
  * hand for the course. Pure and DOM-free like every other widget's numbers.
+ *
+ * COURSE-P11-08 — an English default beside the Spanish one, read through lesson 2's
+ * English lexicon (`LEXICONS.en`): "this small mouse which the cats chase sleeps". Same
+ * construction (a relative clause between the subject and its verb), same eight tokens,
+ * and the same properties the lesson quotes. `sleeps` needs a noun AND a singular: the
+ * verb→noun head ties `mouse` with `cats`, the agreement head prefers `this` and `sleeps`
+ * itself (a determiner and the verb agree with a singular as well as the subject does),
+ * and only the single head answers `mouse`. `chase` needs two words that differ in
+ * number: the single head keeps `cats` and nearly drops `mouse`, which the verb→noun head
+ * still reads. Not «that», which the lexicon has as a singular determiner, and no second
+ * `the`/`this`: AUTHORING.en.md §3, a sentence in these widgets repeats no vector.
+ * `multiHeadMaps` takes the locale last and defaults to `es`, like lesson 2's functions.
  */
 
 import { scaledDotProductAttention } from "./attention";
@@ -37,10 +49,12 @@ import { matmul, type Matrix } from "./linalg";
 import {
   D_MODEL,
   PRESETS,
+  PRESETS_EN,
   RULES,
   embedTokens,
   selfAttentionMap,
   tokeniseSentence,
+  type LexiconLocale,
   type TokenisedSentence,
 } from "./self-attention";
 
@@ -67,6 +81,20 @@ const SHORT = [
  * single head keeps «gatos» and nearly drops «ratón», which the verb→noun head still reads.
  */
 export const MH_PRESETS = [...PRESETS, "el ratón pequeño que persiguen los gatos duerme"] as const;
+
+/** COURSE-P11-08 — the English sweep: lesson 2's English presets plus this lesson's own. */
+export const MH_PRESETS_EN = [...PRESETS_EN, "this small mouse which the cats chase sleeps"] as const;
+
+export const MH_PRESETS_BY_LOCALE: Record<LexiconLocale, readonly string[]> = {
+  es: MH_PRESETS,
+  en: MH_PRESETS_EN,
+};
+
+/** The widget's default sentence: the last preset, the one the lesson argues from. */
+export const MH_DEFAULT: Record<LexiconLocale, string> = { es: MH_PRESETS[3], en: MH_PRESETS_EN[3] };
+
+/** The row it opens on: the main verb, «duerme» / `sleeps`, position 8 in both. */
+export const MH_FOCUS_ROW: Record<LexiconLocale, number> = { es: 7, en: 7 };
 
 export interface HeadSpec {
   /** The rule, spelled out — lesson 2's own wording. */
@@ -106,9 +134,9 @@ const EMPTY = { scores: [] as Matrix, weights: [] as Matrix };
  * The kernel wants a V to mix, and this widget draws maps rather than outputs, so it
  * gets X and the output is dropped.
  */
-export function multiHeadMaps(text: string): MultiHeadMap {
-  const { tokens, known, truncated } = tokeniseSentence(text);
-  const x = embedTokens(tokens);
+export function multiHeadMaps(text: string, locale: LexiconLocale = "es"): MultiHeadMap {
+  const { tokens, known, truncated } = tokeniseSentence(text, locale);
+  const x = embedTokens(tokens, locale);
   if (tokens.length === 0) {
     return {
       tokens,
@@ -127,7 +155,7 @@ export function multiHeadMaps(text: string): MultiHeadMap {
     return { ...head, scores, weights };
   });
 
-  const one = selfAttentionMap(text, true);
+  const one = selfAttentionMap(text, true, false, locale);
   return {
     tokens,
     known,
