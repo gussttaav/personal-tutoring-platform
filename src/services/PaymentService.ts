@@ -81,6 +81,13 @@
  * twice for one class. The webhook, legacy-session and admin-retry paths still READ the key,
  * for intents created before this change (drop the read once they are past Stripe's 3-day
  * retry window).
+ *
+ * REFACTOR-R5-P3-03: the 5-min checkout key dedups a double-click, but it also replayed a
+ * PaymentIntent the student had already PAID: a second pack (or the same slot again) bought
+ * inside the window got the first, unconfirmable intent back and the purchase failed.
+ * createPayableIntent reuses a replayed intent only while it is still payable; otherwise it
+ * creates under `<key>:after:<replayed id>`, hopping again if that key replays a paid intent
+ * too, so every purchase gets its own key and each one still dedups a double-click.
  */
 
 import type Stripe from "stripe";
@@ -195,6 +202,16 @@ type SingleSessionOutcome =
 // /api/admin/failed-bookings returns it verbatim; RetryButton reads it).
 export type ResolvedRetryOutcome = "booked" | "already_handled" | "refunded";
 
+// REFACTOR-R5-P3-03: the statuses a PaymentElement can still confirm. Everything else
+// (succeeded, processing, canceled, requires_capture — unreachable with automatic capture)
+// means the replayed intent belongs to a purchase that is already over.
+const PAYABLE_INTENT_STATUSES = new Set<string>([
+  "requires_payment_method", "requires_confirmation", "requires_action",
+]);
+// One hop per purchase already paid inside the same 5-min window; the cap is only there
+// so an unexpected Stripe answer can never loop forever.
+const MAX_CHECKOUT_KEY_HOPS = 10;
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export class PaymentService {
@@ -227,7 +244,7 @@ export class PaymentService {
     // between two clicks (admin edit); an unchanged key with a changed amount is a Stripe error.
     const bucket = Math.floor(Date.now() / 300_000);
     const idempotencyKey = `pack:${email}:${packSize}:${amount}${currency}:${bucket}`;
-    const intent = await this.stripeClient.createPaymentIntent(
+    const intent = await this.createPayableIntent(
       {
         amount,
         currency,
@@ -238,7 +255,7 @@ export class PaymentService {
           checkout_type: "pack",
         },
       },
-      { idempotencyKey },
+      idempotencyKey,
     );
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   }
@@ -268,7 +285,7 @@ export class PaymentService {
       : "";
     const idempotencyKey =
       `single:${email}:${duration}:${startIso}:${amount}${currency}:${bucket}${sourceKey}`;
-    const intent = await this.stripeClient.createPaymentIntent(
+    const intent = await this.createPayableIntent(
       {
         amount,
         currency,
@@ -285,9 +302,26 @@ export class PaymentService {
           ...sourceMetadata,
         },
       },
-      { idempotencyKey },
+      idempotencyKey,
     );
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
+  }
+
+  // REFACTOR-R5-P3-03: an idempotent create that never hands back a paid PaymentIntent.
+  private async createPayableIntent(
+    params:         Stripe.PaymentIntentCreateParams,
+    idempotencyKey: string,
+  ): Promise<Stripe.PaymentIntent> {
+    let key = idempotencyKey;
+    for (let hop = 0; hop <= MAX_CHECKOUT_KEY_HOPS; hop++) {
+      const intent = await this.stripeClient.createPaymentIntent(params, { idempotencyKey: key });
+      if (PAYABLE_INTENT_STATUSES.has(intent.status)) return intent;
+      log("info", "Idempotent checkout replayed a non-payable intent; creating a fresh one", {
+        service: "payment", paymentIntentId: intent.id, status: intent.status,
+      });
+      key = `${idempotencyKey}:after:${intent.id}`;
+    }
+    throw new Error(`Checkout key ${idempotencyKey} replayed ${MAX_CHECKOUT_KEY_HOPS + 1} non-payable intents`);
   }
 
   // ── Session confirmation ───────────────────────────────────────────────────

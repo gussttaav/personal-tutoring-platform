@@ -1,6 +1,6 @@
 # P3-03 — Checkout never hands back a paid PaymentIntent
 
-**Tag:** `REFACTOR-R5-P3-03` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P3-03` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
@@ -57,11 +57,11 @@ gets its own key, and a double-click on any of them still dedups.
 
 ## Acceptance criteria
 
-- [ ] Pack: key replays a `succeeded` intent → a second, distinct, payable intent is returned
-- [ ] Pack: key replays a `requires_payment_method` intent → the same intent (double-click dedup kept)
-- [ ] Single session: same two behaviours
-- [ ] `processing` and `canceled` count as non-payable (fresh intent); `requires_capture` can't occur (automatic capture) and is treated as non-payable
-- [ ] File-top block carries `REFACTOR-R5-P3-03`
+- [x] Pack: key replays a `succeeded` intent → a second, distinct, payable intent is returned
+- [x] Pack: key replays a `requires_payment_method` intent → the same intent (double-click dedup kept)
+- [x] Single session: same two behaviours
+- [x] `processing` and `canceled` count as non-payable (fresh intent); `requires_capture` can't occur (automatic capture) and is treated as non-payable
+- [x] File-top block carries `REFACTOR-R5-P3-03`
 
 ## Test plan
 
