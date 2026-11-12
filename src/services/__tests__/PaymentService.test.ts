@@ -1866,3 +1866,37 @@ describe("REFACTOR-R4-P4-01: checkout keys carry the amount", () => {
     ]);
   });
 });
+
+describe("REFACTOR-R5-P1-04: a paid checkout never carries a reschedule token", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+  });
+
+  it("writes an empty reschedule_token into the PaymentIntent metadata", async () => {
+    const { service, stripe } = makeService();
+    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s" } as Stripe.PaymentIntent);
+
+    await service.createSingleSessionCheckout({
+      email: "student@test.com", name: "Student", duration: "1h",
+      startIso: "2099-12-01T10:00:00.000Z", endIso: "2099-12-01T11:00:00.000Z",
+    });
+
+    const [[intentParams]] = stripe.createPaymentIntent.mock.calls;
+    expect(intentParams.metadata).toHaveProperty("reschedule_token", "");
+  });
+
+  it("the webhook still hands a legacy intent's token to createBooking", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+    const event = fakeSingleEvent();
+    (event.data.object as Stripe.PaymentIntent).metadata.reschedule_token = "tok_legacy";
+
+    await service.processWebhookEvent(event);
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ rescheduleToken: "tok_legacy" }),
+    );
+  });
+});

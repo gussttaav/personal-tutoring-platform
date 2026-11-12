@@ -12,6 +12,8 @@
  *     validator) maps to its 4xx via mapDomainErrorToResponse; anything else stays a 500.
  *   BOOKING-ATTRIBUTION-01: a single-session checkout forwards the first-touch source
  *     (mobile app → `mobile_app`); it rides the PaymentIntent metadata to the webhook.
+ *   REFACTOR-R5-P1-04: a body carrying `rescheduleToken` is a 400 (CheckoutSchema), and
+ *     nothing forwards a token to the PaymentIntent: a reschedule goes through /api/book.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -64,7 +66,6 @@ export async function POST(req: NextRequest) {
           duration:        body.duration,
           startIso:        body.startIso,
           endIso:          body.endIso,
-          rescheduleToken: body.rescheduleToken,
           attribution:     resolveRequestAttribution(isBearerOnlyRequest(req), body.attribution),
         });
     return NextResponse.json(result);

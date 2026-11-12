@@ -74,6 +74,13 @@
  * checkout.session.completed path keys on the session id and may lack a payment_intent,
  * so the gate can't heal it there — a redelivery would reach the slot re-check and refund.
  * That path has had no traffic since the embedded PaymentElement shipped.
+ *
+ * REFACTOR-R5-P1-04: createSingleSessionCheckout no longer takes a reschedule token; the
+ * metadata `reschedule_token` is always "". A reschedule is free (POST /api/book), and a
+ * token on a paid intent either refunded (the original's own event read as busy) or charged
+ * twice for one class. The webhook, legacy-session and admin-retry paths still READ the key,
+ * for intents created before this change (drop the read once they are past Stripe's 3-day
+ * retry window).
  */
 
 import type Stripe from "stripe";
@@ -242,10 +249,9 @@ export class PaymentService {
     duration:        "1h" | "2h";
     startIso:        string;
     endIso:          string;
-    rescheduleToken?: string;
     attribution?:    BookingAttribution;
   }): Promise<CheckoutResult> {
-    const { email, name, duration, startIso, endIso, rescheduleToken, attribution } = params;
+    const { email, name, duration, startIso, endIso, attribution } = params;
     // REFACTOR-R4-P1-01: never take money for a slot the server would not book.
     const sessionType = duration === "1h" ? "session1h" : "session2h";
     await this.bookings.assertSlotBookable({ startIso, endIso, sessionType });
@@ -273,7 +279,9 @@ export class PaymentService {
           session_duration: duration,
           start_iso:        startIso,
           end_iso:          endIso,
-          reschedule_token: rescheduleToken ?? "",
+          // REFACTOR-R5-P1-04: always empty. The key stays so every PaymentIntent has the same
+          // metadata shape; the webhook still reads it for intents created before this change.
+          reschedule_token: "",
           ...sourceMetadata,
         },
       },

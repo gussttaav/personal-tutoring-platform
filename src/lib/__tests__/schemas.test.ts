@@ -7,6 +7,7 @@
 import {
   BlogAnnounceSchema,
   BlogAreasSchema,
+  CheckoutSchema,
   CodeChallengeSchema,
   CourseAttemptSchema,
   CourseManifestSchema,
@@ -543,5 +544,21 @@ describe("BlogAnnounceSchema", () => {
 
   it("refuses a count-only request that also confirms", () => {
     expect(BlogAnnounceSchema.safeParse({ slug: "arboles-b", countOnly: true, confirm: true }).success).toBe(false);
+  });
+});
+
+// REFACTOR-R5-P1-04: a reschedule is never paid for, so a checkout carrying a token is refused.
+describe("CheckoutSchema — single session", () => {
+  const single = {
+    type: "single", duration: "1h",
+    startIso: "2026-10-05T13:30:00.000Z", endIso: "2026-10-05T14:30:00.000Z",
+  };
+
+  it("accepts a single-session checkout without a reschedule token", () => {
+    expect(CheckoutSchema.safeParse(single).success).toBe(true);
+  });
+
+  it.each(["abc", ""])("refuses one with rescheduleToken %p", (token) => {
+    expect(CheckoutSchema.safeParse({ ...single, rescheduleToken: token }).success).toBe(false);
   });
 });

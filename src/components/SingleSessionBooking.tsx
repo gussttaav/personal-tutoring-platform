@@ -42,6 +42,9 @@
  * to the next one only when it can be taken — «Revisión» does what «Continuar» does, «Pago» what
  * «Confirmar y pagar» does. Both lock while a request or a payment confirmation is in flight
  * (`PaymentForm`'s `onProcessingChange`).
+ *
+ * REFACTOR-R5-P1-04: the checkout call sends no `rescheduleToken` (the schema now rejects it);
+ * a reschedule never reaches the payment step (`needsPaymentStep`) and books via /api/book.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -379,7 +382,6 @@ export default function SingleSessionBooking({
         duration,
         startIso:        selected.startIso,
         endIso:          selected.endIso,
-        rescheduleToken: rescheduleToken ?? undefined,
       });
       setClientSecret(clientSecret);
       setPhase("paying");

@@ -1,6 +1,6 @@
 # P1-04 — Checkout refuses a reschedule token
 
-**Tag:** `REFACTOR-R5-P1-04` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R5-P1-04` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
