@@ -2,6 +2,7 @@
 
 Completed plans and refactor cycles, newest first.
 
+- [refactor-2026-11-12](refactor-2026-11-12/SUMMARY.md) — Correctness · Honesty & Architecture · Cleanup (2026-11-10 → 2026-11-12, 11 tasks) — tags `REFACTOR-R5-PN-NN`
 - [chat-assistant-2026-11-09](chat-assistant-2026-11-09/SUMMARY.md) — Chat assistant: actions, voice and calendar (2026-10-31 → 2026-11-09, 11 tasks + P2-03 deferred) — tags `CHAT-AGENT-PN-NN`
 - [refactor-2026-10-01](refactor-2026-10-01/SUMMARY.md) — Correctness · Performance · Payments & Admin · Cleanup (2026-09-28 → 2026-10-01, 13 tasks) — tags `REFACTOR-R4-PN-NN`
 - [redesign-2026-09-19](redesign-2026-09-19/SUMMARY.md) — Home + Mentoría redesign (2026-09-17 → 2026-09-19, 14 tasks) — tags `REDESIGN-PN-NN`

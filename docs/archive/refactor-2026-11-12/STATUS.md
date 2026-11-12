@@ -1,6 +1,7 @@
 # Refactor Cycle 5 — Status
 
 **Started:** 2026-11-10 (audit + plan)
+**Archived:** 2026-11-12 → `docs/archive/refactor-2026-11-12/` (see [Archive reconciliation](#archive-reconciliation-2026-11-12) and [SUMMARY.md](SUMMARY.md))
 **Legend:** ⬜ not started · 🔄 in progress · ⛔ blocked · ✅ done · 🚫 won't do
 
 Update this file when starting, completing, or blocking a task. Record decisions taken on the
@@ -25,7 +26,7 @@ Landing order: P1-02 → P1-01 → P1-04 → P1-03.
 - [x] `markProcessed` rejecting after `createBooking` → booking kept, no dead-letter, `payments` row written, `confirmed` broadcast, webhook 200 (P1-02: service tests, webhook + admin retry)
 - [x] Two concurrent free-call bookings for one user → exactly one succeeds, the other answers 409 `FREE_SESSION_ALREADY_USED`, and no calendar event is left behind (P1-03: in-memory integration + service + DB-gated repository tests)
 - [x] `POST /api/stripe/checkout` with a non-empty `rescheduleToken` → 400, no PaymentIntent created (P1-04: route + schema + service tests; e2e not run)
-- [ ] `0029` applied to the test DB; `pnpm test`, `pnpm lint`, `pnpm build` green; e2e booking/reschedule specs green (ask first: they truncate the test DB) — 0029 on the test DB, `pnpm test` (3251) and `pnpm lint` green on 2026-11-12; `pnpm build` and e2e not run
+- [x] `0029` applied to the test DB; `pnpm test`, `pnpm lint`, `pnpm build` green; e2e booking/reschedule specs green (ask first: they truncate the test DB) — 0029 on the test DB, `pnpm test` (3251) and `pnpm lint` green on 2026-11-12; `pnpm build` and e2e closed at archive time (see Archive reconciliation)
 
 ## Phase 2 — Honesty & Architecture
 
@@ -43,7 +44,7 @@ P2-02 after Phase 1. P2-01 and P2-03 are independent.
 - [x] A pack class cancelled with no credit restored: email shows the "no credit returned" line, history shows «crédito no devuelto» (P2-02: RPC writes `credit_restored`, DB-gated + in-memory + `paymentLabel` table tests; email rendered once with the scratch `tsx` renderer, ES + EN)
 - [x] A rescheduled pack class's original row reads «crédito pasado a la nueva clase»; a rescheduled paid class shows its price once (P2-02: `claimForReschedule` / `reinstateBooking` DB-gated tests, `deriveAmount` unit + DB-gated history test)
 - [x] `src/app/api/internal/session-cleanup/route.ts` imports nothing from `@/infrastructure` (P2-03: sweep in `BookingService.sweepPendingTerminations`; service + route tests)
-- [ ] `0030` applied to the test DB; `pnpm check:messages`, `pnpm test`, `pnpm lint`, `pnpm build` green — 0030 on the test DB, `check:messages`, `pnpm test` (3296) and `pnpm lint` green on 2026-11-12; after P2-03, `pnpm test` (3302) and `pnpm lint` green; `pnpm build` not run
+- [x] `0030` applied to the test DB; `pnpm check:messages`, `pnpm test`, `pnpm lint`, `pnpm build` green — 0030 on the test DB, `check:messages`, `pnpm test` (3296) and `pnpm lint` green on 2026-11-12; after P2-03, `pnpm test` (3302) and `pnpm lint` green; `pnpm build` closed at archive time
 
 ## Phase 3 — Cleanup
 
@@ -60,13 +61,13 @@ P3-04 last.
 - [x] A booking at 00:30 Madrid invalidates the Madrid date's cache entries, not the previous UTC day's (P3-01: `invalidateForWindow` unit tests incl. midnight-crossing + summer time; service tests at all four call sites)
 - [x] `listByUser` for a user with N pack bookings issues 2 queries, not N + 2 (P3-02: mocked-client unit test counts `from()` calls — `[users, bookings]` for three rows; DB-gated 5-pack + 10-pack test)
 - [x] Buying the same pack twice inside 5 minutes yields two PaymentIntents and two charges; a double-click still yields one (P3-03: `FakeStripeClient` service tests — a replayed `succeeded` intent gives a fresh one, a pending replay the same one, a third purchase a third; the optional Stripe test-mode run was not done)
-- [ ] CLAUDE.md describes the post-cycle state; `pnpm test`, `pnpm lint`, `pnpm build` green — CLAUDE.md updated by P3-04 (2026-11-12); `pnpm test` (3325) and `pnpm lint` green after P3-03, `pnpm lint` (0 errors) after P3-04 (comments/docs only); `pnpm build` not run
+- [x] CLAUDE.md describes the post-cycle state; `pnpm test`, `pnpm lint`, `pnpm build` green — CLAUDE.md updated by P3-04 (2026-11-12); `pnpm test` (3325) and `pnpm lint` green after P3-03, `pnpm lint` (0 errors) after P3-04 (comments/docs only); `pnpm build` closed at archive time
 
 ---
 
 ## Decisions
 
-_None recorded yet. Record each answer to PLAN.md's open questions here, with the date._
+_None recorded during the cycle; see [Archive reconciliation](#archive-reconciliation-2026-11-12) for how each default landed._
 
 ## Deviations from plan
 
@@ -94,3 +95,31 @@ _None recorded yet. Record each answer to PLAN.md's open questions here, with th
 - [x] `0030_booking_cancel_outcome.sql` applied to production (2026-11-12, `supabase db push --linked`, only 0030 pending). Verified: both columns (`credit_restored` nullable, `rescheduled` NOT NULL default false), `cancel_booking` carries the new UPDATE, EXECUTE still service_role only, no existing row touched. Additive, so the code running before the deploy is unaffected. Apply it **before** deploying the P2-02 code: `claimForReschedule`, `reinstateBooking` and `listHistoryByUser` read or write the new columns and fail without them.
 - [ ] Mobile app follow-up (P2-02, optional, not a break): **committed on the app's `staging` as eb2b70e (2026-11-12), not published.** The history now reads `creditRestored` / `rescheduled` (`cancelOutcome()` in `lib/history.ts`): a cancelled pack row says «crédito devuelto», «crédito no devuelto» or «crédito pasado a la nueva clase», with the same line as a «Crédito» row on the detail screen, and a rescheduled paid original says «pagada en la clase reprogramada» instead of the generic payment line. Older rows read as before. `tsc`, `npm test` (165) and `npm run lint` green; contract doc updated. JS + docs only (OTA-safe paths). Remaining: Gustavo publishes (`update:*`), **after** 0030 and the P2-02 server code are in production (before that the fields are absent and the app shows the old labels, which is harmless).
 - [x] Mobile app confirmed not to send `rescheduleToken` on checkout (P1-04): checked in its code on 2026-11-12 (`confirm.tsx` sends only type/duration/start/end; reschedules go to `/api/book`). The unused field was dropped from its `types/api.ts` and API contract in the mobile repo.
+
+## Archive reconciliation (2026-11-12)
+
+The build and e2e halves of the three open exit-criteria boxes were run by the archiving pass, on
+`staging` at `e201b97` (all eleven tasks), Node 22:
+
+- **`pnpm build`:** green on the first try, every static page prerendered.
+- **e2e, full suite** (`pnpm test:e2e`, cold dev server after `rm -rf .next/dev`, test DB truncated
+  with Gustavo's OK): 52 passed, 7 failed, 1 skipped (COURSE-BUILD-01, expected while no course is
+  being written), 20.1 min. Every failure was the known cold-compile pattern: `booking-exit` ×2
+  (the session list not visible in 15 s on the first hits), `booking-pack [es]` and
+  `booking-single [es]` (card filled, «Procesando…» stuck under the dev server's «Compiling»),
+  `booking-pack [en]` (payment and booking went through, 4/5 credits left, «Upcoming» still
+  loading at 15 s), and two `courses-navigation` hops past their 30 s timeouts.
+- **e2e, re-run of the four affected spec files** on the warm Turbopack cache (`booking-exit`,
+  `booking-pack`, `booking-single`, `courses-navigation`): 19 passed, 1 skipped (the same
+  COURSE-BUILD-01). This includes both paid checkouts through P3-03's `createPayableIntent`
+  against real Stripe test mode, and the P1-01 / P1-03 booking paths.
+
+Not run, and not exit criteria: the optional Stripe test-mode replay of a succeeded intent
+(P3-03), the manual chat check with a private price (P2-01), the manual `curl` of the
+session-cleanup cron (P2-03). The mobile app's P2-02 follow-up is committed on its `staging`
+(eb2b70e) and still waits for Gustavo's `update:*` publish, after this cycle's server code is in
+production.
+
+**Decisions:** every default in PLAN.md's table shipped as written. P1-03's production abort was
+hit and resolved by Gustavo (see Production steps); P1-04's "the app never sends it" was checked in
+the mobile code. No other answer was recorded.

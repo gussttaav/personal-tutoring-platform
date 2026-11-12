@@ -5,10 +5,10 @@
 external APIs → services and routes. It concentrated on code shipped since cycle 4 was archived
 (2026-10-01): the chat assistant's tools and voice, the classroom join window, booking attribution,
 the admin users area and blog subscriptions. It also re-checked the items cycle 4 deferred.
-**Previous cycles:** see [docs/archive/INDEX.md](../archive/INDEX.md). Nothing here re-proposes work completed in
+**Previous cycles:** see [docs/archive/INDEX.md](../INDEX.md). Nothing here re-proposes work completed in
 `refactor-04-2026`, `refactor-2026-05-31`, `refactor-2026-07-22`, `refactor-2026-10-01`,
 `redesign-2026-09-19` or `chat-assistant-2026-11-09`. Five tasks pick up items that
-[cycle 4's SUMMARY](../archive/refactor-2026-10-01/SUMMARY.md#deferred-to-a-future-refactor) explicitly deferred.
+[cycle 4's SUMMARY](../refactor-2026-10-01/SUMMARY.md#deferred-to-a-future-refactor) explicitly deferred.
 They are marked *(deferred from R4)* below.
 
 **Tag convention:** per CLAUDE.md, from cycle 3 on the tag carries the cycle. This cycle uses
