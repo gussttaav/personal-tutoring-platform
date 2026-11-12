@@ -1564,7 +1564,7 @@
       "positional-encoding": {
         "position": "position in the sentence",
         "coordinate": "coordinate of d_model",
-        "coordinateValue": "{v} — {fn, select, sine {sine} other {cosine}} of pair {pair}",
+        "coordinateValue": "{v} ({fn, select, sine {sine} other {cosine}} of pair {pair})",
         "shift": "shift k",
         "fastestPair": "the fastest pair",
         "slowestPair": "the slowest pair",
@@ -1573,13 +1573,13 @@
         "positionsUnit": "{count} positions",
         "coordinateLine": "Coordinate <c>{col}</c> is the {fn, select, sine {sine} other {cosine}} of pair {pair}, turning at <r>{rate}</r> radians per position: it comes back to the same place every {cycle}.",
         "valueLine": "At position <p>{pos}</p> that coordinate is <a>{here}</a>, and {k} positions further along it is <b>{there}</b>",
-        "valueLineSame": " —the same number: this pair turns so slowly that it does not separate the two positions—.",
+        "valueLineSame": " (the same number: this pair turns so slowly that it does not separate the two positions).",
         "valueLineEnd": ".",
         "dotHeading": "What two positions {k} apart score against each other:",
         "dotFrom": "from {pos} → ",
         "dotElsewhere": "from {pos} → ",
         "dotNote": "Move the position and that number does not move: it is {value} across the whole sentence. Change k and it changes.",
-        "footnote": "{rows} positions and {cols} of the coordinates, which is what fits on a screen; a model from the paper has 512. Nothing here is set by hand: it is the paper's formula and its constant {base}, and the colours give the sign —green positive, blue negative, dark near zero—."
+        "footnote": "{rows} positions and {cols} of the coordinates, which is what fits on a screen; a model from the paper has 512. Nothing here is set by hand: it is the paper's formula and its constant {base}, and the colours give the sign: green positive, blue negative, dark near zero."
       },
       "transformer-architecture": {
         "groupAria": "Transformer architecture; use the arrow keys to walk the boxes of the diagram",

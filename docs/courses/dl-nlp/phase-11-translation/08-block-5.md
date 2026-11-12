@@ -408,8 +408,8 @@ which quotes five of its figures. Block 4's direction decision fixes 5.9's class
 - [x] 5.1 `adios-recurrencia`
 - [x] 5.2 `self-attention`
 - [x] 5.3 `scaled-dot-product`
-- [ ] 5.4 `multi-head`
-- [ ] 5.5 `codificacion-posicional`
+- [x] 5.4 `multi-head`
+- [x] 5.5 `codificacion-posicional`
 - [ ] 5.6 `bloque-transformer`
 - [ ] 5.7 `encoder-decoder-masking`
 - [ ] 5.8 `arquitectura-completa`
@@ -443,9 +443,22 @@ unprojected, the diagonal wins all seven rows. The sentence lives in
 `src/features/courses/widgets/math/self-attention.ts` as `PRESETS_EN[0]`, beside an English lexicon
 (`LEXICONS.en`, 97 words) that 5.2 built, since P11-02 had left the widget in
 `SPANISH_BOUND_CORPORA`. **5.7 reuses it verbatim** (its explorable is this widget with the mask on).
-**5.4 is still open:** `multi-head-view` reads only the Spanish lexicon and stays Spanish-bound, and
-its English sentence (two verbs needing subjects in opposite directions) is that lesson's decision;
-the English lexicon is there to build it on.
+**Decided in 5.4 (COURSE-P11-08): `this small mouse which the cats chase sleeps`** for
+`multi-head-view`, which now reads `LEXICONS.en` per locale (`MH_DEFAULT`, `MH_PRESETS_EN` in
+`math/multi-head.ts`) and is off `SPANISH_BOUND_CORPORA`. Eight tokens, `sleeps` at row 8 as «duerme»,
+no repeated vector. Measured in the rendered widget: on `sleeps`, head 1 ties `mouse`/`cats` at
+**0.30**, head 2 ties `this`/`sleeps` at **0.32** (two singulars, not the Spanish three: English
+adjectives and `the` carry no number), the single head answers `mouse` **0.33**; on `chase`, the
+single head gives `cats` **0.40** and `mouse` **0.07**, head 1 still `mouse` **0.30**. All pinned in
+`math/__tests__/multi-head.test.ts`. The figure got its sibling, `multi-head-bloques.en.svg`.
+**Decided in 5.5 (COURSE-P11-08):** translated against the reworked Spanish (7c5bba6: clock
+analogy, RoPE paragraph, RoFormer as a third `reading` entry), not the version the 5.5 inventory above
+describes. <W>la casa amarilla</W> became <W>the</W> in <W>the yellow house</W>, seen from <W>house</W>,
+**two** positions back (AUTHORING.en.md §3 now says so). $k$ is the **shift**, what $\mathbf{M}_k$
+applies is a **rotation**, the clock hands **turn** (AUTHORING.en.md §6 row); later lessons that
+quote $\mathbf{M}_k$ or RoPE reuse those words. The `positional-encoding` widget's three English em
+dashes were removed in `messages/en.json`, mirroring the Spanish fix. All numbers re-read in Pyodide:
+6.3 / 11.2 / 19.9 / 35 332.9, norm 4, error 1.08e-15, 12.272398, 16 / 15.314 / 12.272.
 
 ## 5.11 and the notebooks
 

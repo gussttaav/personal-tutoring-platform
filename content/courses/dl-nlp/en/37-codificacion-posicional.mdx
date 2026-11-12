@@ -1,0 +1,515 @@
+---
+slug: codificacion-posicional
+title: "Each position, a handful of clocks"
+block: 5
+order: 5
+minutes: 29
+summary: "The attention layer is finished and still reads the sentence as a heap of vectors with no order, so what needs fixing is the input: each row has to arrive knowing where it was. Putting in the position number breaks the scale, dividing it by the sentence length makes the same coordinate mean different things in different texts, and learning one vector per position leaves 7 and 8 with no relation at all. The paper's sines and cosines solve all three: bounded by construction, with one wavelength per pair of coordinates, and with a property proved in three lines. Moving k positions is turning by a fixed angle inside each pair, with the same matrix across the whole sentence, and the dot product between two positions depends only on the distance between them."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-no-el-numero
+    type: single
+    prompt: 'What does writing the position number ($0$, $1$, $2$, …) into one coordinate of $\mathbf{x}_t$ break?'
+    options:
+      - { id: a, text: 'That coordinate has no ceiling. At position $300$ it is worth $300$ while the rest of the vector moves between $-1$ and $1$, so it dominates any dot product it enters and the score stops saying anything about meaning.' }
+      - { id: b, text: 'It is an integer, and the layers of the network need continuous inputs so that the loss can be differentiated with respect to them.' }
+      - { id: c, text: 'Two different positions would end up with the same encoding as soon as the sentence runs past $d_{\text{model}}$ tokens, because there are not enough coordinates for that many.' }
+      - { id: d, text: 'Attention would have to stop being invariant to order, and that would force a change to the layer''s formula as well as to the input.' }
+    answer: a
+    explanation: '(a), and it is a question of scale, not of principle. The encoding enters $\mathbf{x}_t$ added to the embedding, and from there it is projected into queries and keys: a coordinate that grows with the position takes over the whole score as soon as the sentence is long, which is exactly what $\sqrt{d_k}$ took a whole lesson to avoid. (b) is false twice over: an integer is perfectly differentiable as an input, and nobody differentiates the loss with respect to the position, which is not a parameter. (c) confuses one coordinate with all of them: the position number takes up a single coordinate and tells infinitely many positions apart. (d) turns the matter round (what is wanted is precisely for the layer to stop being blind to order), and besides, the layer''s formula doesn''t change: what changes is what it is given.'
+    hint: 'Between which values does the rest of the vector move, and between which does the position number?'
+  - id: q-de-que-depende-m
+    type: single
+    prompt: 'The matrix $\mathbf{M}_k$ satisfies $\text{PE}_{\text{pos}+k} = \mathbf{M}_k\text{PE}_{\text{pos}}$. What does it depend on?'
+    options:
+      - { id: a, text: 'On $k$ and on the frequencies $\omega_i$, that is, on $d_{\text{model}}$. It does not depend on $\text{pos}$, and that is exactly what makes it useful: it is the same matrix at the start of the sentence and at the end.' }
+      - { id: b, text: 'On $k$ and on $\text{pos}$, because the angle to turn through is $\omega_i\left(\text{pos} + k\right)$ and the starting position is in there.' }
+      - { id: c, text: 'On $k$ and on the layer''s parameters, because the shift is applied after projecting with $\mathbf{W}^Q$ and $\mathbf{W}^K$.' }
+      - { id: d, text: 'On nothing: it is learned during training, like one more projection.' }
+    answer: a
+    explanation: '(a). In the block of pair $i$ only $\cos(\omega_i k)$ and $\sin(\omega_i k)$ appear, and $\text{pos}$ has dropped out along the way: the angle-addition formulas leave the starting position inside the vector the matrix is applied to, not inside the matrix. (b) points at the right place (the final angle is $\omega_i(\text{pos}+k)$) and stops one step short: that angle splits in two, and only the half worth $\omega_i k$ ends up in the coefficients. (c) mixes up two things that never touch: $\mathbf{M}_k$ is a property of the encoding and exists before there is any layer at all. (d) confuses this encoding with the alternative the lesson sets aside, the table of one learned vector per position, where there is indeed no $\mathbf{M}_k$ to be had.'
+    hint: 'Write out the $2 \times 2$ block of pair $i$ and look for where $\text{pos}$ has ended up.'
+  - id: q-consigo-misma
+    type: numeric
+    prompt: 'With $d_{\text{model}} = 512$, what is $\text{PE}_{\text{pos}}^{\top}\text{PE}_{\text{pos}}$?'
+    answer: 256
+    tolerance: 0
+    explanation: 'Two hundred and fifty-six, which is $d_{\text{model}}/2$, and it comes out without computing a single sine: each pair contributes $\sin^{2}(\omega_i\text{pos}) + \cos^{2}(\omega_i\text{pos}) = 1$, and there are $512/2 = 256$ pairs. Two things are worth taking away from it. The first is that the number does not depend on $\text{pos}$: every row of $\text{PE}$ has the same length, $\sqrt{256} = 16$, and $256$ is the case $k = 0$ of the general formula $\sum_i \cos(\omega_i k)$. The second is that it is the maximum: for any other $k$ the cosines are no longer all $1$, so no position scores as highly against another as against itself.'
+    hint: 'What do the squared sine and the squared cosine of the same angle add up to, and how many pairs are there?'
+  - id: q-solo-senos
+    type: multi
+    prompt: 'You keep only the sines: one coordinate per pair, without its cosine. Mark what is still true.'
+    options:
+      - { id: a, text: 'The values still lie between $-1$ and $1$, so the scale holds up as well for a sentence of ten tokens as for one of a thousand.' }
+      - { id: b, text: 'Each pair keeps its wavelength, so some coordinates still change between neighbouring positions and others stay almost flat along the text.' }
+      - { id: c, text: 'Shifting by $k$ positions is still the same linear operation across the whole sentence.' }
+      - { id: d, text: 'The dot product between two positions $k$ apart still has the same value wherever they fall.' }
+    answer: [a, b]
+    explanation: '(a) and (b): what survives is everything that depended only on the functions being bounded and on the frequencies forming a ladder. What is lost is the other two, and for the same reason. $\sin(\omega(\text{pos}+k)) = \sin(\omega\text{pos})\cos(\omega k) + \cos(\omega\text{pos})\sin(\omega k)$ needs the cosine of the starting position to be written at all, and without that coordinate there is no way to get the new one from the old with coefficients that do not look at $\text{pos}$, so (c) is false. (d) falls for the same reason: the dot product came out as $\sum_i\cos(\omega_i k)$ because each pair contributed $\sin\sin + \cos\cos$, which is the cosine of the difference; with half the terms you are left with $\sum_i \sin(\omega_i\text{pos})\sin(\omega_i(\text{pos}+k))$, and there $\text{pos}$ stays inside. The sine and the cosine are not two copies of the same thing: they are the two coordinates of a point that turns, and it takes both of them to turn it.'
+    hint: 'Write the angle-addition formula for the sine and look at what it needs on the right-hand side.'
+  - id: q-sumar-o-concatenar
+    type: boolean
+    prompt: 'Adding the encoding to the embedding, instead of concatenating it, guarantees that the model can separate meaning and position again.'
+    answer: false
+    explanation: 'False, and the concession is worth being clear about. Concatenating would keep the two in different coordinates by construction, and it costs those coordinates: setting aside $64$ of the $512$ for position leaves $448$ for everything else. Adding costs none, and in exchange guarantees nothing: the two signals share the same coordinates and nothing forces them into separate directions. What does count in its favour is that $\mathbf{W}^Q$ and $\mathbf{W}^K$ are learned, so one head can keep the directions where position weighs most and another the rest; and that the encoding has a structure of its own (a ladder of frequencies that a trained embedding has no reason to imitate), which makes the separation plausible without making it true.'
+    hint: 'What do separate coordinates give you by construction, and what does the sum promise you?'
+challenges:
+  - id: ch-codificacion-posicional
+    prompt: |
+      Write the lesson's two pieces.
+
+      `positional_encoding(T, d_model)` returns $\text{PE}$ of shape $(T, d_{\text{model}})$,
+      with row $\text{pos}$ carrying $\sin(\text{pos} \cdot \omega_i)$ in the even coordinates
+      and $\cos(\text{pos} \cdot \omega_i)$ in the odd ones, where
+      $\omega_i = 1/10\,000^{2i/d_{\text{model}}}$ and pair $i$ takes up coordinates $2i$
+      and $2i+1$.
+
+      `shift(k, d_model)` returns $\mathbf{M}_k$ of shape
+      $(d_{\text{model}}, d_{\text{model}})$: zeros except for one $2 \times 2$ block per pair,
+      $\begin{bmatrix}\cos(\omega_i k) & \sin(\omega_i k) \\ -\sin(\omega_i k) & \cos(\omega_i k)\end{bmatrix}$,
+      placed in rows and columns $2i$ and $2i+1$.
+
+      The two have to fit together: $\mathbf{M}_k$ applied to row $\text{pos}$ gives row
+      $\text{pos}+k$, across the whole sentence. Assume $d_{\text{model}}$ is even.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def positional_encoding(T, d_model):
+          # your code here
+          pass
+
+
+      def shift(k, d_model):
+          # your code here
+          pass
+    tests:
+      - name: "the shape, the range and the first row"
+        code: |
+          import numpy as np
+          PE = positional_encoding(20, 16)
+          assert PE is not None, 'positional_encoding has to return the matrix, not print it'
+          PE = np.asarray(PE)
+          assert PE.shape == (20, 16), 'one row per position and one column per coordinate'
+          assert np.abs(PE).max() <= 1.0, 'sine and cosine stay inside [-1, 1]: check you are not adding the position'
+          expected = np.array([0.0, 1.0] * 8)
+          assert np.allclose(PE[0], expected), 'at position 0 every angle is 0: sines at 0, cosines at 1'
+      - name: "matches the paper's formula"
+        code: |
+          import numpy as np
+          T, d = 24, 32
+          i = np.arange(d // 2)
+          omega = 1.0 / (10000 ** (2 * i / d))
+          ref = np.zeros((T, d))
+          ref[:, 0::2] = np.sin(np.arange(T)[:, None] * omega)
+          ref[:, 1::2] = np.cos(np.arange(T)[:, None] * omega)
+          PE = positional_encoding(T, d)
+          assert PE is not None, 'positional_encoding has to return the matrix, not print it'
+          PE = np.asarray(PE)
+          assert np.allclose(PE, ref), 'pair i is coordinates 2i and 2i+1, and its frequency is 1/10000**(2i/d_model)'
+          assert np.allclose(PE[:, 0], np.sin(np.arange(T))), 'pair 0 turns 1 radian per position: 10000**0 = 1'
+      - name: "M is block-diagonal and each block is a rotation"
+        code: |
+          import numpy as np
+          d, k = 12, 3
+          M = shift(k, d)
+          assert M is not None, 'shift has to return the matrix M_k, not print it'
+          M = np.asarray(M)
+          assert M.shape == (d, d), 'M_k goes from d_model coordinates to d_model coordinates'
+          i = np.arange(d // 2)
+          omega = 1.0 / (10000 ** (2 * i / d))
+          for j in range(d // 2):
+              c, s = np.cos(k * omega[j]), np.sin(k * omega[j])
+              block = M[2 * j:2 * j + 2, 2 * j:2 * j + 2]
+              assert np.allclose(block, [[c, s], [-s, c]]), 'the block of pair j turns through the angle omega_j * k'
+          outside = M.copy()
+          for j in range(d // 2):
+              outside[2 * j:2 * j + 2, 2 * j:2 * j + 2] = 0.0
+          assert np.allclose(outside, 0.0), 'outside the 2x2 blocks everything is zero: the pairs do not mix'
+      - name: "the same M takes any row k positions further on"
+        code: |
+          import numpy as np
+          T, d, k = 30, 16, 4
+          PE, M = positional_encoding(T + k, d), shift(k, d)
+          assert PE is not None, 'positional_encoding has to return the matrix, not print it'
+          assert M is not None, 'shift has to return the matrix M_k, not print it'
+          PE, M = np.asarray(PE), np.asarray(M)
+          shifted = PE[:T] @ M.T
+          assert np.abs(shifted - PE[k:T + k]).max() < 1e-10, 'M_k applied to row pos has to give row pos+k, and the same M for all of them'
+          assert np.allclose(np.asarray(shift(0, d)), np.eye(d)), 'with k = 0 there is no turn: M_0 is the identity'
+      - name: "the dot product only looks at the distance"
+        code: |
+          import numpy as np
+          T, d, k = 40, 32, 5
+          PE = positional_encoding(T, d)
+          assert PE is not None, 'positional_encoding has to return the matrix, not print it'
+          PE = np.asarray(PE)
+          products = [float(PE[p] @ PE[p + k]) for p in range(T - k)]
+          assert max(products) - min(products) < 1e-10, 'two positions k apart score the same wherever they fall'
+          assert abs(products[0] - 11.777382878638058) < 1e-6, 'that value is the sum of the cosines of omega_i * k'
+          assert abs(float(PE[7] @ PE[7]) - d / 2) < 1e-10, 'a position against itself gives d_model/2: sin^2 + cos^2 per pair'
+    solution: |
+      import numpy as np
+
+
+      def frequencies(d_model):
+          i = np.arange(d_model // 2)
+          return 1.0 / (10000 ** (2 * i / d_model))
+
+
+      def positional_encoding(T, d_model):
+          omega = frequencies(d_model)
+          pos = np.arange(T)[:, None]              # (T, 1) against (d_model/2,) -> (T, d_model/2)
+          PE = np.zeros((T, d_model))
+          PE[:, 0::2] = np.sin(pos * omega)
+          PE[:, 1::2] = np.cos(pos * omega)
+          return PE
+
+
+      def shift(k, d_model):
+          omega = frequencies(d_model)
+          c, s = np.cos(k * omega), np.sin(k * omega)
+          M = np.zeros((d_model, d_model))
+          M[0::2, 0::2] = np.diag(c)
+          M[0::2, 1::2] = np.diag(s)
+          M[1::2, 0::2] = np.diag(-s)
+          M[1::2, 1::2] = np.diag(c)
+          return M
+    explanation: |
+      Both functions come out of the same vector of frequencies, which is why it pays to pull
+      it out on its own: $\omega$ has $d_{\text{model}}/2$ entries, one per pair, and the
+      slices `[:, 0::2]` and `[:, 1::2]` lay those pairs out in alternate columns without a
+      single loop to write. The product `pos * omega`, with `pos` of shape $(T, 1)$, is the
+      whole table of angles in one go.
+
+      The two mistakes the tests check for are the same ones made by reading the paper in a
+      hurry. The first is putting the pairs in blocks (the first $d/2$ coordinates all sines,
+      the last $d/2$ all cosines): each sine has to sit *next to* its cosine for the
+      $2 \times 2$ block of $\mathbf{M}_k$ to reach both. The second is the sign: the matrix
+      that works is the rotation with $-\sin$ in the bottom row, and with the sign flipped you
+      get a perfectly valid $\mathbf{M}_{-k}$ that moves the rows in the opposite direction.
+      Notice also how it is applied: $\mathbf{M}_k$ multiplies a column vector, and the rows of
+      $\text{PE}$ lie on their side, so in NumPy it is `PE @ M.T`.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar and others'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Its §3.5 defines the sines and cosines and states, without proof, that shifting by k positions is a linear function of PE_pos. That proof, the matrix M_k, is the centre of this lesson; the paper only says it exists.'
+  - kind: blog
+    title: 'Transformer Architecture: The Positional Encoding'
+    authors: 'Amirhossein Kazemnejad'
+    year: '2019'
+    venue: 'kazemnejad.com'
+    lang: en
+    url: 'https://kazemnejad.com/blog/transformer_architecture_positional_encoding/'
+    note: 'Does the working the paper skips: it builds the rotation M_k pair by pair and checks that it does not depend on the position, your own derivation. It goes a little further, towards the relative distance between positions.'
+  - kind: paper
+    title: 'RoFormer: Enhanced Transformer with Rotary Position Embedding'
+    authors: 'Su, Lu, Pan and others'
+    year: '2021'
+    venue: 'arXiv:2104.09864'
+    lang: en
+    url: 'https://arxiv.org/abs/2104.09864'
+    note: 'Introduces RoPE, this lesson''s rotation applied to queries and keys instead of added to the input. Its equation 6 is the four-term expansion that, here, keeps position in only one term; section 3 resolves it.'
+---
+
+{/* COURSE-P5-05: Block 5, Lesson 5. COURSE-P11-08: English translation. */}
+
+Multi-head attention completed the layer: $h$ ways of looking at the sentence, concatenated and
+projected back for the price of one. What no number of heads can give $\mathbf{X}$ is a first row
+and a last, so the order has to be written into every row before the layer reads it. What gets
+written there is this lesson's subject.
+
+The easy answers fail in three ways, and they are worth looking at because between them they
+describe what is needed. Writing the position number into a coordinate breaks the scale: at position
+$300$ that coordinate is worth $300$ while the rest of the vector moves between $-1$ and $1$, and it
+flattens any dot product it enters. Dividing it by the sentence length, $\text{pos}/T$, fixes the
+scale and spoils something else: the $0.5$ of an eight-token sentence would point at the fourth
+token and that of a three-hundred-token text at the hundred and fiftieth, and it would be the same
+coordinate with the same value. And learning one vector per position, a table like the embeddings',
+works (some models do it) at the price of the table having exactly as many rows as positions seen
+in training, and of positions $7$ and $8$ being two rows with no relation between them: nothing says
+they are neighbours.
+
+That last flaw is the one that points at what is really wanted. Think of an analogue clock. The
+second hand goes round once a minute: it tells two consecutive seconds apart without trouble, but at
+10:00:05 and at 10:01:05 it is in the same place. The hour hand does the opposite: from one second to
+the next it barely moves, so it doesn't tell neighbours apart, but it never mistakes ten o'clock for
+four. No hand on its own will do, and the three together pick out an instant without ambiguity
+within twelve hours.
+
+The clock has a second property as well, and it is the one this lesson ends up proving: letting ten
+minutes pass turns each hand through a fixed angle, whatever the time. From 3:00 to 3:10 the minute
+hand covers a sixth of a turn, and from 8:40 to 8:50 it covers exactly the same. The paper's encoding
+is a handful of clocks like that, each with a single hand: each pair of coordinates is a hand, each
+turns at its own speed, and the token's position plays the part of the time. The sine and the cosine
+are, literally, where the tip is: measuring the angle from twelve o'clock, the sine says how far the
+tip lies to the right and the cosine how far up.
+
+<Callout type="intuition" title="The idea in one sentence">
+Each position is written as a handful of clocks turning at different speeds, and moving forward $k$
+positions is turning them all through a fixed angle: the same turn at the start of the sentence as
+at the end.
+</Callout>
+
+## A ladder of wavelengths
+
+The paper defines the positional encoding entry by entry, with $\text{pos}$ as the index of the
+position (it is the $t$ of the rest of the course, written with the paper's letter) and with
+$\text{PE}$ for positional encoding:
+
+$$
+\begin{aligned}
+\text{PE}_{(\text{pos},\,2i)} &= \sin\left(\frac{\text{pos}}{10\,000^{2i/d_{\text{model}}}}\right), \\[4pt]
+\text{PE}_{(\text{pos},\,2i+1)} &= \cos\left(\frac{\text{pos}}{10\,000^{2i/d_{\text{model}}}}\right)
+\end{aligned}
+$$
+
+for $i = 0, 1, \dots, d_{\text{model}}/2 - 1$. Read it slowly, because the structure is in the
+indices: the coordinates come *in pairs*, pair $i$ takes up coordinates $2i$ and $2i+1$, and the two
+share the same argument. Let's call that divisor, inverted, $\omega_i$; it is how far the pair turns
+for each position you move forward:
+
+$$
+\omega_i = \frac{1}{10\,000^{2i/d_{\text{model}}}}, \qquad \frac{2\pi}{\omega_i} = 2\pi \cdot 10\,000^{2i/d_{\text{model}}}.
+$$
+
+On the right is the wavelength: how many positions that pair takes to come back to the same place.
+Pair $0$ has $\omega_0 = 1$ and comes back every $2\pi \approx 6.28$ positions; the last one stays
+below $10\,000 \cdot 2\pi$, because its exponent never reaches $1$: the last pair is
+$i = d_{\text{model}}/2 - 1$, so the exponent stops at $1 - 2/d_{\text{model}}$. With
+$d_{\text{model}} = 512$ that is about $60\,600$ positions, which over any text is a band that barely
+moves. Between the two, the wavelengths grow by multiplying by the same factor every time: they form
+a geometric progression, and that is the ladder the section is named after. On the clock, pair $0$ is
+the second hand and the last pair an hour hand that takes far longer to go round.
+
+What comes out of this is a matrix $\text{PE} \in \mathbb{R}^{T \times d_{\text{model}}}$ whose row
+$\text{pos}$ is $\text{PE}_{\text{pos}}^{\top}$, exactly the shape of the $\mathbf{X}$ of the last
+three lessons. And the two are joined by adding:
+
+$$
+\mathbf{x}_t = \mathbf{e}_{w_t} + \text{PE}_t.
+$$
+
+Notice that the first flaw has gone away on its own: sine and cosine live in $[-1, 1]$ whatever
+happens to $T$, so the encoding of position $3$ and that of position $3\,000$ are the same size. So
+has the second, for a different reason: $T$ appears nowhere in the formula, so position $5$ is
+encoded the same way in a short sentence as in a long text.
+
+Adding instead of concatenating is a decision, and what it costs deserves saying out loud.
+Concatenating would keep the coordinates of meaning and those of position apart by construction, and
+it would be paid for in width: setting aside $64$ of the $512$ for position leaves $448$ for
+everything else. Adding costs no width at all, and in exchange the two signals share the same
+coordinates and nothing guarantees they can be pulled apart again. What there is in its favour is
+that $\mathbf{W}^Q$ and $\mathbf{W}^K$ are learned and can keep some directions and not others, and
+that the encoding has a structure very much its own that a trained embedding has no reason to
+imitate. Plausible, then; not proven.
+
+### Shifting by a fixed distance is turning through a fixed angle
+
+Of the three flaws from the start, the third remains, and it was the one that really asked for
+something: that two neighbouring positions look alike, and look alike to the same degree wherever
+they are. Here it can be proved, and it takes three lines.
+
+Fix a shift $k$ and keep a single pair. The angle-addition formulas say what happens to that pair
+when it moves forward $k$ positions:
+
+$$
+\begin{aligned}
+\sin\left(\omega_i(\text{pos}+k)\right) &= \cos(\omega_i k)\,\sin(\omega_i \text{pos}) + \sin(\omega_i k)\,\cos(\omega_i \text{pos}), \\[2pt]
+\cos\left(\omega_i(\text{pos}+k)\right) &= -\sin(\omega_i k)\,\sin(\omega_i \text{pos}) + \cos(\omega_i k)\,\cos(\omega_i \text{pos}).
+\end{aligned}
+$$
+
+I have written the factors in that order on purpose, because that way the two lines are already a
+matrix product. The new coordinates are a combination of the two old ones, and the coefficients of
+that combination are four numbers that look only at $\omega_i$ and $k$:
+
+$$
+\begin{bmatrix}\text{PE}_{(\text{pos}+k,\,2i)} \\[2pt] \text{PE}_{(\text{pos}+k,\,2i+1)}\end{bmatrix}
+=
+\begin{bmatrix}\cos(\omega_i k) & \sin(\omega_i k) \\[2pt] -\sin(\omega_i k) & \cos(\omega_i k)\end{bmatrix}
+\begin{bmatrix}\text{PE}_{(\text{pos},\,2i)} \\[2pt] \text{PE}_{(\text{pos},\,2i+1)}\end{bmatrix}.
+$$
+
+Look at what is *not* in that matrix: $\text{pos}$. The starting position has stayed whole inside the
+vector on the right, and the expansion has left it there. Since each pair is transformed without
+touching the others, stacking the $d_{\text{model}}/2$ matrices, each $2 \times 2$, along the
+diagonal gives a single matrix for the whole vector:
+
+$$
+\text{PE}_{\text{pos}+k} = \mathbf{M}_k\,\text{PE}_{\text{pos}}, \qquad \mathbf{M}_k \in \mathbb{R}^{d_{\text{model}} \times d_{\text{model}}}.
+$$
+
+That is the property, and it is worth reading carefully what it says: there is *one* matrix for each
+distance $k$, and that matrix holds for every position in the sentence. Moving forward three
+positions is applying $\mathbf{M}_3$, whether you start from the first word or from the last. Each
+block is also a rotation (its two columns are perpendicular and of length $1$), so $\mathbf{M}_k$
+stretches and shrinks nothing: every row of $\text{PE}$ has the same length.
+
+### What a score can see of all this
+
+$\mathbf{M}_k$ is a property of the encoding, and the attention layer doesn't look at matrices: it
+looks at dot products. It is worth working one out and seeing what is left. With
+$\cos(A - B) = \cos A \cos B + \sin A \sin B$ applied pair by pair:
+
+$$
+\text{PE}_{\text{pos}}^{\top}\text{PE}_{\text{pos}+k} = \sum_{i} \left[\sin(\omega_i \text{pos})\sin\left(\omega_i(\text{pos}+k)\right) + \cos(\omega_i \text{pos})\cos\left(\omega_i(\text{pos}+k)\right)\right] = \sum_{i=0}^{d_{\text{model}}/2 - 1} \cos(\omega_i k).
+$$
+
+$\text{pos}$ has disappeared again. Two positions $k$ apart score the same number against each other
+at the start of the sentence and in the middle, and that number depends only on the distance. With
+$k = 0$ each term is $1$ and the sum gives $d_{\text{model}}/2$, which is the maximum: no position
+scores as highly against another as against itself.
+
+The explorable below brings the two properties together. The map is $\text{PE}$ for $24$ positions
+and $32$ coordinates: each row is a position, each column a coordinate, and the colour gives the
+value (green positive, blue negative, dark near zero). Read from left to right it is the ladder: the
+first columns, the fast hands, change colour every few rows, and the last ones are a smooth band
+because in $24$ positions they barely move. The three sliders choose a position (the row with a solid
+border), a coordinate (the outlined column, whose speed and value the panel gives) and a distance $k$
+(the row with a dashed border, $k$ positions further down). The last line of the panel is that dot
+product, computed from your position and from two others: move the position with $k$ fixed and check
+that the three numbers agree and don't change.
+
+<Explorable
+  id="positional-encoding"
+  caption="The columns on the left change every few positions and those on the right are almost flat: it is the same function at ever slower speeds. The number at the bottom changes only when you change k."
+/>
+
+And now the concession, because this is less than it looks. The layer doesn't compute
+$\text{PE}_{\text{pos}}^{\top}\text{PE}_{\text{pos}+k}$: it computes $\mathbf{q}^{\top}\mathbf{k}$
+with both projected from $\mathbf{e}_{w_t} + \text{PE}_t$, so expanding the product gives four terms
+and only one of them is purely positional. What the sinusoidal form guarantees is that this term
+exists and depends only on the distance; a head that wants to learn to look for the determiner two
+positions back (<W>the</W> in <W>the yellow house</W>, seen from <W>house</W>) has the material to
+build it, because the signal for two positions back is the same throughout the sentence. Whether it
+builds it is for training to decide, not this lesson.
+
+That concession is the weakness RoPE (*rotary position embedding*) corrects, the encoding Su and
+colleagues proposed in 2021 and that most large language models use today. The idea comes straight
+out of $\mathbf{M}_k$: instead of adding the position to the input, where it mixes with the meaning
+before the projections, it is applied as a rotation after them. The query at position $m$ is rotated,
+pair by pair and with the same frequencies $\omega_i$, through an angle $\omega_i m$, and the key at
+position $n$ through an angle $\omega_i n$. Rotating both vectors by the same amount doesn't change
+their dot product, so when they are compared only the difference counts, $\omega_i(n - m)$: the
+whole score, and not one of its four terms, depends on the positions only through the distance
+between them.
+
+## The ladder in NumPy
+
+The first cell builds $\text{PE}$ with two slices and not a single loop, and then prints the
+wavelength of a few pairs.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model = 24, 32
+i = np.arange(d_model // 2)                  # one pair of coordinates for each i
+omega = 1.0 / (10000 ** (2 * i / d_model))
+pos = np.arange(T)[:, None]                  # (T, 1) against (d_model/2,)
+
+PE = np.zeros((T, d_model))
+PE[:, 0::2] = np.sin(pos * omega)            # even coordinates: the sine
+PE[:, 1::2] = np.cos(pos * omega)            # odd ones: the cosine of that same angle
+
+print("PE", PE.shape, " values between", round(PE.min(), 3), "and", round(PE.max(), 3))
+print("row 0 :", np.round(PE[0, :8], 3))
+print("row 1 :", np.round(PE[1, :8], 3))
+print("row 12:", np.round(PE[12, :8], 3))
+
+print("\\n  pair   omega          wavelength")
+for j in (0, 1, 2, 8, 15):
+    print(f"{j:6d}   {omega[j]:.6f}   {2 * np.pi / omega[j]:14.1f}")
+
+norm = np.linalg.norm(PE, axis=1)
+print("\\nevery row has the same length:",
+      bool(np.allclose(norm, np.sqrt(d_model / 2))), "->", round(float(norm[0]), 3))
+`} />
+
+Row $0$ comes out as $(0, 1, 0, 1, \dots)$, which is what it has to be: at position $0$ every angle
+is $0$ and every hand points at twelve. The first three rows of the table are the ladder: pair $0$
+comes back every $6.3$ positions, pair $1$ every $11.2$, pair $2$ every $19.9$ (each $1.78$ times the
+one before), and pair $15$, the last for this $d_{\text{model}}$, every $35\,332.9$, which over $24$
+positions is a straight line. The last line is the observation from the end of the previous section,
+checked: every row has length $4$, which is $\sqrt{32/2}$.
+
+The second cell checks the two properties, which is where the content of the lesson lies.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model, k = 24, 32, 3
+i = np.arange(d_model // 2)
+omega = 1.0 / (10000 ** (2 * i / d_model))
+pos = np.arange(T + k)[:, None]
+PE = np.zeros((T + k, d_model))
+PE[:, 0::2] = np.sin(pos * omega)
+PE[:, 1::2] = np.cos(pos * omega)
+
+c, s = np.cos(k * omega), np.sin(k * omega)  # the four numbers of each block
+M = np.zeros((d_model, d_model))
+M[0::2, 0::2] = np.diag(c)
+M[0::2, 1::2] = np.diag(s)
+M[1::2, 0::2] = np.diag(-s)
+M[1::2, 1::2] = np.diag(c)
+
+shifted = PE[:T] @ M.T                       # M times a column == the row times M transposed
+print("a single M moves all", T, "rows at once; maximum error",
+      f"{np.abs(shifted - PE[k:T + k]).max():.2e}")
+
+print("\\nPE_pos . PE_pos+k, from four different positions:")
+print(" ", np.round([float(PE[p] @ PE[p + k]) for p in (0, 5, 11, 19)], 6))
+print("  sum of cosines:", round(float(np.cos(k * omega).sum()), 6))
+
+print("\\nand how it changes with the distance:")
+for kk in (0, 1, 2, 3, 8, 20):
+    print(f"  k = {kk:2d} -> {np.cos(kk * omega).sum():7.3f}")
+`} />
+
+The first line is $\mathbf{M}_k$ applied to all twenty-four positions at once, and the maximum error
+stays of the order of $10^{-15}$: the same matrix, every row. The second is the other property (four
+starting positions and four times $12.272398$, which is exactly the sum of cosines), and the table at
+the end says how that quantity behaves as the two positions move apart: $16$ against itself,
+$15.314$ one step away, $12.272$ at three, and after that it falls slowly and not monotonically,
+because it is a sum of cosines and not a distance.
+
+## Test your intuition
+
+Five questions: why the position number won't do, what $\mathbf{M}_k$ depends on, how a position
+scores against itself, what breaks when the cosines go, and what adding instead of concatenating
+guarantees.
+
+<Quiz id="q-por-que-no-el-numero" />
+
+<Quiz id="q-de-que-depende-m" />
+
+<Quiz id="q-consigo-misma" />
+
+<Quiz id="q-solo-senos" />
+
+<Quiz id="q-sumar-o-concatenar" />
+
+<CodeChallenge id="ch-codificacion-posicional" />
+
+---
+
+With this the input is complete: each row of $\mathbf{X}$ carries what the token says and where it
+was, and the attention layer of the last four lessons can now be computed in full on top of it. What
+remains is to stack it, which is what turns a layer into a model. And there something turns up that
+this lesson leaves pending without saying so: the position is added *once*, at the very bottom, and
+it has to arrive alive at the last layer.
+
+What the paper draws around the attention (a connection that skips the whole layer, a normalisation
+and a position-wise perceptron) looks like plumbing around the important part, and it isn't. It is
+what decides whether a signal put in at the bottom is still there at the top, and Block 3 has already
+measured why, by following a gradient along a chain of products and watching it vanish. That is
+<Leccion slug="bloque-transformer">the next lesson, on the full block with residual connections and
+layer norm</Leccion>.

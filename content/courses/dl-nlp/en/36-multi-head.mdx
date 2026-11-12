@@ -1,0 +1,535 @@
+---
+slug: multi-head
+title: "Several heads, several share-outs"
+block: 5
+order: 4
+minutes: 35
+summary: "A position has one row, and only one way of looking at the sentence fits in it. Multi-head attention runs h attentions in parallel over the same X, each with its three projections and its own map, and joins them by concatenating and projecting. What changes is not the scores but the moment the softmax comes in: each group of coordinates gets its own, instead of all of them being added before a single one, which is what lets one rule cover another without leaving a trace. And from splitting the width, d_k = d_model/h, it follows that the cost does not depend on h: the same parameters and the same multiplications with one head as with sixteen."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-donde-se-normaliza
+    type: single
+    prompt: 'One layer has a single head with $d_k = 4$. Another has four heads with $d_k = 1$, and their columns are exactly the four of the first. What is the difference between them?'
+    options:
+      - { id: a, text: 'The moment the softmax comes in. The four terms of the dot product are the same; the first layer adds them up and applies one softmax to the total, the second gives each its own softmax. That is why in the first a large term can cover another, and the share-out that comes out can no longer be broken down.' }
+      - { id: b, text: 'The scores, which are four numbers per pair instead of one, so the second layer compares at a higher resolution than the first.' }
+      - { id: c, text: 'Nothing observable: the softmax is increasing and preserves the order of the scores, so the two share out the same way and only the way the calculation is written changes.' }
+      - { id: d, text: 'The number of parameters: four heads carry four times as many matrices as one.' }
+    answer: a
+    explanation: '(a). The two layers hold the same numbers in the same columns, and all that changes is that the sum over $m$ happens inside the softmax in one case and outside it in the other. (b) mistakes having four scores for comparing better: each of those four looks at a single coordinate, which is less resolution per comparison, not more. (c) puts a true fact in the wrong place: the softmax preserves order *within the row it receives*, and the question here is which row it receives, a sum of four terms or four separate rows. (d) is false for the same reason (a) is true: they are the same matrices, split differently.'
+    hint: 'Where does the sum over the coordinates fall in each of the two, before or after the softmax?'
+  - id: q-cuenta-parametros
+    type: numeric
+    prompt: 'A multi-head layer with $d_{\text{model}} = 512$ and $h = 8$ splits the width the way the paper does ($d_k = d_v = d_{\text{model}}/h$). How many parameters does it have in total, counting $\mathbf{W}^O$?'
+    answer: 1048576
+    tolerance: 0
+    unit: parameters
+    explanation: 'One million, forty-eight thousand, five hundred and seventy-six, which is $4 \cdot 512^{2}$. The three projections of the eight heads give $8 \cdot 512 \cdot 3 \cdot 64 = 786\,432$, and $\mathbf{W}^O$, at $512 \times 512$, adds $262\,144$. What is worth keeping is not the figure but the fact that $h$ does not appear in it: one head with $d_k = 512$ gives exactly the same, and so do sixteen with $d_k = 32$. The gross mistake is to forget $\mathbf{W}^O$ and stop at $786\,432$: it is the one matrix in the layer that belongs to no head, and it is a quarter of the total.'
+    hint: 'Count one head first, multiply by eight, and remember the matrix that joins the outputs.'
+  - id: q-de-donde-sale-dk
+    type: single
+    prompt: 'Why $d_k = d_{\text{model}}/h$, and not some other width?'
+    options:
+      - { id: a, text: 'Because with that split the total number of parameters stays at $4d_{\text{model}}^{2}$ and the multiplications at $2T^{2}d_{\text{model}}$, with $h$ appearing in neither: so $h$ is chosen for what it does and not for what it costs.' }
+      - { id: b, text: 'Because the concatenation has to come out with width $d_{\text{model}}$ for the layer to return what it received, and that forces $h \cdot d_v = d_{\text{model}}$.' }
+      - { id: c, text: 'Because the divisor $\sqrt{d_k}$ from the previous lesson only compensates properly when $d_k$ divides $d_{\text{model}}$; with other widths the scores are left out of balance.' }
+      - { id: d, text: 'Because each head has to keep a different part of the coordinates of $\mathbf{x}_t$, and there are $d_{\text{model}}$ of them to split among $h$.' }
+    answer: a
+    explanation: '(a), and it comes from a cancellation, not a preference: $h$ heads of $d_{\text{model}}/h$ cost $h \cdot d_{\text{model}} \cdot 3d_{\text{model}}/h$, where the $h$ above and the $h$ below cancel out. (b) is the good trap, because it describes something real (the output goes back to $d_{\text{model}}$) but credits it to the concatenation: what restores the width is $\mathbf{W}^O$, which is $\left(h \cdot d_v\right) \times d_{\text{model}}$ and works with any $d_v$. (c) invents a condition: the count behind the divisor only uses how many coordinates are added up, and knows nothing about $d_{\text{model}}$. (d) describes a layer that is not this one: the $h$ heads all read *the same* $\mathbf{X}$, whole; what is split is the output width of each projection, not the input coordinates.'
+    hint: 'Write the total with $d_k = d_v = d_{\text{model}}/h$ and look for where the $h$ goes.'
+  - id: q-cabezas-iguales
+    type: multi
+    prompt: 'You initialise the $h$ heads with exactly the same $\mathbf{W}^Q_i$, $\mathbf{W}^K_i$ and $\mathbf{W}^V_i$. Mark what is true of the layer at that moment.'
+    options:
+      - { id: a, text: 'The $h$ maps come out identical cell by cell, because each is computed from the same $\mathbf{X}$ with the same parameters.' }
+      - { id: b, text: 'The concatenation is the same block repeated $h$ times, so $\mathbf{W}^O$ can only combine copies of a single vector per position.' }
+      - { id: c, text: 'Whatever separates one head from another has to come from the initialisation: no term of the loss assigns a role to any of them.' }
+      - { id: d, text: 'The rows stop summing to $1$, because $h$ maps sharing out one unit each share out $h$ in total.' }
+    answer: [a, b, c]
+    explanation: 'The first three. (a) and (b) are the same observation in two places: a head is a function of $\mathbf{X}$ and its three matrices, so with the matrices equal the outputs are equal, and concatenating copies adds no information that $\mathbf{W}^O$ could use. (c) is the concession worth taking away: heads specialise because they start out different, not because anything asks them to. And if the $h$ blocks of rows of $\mathbf{W}^O$ also started out equal, the symmetry would hold step after step and the $h$ heads would be one for ever. (d) confuses two things: each map normalises its own rows and they still sum to $1$; what you have is $h$ share-outs, not one share-out of $h$.'
+    hint: 'A head is a function of $\mathbf{X}$ and its three matrices. What does that function return when given the same arguments?'
+  - id: q-promediar
+    type: boolean
+    prompt: 'Averaging the $h$ heads is something that the concatenation followed by $\mathbf{W}^O$ cannot do.'
+    answer: false
+    explanation: 'False, and that is why the heads are concatenated. With $d_v = d_{\text{model}}$, the $\mathbf{W}^O$ that stacks $h$ copies of $\frac{1}{h}\mathbf{I}$ gives exactly $\frac{1}{h}\sum_i \text{head}_i$: the average is one particular value of a matrix the layer learns, so concatenating can do that and everything else besides. What is gained, then, is not power but not having to fix it in advance. And one more thing is gained, which is the practical reason: when averaging, the $h$ heads write into the same coordinates and two of them can cancel out before anything reads them; concatenated, each has its own, and $\mathbf{W}^O$ decides afterwards which one to listen to.'
+    hint: 'What does $\mathbf{W}^O$ have to be for the product to come out as the average?'
+challenges:
+  - id: ch-multi-head
+    prompt: |
+      Write `multi_head(X, Wq, Wk, Wv, Wo, h)`. It takes the sentence already turned into vectors,
+      `X` of shape $(T, d_{\text{model}})$; the three projections *whole*, `Wq`, `Wk` and `Wv`,
+      all three of shape $(d_{\text{model}}, d_{\text{model}})$; the output projection `Wo`, of
+      the same shape; and the number of heads `h`, which divides $d_{\text{model}}$.
+
+      Head $i$ takes the $i$-th block of columns of each projection (from `i * d_k` to
+      `(i + 1) * d_k`, with `d_k = d_v = d_model // h`) and does the usual attention with it,
+      dividing by $\sqrt{d_k}$.
+
+      Return *the pair* `(output, A)`, in that order: the output, of shape
+      $(T, d_{\text{model}})$, with the $h$ heads concatenated by columns and projected by `Wo`;
+      and the $h$ maps stacked, `A` of shape $(h, T, T)$, with every row of every map summing
+      to $1$.
+
+      Don't write into the arrays you receive.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def multi_head(X, Wq, Wk, Wv, Wo, h):
+          # your code here
+          pass
+    tests:
+      - name: "the two shapes, and one distribution per row of each head"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          X = rng.normal(size=(7, 12))
+          Wq, Wk, Wv, Wo = (rng.normal(size=(12, 12)) for _ in range(4))
+          res = multi_head(X, Wq, Wk, Wv, Wo, 4)
+          assert res is not None, 'multi_head has to return (output, A), not print them'
+          assert isinstance(res, tuple) and len(res) == 2, 'return the pair (output, A), in that order'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert Y.shape == (7, 12), 'the output goes back to d_model: W^O undoes the concatenation'
+          assert A.shape == (4, 7, 7), 'one square map per head, stacked: (h, T, T)'
+          assert np.allclose(A.sum(axis=2), 1.0), 'every row of every head shares out its own unit'
+      - name: "it matches building the heads one by one"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          X = rng.normal(size=(7, 12))
+          Wq, Wk, Wv, Wo = (rng.normal(size=(12, 12)) for _ in range(4))
+          h, d_k = 4, 3
+          pieces, maps = [], []
+          for i in range(h):
+              c = slice(i * d_k, (i + 1) * d_k)
+              Q, K, V = X @ Wq[:, c], X @ Wk[:, c], X @ Wv[:, c]
+              E = Q @ K.T / np.sqrt(d_k)
+              Z = np.exp(E - E.max(axis=1, keepdims=True))
+              M = Z / Z.sum(axis=1, keepdims=True)
+              maps.append(M)
+              pieces.append(M @ V)
+          expected = np.concatenate(pieces, axis=1) @ Wo
+          Y, A = (np.asarray(v) for v in multi_head(X, Wq, Wk, Wv, Wo, h))
+          assert np.allclose(A, np.stack(maps)), 'map i comes from block of columns i, and divides by the root of d_k, not of d_model'
+          assert np.allclose(Y, expected), 'concatenate in the order of the heads and project afterwards, not before'
+      - name: "with h = 1 it is the single-head layer"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(8)
+          X = rng.normal(size=(5, 6))
+          Wq, Wk, Wv, Wo = (rng.normal(size=(6, 6)) for _ in range(4))
+          E = (X @ Wq) @ (X @ Wk).T / np.sqrt(6)
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          M = Z / Z.sum(axis=1, keepdims=True)
+          Y, A = (np.asarray(v) for v in multi_head(X, Wq, Wk, Wv, Wo, 1))
+          assert A.shape == (1, 5, 5), 'with one head there is still a heads axis'
+          assert np.allclose(A[0], M), 'with h = 1 the block of columns is the whole matrix and d_k = d_model'
+          assert np.allclose(Y, M @ (X @ Wv) @ Wo)
+      - name: "equal heads, equal maps"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(12)
+          X = rng.normal(size=(6, 8))
+          block = rng.normal(size=(8, 2))
+          equal = np.tile(block, (1, 4))
+          Wo = rng.normal(size=(8, 8))
+          A = np.asarray(multi_head(X, equal, equal, equal, Wo, 4)[1])
+          assert np.abs(A - A[0]).max() < 1e-12, 'with the four blocks of columns equal, the four maps have to come out equal'
+      - name: "it does not overflow and does not write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(19)
+          X = rng.normal(size=(5, 8)) * 40
+          Wq, Wk, Wv, Wo = (rng.normal(size=(8, 8)) * 5 for _ in range(4))
+          copies = [X.copy(), Wq.copy(), Wk.copy(), Wv.copy(), Wo.copy()]
+          Y, A = (np.asarray(v) for v in multi_head(X, Wq, Wk, Wv, Wo, 2))
+          assert np.isfinite(Y).all() and np.isfinite(A).all(), 'it overflows: subtract the maximum of each row before exponentiating'
+          assert all(np.array_equal(u, v) for u, v in zip([X, Wq, Wk, Wv, Wo], copies)), "don't write into the arrays you receive"
+    solution: |
+      import numpy as np
+
+
+      def multi_head(X, Wq, Wk, Wv, Wo, h):
+          T, d_model = X.shape
+          d_k = d_model // h
+          # (T, d_model) -> (h, T, d_k): block of columns i becomes head i.
+          Q = (X @ Wq).reshape(T, h, d_k).transpose(1, 0, 2)
+          K = (X @ Wk).reshape(T, h, d_k).transpose(1, 0, 2)
+          V = (X @ Wv).reshape(T, h, d_k).transpose(1, 0, 2)
+          E = Q @ K.transpose(0, 2, 1) / np.sqrt(d_k)      # (h, T, T)
+          Z = np.exp(E - E.max(axis=2, keepdims=True))
+          A = Z / Z.sum(axis=2, keepdims=True)
+          concat = (A @ V).transpose(1, 0, 2).reshape(T, d_model)
+          return concat @ Wo, A
+    explanation: |
+      The three projections are computed *whole* and split afterwards: `X @ Wq` already holds the
+      $h$ queries side by side, and `reshape(T, h, d_k)` does not move a single number, it only
+      changes how the columns are read. That is why a real layer does not have $3h$ matrices but
+      three: block of columns $i$ *is* $\mathbf{W}^Q_i$.
+
+      From there on everything is the attention of <Leccion slug="self-attention">the lesson on self-attention</Leccion>,
+      with one more axis in front: `Q @ K.transpose(0, 2, 1)` does the $h$ products at once, and
+      the softmax's `keepdims` now looks at axis $2$, the axis of each map's columns. Two mistakes
+      are equally easy to make here, and they are the ones the tests check: dividing by
+      $\sqrt{d_{\text{model}}}$ instead of $\sqrt{d_k}$ (the divisor counts the coordinates being
+      added up, and now $d_k$ of them are), and projecting each head by `Wo` before concatenating
+      them, which gives the sum of $h$ projections and not the projection of the concatenation.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar and others'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Its §3.2.2 gives the concatenation with W^O and the split d_k = d_model/h, and says in one line that h heads cost as much as one. You work that cancellation out; reading heads as adding before or after the softmax is not in the paper.'
+---
+
+{/* COURSE-P5-05: Block 5, Lesson 4. COURSE-P11-08: English translation. */}
+
+The lesson on the square root in the scores left two things unsettled. A self-attention layer gives
+each position one row of $\mathbf{A}$, produced by a single pair of matrices, $\mathbf{W}^Q$ and
+$\mathbf{W}^K$; and $d_k$ sits in the formula with nothing to say how large it ought to be.
+
+Take the sentence <W>this small mouse which the cats chase sleeps</W>. <W>sleeps</W> has to find
+its subject, <W>mouse</W>, and one criterion isn't enough for that: asking whether a word is a noun
+doesn't tell <W>mouse</W> from <W>cats</W>, and asking whether it agrees in number doesn't tell a
+subject from a determiner. I'll call each criterion of that kind a rule. The row of <W>sleeps</W>
+needs both at once, and it combines them by adding: each rule gives each word a score, the dot
+product adds them up and the softmax shares out the row according to the total. The word that meets
+both rules wins.
+
+Adding works when what you're after is one word that meets every rule, but a position may need two
+different words. <W>chase</W> needs whoever does the chasing, <W>cats</W>, and whoever is chased,
+<W>mouse</W>, and its row is a single share-out that sums to $1$: either it keeps one and loses the
+other, or it mixes the two. What's more, once the rules have been added they can't be pulled apart
+again: the row doesn't say how much each one put in.
+
+The alternative is not to add before sharing out: split the rules into groups, each with its own
+attention and its own softmax, and join what each one reads afterwards. Each of those attentions is
+a head, and the layer that runs several of them is multi-head attention, the subject of this lesson.
+
+The explorable below puts one rule in each head: head 1 is the noun rule, head 2 is agreement, and
+heads 3 and 4 relate nouns to their determiners and modifiers. The fifth button doesn't join the
+heads: it is the layer from <Leccion slug="self-attention">the lesson on self-attention</Leccion>,
+with the four rules added before a single softmax. The row is the position asking and the column the
+position answering, and the panel underneath sums up, for the row you pick, which word each map
+pulls towards.
+
+<Explorable
+  id="multi-head-view"
+  caption='Four rules, one per head, and a fifth button with all four added in a single row. No head finds the subject of "sleeps" on its own, and the sum, which does find it, all but erases "mouse" in the row of "chase".'
+/>
+
+In the row of <W>sleeps</W>, head 1 ties <W>mouse</W> with <W>cats</W>, at $0.30$ each; head 2
+prefers two singular words that are not the subject, <W>this</W> and the verb itself, at $0.32$
+each; and heads 3 and 4 have nothing to say. No head finds the subject, because the two rules it
+needed have gone to different heads. The sum does find it, <W>mouse</W> with $0.33$, but at the
+cost of erasing what each rule said.
+
+In the row of <W>chase</W>, which needed both <W>cats</W> and <W>mouse</W>, the sum keeps
+<W>cats</W>, with $0.40$, and leaves <W>mouse</W> $0.07$. Head 1, by contrast, still gives it
+$0.30$, so with several heads what is read from <W>mouse</W> gets through to the output. That head
+doesn't know <W>mouse</W> is the one being chased, because none of these rules looks for objects
+and it reads both nouns alike; what the separation prevents is the sum erasing it. That is why a real
+head carries several rules: the ones that have to hold at the same time are added inside it, and the
+ones that look for different things can end up in different heads.
+
+<Callout type="intuition" title="The idea in one sentence">
+Multi-head doesn't change the scores: it changes the moment the softmax comes in. A single head adds
+up every rule and applies one softmax to the total; several heads apply a softmax to each group of
+rules separately and combine what each one has read afterwards.
+</Callout>
+
+## The same matrix read by several attentions at once
+
+Each head is the layer from <Leccion slug="self-attention">the lesson on self-attention</Leccion>,
+whole: its three projections over the same matrix and its own map. All that has to be added is the
+subscript there was no need to write there, because there was only one.
+
+$$
+\text{head}_i = \text{Attention}\left(\mathbf{X}\mathbf{W}^Q_i,\; \mathbf{X}\mathbf{W}^K_i,\; \mathbf{X}\mathbf{W}^V_i\right) \in \mathbb{R}^{T \times d_v},
+$$
+
+with $i = 1, \dots, h$, and with $\mathbf{W}^Q_i, \mathbf{W}^K_i \in \mathbb{R}^{d_{\text{model}} \times
+d_k}$ and $\mathbf{W}^V_i \in \mathbb{R}^{d_{\text{model}} \times d_v}$. Notice that the $h$ heads
+read *the same* $\mathbf{X}$: they don't divide the sentence among themselves, and they don't divide
+the input coordinates either. Each one draws its own queries, keys and values from it, and with them
+its own map $\mathbf{A}_i \in \mathbb{R}^{T \times T}$, square and with rows summing to $1$ like
+the one in <Leccion slug="self-attention">the lesson on self-attention</Leccion>.
+
+That leaves $h$ outputs of $T \times d_v$, and the layer has to return one. Lay them side by side and
+project the result:
+
+$$
+\text{MultiHead}(\mathbf{X}) = \text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O \in \mathbb{R}^{T \times d_{\text{model}}},
+$$
+
+where $\text{Concat}$ joins the $h$ matrices *by columns* (one row per position, with the $h$ pieces
+one after another inside it, so the result is $T \times \left(h \cdot d_v\right)$), and
+$\mathbf{W}^O \in \mathbb{R}^{\left(h \cdot d_v\right) \times d_{\text{model}}}$ is the only matrix
+in the layer that belongs to no head. Its superscript is a label for its role, like those of the
+other three.
+
+<Figure
+  src="/courses/dl-nlp/multi-head-bloques.en.svg"
+  alt="Three rows. At the top, X, T by 512, multiplied by W Q, a 512 by 512 square split into 8 blocks of 64 columns with the third one highlighted, gives Q, T by 512, split into the same 8 blocks: the 8 queries side by side. The same with W K and W V. In the middle, head 3 takes block 3 of Q, of K and of V, each T by 64: Q 3 and K 3 give, through the softmax of Q 3 times K 3 transposed over the root of 64, the map A 3, a T by T square; A 3 times V 3 gives head 3, T by 64. At the bottom, the 8 outputs side by side, with head 3 in block 3, form a T by 512 matrix which, multiplied by W O, 512 by 512 and split into 8 blocks of rows, gives the output, T by 512."
+  caption="The h query matrices of the equation are not stored separately: they are the blocks of columns of a single 512 × 512 matrix, and the same goes for the key and value ones. Each head does the usual attention with its block, and its output takes that same place in the concatenation, which is what the output projection receives."
+/>
+
+### Adding before or after the softmax
+
+A head's score was already a sum, and the previous lesson wrote it that way precisely so that it
+could count it:
+
+$$
+e_{ij} = \frac{1}{\sqrt{d_k}}\sum_{m=1}^{d_k} q_{im}k_{jm},
+$$
+
+where $q_{im}$ is coordinate $m$ of the query of position $i$. Each coordinate of the comparison
+contributes its term, and the softmax doesn't see the terms: it sees the total.
+
+The rules from the start of the lesson are those terms. The explorable above is built that way on
+purpose: each rule is one column of $\mathbf{W}^Q$ and one of $\mathbf{W}^K$, so coordinate $m$ of
+the query times coordinate $m$ of the key is the score of rule $m$. The single-head layer carries all
+four columns, so it compares in $d_k = 4$ coordinates (and divides their sum by $\sqrt{4} = 2$); each
+of the four heads keeps a single column, $d_k = 1$, and its score is one rule and nothing more. In a
+trained layer nobody writes the rules, and a coordinate need not mean anything on its own, but the
+count is the same: terms that reach the softmax already added up.
+
+Adding inside the softmax has a consequence that fits in one line. If $a_j$ and $b_j$ are what two
+rules give word $j$, the exponential turns their sum into a product:
+
+$$
+\text{softmax}_j\left(a_j + b_j\right) = \frac{e^{a_j}\,e^{b_j}}{\sum_{l} e^{a_l}\,e^{b_l}}.
+$$
+
+Sharing out the total means multiplying, word by word, what each rule would give on its own, and
+rescaling so that the row sums to $1$ again. A product behaves like a logical AND: if one rule scores
+a word low, that word is left with no weight, whatever the other rule says. That is what happens to
+<W>mouse</W> in the row of <W>chase</W>: agreement sinks it, because the number doesn't match, and
+the noun rule, which scored it the same as <W>cats</W>, can't pull it back up. And since what comes
+out is a single share-out, there's no longer any telling how much each rule put in.
+
+That is the whole operation. Splitting the coordinates into $h$ groups and giving each group its own
+softmax is *sharing out before combining*, instead of combining before sharing out. Out come $h$
+share-outs instead of one, each with its own denominator, and they reach the output without touching
+each other; what combines them is $\mathbf{W}^O$, a matrix that is learnt and that receives them
+already shared out. The sum the single-head layer did inside the softmax could not be undone; done
+outside, how much each part weighs can still be decided.
+
+### Splitting the width among the heads
+
+That leaves choosing $d_k$, the other open question, and it is chosen by counting. Each head costs
+what the whole layer from <Leccion slug="self-attention">the lesson on self-attention</Leccion>
+cost:
+
+$$
+d_{\text{model}}\left(2d_k + d_v\right) \quad \text{parameters},
+$$
+
+there are $h$ of them, and on top of them sits $\mathbf{W}^O$ with $h \cdot d_v \cdot d_{\text{model}}$
+more, so the complete layer asks for
+
+$$
+h \cdot d_{\text{model}}\left(2d_k + d_v\right) + h \cdot d_v \cdot d_{\text{model}}.
+$$
+
+Now assign $d_k$ and $d_v$ the value $d_{\text{model}}/h$ (splitting the model's width among the
+heads, instead of giving each one the whole width) and watch what happens:
+
+$$
+h \cdot d_{\text{model}} \cdot \frac{3d_{\text{model}}}{h} + h \cdot \frac{d_{\text{model}}}{h} \cdot d_{\text{model}} = 3d_{\text{model}}^{2} + d_{\text{model}}^{2} = 4d_{\text{model}}^{2}.
+$$
+
+The $h$ has gone. Eight heads cost the same as one, and sixteen the same as eight. The
+multiplications behave the same way: <Leccion slug="adios-recurrencia">the lesson that said goodbye to recurrence</Leccion>
+measured one attention at $T^{2}\left(d_k + d_v\right)$, and $h$ of them give
+$h \cdot T^{2}\left(d_k + d_v\right) = 2T^{2}d_{\text{model}}$, which is exactly what a single one of
+width $d_{\text{model}}$ cost.
+
+So $h$ is chosen for what it does and not for what it costs, and $d_k$ stops being a loose number:
+it is what is left of $d_{\text{model}}$ once it is split. With the paper's figures,
+$d_{\text{model}} = 512$ and $h = 8$, that gives $d_k = 64$ (the number the previous lesson did its
+sums with), and the whole layer weighs $4 \cdot 512^{2} = 1\,048\,576$ parameters.
+
+What it costs is worth saying, because it isn't nothing. Each head compares in $64$ coordinates
+where a single one would have compared in $512$: these are not eight comparisons as fine as the one
+there was, they are eight comparisons eight times narrower. That is the deal, and it is a bet about
+language (that several coarse relations are worth more than one very fine one), not a theorem.
+
+### Concatenate and project, don't average
+
+The obvious alternative to concatenating is averaging: give each head the whole width,
+$d_v = d_{\text{model}}$, and return $\frac{1}{h}\sum_i \text{head}_i$, which already has the right
+shape without any further matrix. It is worth seeing it for what it is, a special case of what the
+layer already does. Take the $\mathbf{W}^O$ that stacks $h$ copies of $\frac{1}{h}\mathbf{I}$:
+
+$$
+\mathbf{W}^O = \frac{1}{h}\begin{bmatrix}\mathbf{I} \\ \vdots \\ \mathbf{I}\end{bmatrix}
+\quad\Longrightarrow\quad
+\text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O = \frac{1}{h}\sum_{i=1}^{h}\text{head}_i.
+$$
+
+Concatenating with a $\mathbf{W}^O$ that is learnt can therefore give the average and anything else;
+averaging is fixing one point of all that in advance. And fixing it has a very specific cost: it
+forces the $h$ heads to write into the same $d_{\text{model}}$ coordinates, so two heads that have
+found two different things can cancel each other out before anything reads them. Concatenated, each
+has its $d_v$ coordinates to itself, and $\mathbf{W}^O$ decides afterwards, one output coordinate at
+a time, which of them to listen to.
+
+That matrix does a second thing as well, which is only pointed out here: it brings the output back to
+$d_{\text{model}}$, the width it came in with. That is what lets these layers be stacked one on top
+of another, and what really needs it is <Leccion slug="bloque-transformer">a lesson further on, on
+the full block with residual connections and layer norm</Leccion>.
+
+It remains to say what this construction does *not* do, because the drawings in papers invite you to
+believe the opposite. Nothing in the loss assigns a role to a head: there is no term saying that head
+2 takes care of agreement. Heads do different things because they start out different, and for no
+other reason. The names in the explorable above are mine, from writing the four rules by hand; in a
+trained layer nobody names them, and you have to go looking for them afterwards, when they are there
+at all. Not even the order means anything: swap two heads together with their two blocks of rows of
+$\mathbf{W}^O$ and not one number of the output changes, so head 3 does not name the same thing in two
+trainings of the same model.
+
+## The heads in NumPy
+
+The first cell builds the layer with the projections whole and one block of columns per head, which
+is how it is really implemented, and then runs the parameter count through five values of $h$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model, h = 6, 8, 4
+d_k = d_v = d_model // h
+rng = np.random.default_rng(5)
+X = rng.normal(size=(T, d_model))
+Wq = rng.normal(size=(d_model, d_model)) * 0.6   # the h heads, side by side
+Wk = rng.normal(size=(d_model, d_model)) * 0.6
+Wv = rng.normal(size=(d_model, d_model)) * 0.6
+Wo = rng.normal(size=(h * d_v, d_model)) * 0.6
+
+
+def softmax_rows(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+outputs, maps = [], []
+for i in range(h):
+    cols = slice(i * d_k, (i + 1) * d_k)          # head i's block of columns
+    Q, K, V = X @ Wq[:, cols], X @ Wk[:, cols], X @ Wv[:, cols]
+    A = softmax_rows(Q @ K.T / np.sqrt(d_k))
+    outputs.append(A @ V)
+    maps.append(A)
+
+concat = np.concatenate(outputs, axis=1)          # (T, h*d_v): the h pieces in a row
+Y = concat @ Wo
+
+print("one head", outputs[0].shape, " concatenated", concat.shape, " output", Y.shape)
+print("maps:", len(maps), "of", maps[0].shape,
+      " every row sums to 1:", bool(np.allclose([A.sum(axis=1) for A in maps], 1.0)))
+print("row 0 of head 1:", np.round(maps[0][0], 3))
+print("row 0 of head 2:", np.round(maps[1][0], 3))
+
+d = 512                                           # the paper's width
+print("\\n  h    d_k    projections      W^O        total")
+for hh in (1, 2, 4, 8, 16):
+    dk = d // hh
+    proj, out = hh * d * 3 * dk, hh * dk * d
+    print(f"{hh:3d}   {dk:4d}   {proj:12d}   {out:8d}   {proj + out:9d}")
+`} />
+
+The two rows printed are the same position seen by two heads, and they look nothing alike: the first
+puts $0.591$ on position $0$, its own, and the second $0.531$ on position $4$, to which the first
+gave $0.005$. Here the heads have come apart only because `rng` gave them different matrices, which
+is also all that separates them in a trained model. And the table is the cancellation above, checked: the three
+columns on the right don't budge from $786\,432$, $262\,144$ and $1\,048\,576$ while $d_k$ falls
+from $512$ to $32$.
+
+The second cell measures the concession. If the $h$ heads start out with the same parameters, there
+are not $h$ heads.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model, h = 6, 8, 4
+d_k = d_model // h
+rng = np.random.default_rng(5)
+X = rng.normal(size=(T, d_model))
+
+
+def softmax_rows(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+def head_maps(Wq, Wk):
+    out = []
+    for i in range(h):
+        cols = slice(i * d_k, (i + 1) * d_k)
+        Q, K = X @ Wq[:, cols], X @ Wk[:, cols]
+        out.append(softmax_rows(Q @ K.T / np.sqrt(d_k)))
+    return np.stack(out)                          # (h, T, T)
+
+
+block = rng.normal(size=(d_model, d_k)) * 0.6
+equal = np.tile(block, (1, h))                    # the h heads, with the same matrices
+A = head_maps(equal, equal)
+print("h identical maps:", bool(np.allclose(A, A[0])))
+print("largest difference from head 1:", np.abs(A - A[0]).max(axis=(1, 2)))
+
+different = equal.copy()
+different[:, :d_k] += 0.4 * rng.normal(size=(d_model, d_k))   # head 1 only
+B = head_maps(different, different)
+print("after moving head 1 only:")
+print("  how far each one is from head 1:", np.round(np.abs(B - B[0]).max(axis=(1, 2)), 3))
+print("  and how far each one is from head 2:", np.round(np.abs(B - B[1]).max(axis=(1, 2)), 3))
+print("row 0, head 1:", np.round(B[0][0], 3))
+print("row 0, head 2:", np.round(B[1][0], 3))
+`} />
+
+With the four blocks of columns equal, the four distances come out exactly $0$: the four maps are
+the same, and $\mathbf{W}^O$ receives four copies of one vector per position. Moving a single block
+separates that head from the other three ($0.458$ in the last three cells of the first line) and
+leaves those three identical to one another, which is what the three zeros of the second line say.
+The asymmetry doesn't appear by itself: it comes in through the initialisation, and in training it
+lasts because the heads and the blocks of rows of $\mathbf{W}^O$ all start out different. With
+everything symmetric, the gradient would have no way of breaking it.
+
+## Test your intuition
+
+Five questions: what separates $h$ heads from one, how much the layer weighs, where $d_k$ comes
+from, what the layer computes with equal heads, and whether averaging was an option.
+
+<Quiz id="q-donde-se-normaliza" />
+
+<Quiz id="q-cuenta-parametros" />
+
+<Quiz id="q-de-donde-sale-dk" />
+
+<Quiz id="q-cabezas-iguales" />
+
+<Quiz id="q-promediar" />
+
+<CodeChallenge id="ch-multi-head" />
+
+---
+
+With $h$ heads, a position has $h$ answers where it had one, and $\mathbf{W}^O$ decides what to do
+with them. But look at where the $h$ come from: the same $\mathbf{X}$, the same formula, and
+neither $i$ nor $j$ appears anywhere in $e_{ij}$. Multiplying the heads multiplies *what* is
+compared, and adds not a single coordinate of *where*. None of the $h$ can learn to look for the
+noun on its left, however many of them you put in, because in what the layer reads there is no left.
+
+The missing piece isn't in the layer: it is in the input, and it amounts to two different positions
+reaching $\mathbf{X}$ as two different rows even when the token is the same. That is
+<Leccion slug="codificacion-posicional">the next lesson, on positional encoding</Leccion>, and what
+makes it interesting is not that it is needed (that has been known since the first lesson of this
+block) but the particular form the paper chooses: sines and cosines with which the distance between
+two positions can be written as a linear operation on what has been added. That property is shown,
+not asserted, and it takes up the whole lesson.

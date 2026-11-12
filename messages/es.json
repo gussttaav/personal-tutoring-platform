@@ -1564,7 +1564,7 @@
       "positional-encoding": {
         "position": "posición en la frase",
         "coordinate": "coordenada de d_model",
-        "coordinateValue": "{v} — {fn, select, sine {seno} other {coseno}} del par {pair}",
+        "coordinateValue": "{v} ({fn, select, sine {seno} other {coseno}} del par {pair})",
         "shift": "desplazamiento k",
         "fastestPair": "el par más rápido",
         "slowestPair": "el par más lento",
@@ -1573,13 +1573,13 @@
         "positionsUnit": "{count} posiciones",
         "coordinateLine": "La coordenada <c>{col}</c> es el {fn, select, sine {seno} other {coseno}} del par {pair}, que gira a <r>{rate}</r> radianes por posición: vuelve al mismo sitio cada {cycle}.",
         "valueLine": "En la posición <p>{pos}</p> esa coordenada vale <a>{here}</a>, y {k} posiciones más allá vale <b>{there}</b>",
-        "valueLineSame": " —el mismo número: esta pareja gira tan despacio que no separa las dos posiciones—.",
+        "valueLineSame": " (el mismo número: esta pareja gira tan despacio que no separa las dos posiciones).",
         "valueLineEnd": ".",
         "dotHeading": "Lo que dos posiciones a distancia {k} puntúan entre ellas:",
         "dotFrom": "desde {pos} → ",
         "dotElsewhere": "desde {pos} → ",
         "dotNote": "Mueve la posición y ese número no se mueve: vale {value} en toda la frase. Cambia k y cambia.",
-        "footnote": "{rows} posiciones y {cols} de las coordenadas, que es lo que cabe en una pantalla; un modelo del artículo tiene 512. Aquí no hay nada puesto a mano: son la fórmula del artículo y su constante {base}, y los colores dicen el signo —verde positivo, azul negativo, oscuro cerca de cero—."
+        "footnote": "{rows} posiciones y {cols} de las coordenadas, que es lo que cabe en una pantalla; un modelo del artículo tiene 512. Aquí no hay nada puesto a mano: son la fórmula del artículo y su constante {base}, y los colores dicen el signo: verde positivo, azul negativo, oscuro cerca de cero."
       },
       "transformer-architecture": {
         "groupAria": "Arquitectura del Transformer; usa las flechas para recorrer las cajas del diagrama",

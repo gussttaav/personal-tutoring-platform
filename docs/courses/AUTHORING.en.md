@@ -62,6 +62,14 @@ mark arrives with two jobs (the failure this section exists to prevent) and the 
 > **The loose sense is the only use of quotation marks in a lesson.** Quoted speech and quoted
 > output belong in `<W>` or in a code fence.
 
+**A criterion, question or rule the Spanish sets in `«…»` becomes indirect speech.** Spanish puts
+a question a word "asks" in angle quotes («¿es un sustantivo?», «el sustantivo que tengo a la
+izquierda»), and under the rule above English cannot carry it across in quotation marks: it is
+neither the loose sense nor a string the lesson talks about. Recast it so it needs no mark: "asking
+whether a word is a noun doesn't tell <W>mouse</W> from <W>cats</W>", "learn to look for the noun on
+its left", "no term saying that head 2 takes care of agreement". *Settled by
+`en/36-multi-head.mdx` (COURSE-P11-08).*
+
 A cited line or aphorism is a third thing, and it takes neither mark: not quotation marks (loose sense
 only) and not italics (which already has its two jobs above, and in Spanish only marked the line as
 foreign, a reason that disappears in English). Set it plain, introduced by a colon and closed by a
@@ -175,12 +183,29 @@ on the first copy instead. So the sentence is chosen so that no two of its token
 keeping a singular determiner between the subject and the verb as «del» does in Spanish. Check it in
 the rendered widget, unprojected, row by row. *Settled by `en/34-self-attention.mdx` (COURSE-P11-08).*
 
+**An agreement example that needs a determiner to carry number uses one that has it.** English
+marks number on far fewer words than Spanish: in the widgets' lexicon `the`, `my` and every adjective
+carry number 0, and only `this`/`that`/`a`/`each` (singular) and `these`/`those` (plural) carry one.
+So where the Spanish argument leans on a determiner agreeing with a verb as well as the subject does
+(«¿concuerda conmigo en número?» does not tell a subject from a determiner), the English sentence
+uses `this` or `these` there, never `the`: <W>this small mouse which the cats chase sleeps</W>, where
+the agreement head on <W>sleeps</W> ties <W>this</W> with the verb itself. Not `that` as a relative
+pronoun either, which the lexicon reads as a singular determiner; write `which`. *Settled by
+`en/36-multi-head.mdx` (COURSE-P11-08).*
+
 **A reversal example is two real words with no repeated letter.** A lesson that reverses a string
 names letters by position (the output's first letter is the input's last), and a repeated letter
 makes that ambiguous: in <W>stressed</W> / <W>desserts</W> the <W>s</W> the decoder must "remember
 from the start" also sits in the middle. So the pair is chosen, not translated, and its letters are
 all distinct: <W>live</W> / <W>evil</W> for the Spanish <W>roma</W> / <W>amor</W>. *Settled by
 `en/26-seq2seq.mdx` (COURSE-P11-06).*
+
+**An example that rests on the distance between two words re-counts it in English.** English word
+order moves the determiner, the adjective and the noun relative to each other (<W>la casa
+amarilla</W> → <W>the yellow house</W>), so a Spanish "one position back" can become two. Count the
+positions in the English phrase and write the number it gives, rather than carrying the Spanish one
+across: <W>the</W> in <W>the yellow house</W>, seen from <W>house</W>, is two positions back.
+*Settled by `en/37-codificacion-posicional.mdx` (COURSE-P11-08).*
 
 **Block 4's language pair stays Spanish→English, and its Spanish is glossed, not translated.** The
 block is about translation, so one side of every example is a language other than English whichever
@@ -300,6 +325,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | one of the $h$ attentions run in parallel | head — inside the compound *multi-head attention* | |
 | $\mathbb{E}[\cdot]$ · how far a centred quantity lands from zero | mean · standard deviation | expectation, expected value, average; and never the letter $\sigma$, which NOTATION.md §4 reserves |
 | how many positions a coordinate takes to come back round | wavelength | period; frequency, which is $\omega_i$ — a different number |
+| the offset $k$ between two positions · what $\mathbf{M}_k$ does to a pair | shift (the `positional-encoding` widget's label, and the challenge's `shift()`) · rotation; *turn* only for the clock hands of the analogy | offset, displacement. *Settled by `en/37-codificacion-posicional.mdx` (COURSE-P11-08)* |
 | the line carrying a sublayer's input around it | residual connection, and *the residuals* for several | skip connection, shortcut |
 | training against raw text before any task | pre-training, to pre-train | prior training |
 | the vector the stack gives one position | contextual representation | contextual embedding — *embedding* names the static object |
