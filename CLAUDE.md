@@ -56,6 +56,27 @@ Business logic lives in `src/services/`:
 Route handlers are thin dispatchers: parse input → call service → map errors to HTTP.
 Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-errors.ts`.
 
+## Companion repo: the mobile app
+
+The Android app «Clases con Gustavo» (Expo / React Native, live on Google Play) is a
+separate repo at `../personal-mobile-booking-app` (added to every session through
+`permissions.additionalDirectories` in `.claude/settings.local.json`). It has no backend of
+its own: it calls this API with the mobile bearer (`/api/auth/mobile`, read by `getSession()`),
+and real students run whatever was last published, so a breaking API change breaks them with
+no review in between. Its own rules live in its `CLAUDE.md` (npm, not pnpm).
+
+- **Any change to a route under `src/app/api/`, a schema in `src/lib/schemas.ts`, a response
+  shape or a domain error code: check the app before calling it done.** Its whole contract is
+  `lib/api-client.ts` (every endpoint it calls) and `types/api.ts` (request/response shapes and
+  the error codes it handles); `grep -rn "/api/<route>"` across its `app/` and `lib/` catches
+  the rest (`/api/schedule`, `/api/zoom/token`).
+- A field the server starts rejecting, a field renamed or removed from a response, a new
+  required field or a changed error code is a break: say so, and record the app-side follow-up
+  (in the refactor's STATUS **Production steps**, or to Gustavo). Additive changes are safe.
+- Read the app freely; edit it only when asked, on its own branch decision, with its own
+  commands (`npm test`). Never publish (`update:*`, `build:*`, `submit:*`): that is a deploy to
+  real users, and Gustavo runs it.
+
 ## Conventions
 - Zod schemas in `src/lib/schemas.ts` — never inline in route handlers.
 - Structured logging via `log()` from `src/lib/logger.ts` — no `console.*`.
