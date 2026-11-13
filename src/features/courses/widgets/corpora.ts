@@ -1,5 +1,7 @@
 /*
  * COURSE-P11-02 — Per-locale default corpora for the explorables.
+ * COURSE-C2-P3-01 — `context-window` joins `SPANISH_BOUND_CORPORA`: its `compactacion` preset
+ *                   holds sizes measured on the Spanish Block 5 run.
  *
  * A widget's interface text is translation (see `messages/*.json`, namespace
  * `courses.widgets.*`). Its DEFAULT CORPUS is not: the sentences below were chosen so
@@ -235,6 +237,14 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "several llamadas, and only one llamada changes the entorno. Block 4 lesson 7's preset " +
     "(proyecto) is that lesson's first cell the same way, with two llamadas that fail and a " +
     "write the scripted user refuses; its English version needs the same three properties.",
+  // COURSE-C2-P3-01 — llm-agents Block 5 lesson 5; found missing by the P3-00 triage.
+  "context-window":
+    "Its compactacion preset (math/context-window.ts, MEASURED_TURNS) holds the sizes " +
+    "measured on the Spanish run of Block 5 lesson 5: the sistema, herramientas, proyecto " +
+    "and pedido tokens and each turno's llamadas and observaciones, from the server's usage " +
+    "against Spanish prompts. An English version is the English lesson's own run on the " +
+    "pinned chain, re-measured, never transposed. The asistente and agente presets hold " +
+    "no text and need nothing.",
   "courses/llm-agents/entorno.py":
     "The Block 4 entorno and its four herramientas, frozen from lesson 4·2 " +
     "(llamar-herramientas): Spanish routes and contents, Spanish tool names and descriptions, " +
