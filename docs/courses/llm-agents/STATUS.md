@@ -81,7 +81,7 @@ frozen modules, the companion repository and every Block 5 measurement. See the
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [00 Triage: classify 40 lessons](phase-3-translation/00-triage.md) | `COURSE-C2-P3-00` | ✅ | _tbd_ | local |
-| [01 Platform readiness](phase-3-translation/01-platform-readiness.md) | `COURSE-C2-P3-01` | ⬜ | _tbd_ | |
+| [01 Platform readiness](phase-3-translation/01-platform-readiness.md) | `COURSE-C2-P3-01` | ✅ | _tbd_ | local |
 | [02 The English mini-GPT](phase-3-translation/02-english-checkpoint.md) | `COURSE-C2-P3-02` | ⬜ | _tbd_ | |
 | [03 `llm-agents/AUTHORING.en.md`: glossary + identifier map](phase-3-translation/03-authoring-en.md) | `COURSE-C2-P3-03` | ⬜ | _tbd_ | |
 | [04 Block 1 — From the Transformer to the Language Model (9)](phase-3-translation/04-block-1.md) | `COURSE-C2-P3-04` | ⬜ | _tbd_ | |
@@ -1759,3 +1759,44 @@ phase README's planning estimate is replaced by the count. No code, no content, 
   `fine-tuning-colab` ×1). The course's only `ancla` is 2·8 → 2·3's heading «Lo que la pérdida no
   dice». Its English anchor follows 2·3's English heading.
 - Verified: none needed (documentation). Line refs checked against `es/` at `073c57d`.
+
+**COURSE-C2-P3-01** — Done (2026-11-13), on `course/llm-agents-p3-01-platform-readiness`. Phase 11's
+machinery covers `llm-agents` with no change; the two `dl-nlp`-shaped places are generalised and
+D1's tag invariant is linted.
+- **The stub proved the inheritance** (`en/01-una-sola-columna.mdx`, written, checked, **deleted**:
+  `en/` ships empty). `lint:content` passed and warned on `simply`; `pnpm build` prerendered it;
+  `/en/cursos/llm-agents/una-sola-columna` was `index, follow` with reciprocal `es`/`en` hreflang
+  while `/en/…/bpe-de-verdad` stayed `noindex` with none; the landing read «1 of 40 lessons are
+  already in English»; `/api/courses/search-index/llm-agents/en` carried the English title. In the
+  dev server all four references linked: `curso="dl-nlp"` → `vocabulario-oov` (translated, no
+  badge), → `proyecto-transformer` and the two forward refs `bpe-de-verdad`, `entrenar-un-mini-gpt`
+  (fallbacks, card marked «In Spanish», checked in the DOM; the pane's screenshot didn't show the
+  hover card). **Deviation:** 1·1 has no published predecessor in its own course, so the "backward"
+  reference is the cross-course one to the translated `vocabulario-oov`, and there are three
+  fallbacks, not two. Not checked on a phone.
+- **`/course-translate`** (`.claude/commands/course-translate.md`): prerequisites are now "every task
+  the phase README lists before the first block task is ✅ in STATUS.md, and the lesson has a class
+  row", named one by one; that reads P11-00 … 03 for `dl-nlp` and P3-00 … 03 here, so it **refuses
+  on this course until P3-02 and P3-03 land**. Plus: the notebook exception (only where the block md
+  asks; ask before pushing to the notebooks repo), a step-9 branch for terminal verification (fresh
+  clone of the starting tag, pinned chain, raw log beside the block md), and step 13's
+  companion-repo commit + tag after approval, asking before any push. **Note: `.claude/` is
+  gitignored, so this edit is local to the author's machine and is not in the branch's diff.**
+- **`AUTHORING.en.md` §7**: one rule for every sibling (`public/courses/<course>/<name>.en.<ext>`,
+  the Spanish file keeps its name, stated once instead of four times) and the new `.en.py` frozen-module
+  paragraph with its parity test. 485 lines before and after. The header still links the two course
+  deltas by path (`dl-nlp/AUTHORING.md`, `llm-agents/AUTHORING.md`); that's a list of deltas, not
+  an asset path, so it stays.
+- **`validate-repolinks.ts`** (new, fatal, beside `validateCrosslinks` in `lint:content`):
+  `REPO_TAG_ES = /^b5-l[1-9]$/` in `es/`, `REPO_TAG_EN = /^en-b5-l[1-9]$/` in `en/`, via
+  `REPO_TAG_BY_LOCALE`; a locale with no entry is not checked; a `<RepoLink>` with no `tag` (an MDX
+  comment) and fenced samples are skipped. 15 tests (temp trees + the real tree). Checked by hand both
+  ways: a `b5-l1` in an `en/` stub and an `en-b5-l1` in `es/33` each fail, naming the file. The 18
+  Spanish lesson `<RepoLink>`s (plus the fixture's 2) pass unchanged.
+- **`course.en.yml`**: "block 3 mixes; blocks 4 and 5" → "Block 3 … Blocks 4 and 5", and the same
+  slip in the FAQ answer above it ("Nothing until block 5" → "Block 5"), not named in the task.
+- **Triage hand-off** (from the phase README, not this task's file table): `context-window` added to
+  `SPANISH_BOUND_CORPORA` for its measured `compactacion` preset.
+- Verified: `pnpm lint` (0 errors, the 8 existing warnings), `pnpm lint:content`, `pnpm test`
+  (218 suites, 3 345 tests), `pnpm check:messages`, `pnpm build` (with the stub in place) all green.
+  `check:bundle` not run (the one client-side change is a string in `SPANISH_BOUND_CORPORA`).

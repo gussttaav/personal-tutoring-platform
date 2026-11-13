@@ -408,14 +408,14 @@ free draft`. What stays fixed is the source's *identity* — surnames, the work'
 `url` and `lang` (an English source is `en` in both locales) — and `kind`, an enum the reader
 localises on its own. "Translate only the note" means keep the source, not keep the Spanish.
 
-**A `<Figure>` whose asset has source text set into it gets an English sibling, `<name>.en.svg`.**
-The SVG's `alt`, `caption` and any label baked into the drawing are the lesson talking, translated
-like the prose — but the file itself is a static asset that `src` names by path, with no locale
-resolution behind it (`src/lib/courses/mdx-components.tsx` passes `src` straight to an `<img>`). So
-the English lesson cannot point at the Spanish file without inheriting its Spanish labels. Copy it to
-`<name>.en.svg` beside the original in `public/courses/dl-nlp/`, translate the text set into it and
-the `aria-label`, and point `src` at the sibling; the Spanish file keeps its name and its Spanish.
-Figures are not widgets, so P11-02 does not own them and the redraw is the translating lesson's.
+**Every locale-bound asset gets an English sibling, `<name>.en.<ext>`, beside the original in
+`public/courses/<course>/`; the English lesson points at it, and the Spanish file keeps its name and
+its Spanish.** A `<Figure>`'s `src` and a cell's `open_url("/courses/<course>/…")` name an asset by
+path, with no locale resolution behind them, so pointing at the original inherits its Spanish.
+
+**A figure with source text set into it: `<name>.en.svg`.** Its `alt`, `caption`, `aria-label` and
+every label baked into the drawing are the lesson talking, translated like the prose. Figures are not
+widgets, so P11-02 does not own them and the redraw is the translating lesson's.
 *Settled by `en/03-vocabulario-oov.mdx` (COURSE-P11-04): `suma-armonica.svg` → `suma-armonica.en.svg`.*
 
 **And re-measure every string you put into the sibling.** The geometry is copied byte for byte, so
@@ -427,28 +427,28 @@ so a faithful translation that does not fit is not the one that ships.
 *Settled by `en/17-implementar-mlp.mdx` (COURSE-P11-05): `bucle-entrenamiento`'s caption came out
 374px wide in a 360px `viewBox`, against the Spanish 328px.*
 
-**A data file a `<PyCell>` fetches at runtime gets an English sibling, `<name>.en.txt`.** The cell
-reads it by path (`open_url("/courses/dl-nlp/…")`), with no locale resolution behind it, exactly
-like a figure's `src`. Write the English text beside the original in `public/courses/dl-nlp/`, point
-the English cell's `open_url` at it, and re-derive every number the prose quotes from it (length,
-$\lvert V \rvert$, anything trained on it) in the browser; the Spanish file keeps its name.
-*Settled by `en/25-proyecto-char-lm.mdx` (COURSE-P11-06): `corpus-mar.txt` → `corpus-mar.en.txt`.*
+**A data file a `<PyCell>` fetches at runtime: `<name>.en.txt`.** Point the English cell's `open_url`
+at it and re-derive every number the prose quotes from it (length, $\lvert V \rvert$, anything trained
+on it) in the browser. *Settled by `en/25-proyecto-char-lm.mdx` (COURSE-P11-06): `corpus-mar.txt` →
+`corpus-mar.en.txt`.*
 
-**A widget whose default data is a locale-bound committed asset gets an English sibling asset, and the
-widget picks it per locale.** A few widgets read a *data file*, not just strings — `embedding-projection`
-plots a committed 2D projection of ~200 words. P11-02 can move a widget's strings but not this data, so
-it lists such widgets in `SPANISH_BOUND_CORPORA` (`src/features/courses/widgets/corpora.ts`) and leaves
-the English asset to the lesson that embeds it. Build an English sibling beside the original in
-`public/courses/dl-nlp/` (e.g. `embeddings-sample.en.json`), make the widget locale-aware — a per-locale
-source file, default selection and any analogy words — and guard its teaching property in the widget's
-data test. The Spanish asset keeps its name and its data, and the widget is removed from
-`SPANISH_BOUND_CORPORA` once its English data exists. This is the same rule as the figure sibling above,
-one layer up: the asset, not just the label, is the lesson talking. Where the Spanish asset is a
-word list on a projection, the cheapest faithful English version is a **1:1 translation onto the same
-coordinates** — same layout, same density, same analogy geometry — not a fresh, sparser layout.
-*Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04): `embeddings-sample.en.json`, the Spanish
-218-word list translated 1:1 onto its coordinates, with the `king − man + woman → queen` analogy;
-reused by 1.8.*
+**A frozen module a `<PyCell>` loads: `<name>.en.py`.** It is one lesson's cell code, frozen, so the
+rule above reaches it: translated against the course's identifier map (in the course's own English
+delta), with a test that runs both modules on the same inputs and asserts the same outputs; that
+parity test is what lets it be trusted without re-reviewing its maths. *Decided by COURSE-C2-P3-01.*
+
+**A widget whose default data is a committed asset: a sibling the widget picks per locale.** Some
+widgets read a *data file*, not just strings — `embedding-projection` plots a committed 2D projection
+of ~200 words. P11-02 could move a widget's strings but not its data, so such widgets are listed in
+`SPANISH_BOUND_CORPORA` (`src/features/courses/widgets/corpora.ts`) and the English asset is left to
+the lesson that embeds it: build the sibling (e.g. `embeddings-sample.en.json`), make the widget
+locale-aware (a per-locale source file, default selection and any analogy words), guard its teaching
+property in the widget's data test, and remove the widget from `SPANISH_BOUND_CORPORA`. Where the
+Spanish asset is a word list on a projection, the cheapest faithful English version is a **1:1
+translation onto the same coordinates** — same layout, same density, same analogy geometry — not a
+fresh, sparser layout. *Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04):
+`embeddings-sample.en.json`, the Spanish 218-word list translated 1:1 onto its coordinates, with the
+`king − man + woman → queen` analogy; reused by 1.8.*
 
 ## 8. What this delta does not replace
 
