@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" width="760" height="250" role="img"
+ aria-label="Un bucle entre dos cajas. A la izquierda, el modelo de lenguaje, que puede equivocarse: recibe el programa y propone un veredicto junto con un certificado, como una función de ranking, una demostración o código acompañado de su prueba. A la derecha, el comprobador, que siempre termina: un solucionador SMT, un demostrador de teoremas o un verificador. Si acepta el certificado, la conclusión es segura aunque el modelo no sea de fiar. Si lo rechaza, devuelve al modelo el error o un contraejemplo, y el modelo lo intenta otra vez. Cuando se acaba el presupuesto de intentos, la respuesta es no lo sé.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .bx.o { fill: #131315; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ln { fill: none; stroke: #86948a; stroke-width: 1.2; }
+  .ln.m { stroke: #4edea3; }
+  .ln.w { stroke: #e8a24c; }
+  .ln.x { stroke: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="tx" x="10.0" y="102.0" style="text-anchor:start">programa</text>
+<path class="ar" d="M70.0,98.0 L100.0,98.0"/>
+<text class="hd w" x="104.0" y="50.0" style="text-anchor:start">PUEDE EQUIVOCARSE</text>
+<rect class="bx w" x="104.0" y="64.0" width="180.0" height="68.0" rx="6"/>
+<text class="lb w" x="194.0" y="96.0">Modelo de lenguaje</text>
+<text class="sb" x="194.0" y="110.0">propone</text>
+<path class="ar" d="M286.0,98.0 L430.0,98.0"/>
+<text class="sb" x="358.0" y="88.0">veredicto + certificado</text>
+<text class="sb" x="358.0" y="116.0">ranking, demostración,</text>
+<text class="sb" x="358.0" y="130.0">código con su prueba</text>
+<text class="hd m" x="432.0" y="50.0" style="text-anchor:start">SIEMPRE TERMINA</text>
+<rect class="bx m" x="432.0" y="64.0" width="180.0" height="68.0" rx="6"/>
+<text class="lb m" x="522.0" y="96.0">Comprobador</text>
+<text class="sb" x="522.0" y="110.0">SMT, demostrador, verificador</text>
+<path class="ar m" d="M614.0,80.0 L628.0,80.0 L628.0,58.0 L640.0,58.0"/>
+<text class="lb m" x="646.0" y="54.0" style="text-anchor:start">acepta</text>
+<text class="sb" x="646.0" y="68.0" style="text-anchor:start">conclusión segura</text>
+<path class="ar w" d="M522.0,134.0 L522.0,186.0 L230.0,186.0 L230.0,136.0"/>
+<text class="sb w" x="376.0" y="204.0">rechaza: error o contraejemplo</text>
+<path class="ar" d="M150.0,134.0 L150.0,220.0"/>
+<text class="sb" x="160.0" y="214.0" style="text-anchor:start">se acaba el presupuesto</text>
+<text class="lb" x="160.0" y="236.0" style="text-anchor:start">«no lo sé»</text>
+</svg>
