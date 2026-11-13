@@ -2,7 +2,8 @@
 
 **Tag:** `COURSE-C2-P0-04` · Delta on [`../AUTHORING.md`](../AUTHORING.md) · Notation:
 [NOTATION.md](NOTATION.md) (this course's symbol tables) on [`../NOTATION.md`](../NOTATION.md) ·
-Template: [`content/courses/llm-agents/_template.mdx`](../../../content/courses/llm-agents/_template.mdx)
+Template: [`content/courses/llm-agents/_template.mdx`](../../../content/courses/llm-agents/_template.mdx) ·
+In English: [AUTHORING.en.md](AUTHORING.en.md) (`COURSE-C2-P3-03`), §4's table in English and the identifier map
 
 **The shared [AUTHORING.md](../AUTHORING.md) governs an `llm-agents` lesson exactly as it governs
 a `dl-nlp` one, except where this file replaces it, section by section.** Read that file first;
