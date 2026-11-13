@@ -80,7 +80,7 @@ frozen modules, the companion repository and every Block 5 measurement. See the
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [00 Triage: classify 40 lessons](phase-3-translation/00-triage.md) | `COURSE-C2-P3-00` | ⬜ | _tbd_ | |
+| [00 Triage: classify 40 lessons](phase-3-translation/00-triage.md) | `COURSE-C2-P3-00` | ✅ | _tbd_ | local |
 | [01 Platform readiness](phase-3-translation/01-platform-readiness.md) | `COURSE-C2-P3-01` | ⬜ | _tbd_ | |
 | [02 The English mini-GPT](phase-3-translation/02-english-checkpoint.md) | `COURSE-C2-P3-02` | ⬜ | _tbd_ | |
 | [03 `llm-agents/AUTHORING.en.md`: glossary + identifier map](phase-3-translation/03-authoring-en.md) | `COURSE-C2-P3-03` | ⬜ | _tbd_ | |
@@ -1726,3 +1726,36 @@ DeepSWE; URLs and figures checked). Runs on the local model, `qwen3:4b-instruct`
 - **Side effect:** with block 5 complete, `courseBuildStatus()` reports the course finished, so the
   catalog card and the landing lose «En construcción».
 
+**COURSE-C2-P3-00** — Done (2026-11-13), on `docs/llm-agents-p3-00-triage`. All 40 published
+lessons read (`00-pipeline-fixture.mdx` excluded as a draft fixture); each block md (04–08) now has
+its Classification table, «What changed from the planning pass», cross-course refs, the frozen-module
+identifiers its prose names (for P3-03), and a per-lesson artifact inventory with line refs. The
+phase README's planning estimate is replaced by the count. No code, no content, no `en/` file.
+- **The count: 1 transpose · 33 adapt · 6 rewrite** (planned 2 / 34 / 4). Re-runs: P ×20, P
+  (scripted) ×8, T ×9, C ×1, — ×2. New flag **P (scripted)**: cells on the scripted model only
+  (3·1, 3·6, Block 4 but 4·6), whose output is the author's strings, so re-authoring with the same
+  pattern reproduces the numbers.
+- **Moved rows:** 1·7 transpose → adapt (its cell hard-codes the checkpoint's 125 789 training
+  tokens and step 1 750); 2·3 adapt → rewrite (the evidence that the model reads the question is
+  Spanish article agreement, and `q-el-vino` rests on it); 3·4 adapt → rewrite (the causal mean's
+  asymmetry is measured on the opening `¿`; `q-el-signo`). 4·6's re-run is a real measurement (it
+  counts the whole novel with the BPE), not a scripted one.
+- **Corrections to the plan:** the `dl-nlp` code name crossing the course boundary is quoted by
+  **1·9** (`paso(entrada)`), not 1·1, and no lesson quotes `genera(…)`. The README's sequencing
+  bullet is fixed. **P3-03's md still says 1·1 / `genera`**; fix it when P3-03 runs. The
+  «`pedido`, 18 mentions» note was 5·8's, not 3·6's. The `asistente` and `agente`
+  `context-window` presets hold no text (labels come from messages), so their English-preset asset
+  rows in 06/07 are struck.
+- **Handed to later tasks** (in the README's count section): P3-01, add `context-window`'s measured
+  `compactacion` preset to `SPANISH_BOUND_CORPORA`, where it is missing. P3-02, seven corpus
+  properties the lessons rely on beyond the trainer's asserts: a zero-frequency held-out token
+  (1·6), no `{` or straight `"` (3·3), more than 128 000 tokens (4·6), a name never merged with its
+  space (1·9), the frame's answer word absent (2·1), a misleading dialogue tag and a vocabulary-gap
+  Q/A pair (3·7, 3·4). P3-03, decide the message roles before 4·2 freezes them (5·2's adapter
+  translates them into English today). P3-08 / 5·1, D1's "byte-identical `Modelfile`" has a Spanish
+  comment line.
+- **Cross-course:** 34 `curso="dl-nlp"` refs in 12 lessons, 10 of them to four lessons not yet in
+  `dl-nlp/en/` (`bert-y-gpt` ×4, `proyecto-transformer` ×3, `encoder-decoder-masking` ×2,
+  `fine-tuning-colab` ×1). The course's only `ancla` is 2·8 → 2·3's heading «Lo que la pérdida no
+  dice». Its English anchor follows 2·3's English heading.
+- Verified: none needed (documentation). Line refs checked against `es/` at `073c57d`.
