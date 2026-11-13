@@ -23,8 +23,8 @@ docs/courses/
     ├── PLAN.md · STATUS.md
     ├── AUTHORING.md     its delta: the two shapes of a lesson, the terminal form, its terms
     ├── NOTATION.md      its per-block symbol tables, seeded (COURSE-C2-P0-04)
-    ├── phase-0 … phase-2
-    └── (notebooks/ — created by its Phase 1)
+    ├── phase-0 … phase-3
+    └── notebooks/       its Colab notebook
 ```
 
 ## Which file governs

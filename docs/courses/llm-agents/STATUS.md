@@ -71,6 +71,46 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 - [ ] `dl-nlp`'s last bridge and landing point at `llm-agents`; `/cursos` in prerequisite order
 - [ ] `launch:llm-agents` sent once, both locales, after a dry run
 
+## Phase 3 — English translation
+
+Write `content/courses/llm-agents/en/`: 40 lessons, one PR each, on the platform `dl-nlp`'s Phase 11
+built. What is Spanish here is less the prose than the assets: the mini-GPT and its corpus, seven
+frozen modules, the companion repository and every Block 5 measurement. See the
+[phase README](phase-3-translation/README.md). Planned 2026-11-13.
+
+| Task | Tag | Status | Owner | PR |
+|------|-----|--------|-------|----|
+| [00 Triage: classify 40 lessons](phase-3-translation/00-triage.md) | `COURSE-C2-P3-00` | ⬜ | _tbd_ | |
+| [01 Platform readiness](phase-3-translation/01-platform-readiness.md) | `COURSE-C2-P3-01` | ⬜ | _tbd_ | |
+| [02 The English mini-GPT](phase-3-translation/02-english-checkpoint.md) | `COURSE-C2-P3-02` | ⬜ | _tbd_ | |
+| [03 `llm-agents/AUTHORING.en.md`: glossary + identifier map](phase-3-translation/03-authoring-en.md) | `COURSE-C2-P3-03` | ⬜ | _tbd_ | |
+| [04 Block 1 — From the Transformer to the Language Model (9)](phase-3-translation/04-block-1.md) | `COURSE-C2-P3-04` | ⬜ | _tbd_ | |
+| [05 Block 2 — From Predicting Text to Following Instructions (8)](phase-3-translation/05-block-2.md) | `COURSE-C2-P3-05` | ⬜ | _tbd_ | |
+| [06 Block 3 — Talking to the Model Is Programming (7)](phase-3-translation/06-block-3.md) | `COURSE-C2-P3-06` | ⬜ | _tbd_ | |
+| [07 Block 4 — The Bridge: from Text to Actions (7)](phase-3-translation/07-block-4.md) | `COURSE-C2-P3-07` | ⬜ | _tbd_ | |
+| [08 Block 5 — A Coding Agent in the Terminal (9)](phase-3-translation/08-block-5.md) | `COURSE-C2-P3-08` | ⬜ | _tbd_ | |
+
+**Commands:** `/course-task` for P3-00 … P3-03 (run 00 → 01 → 03 → 02); `/course-translate` for the
+block tasks, one lesson per call, **only after P3-01** (until then its prerequisite check reads
+`dl-nlp`'s P11 tags and would wrongly pass).
+
+**Landing order:** P3-00 and P3-01 first (cheap). P3-03's identifier table, then P3-02, then the
+rest of P3-03. Then blocks in order, lessons in order. **`dl-nlp`'s P11-08 (at least 5.9) lands
+before Block 1**: 1·1 quotes its code by name.
+
+**Decisions taken by Gustavo (2026-11-13):** **D1** no new repository: the English code goes on an
+`en` branch of `agente-minimo`, tagged `en-b5-l1` … `en-b5-l9`; **D2** an English Colab notebook on
+OpenAssistant's English pairs; **D3** both Kaggle rows of lesson 39 re-run on the English benchmark.
+
+**Exit criteria**
+- [ ] 40 published lessons under `en/`; `fullyTranslated` true for `en`
+- [ ] Every `/en` lesson route indexable with reciprocal hreflang; no fallback `noindex` remains
+- [ ] A partially translated tree passes `pnpm lint:content` at every intermediate commit
+- [ ] `SPANISH_BOUND_CORPORA` holds no `llm-agents` entry
+- [ ] Every English cell and challenge run in the browser against the English assets; every English
+      Block 5 lesson verified from its English tag on the pinned chain
+- [ ] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
+
 ---
 
 ## Deviations
