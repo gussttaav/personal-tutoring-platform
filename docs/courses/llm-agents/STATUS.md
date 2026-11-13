@@ -83,7 +83,7 @@ frozen modules, the companion repository and every Block 5 measurement. See the
 | [00 Triage: classify 40 lessons](phase-3-translation/00-triage.md) | `COURSE-C2-P3-00` | ✅ | _tbd_ | local |
 | [01 Platform readiness](phase-3-translation/01-platform-readiness.md) | `COURSE-C2-P3-01` | ✅ | _tbd_ | local |
 | [02 The English mini-GPT](phase-3-translation/02-english-checkpoint.md) | `COURSE-C2-P3-02` | ⬜ | _tbd_ | |
-| [03 `llm-agents/AUTHORING.en.md`: glossary + identifier map](phase-3-translation/03-authoring-en.md) | `COURSE-C2-P3-03` | ⬜ | _tbd_ | |
+| [03 `llm-agents/AUTHORING.en.md`: glossary + identifier map](phase-3-translation/03-authoring-en.md) | `COURSE-C2-P3-03` | ✅ | _tbd_ | local |
 | [04 Block 1 — From the Transformer to the Language Model (9)](phase-3-translation/04-block-1.md) | `COURSE-C2-P3-04` | ⬜ | _tbd_ | |
 | [05 Block 2 — From Predicting Text to Following Instructions (8)](phase-3-translation/05-block-2.md) | `COURSE-C2-P3-05` | ⬜ | _tbd_ | |
 | [06 Block 3 — Talking to the Model Is Programming (7)](phase-3-translation/06-block-3.md) | `COURSE-C2-P3-06` | ⬜ | _tbd_ | |
@@ -1800,3 +1800,38 @@ D1's tag invariant is linted.
 - Verified: `pnpm lint` (0 errors, the 8 existing warnings), `pnpm lint:content`, `pnpm test`
   (218 suites, 3 345 tests), `pnpm check:messages`, `pnpm build` (with the stub in place) all green.
   `check:bundle` not run (the one client-side change is a string in `SPANISH_BOUND_CORPORA`).
+
+**COURSE-C2-P3-03** — Done (2026-11-13), on `docs/llm-agents-p3-03-authoring-en`. New
+`docs/courses/llm-agents/AUTHORING.en.md`, the fourth delta (this course's *and* English's): the
+identifier map, the English glossary, the terminal form in English, the two-reader test across the
+course boundary. 297 lines of prose plus the tables (the cap is 300).
+- **The identifier map** covers every public name of the seven frozen modules (functions, methods,
+  parameters, constants, dictionary keys, checkpoint JSON keys, the strings Block 4's tests compare
+  character for character), the names that cross lessons without a module (2·2's specials, 3·x's
+  JSON keys and helpers, 4·1/4·4/4·5/4·7's), and **every file in `agente-minimo`'s `b5-l9` tag**
+  with the repository's public names. Twelve collisions decided in the name, each with its reason.
+  The ones later tasks feel: **roles are the protocol's** (`system` / `user` / `assistant`), so the
+  English `api.py` has no `ROLES` and 5·2's rewrite loses its translation clause (its distractor (b)
+  needs a new point); the harness's `ejecutar` is `execute`, Block 5's tool is `run`, `correr.py` is
+  **`main.py`** (not the seed's `run.py`, which would collide with `tools/run.py`); the user's
+  `pedido` is `request`, so the HTTP body is a `payload` and an MCP message an `rpc`; tool classes
+  are nouns (`reading` / `writing` / `execution`); Block 3's `prueba` is an **item** (Block 4 keeps
+  *test*); builders `text` / `tool_use` / `tool_result`; `objeto` → `object_schema`, `muestra` →
+  `show`, `lista.txt` → `shopping.txt`; `AGENTE.md` → `AGENT.md` (not the `AGENTS.md` convention).
+- **The glossary** carries all 160 rows of §4, in order, keyed by the Spanish term. Changed shape:
+  *obey* (English *follow* collides as `seguir` did), *penalise* (RL's *discount* is $\gamma$),
+  *greedy generation* (`decode` is taken, 1·4's argument survives), a call *fails* / a test *does
+  not pass*, *working directory* + *folder*. The two sentence rows (*turn*, *response*) are written.
+- **Deviation: `paso`'s English name could not be taken from `dl-nlp`'s English 5.9**, which is not
+  translated (P11-08 still open). It is derived from `dl-nlp/en/`'s own conventions (en/20 `step`,
+  en/25 `generate`, `inputs`): `generate(step, go, eos, max_steps)`, `step(inputs)`. **Hand-off to
+  `dl-nlp`'s P11-08: its 5.9 must take these names** (not written into `dl-nlp`'s docs, which this
+  task does not own). The training step is `Adam.step`; the two never share a call site.
+- **Not yet checked against P3-02.** The test plan's check is `bpe.en.py` / `minigpt.en.py` written
+  from the table alone; any gap P3-02 finds is fixed in this file first.
+- **Also**: `llm-agents/AUTHORING.md` gets a pointer in its header; `docs/courses/README.md`'s
+  governing order gains step 3 (the language delta, then the course's English delta) and the tree
+  lists the file; `/course-translate` step 2 reads the course's English delta and refuses to invent a
+  name the map lacks (`.claude/` is gitignored: local only, as in P3-01). The task md's "1·1 quotes
+  `genera(…)`" wording is corrected to 1·9 / `paso(entrada)`, the fix P3-00 asked for.
+- Verified: none needed (documentation). Row count checked against §4 (160 = 160).

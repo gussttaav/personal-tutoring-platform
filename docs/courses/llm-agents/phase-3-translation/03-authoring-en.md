@@ -28,9 +28,9 @@ rows, written lesson by lesson, and almost every one is shaped by Spanish:
 - **The collisions survive translation, and one gets worse.** The Spanish table separates `ventana`
   (training) from `ventana` (context), and `llamada` (to the model, Blocks 2–3) from `llamada` (the
   model's, Block 4 on). English *window* and *call* collide the same way. And `paso` splits three
-  ways: the training step (`Adam.paso`), the first course's model-as-function `paso` in
-  `genera(paso, go, eos, max_pasos)`, and *step* as the prose word the `turno` row keeps out of the
-  loop.
+  ways: the training step (`Adam.paso`), the first course's model-as-function `paso(entrada)`
+  (from `genera(paso, go, eos, max_pasos)`, quoted by 1·9), and *step* as the prose word the
+  `turno` row keeps out of the loop.
 
 And the terms are the **identifiers**. `turno`, `llamada`, `observación`, `entorno`, `permiso`,
 `codificar` are function names, variables and dictionary keys in seven frozen modules and in the
@@ -63,8 +63,9 @@ The rules the table follows:
 - **en-GB for words the course owns** (`normalise`), **source spelling for names it does not**
   (`np.random.normal`, `json.loads`).
 - **Agree with `dl-nlp`'s English.** This course picks up the first course's code by name. `dl-nlp`
-  `en/25` already writes `generate(n, seed)`. And 1·1's opening quotes `genera(paso, go, eos,
-  max_pasos)` from `dl-nlp`'s `proyecto-transformer` (5.9), which is **not yet translated**. The
+  `en/25` already writes `generate(n, seed)`. And 1·9 quotes `paso(entrada)`, the model-as-function
+  of `genera(paso, go, eos, max_pasos)`, from `dl-nlp`'s `proyecto-transformer` (5.9), which is
+  **not yet translated** (P3-00: 1·9, not 1·1, and no lesson quotes `genera(` itself). The
   English name of `paso` must be the one `dl-nlp`'s 5.9 picks. See the sequencing constraint below.
 - **A collision is resolved in the name, not left to the prose.** If *window* names both, then
   `windows()` (training) needs a qualifier the prose always uses, or a different identifier.
@@ -130,7 +131,7 @@ Block 1 md that 1·1 must be re-read once it lands.
 ## Sequencing constraint — `dl-nlp`'s Block 5
 
 `dl-nlp`'s P11-08 has 5.6–5.11 open. Three of them are named across the course boundary: 5.9
-`proyecto-transformer` (3 references, and the `genera(paso, …)` code 1·1 quotes), 5.10 `bert-y-gpt`
+`proyecto-transformer` (3 references, and the `paso(entrada)` code 1·9 quotes), 5.10 `bert-y-gpt`
 (4) and 5.11 `fine-tuning-colab` (1, and the course hand-off). **Finish `dl-nlp`'s P11-08 before
 this course's Block 1**, or at least 5.9, and take `paso`'s English name from it. The `<Leccion>`
 fallback will render the other two «In Spanish» correctly in the meantime; the code name cannot
