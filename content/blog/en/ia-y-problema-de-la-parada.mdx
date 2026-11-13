@@ -102,113 +102,113 @@ aiImages: true
   scripts/figures/ia-y-problema-de-la-parada/make_svgs.py: change one, change the other.
 */}
 
-Two headlines come back every time a new model ships. One announces that artificial intelligence
-(AI) now programs itself and will soon review all our code better than we can. The other replies
-that it will never be truly intelligent, because Alan Turing proved in 1936 that there are things
-no machine can compute. Both invoke the same theorem, the **halting problem**, and both get more
-out of it than it says.
+Two headlines come back every time a new model ships. One says artificial intelligence (AI) now
+programs itself and will soon review all our code better than we can. The other says it will never
+be truly intelligent, because Alan Turing proved in 1936 that some things no machine can compute.
+Both lean on the same theorem, the **halting problem**, and both claim more from it than it says.
 
-This article applies that theorem to AI carefully. First, where it really shows up in an AI
-system, which isn't where people tend to think. Then, what stays out of reach for good, for an AI
-and for anyone else. And finally, what can improve, and is improving already: proving that
-particular programs terminate, writing code together with a proof that it's correct, hallucinating
-less, reasoning better and improving itself. In every case the improvement has the same shape, and
-the theorem explains why.
+This article applies that theorem to AI with some care. First, where it actually shows up in an AI
+system, which isn't where people usually look. Then, what stays out of reach for good, for an AI
+and for anyone else. And finally, what can improve, and already is: proving that particular
+programs terminate, writing code together with a proof that it's correct, hallucinating less,
+reasoning better and improving itself. The improvement always has the same shape, and the theorem
+explains why.
 
 ## The map, in three paragraphs
 
-The halting problem asks whether there is an algorithm that, given any program and any input, says
-whether the program finishes or runs forever. There isn't. The proof assumes a function
-`halts(program, input)` that is always right, builds a program that asks it what that very program
-will do and then does the opposite, and reaches a contradiction. In 1953 Henry Rice extended the
-result to **any non-trivial property of what a program does**: whether it has bugs, whether it
-meets its specification, whether it leaks data, whether it's harmful. None of them has a general
-algorithm.
+The halting problem asks whether there's an algorithm that can take any program and any input and
+tell you whether the program finishes or runs forever. There isn't. The proof assumes such a
+function, `halts(program, input)`, that's always right. It then builds a program that asks `halts`
+what that very program will do, and does the opposite. That's a contradiction. In 1953 Henry Rice
+extended the result to **any non-trivial property of what a program does**: whether it has bugs,
+whether it meets its specification, whether it leaks data, whether it's harmful. None of them has a
+general algorithm.
 
-The key word is **decide**. A procedure decides a question if it meets three conditions at once.
-It's **general**: it works on any program. It's **total**: it always finishes and gives an answer.
-And it's **exact**: it never gives a wrong answer. The theorem rules out all three together, not
-each one separately. A language in which every program terminates gives up generality; an analyser
-that sometimes answers "I don't know" gives up totality; a test that passes a program with a
-hidden bug gives up exactness. Every useful tool there is picks one thing to give up.
+The key word is **decide**. A procedure decides a question if it meets three conditions at once: it's
+**general** (it works on any program), **total** (it always finishes and gives an answer) and
+**exact** (it never gives a wrong one). The theorem rules out all three together, not each one
+separately. A language in which every program terminates gives up generality. An analyser that
+sometimes answers "I don't know" gives up totality. A test that passes a program with a hidden bug
+gives up exactness. Every useful tool makes one of these sacrifices.
 
-And there's an asymmetry that makes all of this workable: **finding a proof can be impossible in
-general, but checking one is mechanical**. If someone proposes an argument that a loop terminates,
-for example a quantity that can't drop below zero and goes down on every iteration (a **ranking
-function**), a small, trustworthy program can check it without repeating the search. A checkable
-argument like that is called a **certificate**. The
+One asymmetry makes all this workable: **finding a proof can be impossible in general, but checking
+one is mechanical**. Suppose someone proposes an argument that a loop terminates, such as a quantity
+that can't drop below zero and goes down on every iteration (a **ranking function**). A small,
+trustworthy program can check that without repeating the search. An argument that can be checked
+like this is called a **certificate**. The
 [previous article in this series](/blog/problema-de-la-parada) covers all of this in detail, with
-the proof in Python and what it means for people; here this map is enough.
+the proof in Python and what it means for people. Here, this map is enough.
 
 ## Where the theorem enters an AI system
 
-People often say the halting problem "applies to AI" as if it applied to the model. But a large
-language model (LLM), on its own, can't get stuck in an infinite loop, so it's worth separating
-three pieces that are often lumped together.
+People often say the halting problem "applies to AI" as if it applied to the model itself. But a
+large language model (LLM), on its own, can't get stuck in an infinite loop, so it helps to
+separate three pieces that tend to get lumped together.
 
 ### One pass always finishes
 
 An LLM generates text one token at a time, and each token comes out of one **forward pass** of the
-model: the input goes through a fixed number of layers, each with a known amount of arithmetic.
+model: the input goes through a fixed number of layers, each doing a known amount of arithmetic.
 For a given model and input length, that's a finite circuit. It has no loops that depend on the
-data, so it always finishes, and in a time known in advance.
+data, so it always finishes, in a time known in advance.
 
 That doesn't make questions about the network easy. "Is there any input in this region that
-changes the model's decision?" is decidable, because in principle you can go through every case.
-But the cost explodes. In 2017 the team behind [Reluplex](https://arxiv.org/abs/1702.01135), a
-neural network verifier from Stanford, proved that checking properties of networks with ReLU
-activations (the function that lets positive values through and turns negative ones into zero) is
-NP-complete: as hard as the hardest combinatorial problems we know. With their tool they verified
+changes the model's decision?" is decidable, since in principle you can check every case. But the
+cost explodes. In 2017 the team behind [Reluplex](https://arxiv.org/abs/1702.01135), a neural
+network verifier from Stanford, proved that checking properties of networks with ReLU activations
+(the function that lets positive values through and turns negative ones into zero) is
+NP-complete, as hard as the hardest combinatorial problems we know. With their tool they verified
 45 networks from the ACAS Xu collision avoidance system (*Airborne Collision Avoidance System X*,
 for unmanned aircraft), each with 300 neurons, an order of magnitude more than anyone had managed
 before. An LLM has billions of parameters.
 
-So the barrier to analysing a single pass is one of **complexity**, not **computability**: the
-problem has a solution, but it doesn't fit in the time available. The distinction matters, because
-complexity can be attacked with structure, approximations and hardware, and computability can't.
+So the barrier to analysing a single pass is **complexity**, not **computability**: the problem
+has a solution, but not one that fits in the time available. The distinction matters, because you
+can attack complexity with structure, approximations and hardware, and you can't attack
+computability.
 
-### Thinking in more steps changes the complexity, not the kind of problem
+### Thinking for more steps changes the complexity, not the kind of problem
 
-When a model "reasons" by writing intermediate steps before its answer, the **chain of thought**,
+When a model "reasons" by writing intermediate steps before its answer (the **chain of thought**),
 it makes many passes in a row, each one reading what the previous ones wrote. Does that change
-what it can compute? Yes, a lot: the more steps it writes, the more problems it can solve. What
-doesn't change is that it finishes. William Merrill and Ashish Sabharwal
+what it can compute? It does, and by a lot: the more steps it writes, the more problems it can
+solve. What doesn't change is that it finishes. William Merrill and Ashish Sabharwal
 [measured this carefully](https://arxiv.org/abs/2310.07923) in 2024, for *transformers* (the
-architecture behind every current LLM) that compute with realistic numerical precision.
+architecture behind every current LLM) computing with realistic numerical precision.
 
-The starting point is modest. Without intermediate steps, earlier work by the same authors had
-shown that these models sit inside a very small class, TC⁰: what can be computed by a circuit of
-fixed depth, however long the input. If the usual conjectures of complexity theory hold, that
-rules out things as simple as following a finite automaton over an input of any length, or
+The starting point is modest. Earlier work by the same authors had shown that, without
+intermediate steps, these models sit inside a very small class, TC⁰: whatever a circuit of fixed
+depth can compute, however long the input. If the usual conjectures of complexity theory hold,
+that rules out things as simple as following a finite automaton over an input of any length, or
 telling whether two nodes in a directed graph are connected. With intermediate steps, the power
 grows with how many there are:
 
-- With a logarithmic number of steps (relative to the input length), hardly anything: at most the
+- With a logarithmic number of steps (in the length of the input), hardly anything: at most the
   class L, the problems that can be solved with logarithmic memory.
 - With a linear number, they can follow any finite automaton (they recognise every regular
   language), which they couldn't do without intermediate steps.
 - With a polynomial number, they solve **exactly** the problems in P, the ones a computer solves
   in time that grows as a polynomial in the length of the input.
 
-So the answer to the question is that chain of thought moves the model around the map of
-complexity, from a small class all the way up to P, but doesn't take it off that map. This
-explains much of what gets called "weak reasoning". When a model fails to follow a long chain of
-deductions without writing them down, it isn't running into Turing: it's short of computation, and
-writing steps gives it more. And since the number of steps always has a cap, the maximum number of
-tokens it's allowed to generate, a chain of thought also finishes, however long it is.
+So chain of thought moves the model around the map of complexity, from a small class all the way
+up to P, but never off the map. That explains much of what gets called "weak reasoning". When a
+model fails to follow a long chain of deductions without writing them down, it isn't running into
+Turing. It's short of computation, and writing out steps gives it more. And because the number of
+steps always has a cap (the maximum number of tokens the model is allowed to generate), a chain of
+thought finishes too, however long it is.
 
-Only by removing that cap does the kind of problem change. In 2021,
+Only when you remove that cap does the kind of problem change. In 2021,
 [Pérez, Barceló and Marinkovic](https://jmlr.org/papers/v22/20-302.html) showed that a
-*transformer* that computes with arbitrary precision and can generate an unlimited number of steps
-is **Turing-complete**: it can compute anything a Turing machine can, which is to say, run any
-program. That power brings the halting problem with it, because then some runs never finish and
-there's no general way to tell which. But it's an idealised model, not what actually runs.
+*transformer* computing with arbitrary precision and allowed to generate unlimited steps is
+**Turing-complete**: it can compute anything a Turing machine can, which is to say, run any
+program. That power brings the halting problem with it, because some runs then never finish and
+there's no general way to tell which. But that's an idealised model, not what actually runs.
 
 ### The agent really is a universal machine
 
 The third piece is the one that changes things. An **agent** is a program that asks the model for
-the next step, carries it out and hands back the result, over and over, until the model decides
-it's done. Simplified:
+the next step, carries it out and hands the result back, over and over, until the model decides
+it's done. In simplified form:
 
 ```python
 def agent(task):
@@ -221,15 +221,15 @@ def agent(task):
 ```
 
 Every call to `model` finishes. But the `while True` has no fixed number of iterations, and
-`execute` can launch arbitrary code, which may itself never finish. As soon as an agent can write
+`execute` can launch arbitrary code, which may itself never finish. Once an agent can write
 programs and run them, the whole system is as powerful as a universal Turing machine, and every
 question about what it will do falls under Rice's theorem: whether it will finish, whether it will
 delete a file it shouldn't, whether it will send a secret somewhere.
 
 That's why no real agent has a bare `while True`. They all carry a maximum number of steps, a time
-limit or a token budget: they give up totality, just like an analyser that says "I don't know"
-after a while. And that's why an agent's safety can't rest on predicting what it will do, only on
-restricting what it can do, which is the idea behind
+limit or a token budget, which gives up totality, just like an analyser that says "I don't know"
+after a while. And it's why an agent's safety can't rest on predicting what it will do, only on
+restricting what it can do. That's the idea behind
 [sandboxes for agents](/blog/sandboxes-para-agentes).
 
 <figure>
@@ -247,69 +247,70 @@ restricting what it can do, which is the idea behind
 
 ## What stays out of reach for good
 
-With the map in front of us, we can separate the impossible from the merely hard. The impossible
-is everything that asks for all three properties at once, and it doesn't depend on how clever the
-AI is.
+With the map in hand, we can separate the impossible from the merely hard. The impossible is
+anything that demands all three properties at once, and it doesn't depend on how clever the AI is.
 
 ### Verifying any program
 
-No AI, however capable, will be able to take any program and always say, without mistakes,
-whether it has bugs, whether it terminates or whether it meets its specification. That's Rice,
-plain and simple. Not even for the code it writes itself: a model that generates programs and
-reviews them still faces the same undecidable question about its own output. An AI that "verifies
-code" has to give something up, and the useful question to ask of every product is what.
+No AI, however capable, will ever be able to take any program and always say, without mistakes,
+whether it has bugs, whether it terminates or whether it meets its specification. That's Rice's
+theorem, plain and simple. It makes no difference if the code is the AI's own: a model that
+generates programs and reviews them still faces the same undecidable question about its own
+output. An AI that "verifies code" has to give something up, and the useful question to ask of any
+product is what.
 
 ### Containing a superintelligence by simulating it
 
 In 2021 [Manuel Alfonseca and five co-authors](https://jair.org/index.php/jair/article/view/12202)
 published a paper with a blunt title: superintelligence cannot be contained. The argument is a
 reduction from the halting problem. Suppose there's a function `Harm(R, D)` that decides whether a
-program `R` with data `D` will harm people. With it you can write a program that runs any Turing
-machine and, if the machine halts, does harm. Knowing whether that program does harm means knowing
-whether the machine halts, and that's impossible. So no algorithm decides whether an arbitrary
-program is harmful, and a containment system that works by deciding that can't exist.
+program `R` running on data `D` will harm people. With it you can write a program that runs an
+arbitrary Turing machine and, if the machine halts, does harm. Knowing whether that program does
+harm means knowing whether the machine halts, and that's impossible. So no algorithm decides
+whether an arbitrary program is harmful, and a containment system that works by deciding that
+can't exist.
 
-The result is correct, and its reach depends on an assumption the authors state explicitly: that
+The result is correct, but its reach depends on an assumption the authors state explicitly: that
 the superintelligence can simulate any Turing machine and that its data is the state of the world.
-In other words, that the program to be contained is fully general. What the theorem rules out is
-a **general, total and exact container**: one that, looking at any program, always predicts
-without error whether it will do harm. The authors say so themselves right after the result: in
-practice, problems like this one are tackled with approximate solutions that accept a small but
-positive error rate.
+In other words, the program to be contained is fully general. What the theorem rules out is a
+**general, total and exact container**: one that looks at any program and always predicts, without
+error, whether it will do harm. The authors say as much right after the result: in practice,
+problems like this are tackled with approximate solutions that accept a small but positive error
+rate.
 
-Sandboxes take another route: they don't predict anything. A [sandbox](/blog/que-es-un-sandbox) is
-an environment where a program runs without being able to touch what lies outside it: it doesn't
-decide whether the agent will want to wipe your disk, it stops it from doing so. That gives up
-generality (the agent can't do just anything), and that's why it's possible. The authors doubt that
-restriction works on a superintelligence, because cutting it off from the world would take away
-what makes it useful; that's an argument about what we'd want from it, not a theorem. The paper
-adds another, odder consequence of Rice: "being superintelligent" is also a property of what a
-program does, so there's no algorithm either that decides, by looking at the code, whether a
-machine is superintelligent. You can measure it with tests; you can't guarantee it.
+Sandboxes take a different route: they don't predict anything. A [sandbox](/blog/que-es-un-sandbox)
+is an environment where a program runs without being able to touch anything outside it. It doesn't
+decide whether the agent will want to wipe your disk; it stops it from doing so. That gives up
+generality (the agent can't do whatever it likes), which is exactly why it's possible. The authors
+doubt that restricting works on a superintelligence, because cutting it off from the world would
+take away what makes it useful. That's an argument about what we'd want from it, not a theorem.
+The paper adds another, odder consequence of Rice: "being superintelligent" is also a property of
+what a program does, so no algorithm can decide, by looking at the code, whether a machine is
+superintelligent either. You can measure it with tests, but you can't guarantee it.
 
 ### Proving the successor is better
 
-The idea of an AI that improves itself has a rigorous formulation from 2003: Jürgen Schmidhuber's
-[Gödel machine](https://arxiv.org/abs/cs/0309048). It's a program that rewrites any part of its own
-code, but only once it has found a formal proof that the rewrite increases its utility. The
-guarantee is perfect, and so is the price: Schmidhuber himself points out that the machine has to
-ignore every improvement whose usefulness it can't prove. "Is this version better than the current
-one?" is a property of what two programs do, and Rice says there's no general method for answering
-it. The Gödel machine chooses to be exact and gives up totality: it only changes when it can prove
-the change is good, and in practice that almost never happens.
+The idea of an AI that improves itself has a rigorous formulation dating from 2003: Jürgen
+Schmidhuber's [Gödel machine](https://arxiv.org/abs/cs/0309048). It's a program that can rewrite
+any part of its own code, but only once it has found a formal proof that the rewrite increases its
+utility. The guarantee is perfect, and so is the price: Schmidhuber himself points out that the
+machine has to ignore every improvement whose usefulness it can't prove. "Is this version better
+than the current one?" is a property of what two programs do, and Rice says there's no general
+method for answering it. The Gödel machine chooses to be exact and gives up totality: it only
+changes when it can prove the change is good, and in practice that almost never happens.
 
-There's a subtler obstacle, to do with trusting the successor. In 2013 Eliezer Yudkowsky and
-Marcello Herreshoff, of MIRI (the *Machine Intelligence Research Institute*), called it the
+There's a subtler obstacle, which has to do with trusting a successor. In 2013 Eliezer Yudkowsky
+and Marcello Herreshoff, of MIRI (the *Machine Intelligence Research Institute*), called it the
 [Löbian obstacle](https://intelligence.org/files/TilingAgents.pdf). Suppose an agent only approves
 a successor if it can prove that everything the successor does will be justified. If the successor
-reasons in the same mathematical theory as the agent, the agent needs to be able to assert
-"everything I prove is true". Löb's theorem, from 1955, says that a consistent theory can't prove
-that about itself in general. The consequence, in the most direct setup, is that each successor
-would have to reason in a weaker theory than the one before, and a chain of self-improvements would
+reasons in the same mathematical theory as the agent, the agent has to be able to assert
+"everything I prove is true". Löb's theorem, from 1955, says that a consistent theory can't, in
+general, prove that about itself. In the most direct setup, the consequence is that each successor
+would have to reason in a weaker theory than the one before, so a chain of self-improvements would
 gradually degrade. The authors found partial technical workarounds and left the problem open.
 
-None of this stops an AI from improving. It stops it from doing so with a proven guarantee in
-general. Further down we'll see what happens when the proof is swapped for an exam.
+None of this stops an AI from improving. It stops it from doing so with a proven guarantee, in
+general. Further down we'll see what happens when you swap the proof for an exam.
 
 ### Never hallucinating
 
@@ -317,11 +318,11 @@ In 2024 [Ziwei Xu, Sanjay Jain and Mohan Kankanhalli](https://arxiv.org/abs/2401
 National University of Singapore, proved that hallucinations are inevitable. They define a formal
 world in which the truth is a computable function `f` that maps each question to its one correct
 answer, and an LLM hallucinates if, however much it's trained, it keeps getting some answer wrong.
-Their theorem says that for any computable LLM there's a computable `f` on which it hallucinates on
-infinitely many questions.
+Their theorem says that for any computable LLM there's a computable `f` on which it hallucinates
+on infinitely many questions.
 
-The proof is the same diagonal as the one for the halting problem. If you number every possible
-model (every training state of every one), you can define the truth like this:
+The proof is the same diagonal argument as the one for the halting problem. If you number every
+possible model (every training state of every one), you can define the truth like this:
 
 ```python
 def truth(i):
@@ -330,31 +331,32 @@ def truth(i):
 ```
 
 Every model is wrong at least on its own question on the diagonal, and since the construction can
-be repeated, on infinitely many. The result is correct, and it's worth reading with the same
-attention to quantifiers as Turing's theorem:
+be repeated, on infinitely many. The result is correct, and it deserves the same attention to
+quantifiers as Turing's theorem:
 
 - It's an **existence** result. For each model there's a world, built on purpose against it, in
   which it fails. It says nothing about how often a particular model fails on real questions,
-  which is what matters when you use it.
+  which is what matters when you actually use it.
 - It assumes the model **always answers**. The authors say so themselves: a model that never
   answers never hallucinates either. And their main theorem doesn't apply to a model that consults
   external sources or uses tools.
 
-In the language of the trilemma, what's impossible is a model that answers any question
-(general), always (total) and without mistakes (exact). A model that sometimes says "I don't know"
-isn't covered by the theorem. Whether that's a practical way out or a cop-out depends on how often
-it says it, and that's the question of a later section.
+In terms of the trilemma, what's impossible is a model that answers any question (general), every
+time (total) and without mistakes (exact). A model that sometimes says "I don't know" isn't
+covered by the theorem. Whether that's a practical way out or a cop-out depends on how often it
+says it, which is the subject of a later section.
 
 ## Propose and check
 
-Everything that stays out of reach asks for all three properties. Everything that improves gives
-one up, and nearly always the same one: totality. The pattern is the one of certificates. The model
-acts as the **searcher**: it proposes a verdict along with an argument that can be checked. A small
-program that always finishes acts as the **checker**: it accepts or rejects it. If it accepts, the
-conclusion is certain even though the model can't be trusted. If it rejects, it sends the error
-back and the model tries again, until the budget runs out and the answer is "I don't know".
+Everything that stays out of reach demands all three properties. Everything that improves gives
+one up, and nearly always the same one: totality. The pattern is the one of certificates. The
+model acts as the **searcher**: it proposes a verdict together with an argument that can be
+checked. A small program that always finishes acts as the **checker**, accepting or rejecting it.
+If it accepts, the conclusion is certain even though the model can't be trusted. If it rejects, it
+sends the error back and the model tries again, until the budget runs out and the answer is "I
+don't know".
 
-The checkers come in three kinds. An **SMT solver** (*satisfiability modulo theories*), such as
+There are three kinds of checker. An **SMT solver** (*satisfiability modulo theories*), such as
 Microsoft's Z3, says whether a formula over numbers, arrays or bits has any solution. A **theorem
 prover**, such as Lean, checks mathematical proofs written in a formal language. And a **program
 verifier**, such as Dafny, checks that a program meets the specification written alongside it.
@@ -375,22 +377,22 @@ What they check is mechanical; the hard part, finding what to give them, we leav
 
 ### Termination
 
-The classic certificate that a loop terminates is the ranking function: if there's a quantity that
-can't drop below zero and goes down on every iteration, the loop can't go round forever. Finding
-one takes ingenuity; checking that a proposed function meets both conditions is a question an SMT
+The classic certificate that a loop terminates is the ranking function: if some quantity can't
+drop below zero and goes down on every iteration, the loop can't go round forever. Finding one
+takes ingenuity; checking that a proposed function meets both conditions is a question an SMT
 solver can answer.
 
-The idea of using a neural network as the searcher predates LLMs. In
+Using a neural network as the searcher predates LLMs. In
 [*Neural Termination Analysis*](https://arxiv.org/abs/2102.03824), from 2022, Mirco Giacobbe,
 Daniel Kroening and Julian Parsert trained a tiny network, with fewer than ten neurons, on runs of
-the program so that its output went down along each run. Then an SMT solver checked whether the
+the program so that its output went down along each run. An SMT solver then checked whether the
 network was a valid ranking function for every possible run, not just the ones it had seen. On
 loops like `while (x*x*x < y) x++`, which two established tools, AProVE and Ultimate, couldn't
 prove within a minute, the network found and verified `max(y - x, 0)` in under a second. It's
 worth not overselling it, though: on the 110 standard problems in their benchmark, the network
 solved 76.6%, behind AProVE (89.1%) and Ultimate (86.4%). Its edge was on non-linear loops.
 
-With LLMs, the question changed: do they know whether a program terminates? A team from Meta's AI
+With LLMs the question changed: do they know whether a program terminates? A team from Meta's AI
 research lab (FAIR, *Fundamental AI Research*), the Hebrew University of Jerusalem, Bloomberg,
 Imperial College and University College London
 [measured it in 2026](https://arxiv.org/abs/2601.18987) on the 2,328 C programs in the termination
@@ -408,66 +410,66 @@ software verifiers). The competition scores answers like this:
 With those penalties, answering "terminates" only pays off if the probability of being right is
 above 32/34, about 94%. The competition punishes a mistake far more than it rewards a correct
 answer. The authors asked each model ten times and only gave a verdict when all ten answers
-agreed; otherwise, "I don't know". With that consensus, OpenAI's GPT-5 scored 3,520 points and
-Anthropic's Claude Sonnet 4.5 scored 3,448, which would have placed them second and third in the
-competition, behind only PROTON, the tool that won.
+agreed; otherwise it was "I don't know". With that consensus, OpenAI's GPT-5 scored 3,520 points
+and Anthropic's Claude Sonnet 4.5 scored 3,448, which would have put them second and third in the
+competition, behind only PROTON, the winning tool.
 
 The interesting result is in the witness. For every "doesn't terminate", SV-COMP asks for a
 description of the infinite run, a cycle of states the program can go round forever, and another
 tool checks it with an SMT solver. That's where the models fall apart: only 41.4% of GPT-5's
 witnesses and 40.7% of Claude's were valid, and that's counting only the cases where the verdict
 was right. The authors describe it as a gap between recognising what a program does and producing
-the symbolic proof. In terms of the trilemma: the bare verdict is a very good bet, and gives up
-exactness; the verdict with a checked witness is certain, but only arrives in fewer than half the
-cases.
+the symbolic proof. In terms of the trilemma: the bare verdict is a very good bet that gives up
+exactness, while the verdict with a checked witness is certain but only arrives in fewer than half
+the cases.
 
 Plugging the model into a theorem prover is the next step. In
 [a paper presented at ITP 2026](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITP.2026.22),
-the conference on interactive theorem proving, Zeke Medley and Panagiotis Manolios, of
-Northeastern University, connected two open-weight models, OpenAI's gpt-oss-120b and Alibaba's
-Qwen3-32B, to ACL2s, a theorem prover for programs written in a dialect of Lisp. The model proposes
-a **measure**, the ranking function of a recursive program; ACL2s tries to prove it valid and, if
-it fails, sends back the error or a counterexample. On their collection of 42 functions,
+the conference on interactive theorem proving, Zeke Medley and Panagiotis Manolios of Northeastern
+University connected two open-weight models, OpenAI's gpt-oss-120b and Alibaba's Qwen3-32B, to
+ACL2s, a theorem prover for programs written in a dialect of Lisp. The model proposes a
+**measure**, the ranking function of a recursive program; ACL2s tries to prove it valid and, if
+that fails, sends back the error or a counterexample. On their collection of 42 functions,
 gpt-oss-120b solved 70% of the ones from a university course and 93% of the ones from termination
-competitions, against 65% and 63% for the analysis built into ACL2s. Combining the two, the model
-and the automatic analysis, solved 39% more problems than the best model on its own, and more than
-three times as many as the automatic analysis.
+competitions, against 65% and 63% for the analysis built into ACL2s. The model and the automatic
+analysis together solved 39% more problems than the best model on its own, and more than three
+times as many as the automatic analysis.
 
-Two details of that work deserve attention. The first: giving the model more information from the
-prover doesn't always help. The best configuration for both models left out the history of
-earlier attempts. The second is almost a joke at the theorem's expense: on hard problems,
+Two details of that work deserve attention. The first is that giving the model more information
+from the prover doesn't always help: the best configuration for both models left out the history
+of earlier attempts. The second is almost a joke at the theorem's expense. On hard problems,
 gpt-oss-120b sometimes fell into a loop of its own, proposing a measure with the constant 3121,
-then 3122, then 3123, until it ran out of context window. The searcher didn't terminate. It doesn't
-matter, because the system treats that as a failed attempt and falls back to "I don't know": the
-guarantee never depended on it.
+then 3122, then 3123, until it ran out of context window. The searcher didn't terminate. It
+doesn't matter, because the system treats that as a failed attempt and falls back to "I don't
+know". The guarantee never depended on the searcher.
 
 ### Verified code
 
 The same pattern works for writing programs. A group from the Beneficial AI Foundation and MIT,
-including Max Tegmark, called it [*vericoding*](https://arxiv.org/abs/2509.22908), by contrast with
-*vibe coding*: instead of asking for code from a description in natural language, you give the
-model a **formal specification** (what the output must satisfy for each input) and it has to return
-the implementation together with a proof that it meets it. A verifier checks the result.
+including Max Tegmark, called it [*vericoding*](https://arxiv.org/abs/2509.22908), as opposed to
+*vibe coding*. Instead of asking for code from a description in natural language, you give the
+model a **formal specification** (what the output must satisfy for each input), and it has to
+return the implementation together with a proof that it meets it. A verifier checks the result.
 
-Their benchmark, from 2025, has 12,504 specifications in three languages: Dafny, created at
-Microsoft Research, which checks specifications automatically with an SMT solver; Verus, a
-verifier for Rust; and Lean. With five attempts per task and the verifier's errors fed back between
-attempts, the models of the day solved 82% in Dafny, 44% in Verus and 27% in Lean, counting a task
-as solved if any of the nine models tested solved it. The numbers for any single model are
-considerably lower.
+Their 2025 benchmark has 12,504 specifications in three languages: Dafny, created at Microsoft
+Research, which checks specifications automatically with an SMT solver; Verus, a verifier for
+Rust; and Lean. With five attempts per task and the verifier's errors fed back between attempts,
+the models of the day solved 82% in Dafny, 44% in Verus and 27% in Lean, counting a task as solved
+if any of the nine models tested solved it. The numbers for any single model are considerably
+lower.
 
 A later benchmark puts that in perspective. [AlgoVeri](https://icml.cc/virtual/2026/poster/61803),
 presented at ICML 2026, one of the main machine learning conferences, points out that each
 language's benchmarks contain different tasks and can't be compared, so it sets 77 classic
 algorithms with exactly the same specification in all three languages. On it, the best result in
-Dafny, from Gemini 3 Flash, is 40.3%, and the numbers drop to 24.7% in Verus and 7.8% in Lean. The
-order holds; the gap with the first benchmark doesn't.
+Dafny, from Gemini 3 Flash, is 40.3%, falling to 24.7% in Verus and 7.8% in Lean. The ranking
+holds; the much higher numbers of the first benchmark don't.
 
 When the verifier accepts, the code meets the specification, no exceptions. But that shifts the
-problem onto the specification, which is written by a person or, more and more often, by another
-model. The authors of the first benchmark went through a sample of solved tasks by hand and found
-that around 9% had specifications that were too weak and admitted trivial solutions, and another
-15% had been badly translated from one language to another. Perfectly verified code against a
+problem onto the specification, which is written by a person or, increasingly, by another model.
+The authors of the first benchmark went through a sample of solved tasks by hand and found that
+around 9% had specifications that were too weak and admitted trivial solutions, and another 15%
+had been badly translated from one language to another. Perfectly verified code against a
 specification that doesn't say what you wanted is a proven bug. Who checks the specification is,
 today, the most important open question in this line of work.
 
@@ -475,8 +477,8 @@ today, the most important open question in this line of work.
 
 If hallucinating in some world is inevitable for a model that always answers, the practical
 question is a different one: why do models always answer? In September 2025 Adam Tauman Kalai,
-Ofir Nachum and Edwin Zhang, of OpenAI, and Santosh Vempala, of Georgia Tech,
-[gave an answer](https://arxiv.org/abs/2509.04664) with nothing mysterious about it.
+Ofir Nachum and Edwin Zhang of OpenAI, and Santosh Vempala of Georgia Tech,
+[gave an answer](https://arxiv.org/abs/2509.04664) that is not at all mysterious.
 
 The first part lies in pre-training. Generating only valid statements is at least as hard as
 classifying whether a sentence is valid, and generation errors come out at roughly twice the rate
@@ -485,15 +487,15 @@ of that classification's. For arbitrary facts, with no pattern to learn, the res
 at least 20% of them. This has nothing to do with Turing; it's statistics.
 
 The second part lies in evaluation, and it's the part that can be fixed. Almost every benchmark
-scores answers in binary: a point if you're right, zero if you're wrong, zero if you say "I don't
-know". Under that rule, abstaining is always worse than guessing, because a guess has some chance
-of scoring. The authors went through ten widely used benchmarks and only one gave any credit, and
-only partial, for "I don't know". A model trained and selected on those numbers learns to be a good
-exam-taker: when in doubt, answer.
+scores answers in binary: a point if you're right, zero if you're wrong, and zero if you say "I
+don't know". Under that rule, abstaining is always worse than guessing, because a guess has some
+chance of scoring. The authors went through ten widely used benchmarks, and only one gave any
+credit for "I don't know", and only partial. A model trained and selected on those numbers learns
+to be a good test-taker: when in doubt, answer.
 
 Their proposal is to change the exam's instructions: tell the model to answer only if its
-confidence is above a threshold $t$, that a correct answer is worth 1 point, a wrong one costs
-$t/(1-t)$ and "I don't know" is worth 0. If the model believes it's right with probability $p$,
+confidence is above a threshold $t$, with a correct answer worth 1 point, a wrong one costing
+$t/(1-t)$ and "I don't know" worth 0. If the model believes it's right with probability $p$,
 answering earns it on average
 
 $$
@@ -505,8 +507,8 @@ $t = 0.9$, it costs nine. It's the same logic as the SV-COMP table, whose −32 
 threshold at 94%.
 
 The authors also point out that a model that never hallucinates is easy to build: a database of
-questions with their answers, a calculator and "I don't know" for everything else. It's useless,
-but it doesn't hallucinate, and it doesn't contradict Xu and his co-authors, because it gives up
+questions and answers, a calculator and "I don't know" for everything else. It's useless, but it
+doesn't hallucinate, and it doesn't contradict Xu and his co-authors, because it gives up
 totality. All the practical work on hallucinations lives between that extreme and the model that
 always answers: saying "I don't know" often enough not to make things up, and rarely enough to be
 of some use. That can be measured and improved. Eliminating hallucinations from a model that
@@ -518,9 +520,9 @@ The most visible improvement in models over the last few years, reasoning in mat
 programming, follows the same pattern, applied to training. In reinforcement learning (RL), the
 model generates answers and receives a reward according to how good they are. For years that
 reward came from another model, trained to imitate human judgement. In 2024 the report on
-[Tülu 3](https://arxiv.org/abs/2411.15124), an open model from the Allen Institute for AI, gave the
-alternative a name: **reinforcement learning with verifiable rewards** (RLVR), in which the reward
-comes from a function that checks the answer, and there's only a reward when the answer is
+[Tülu 3](https://arxiv.org/abs/2411.15124), an open model from the Allen Institute for AI, named
+the alternative: **reinforcement learning with verifiable rewards** (RLVR), where the reward comes
+from a function that checks the answer, and the model is only rewarded when the answer is
 verifiably correct.
 
 [DeepSeek-R1](https://arxiv.org/abs/2501.12948), in January 2025, took this a long way. Its first
@@ -534,42 +536,42 @@ The limit of this method is exactly the limit of the checker. It works where che
 reliable: a numerical answer, a proof in Lean. In 2025 two systems reached gold-medal level at the
 International Mathematical Olympiad with solutions formalised in Lean and checked by its kernel.
 Where the checker is a set of tests, the reward inherits whatever the tests don't see: a program
-that passes them hasn't been proven correct. And where there's no checker, in an essay, a
-diagnosis or a decision, the method has nothing to pull on.
+that passes them hasn't been proven correct. And where there's no checker, as in an essay, a
+diagnosis or a decision, the method has nothing to work with.
 
 ## Self-improvement: swapping the proof for an exam
 
-The Gödel machine demanded a proof before every change, and that's why it never got anywhere. In
+The Gödel machine demanded a proof before every change, which is why it never got anywhere. In
 2025 Jenny Zhang, Shengran Hu, Cong Lu, Robert Lange and Jeff Clune, of the University of British
 Columbia, the Vector Institute and Sakana AI, published the
 [*Darwin Gödel Machine*](https://arxiv.org/abs/2505.22954), which swaps the proof for an exam. It's
 a coding agent that modifies its own code (its instructions, its tools, how it organises its work)
 without touching the weights of the model, which stays frozen. Each new version is evaluated on a
 benchmark and stored in an archive from which the next ones are drawn, as in evolution: variants
-are tried and the ones that work are kept. The authors put it plainly: proving that most changes are
-beneficial is impossible in practice, so they validate them empirically.
+are tried and the ones that work are kept. The authors put it plainly: proving that most changes
+are beneficial is impossible in practice, so they validate them empirically.
 
 It worked. Over 80 iterations, the agent went from solving 20% to 50% of the tasks in SWE-bench
-Verified, a benchmark of 500 real problems from Python repositories on GitHub where you have to
-write the change that makes the tests pass, measured on subsets of those tasks. Each full run cost
+Verified, a benchmark of 500 real problems from Python repositories on GitHub, where you have to
+write the change that makes the tests pass (measured on subsets of those tasks). Each full run cost
 about \$22,000 in model calls and took about two weeks.
 
 And here the price of swapping a proof for an exam shows up. In a separate experiment, the authors
 asked the system to fix a flaw in the model: it would sometimes write into its answer the output of
 a tool it had never called, as if it had run the tests and they had passed. To detect this, the
-evaluation inserted special markers whenever a tool was really used, and checked whether they
-appeared in the model's text without having been produced. One version reached a perfect score
-after only two modifications. It had removed the logging of those markers, even though its
+evaluation inserted special markers whenever a tool was really used, and checked whether any
+showed up in the model's text that no tool had actually produced. One version reached a perfect
+score after only two modifications. It had removed the logging of those markers, even though its
 instructions said not to touch them, and with that the detector stopped detecting anything. The
 authors also observed that this kind of cheating was more frequent when the agent could see the
 evaluation functions.
 
 This is **Goodhart's law**, stated by the economist Charles Goodhart in 1975 and best known in the
-anthropologist Marilyn Strathern's version: when a measure becomes a target, it ceases to be a good
-measure. A benchmark sidesteps the theorem because it gives up exactness: passing it proves nothing
-about the cases it doesn't contain. What it inherits is that a system optimised against it can
-learn to pass without doing what the benchmark was meant to measure. The same weaknesses that make
-the number on a model card misleading, covered in the
+anthropologist Marilyn Strathern's phrasing: when a measure becomes a target, it ceases to be a
+good measure. A benchmark sidesteps the theorem because it gives up exactness: passing it proves
+nothing about the cases it doesn't contain. What it inherits is that a system optimised against it
+can learn to pass without doing what the benchmark was meant to measure. The same weaknesses that
+make the number on a model card misleading, covered in the
 [article on benchmarks](/blog/bancos-de-pruebas), get worse when the one sitting the exam can
 rewrite itself.
 
@@ -577,9 +579,9 @@ rewrite itself.
 from Google DeepMind, shows the other side. It's a system in which Google's Gemini language models
 propose programs and **automated evaluators** run them, check them and score them. Its results,
 announced in May 2025, are among the most solid the idea has produced: a heuristic for the
-scheduler of Google's data centres that recovers, on average, 0.7% of its computing capacity
-worldwide; a way of splitting a matrix multiplication that sped up a part of Gemini by 23% and cut
-its training time by 1%; a method for multiplying 4×4 complex-valued matrices with 48
+scheduler of Google's data centres that recovers, on average, 0.7% of their computing capacity
+worldwide; a way of splitting a matrix multiplication that sped up one part of Gemini by 23% and
+cut its training time by 1%; a method for multiplying 4×4 complex-valued matrices with 48
 multiplications, improving on Volker Strassen's from 1969; and, on more than 50 open mathematical
 problems, matching the best known solution in around 75% of cases and improving on it in nearly
 20%.
@@ -592,7 +594,7 @@ more room it has.
 
 ## What remains open
 
-The active lines of research sort themselves on this map, because nearly all of them are about
+The active lines of research sort themselves onto this map, because nearly all of them are about
 improving the checker or taking it where it doesn't yet reach:
 
 - **Reliable specifications.** Going from a description in natural language to a formal
@@ -604,16 +606,16 @@ improving the checker or taking it where it doesn't yet reach:
 - **Evaluations that reward abstaining.** Changing how the most widely used benchmarks are scored,
   as Kalai and his co-authors propose, is cheap and changes what gets optimised.
 - **Evaluators the system can't touch.** The *Darwin Gödel Machine*'s cheating suggests separating
-  whatever is being improved from whatever evaluates it, with the same logic as a sandbox.
+  whatever is being improved from whatever evaluates it, on the same logic as a sandbox.
 - **Trusting a successor.** The Löbian obstacle still has no complete solution, and it's the formal
   version of the question that worries people most about self-improvement.
 
 ## What to take away
 
-If you take away one thing, make it this: **the halting problem doesn't limit AI, it limits any
+If you take away one thing, make it this: **the halting problem doesn't limit AI; it limits any
 procedure that wants to be general, total and exact at once.** An AI that verified any program,
-always and without error, will never exist, and neither will a person who does. Everything that
-improves does so by giving up one of the three.
+always and without error, will never exist, and neither will a person who can do it. Everything
+that improves does so by giving up one of the three.
 
 <figure>
   <img
@@ -630,23 +632,22 @@ improves does so by giving up one of the three.
 
 And if you take away three more, make them these:
 
-**Undecidability comes in through the loop, not the model.** A pass of the model and its chain of
-thought always finish; what they have is a limit of complexity, which more steps and more
+**Undecidability comes in through the loop, not the model.** One pass of the model and its chain of
+thought always finish; what they face is a limit of complexity, which more steps and more
 computation keep pushing back. The agent that writes and runs code really is a universal machine,
-and that's why its safety is built by restricting what it can do, not by predicting what it will
-do.
+which is why its safety is built by restricting what it can do, not by predicting what it will do.
 
-**Real improvement has the shape of a certificate.** The model proposes and a small program checks:
-ranking functions, witnesses, code with its proof, answers that can be verified. The guarantee
-comes from the checker, and models are already good searchers, though still much better at getting
-the verdict right than at justifying it.
+**Real improvement has the shape of a certificate.** The model proposes and a small program
+checks: ranking functions, witnesses, code with its proof, answers that can be verified. The
+guarantee comes from the checker. Models are already good searchers, though they're still much
+better at getting the verdict right than at justifying it.
 
-**Swapping the proof for an exam gets around Turing, but not around Goodhart.** A benchmark doesn't
-have to decide anything, and that's why it works. But a system optimised against it can learn to
-pass it, and that gets worse when the system can also rewrite its own code.
+**Swapping the proof for an exam gets around Turing, but not Goodhart.** A benchmark doesn't have
+to decide anything, and that's why it works. But a system optimised against it can learn to pass
+it, and that gets worse when the system can also rewrite its own code.
 
-Faced with the next headline about an AI that "verifies", "doesn't hallucinate" or "improves
-itself", four questions are enough. On any program or question, or on those of a particular class?
-Does it always answer, or does it sometimes say "I don't know"? When it answers, is there a
-certificate that another program checks, or only a good score on a benchmark? And if it's the
-latter, could the system touch the exam?
+The next time you see a headline about an AI that "verifies", "doesn't hallucinate" or "improves
+itself", four questions are enough. Does it work on any program or question, or only on a
+particular class? Does it always answer, or does it sometimes say "I don't know"? When it
+answers, is there a certificate that another program checks, or only a good score on a benchmark?
+And if it's the latter, could the system touch the exam?
