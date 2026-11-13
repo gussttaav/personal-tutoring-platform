@@ -110,28 +110,66 @@ Orthogonal to the class, every lesson carries a **re-run** flag — what has to 
 its prose can be written: **P** (Pyodide cells against the English checkpoint or modules),
 **T** (terminal runs against the local model), **C** (Colab), **—** (nothing).
 
-### The planning-pass estimate — P3-00 replaces it with a count
+### The count — P3-00, 2026-11-13
+
+Every published lesson was read (`es/01` … `es/40`; `00-pipeline-fixture.mdx` is a draft fixture
+and is **excluded**). Each block md now carries its Classification table, what changed from the
+planning pass, its cross-course references, the frozen-module identifiers its prose names, and a
+per-lesson artifact inventory with line refs.
+
+One flag is split. **P (scripted)** is a cell that loads only the scripted model and the Block 4
+modules. Everything it prints is a function of strings the author writes, so the English run checks
+the prose and measures nothing new. Plain **P** runs the mini-GPT, the BPE or retrieval over the
+corpus, and quotes a measurement.
 
 | Block | Lessons | Transpose | Adapt | Rewrite | Re-run |
 |---|---|---|---|---|---|
-| [1 — From the Transformer to the Language Model](04-block-1.md) | 9 | 1 | 6 | 2 | P ×7 |
-| [2 — From Predicting Text to Following Instructions](05-block-2.md) | 8 | 1 | 7 | 0 | P ×6 · C ×1 |
-| [3 — Talking to the Model Is Programming](06-block-3.md) | 7 | 0 | 7 | 0 | P ×7 |
-| [4 — The Bridge: from Text to Actions](07-block-4.md) | 7 | 0 | 7 | 0 | P ×7 |
-| [5 — A Coding Agent in the Terminal](08-block-5.md) | 9 | 0 | 7 | 2 | T ×9 |
-| **Phase** | **40** | **2** | **34** | **4** | |
+| [1 — From the Transformer to the Language Model](04-block-1.md) | 9 | 0 | 7 | 2 | P ×8 · — ×1 |
+| [2 — From Predicting Text to Following Instructions](05-block-2.md) | 8 | 1 | 6 | 1 | P ×6 · C ×1 · — ×1 |
+| [3 — Talking to the Model Is Programming](06-block-3.md) | 7 | 0 | 6 | 1 | P ×5 · P (scripted) ×2 |
+| [4 — The Bridge: from Text to Actions](07-block-4.md) | 7 | 0 | 7 | 0 | P (scripted) ×6 · P ×1 |
+| [5 — A Coding Agent in the Terminal](08-block-5.md) | 9 | 0 | 7 | 2 | T ×9 (5·8 also Kaggle ×2) |
+| **Phase** | **40** | **1** | **33** | **6** | P ×20 · P (scripted) ×8 · T ×9 · C ×1 · — ×2 |
 
-These rows are guesses from a scan of the Spanish tree (components, `open_url` targets, quiz
-answers, where the corpus is quoted), not from reading each lesson. `dl-nlp`'s planning pass was
-wrong on five of six pre-filled rows in its last block. P3-00 reads every lesson and corrects them.
+The planning pass estimated 2 / 34 / 4. Four rows moved:
 
-What the estimate already says, and P3-00 will not change: **this phase is adapt-heavy and
-re-run-heavy, and light on rewrites.** Only two lessons are clean transposes (1·7 and 2·7, the two
-whose numbers are all published figures or arithmetic), because nearly every other lesson quotes its
-own model. The four rewrites are the four places where the language is the subject: 1·2 (UTF-8 and
-Spanish spelling), 1·8 (Spanish morphology as the in-context task), 5·2 and 5·4 (the model's
-language as a finding, and as an instruction). The cost is in P3-02 (the checkpoint), in the identifier
-map and the module siblings, and in Block 5's runs, not in the prose.
+- **1·7 transpose → adapt.** Its one cell loads nothing, but it hard-codes the checkpoint's
+  training-token count and step, and its argument (right size, too little text) is quoted from
+  that output.
+- **2·3 adapt → rewrite.** Its only evidence that the fine-tuned model reads the question is the
+  Spanish article agreeing with the question's noun. P3-02 already re-stated property 4 because
+  English has no agreement, and the lesson's argument and `q-el-vino` go with it.
+- **3·4 adapt → rewrite.** The causal mean's asymmetry is measured on the Spanish **opening** `¿`,
+  and `q-el-signo` asks about it. English questions have no opening mark.
+- **4·6 stays adapt, but its re-run is a measurement.** It counts the whole novel with the BPE.
+
+The estimate's conclusion stands: **adapt-heavy, re-run-heavy, light on rewrites**, and the cost is
+in P3-02, the identifier map and Block 5's runs. The six rewrites are 1·2, 1·8, 2·3, 3·4, 5·2 and
+5·4, each the place where Spanish spelling, morphology, agreement, punctuation or the model's
+language is the evidence.
+
+**What the triage hands to the tasks before the blocks:**
+
+- **P3-01**: `context-window`'s `compactacion` preset holds the Spanish run's measured sizes and is
+  **missing from `SPANISH_BOUND_CORPORA`**. Add it. The `asistente` and `agente` presets hold no
+  text and need nothing.
+- **P3-02**: the triage found corpus properties that lessons rely on, beyond the ones
+  `train-minigpt.py` asserts. Check each candidate corpus for them:
+  - the held-out 10 % contains at least one token the training part never saw (1·6's quiz and its
+    `inf` exercise);
+  - the text has no `{` and no straight `"` (3·3's «un modelo que nunca había visto una llave»);
+  - the whole corpus encodes to more than 128 000 tokens with the English merge list (4·6);
+  - one character name the BPE never merges with its leading space (1·9's « Golfín»);
+  - the frame's answer word (2·1's «Respuesta:») never occurs;
+  - a passage whose dialogue tag names someone other than the answer (3·7), and a question / answer
+    pair separated by a vocabulary gap (3·4).
+  English dialogue punctuation also changes 1·8's colon count and 2·1's `MANERAS`.
+- **P3-03**: decide the message roles before 4·2 freezes them. If they are `user` / `assistant`, 5·2's
+  adapter translates no role. Every identifier the prose names is listed per block.
+  `dl-nlp`'s code name is quoted by **1·9** (`paso(entrada)`), not 1·1, and no lesson quotes
+  `genera(…)`.
+
+The full per-block reasoning is in the block mds.
 
 ## Locked decisions
 
@@ -189,9 +227,10 @@ P3-03 against what P3-02 found.
 
 ## Sequencing constraints
 
-- **`dl-nlp`'s Block 5 translation comes first.** 1·1 opens on `dl-nlp`'s last lesson and quotes
-  its `genera(paso, go, eos, max_pasos)` from 5.9 `proyecto-transformer`; `dl-nlp`'s P11-08 still
-  has 5.6–5.11 open. A reference can fall back to Spanish; a code name cannot. See P3-03.
+- **`dl-nlp`'s Block 5 translation comes first.** 1·1 opens on `dl-nlp`'s last lesson, and 1·9
+  quotes `paso(entrada)` from 5.9 `proyecto-transformer` by name (P3-00: not `genera(…)`, and not
+  1·1); `dl-nlp`'s P11-08 still has 5.6–5.11 open. A reference can fall back to Spanish; a code name
+  cannot. See P3-03.
 - **Phase 2 is still open** (`P2-01` hand-off, `P2-02` announcement). Neither blocks this phase. If
   the announcement goes out before English lessons exist, the English email must say the lessons are
   in Spanish; an "English edition" announcement is out of scope here.
