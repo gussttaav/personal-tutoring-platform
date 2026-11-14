@@ -24,7 +24,9 @@ jobs:
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # CI-SUPABASE-PIN-01: a pinned version downloads the release directly; `latest` resolves
+          # it through the GitHub API first, and that lookup failed CI on 2026-11-14 (rate limit).
+          version: 3.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
