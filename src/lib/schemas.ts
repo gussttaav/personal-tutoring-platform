@@ -15,6 +15,10 @@
  * the same schema definitions and inferred types.
  *
  * CHAT-AGENT-P1-02: ChatRequestSchema (was parsed inline in /api/chat).
+ *
+ * REFACTOR-R5-P1-04: SingleCheckoutSchema rejects `rescheduleToken`. A reschedule is never
+ * paid for (POST /api/book books it free), and a token on a paid checkout made the webhook
+ * reschedule a class the student had just paid for again.
  */
 
 import { z } from "zod";
@@ -62,7 +66,10 @@ export const SingleCheckoutSchema = z.object({
   duration:        z.enum(["1h", "2h"]),
   startIso:        z.string().datetime(),
   endIso:          z.string().datetime(),
-  rescheduleToken: z.string().optional(),
+  // REFACTOR-R5-P1-04: a reschedule is never paid for — it goes through POST /api/book.
+  // Rejected (not stripped): a silently dropped token would book a SECOND class and leave
+  // the original in place.
+  rescheduleToken: z.never().optional(),
   attribution:     OptionalAttribution, // BOOKING-ATTRIBUTION-01
 });
 

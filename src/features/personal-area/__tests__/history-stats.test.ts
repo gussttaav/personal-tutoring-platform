@@ -188,6 +188,47 @@ describe("paymentLabel", () => {
   });
 });
 
+// REFACTOR-R5-P2-02: the row says why it was cancelled; legacy rows (no outcome fields)
+// keep the old reading.
+describe("paymentLabel — cancel/reschedule outcome (REFACTOR-R5-P2-02)", () => {
+  const pack = (over: Partial<BookingHistoryEntry>) =>
+    entry({ sessionType: "pack", packSize: 5, amountCents: null, currency: null, ...over });
+
+  it.each<[string, Partial<BookingHistoryEntry>, string]>([
+    ["pack, not cancelled",                         { status: "completed" },                                              "payCredit"],
+    ["pack, not cancelled even if flagged",         { status: "completed", rescheduled: false, creditRestored: null },   "payCredit"],
+    ["pack, rescheduled original",                  { status: "cancelled", rescheduled: true, creditRestored: null },    "payCreditMoved"],
+    ["pack, cancelled, credit NOT restored",        { status: "cancelled", rescheduled: false, creditRestored: false },  "payCreditNotRestored"],
+    ["pack, cancelled, credit restored",            { status: "cancelled", rescheduled: false, creditRestored: true },   "payCreditRefunded"],
+    ["pack, cancelled, legacy (fields undefined)",  { status: "cancelled" },                                              "payCreditRefunded"],
+    ["pack, cancelled, legacy (creditRestored null)", { status: "cancelled", rescheduled: false, creditRestored: null }, "payCreditRefunded"],
+  ])("%s → %s", (_name, over, key) => {
+    expect(paymentLabel(pack(over), "es")).toEqual({ key });
+  });
+
+  it("reads a rescheduled paid original as paid on the rescheduled class", () => {
+    // deriveAmount gives it no amount; without the flag it would read "Gratis".
+    expect(paymentLabel(entry({
+      sessionType: "session1h", status: "cancelled", rescheduled: true, amountCents: null, currency: null,
+    }), "es")).toEqual({ key: "payRescheduled" });
+  });
+
+  it("keeps a rescheduled free call as free", () => {
+    expect(paymentLabel(entry({
+      sessionType: "free15min", status: "cancelled", rescheduled: true, amountCents: null, currency: null,
+    }), "es")).toEqual({ key: "payFree" });
+  });
+
+  it("reads a cancelled, NOT rescheduled paid class with its card amount (as today)", () => {
+    expect(paymentLabel(entry({ status: "cancelled", rescheduled: false, amountCents: 7500 }), "es").key)
+      .toBe("payCard");
+  });
+
+  it("reads a legacy rescheduled paid original (no flag) with its card amount, as today", () => {
+    expect(paymentLabel(entry({ status: "cancelled", amountCents: 7500 }), "es").key).toBe("payCard");
+  });
+});
+
 describe("canReview", () => {
   it("allows rating a completed, unrated class", () => {
     expect(canReview(entry())).toBe(true);

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" width="760" height="200" role="img"
+ aria-label="Tres cajas de izquierda a derecha, de lo que siempre termina a lo que puede no terminar. A la izquierda, una pasada del modelo: un circuito fijo que siempre termina; saber qué hará con un conjunto de entradas es decidible, aunque NP-completo. En el centro, la cadena de pensamiento: muchas pasadas seguidas, con un tope de tokens, así que también termina; cuantos más pasos, más problemas alcanza, y con un número polinómico de pasos resuelve exactamente los de la clase P. Las dos son cuestión de complejidad. A la derecha, el agente: un bucle con herramientas que puede escribir y ejecutar código, sin tope, que equivale a una máquina universal; ahí empieza la computabilidad, y preguntas como si terminará o si borrará algo caen bajo el teorema de Rice.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.d { stroke: #86948a; stroke-dasharray: 3 3; }
+  .bx.o { fill: #131315; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ln { fill: none; stroke: #86948a; stroke-width: 1.2; }
+  .ln.m { stroke: #4edea3; }
+  .ln.w { stroke: #e8a24c; }
+  .ln.x { stroke: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ar.x { stroke: #ffb4ab; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd m" x="260.0" y="30.0" style="text-anchor:middle">COMPLEJIDAD: SIEMPRE TERMINA</text>
+<path class="ln m" d="M40.0,40.0 L480.0,40.0"/>
+<text class="hd x" x="630.0" y="30.0" style="text-anchor:middle">COMPUTABILIDAD</text>
+<path class="ln x" d="M520.0,40.0 L740.0,40.0"/>
+<rect class="bx m" x="40.0" y="62.0" width="180.0" height="56.0" rx="6"/>
+<text class="lb m" x="130.0" y="88.0">Una pasada</text>
+<text class="sb" x="130.0" y="102.0">circuito fijo</text>
+<text class="sb" x="130.0" y="142.0">siempre termina;</text>
+<text class="sb" x="130.0" y="156.0">verificarla es decidible,</text>
+<text class="sb" x="130.0" y="170.0">aunque NP-completo</text>
+<path class="ar" d="M222.0,90.0 L288.0,90.0"/>
+<rect class="bx m" x="290.0" y="62.0" width="190.0" height="56.0" rx="6"/>
+<text class="lb m" x="385.0" y="88.0">Cadena de pensamiento</text>
+<text class="sb" x="385.0" y="102.0">muchas pasadas, con tope</text>
+<text class="sb" x="385.0" y="142.0">más pasos, más problemas;</text>
+<text class="sb" x="385.0" y="156.0">con pasos polinómicos,</text>
+<text class="sb" x="385.0" y="170.0">exactamente P</text>
+<path class="ar" d="M482.0,90.0 L538.0,90.0"/>
+<rect class="bx x" x="540.0" y="62.0" width="200.0" height="56.0" rx="6"/>
+<text class="lb x" x="640.0" y="88.0">Agente</text>
+<text class="sb" x="640.0" y="102.0">bucle, herramientas, código</text>
+<text class="sb" x="640.0" y="142.0">sin tope: máquina universal;</text>
+<text class="sb" x="640.0" y="156.0">si terminará o borrará algo</text>
+<text class="sb" x="640.0" y="170.0">es indecidible (Rice)</text>
+</svg>

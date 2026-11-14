@@ -10,6 +10,9 @@
 // REFACTOR-R4-P1-04: cancelByToken — the status flip and a pack class's credit restore in
 // one transaction (the cancel_booking RPC).
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the daily booking-payment audit's read.
+// REFACTOR-R5-P2-02: claimForReschedule — a reschedule's claim, which also marks the row
+// `rescheduled` (reinstateBooking clears it). consumeCancelToken stays for the new booking's
+// own compensation, which must NOT mark it.
 import type {
   BookingHistoryPage, BookingRecord, PaymentAuditBooking, SessionType, SingleSessionBookingDetail,
 } from "../types";
@@ -68,6 +71,14 @@ export interface IBookingRepository {
   consumeCancelToken(token: string): Promise<boolean>;
 
   /**
+   * REFACTOR-R5-P2-02: a reschedule's claim on the original booking. Same compare-and-swap
+   * as consumeCancelToken (status → cancelled, tokens nulled; false if already consumed),
+   * and it also sets `rescheduled = true`, so the history knows the row's credit or payment
+   * moved to the new booking. reinstateBooking resets it.
+   */
+  claimForReschedule(token: string): Promise<boolean>;
+
+  /**
    * REFACTOR-R4-P1-04: cancels the booking holding `token` and, for a pack class,
    * restores its credit — originating pack first — in ONE transaction, so a failure
    * leaves the booking confirmed and the token usable. Same compare-and-swap as
@@ -82,6 +93,7 @@ export interface IBookingRepository {
    * (they are HMACs of eventId:email:startsAt, so they can be recomputed). Returns false
    * if the row is not in 'cancelled' — or if the exclusion constraint now rejects it
    * because another booking took the slot in the meantime.
+   * REFACTOR-R5-P2-02: also resets `rescheduled` to false.
    */
   reinstateBooking(record: BookingRecord): Promise<boolean>;
 

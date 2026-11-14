@@ -5,6 +5,8 @@
 // keyset predicate against Postgres, the past-only filter, and the three bulk
 // joins (reviews, credit_packs, payments). Rows are inserted directly rather than
 // through createBooking so the test can control status and place bookings in the past.
+// REFACTOR-R5-P2-02: the 0030 outcome columns come back on each entry, and a rescheduled
+// paid original shows no amount (the class that replaced it carries the charge).
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
 
@@ -59,6 +61,8 @@ describeDb("SupabaseBookingRepository.listHistoryByUser", () => {
       endsAt:   new Date(Date.now() + 30 * DAY_MS + HOUR_MS).toISOString(),
     };
 
+    // A multi-row insert sends NULL for a key missing on some rows, so every row names every
+    // column it sets (credit_restored is NULL on all three, as for a legacy cancel).
     const { error } = await supabase.from("bookings").insert([
       { user_id: userId, session_type: "session1h", status: "completed", calendar_event_id: "evt-h1", ...toCols(past) },
       { user_id: userId, session_type: "session1h", status: "no_show",   calendar_event_id: "evt-h2", ...toCols(alsoPast) },
@@ -99,6 +103,8 @@ describeDb("SupabaseBookingRepository.listHistoryByUser", () => {
   it("does not skip rows that share an identical starts_at when paging", async () => {
     const slot = pastSlot(3);
 
+    // A multi-row insert sends NULL for a key missing on some rows, so every row names every
+    // column it sets (credit_restored is NULL on all three, as for a legacy cancel).
     const { error } = await supabase.from("bookings").insert([
       { user_id: userId, session_type: "session1h", status: "cancelled", calendar_event_id: "evt-dup-a", ...toCols(slot) },
       { user_id: userId, session_type: "session1h", status: "confirmed", calendar_event_id: "evt-dup-b", ...toCols(slot) },
@@ -180,6 +186,44 @@ describeDb("SupabaseBookingRepository.listHistoryByUser", () => {
     expect(entry.note).toBeNull();
 
     await supabase.from("bookings").delete().eq("user_id", userId);
+  });
+
+  // REFACTOR-R5-P2-02
+  it("prices a rescheduled paid class once, on the new row, and returns the outcome columns", async () => {
+    const stripeId = `pi_resched_${Date.now()}`;
+    await supabase.from("payments").insert({
+      user_id: userId, stripe_payment_id: stripeId,
+      amount_cents: 7500, currency: "eur", checkout_type: "single", status: "succeeded",
+    });
+    // A multi-row insert sends NULL for a key missing on some rows, so every row names every
+    // column it sets (credit_restored is NULL on all three, as for a legacy cancel).
+    const { error } = await supabase.from("bookings").insert([
+      {
+        user_id: userId, session_type: "session1h", status: "cancelled", rescheduled: true,
+        calendar_event_id: "evt-resched-old", stripe_payment_id: stripeId, ...toCols(pastSlot(6)),
+      },
+      {
+        user_id: userId, session_type: "session1h", status: "completed", rescheduled: false,
+        calendar_event_id: "evt-resched-new", stripe_payment_id: stripeId, ...toCols(pastSlot(7)),
+      },
+      {
+        user_id: userId, session_type: "free15min", status: "cancelled", rescheduled: false,
+        calendar_event_id: "evt-legacy-cancel", stripe_payment_id: null, ...toCols(pastSlot(8)),
+      },
+    ]);
+    if (error) throw error;
+
+    const { entries } = await repo.listHistoryByUser(email, { limit: 10 });
+    const oldRow = entries.find(e => e.eventId === "evt-resched-old")!;
+    const newRow = entries.find(e => e.eventId === "evt-resched-new")!;
+    const legacy = entries.find(e => e.eventId === "evt-legacy-cancel")!;
+
+    expect(oldRow).toMatchObject({ amountCents: null, currency: null, rescheduled: true, creditRestored: null });
+    expect(newRow).toMatchObject({ amountCents: 7500, currency: "eur", rescheduled: false });
+    expect(legacy).toMatchObject({ rescheduled: false, creditRestored: null });
+
+    await supabase.from("bookings").delete().eq("user_id", userId);
+    await supabase.from("payments").delete().eq("user_id", userId);
   });
 });
 

@@ -13,10 +13,12 @@
  *   - It's cheaper than parsing a URL
  *
  * Exemptions (REFACTOR-R3-P4-01: refreshed — the QStash-signed internal routes
- * this list used to name were removed in cycle 2):
+ * this list used to name were removed in cycle 2; REFACTOR-R5-P3-04: the audit cron
+ * added):
  *   - /api/stripe/webhook has signature verification (better auth than CSRF)
  *   - /api/internal/session-cleanup has CRON_SECRET
  *   - /api/internal/reconcile-stripe has CRON_SECRET
+ *   - /api/internal/booking-payment-audit has CRON_SECRET
  *   - /api/auth/* handled by NextAuth
  *
  * MOBILE-AUTH-01 / SEC: Bearer-authenticated requests are not CSRF-able. A

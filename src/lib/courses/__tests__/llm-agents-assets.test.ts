@@ -9,6 +9,12 @@
  * promises, and a checkpoint inside the size budget a mid-range phone can load in one cell.
  *
  * It reads the files from disk rather than importing them: the point is the bytes served.
+ *
+ * COURSE-C2-P3-02 — The same shape checks over the English siblings (`corpus.en.txt`,
+ * `bpe-merges.en.json`, `minigpt.en.json`, `bpe.en.py`, `minigpt.en.py`), written by
+ * `train-minigpt.py --idioma en`. Their JSON keys are English (`weights`, `n_layers`), so a
+ * cell reading `cfg["n_capas"]` against them fails: the English keys are checked explicitly.
+ * The Spanish assertions above them are unchanged.
  */
 
 import fs from "node:fs";
@@ -175,6 +181,158 @@ describe("llm-agents assets — the model file the cells exec", () => {
     for (const name of ["def entrenar", "def codificar", "def decodificar", "def quitar_cabecera"]) {
       expect(bpe).toContain(name);
     }
+  });
+});
+
+/*
+ * COURSE-C2-P3-02 — The English siblings: the same checks, against English keys and names.
+ */
+interface ConfigEn {
+  n_v: number;
+  T_ctx: number;
+  d_model: number;
+  h: number;
+  d_ff: number;
+  n_layers: number;
+}
+
+interface CheckpointEn {
+  config: ConfigEn;
+  weights: Record<string, unknown>;
+}
+
+describe("llm-agents assets — the English corpus", () => {
+  const raw = read("corpus.en.txt");
+  const [header, ...rest] = raw.split("\n");
+  const body = rest.join("\n").trimStart();
+
+  it("opens on a header line naming the source and the licence, which the loader strips", () => {
+    expect(header.startsWith("#")).toBe(true);
+    expect(header).toMatch(/Public domain/);
+    expect(header).toMatch(/gutenberg\.org/);
+    expect(header).toMatch(/strip_header/);
+    expect(body.startsWith("#")).toBe(false);
+  });
+
+  it("is English prose in the size window, not code and not a wordlist", () => {
+    const size = Buffer.byteLength(body, "utf8");
+    expect(size).toBeGreaterThanOrEqual(200 * 1024);
+    expect(size).toBeLessThanOrEqual(500 * 1024);
+    const lines = body.split("\n").filter((l) => l.length > 0);
+    const avgWordsPerLine = body.split(/\s+/).length / lines.length;
+    expect(avgWordsPerLine).toBeGreaterThan(20);
+    for (const w of [" the ", " and ", " of ", " to ", " a "]) {
+      expect((body.match(new RegExp(w, "g")) ?? []).length).toBeGreaterThan(500);
+    }
+    // British spelling, to match the course's en-GB.
+    expect(body).toMatch(/\bcolour/);
+    expect(body).not.toMatch(/\bcolor\b/);
+  });
+});
+
+describe("llm-agents assets — the English BPE merge table", () => {
+  const merges = JSON.parse(read("bpe-merges.en.json")) as unknown;
+  const checkpoint = JSON.parse(read("minigpt.en.json")) as CheckpointEn;
+
+  it("is an ordered list of [a, b] pairs, one per non-byte vocabulary entry", () => {
+    expect(Array.isArray(merges)).toBe(true);
+    const list = merges as unknown[];
+    expect(list.length).toBe(checkpoint.config.n_v - N_BYTES);
+    list.forEach((pair, i) => {
+      expect(Array.isArray(pair)).toBe(true);
+      const [a, b] = pair as unknown[];
+      for (const t of [a, b]) {
+        expect(Number.isInteger(t)).toBe(true);
+        expect(t as number).toBeGreaterThanOrEqual(0);
+        expect(t as number).toBeLessThan(N_BYTES + i);
+      }
+    });
+  });
+});
+
+describe("llm-agents assets — the English checkpoint", () => {
+  const checkpoint = JSON.parse(read("minigpt.en.json")) as CheckpointEn;
+  const { config, weights } = checkpoint;
+
+  it("carries English keys: `weights` and `n_layers`, never `pesos` or `n_capas`", () => {
+    expect(Object.keys(checkpoint).sort()).toEqual(["config", "weights"]);
+    expect(Object.keys(config).sort()).toEqual(
+      ["T_ctx", "d_ff", "d_model", "h", "n_layers", "n_v"].sort(),
+    );
+  });
+
+  it("has the Spanish checkpoint's shape: the same recipe, another corpus", () => {
+    const es = (JSON.parse(read("minigpt.json")) as Checkpoint).config;
+    const { n_capas, ...rest } = es;
+    expect(config).toEqual({ ...rest, n_layers: n_capas });
+  });
+
+  it("holds every weight the config implies, at the shape the config implies, and nothing else", () => {
+    const { n_v, T_ctx, d_model, d_ff, n_layers } = config;
+    const expected: Record<string, number[]> = {
+      E: [n_v, d_model],
+      P: [T_ctx, d_model],
+      lnf_g: [d_model],
+      lnf_b: [d_model],
+    };
+    for (let l = 0; l < n_layers; l++) {
+      Object.assign(expected, {
+        [`${l}.ln1_g`]: [d_model],
+        [`${l}.ln1_b`]: [d_model],
+        [`${l}.Wqkv`]: [d_model, 3 * d_model],
+        [`${l}.Wo`]: [d_model, d_model],
+        [`${l}.ln2_g`]: [d_model],
+        [`${l}.ln2_b`]: [d_model],
+        [`${l}.W1`]: [d_model, d_ff],
+        [`${l}.b1`]: [d_ff],
+        [`${l}.W2`]: [d_ff, d_model],
+        [`${l}.b2`]: [d_model],
+      });
+    }
+    expect(Object.keys(weights).sort()).toEqual(Object.keys(expected).sort());
+    for (const [name, shape] of Object.entries(expected)) {
+      expect({ name, shape: shapeOf(weights[name]) }).toEqual({ name, shape });
+    }
+  });
+
+  it("is rounded to at most 4 decimals", () => {
+    expect(read("minigpt.en.json")).not.toMatch(/\.\d{5,}/);
+  });
+
+  it("fits the size budget", () => {
+    expect(bytes("minigpt.en.json")).toBeLessThanOrEqual(CHECKPOINT_MAX_BYTES);
+  });
+});
+
+describe("llm-agents assets — the English model files the cells exec", () => {
+  it("is NumPy-only Python, under the same length budget, and defines what the cells call", () => {
+    const src = read("minigpt.en.py");
+    expect(src.split("\n").length).toBeLessThanOrEqual(250);
+    expect(src).toMatch(/^import numpy as np$/m);
+    for (const forbidden of ["torch", "numba", "scipy", "matplotlib"]) {
+      expect(src).not.toMatch(new RegExp(`^\\s*(import|from)\\s+${forbidden}\\b`, "m"));
+    }
+    for (const name of ["class MiniGPT", "def forward", "def loss", "def generate", "def save", "def load"]) {
+      expect(src).toContain(name);
+    }
+    expect(src).toContain('"n_layers"');
+    expect(src).toContain('"weights"');
+    expect(src).not.toMatch(/n_capas|pesos/);
+    const bpe = read("bpe.en.py");
+    for (const name of ["def train", "def encode", "def decode", "def strip_header"]) {
+      expect(bpe).toContain(name);
+    }
+  });
+
+  it("has the Spanish file's line structure, one line for one line", () => {
+    // A 1:1 translation: the same statements on the same lines, only a longer header. The
+    // real check is scripts/courses/llm-agents/parity-en.py (same outputs, run by the author).
+    const code = (name: string) =>
+      read(name)
+        .split("\n")
+        .filter((l) => l.trim() && !l.trimStart().startsWith("#")).length;
+    expect(code("minigpt.en.py")).toBe(code("minigpt.py"));
+    expect(code("bpe.en.py")).toBe(code("bpe.py"));
   });
 });
 

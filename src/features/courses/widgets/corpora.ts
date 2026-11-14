@@ -1,5 +1,9 @@
 /*
  * COURSE-P11-02 — Per-locale default corpora for the explorables.
+ * COURSE-C2-P3-01 — `context-window` joins `SPANISH_BOUND_CORPORA`: its `compactacion` preset
+ *                   holds sizes measured on the Spanish Block 5 run.
+ * COURSE-C2-P3-02 — the `corpus.txt` entry records that the English corpus and checkpoint
+ *                   exist, and what still depends on the Spanish ones.
  *
  * A widget's interface text is translation (see `messages/*.json`, namespace
  * `courses.widgets.*`). Its DEFAULT CORPUS is not: the sentences below were chosen so
@@ -194,11 +198,8 @@ export type CorpusWidgetId = keyof typeof WIDGET_CORPORA;
 export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
   // self-attention-heatmap was here until COURSE-P11-08: math/self-attention.ts now has an
   // English lexicon (LEXICONS.en) and English presets, picked per locale by the widget.
-  "multi-head-view":
-    "Same lexicon as self-attention-heatmap, and the four heads ARE its four rules. The " +
-    "lexicon has an English half since COURSE-P11-08, but this widget still reads only " +
-    "the Spanish one: its default sentence is chosen so the heads disagree on two verbs " +
-    "in opposite directions, and the English one is Block 5 lesson 4's decision.",
+  // multi-head-view was here until COURSE-P11-08 (Block 5 lesson 4): it reads lesson 2's
+  // English lexicon and opens on its own English sentence (MH_DEFAULT in math/multi-head).
   // embedding-projection was here until COURSE-P11-04: it now has an English scatter,
   // public/courses/dl-nlp/embeddings-sample.en.json, picked per locale by the widget.
   "attention-alignment":
@@ -238,6 +239,14 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "several llamadas, and only one llamada changes the entorno. Block 4 lesson 7's preset " +
     "(proyecto) is that lesson's first cell the same way, with two llamadas that fail and a " +
     "write the scripted user refuses; its English version needs the same three properties.",
+  // COURSE-C2-P3-01 — llm-agents Block 5 lesson 5; found missing by the P3-00 triage.
+  "context-window":
+    "Its compactacion preset (math/context-window.ts, MEASURED_TURNS) holds the sizes " +
+    "measured on the Spanish run of Block 5 lesson 5: the sistema, herramientas, proyecto " +
+    "and pedido tokens and each turno's llamadas and observaciones, from the server's usage " +
+    "against Spanish prompts. An English version is the English lesson's own run on the " +
+    "pinned chain, re-measured, never transposed. The asistente and agente presets hold " +
+    "no text and need nothing.",
   "courses/llm-agents/entorno.py":
     "The Block 4 entorno and its four herramientas, frozen from lesson 4·2 " +
     "(llamar-herramientas): Spanish routes and contents, Spanish tool names and descriptions, " +
@@ -256,13 +265,19 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "quote them. The English course needs its own permisos.en.py beside harness.en.py.",
   // COURSE-C2-P0-03 — the llm-agents mini-GPT is trained on this Spanish corpus, and
   // its checkpoint (minigpt.json) and merge table (bpe-merges.json) are functions of it.
+  // COURSE-C2-P3-02 — the English sibling exists; the entry stays until the English lessons
+  // and presets that still read the Spanish checkpoint have moved.
   "courses/llm-agents/corpus.txt":
     "Marianela (Galdós, public domain), the corpus the llm-agents Block 1 mini-GPT is " +
     "trained on. Every text the checkpoint generates, every merge in bpe-merges.json and " +
-    "every number the Block 1–3 lessons quote is a function of it. The English course " +
-    "needs an English corpus AND its own checkpoint, re-trained by " +
-    "scripts/courses/llm-agents/train-minigpt.py (corpus path and output directory are " +
-    "its parameters) — plus new lesson prose, since the quoted samples change with it.",
+    "every number the Block 1–3 lessons quote is a function of it. The English sibling " +
+    "exists: corpus.en.txt (Gaskell's Cousin Phillis), with bpe-merges.en.json and " +
+    "minigpt.en.json trained from it by `train-minigpt.py --idioma en` (same recipe, same " +
+    "seed) and the modules bpe.en.py and minigpt.en.py. What still depends on the Spanish " +
+    "corpus: the English lessons' prose, which must quote the English checkpoint's own " +
+    "samples and numbers, and every preset or figure made from the Spanish checkpoint " +
+    "(sampling-explorer, kv-cache and logit-mask above, minigpt-entrenamiento.svg), each " +
+    "re-made from the English one by the English lesson that embeds it.",
 };
 
 /**

@@ -2,7 +2,8 @@
 // Token generation replicates the HMAC logic from booking-tokens.ts without
 // importing that module (it has Redis side-effects at module scope).
 // Separate queries are used instead of PostgREST embedded joins to avoid
-// relying on FK-hint syntax that varies across PostgREST versions.
+// relying on FK-hint syntax that varies across PostgREST versions (the pack size is the
+// exception: one unambiguous FK, no hint — REFACTOR-R5-P3-02).
 // BOOKING-HISTORY-01: listHistoryByUser — keyset-paginated past bookings.
 // REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap (fails closed on error).
 // REFACTOR-R4-P1-02: the reads that authorize a side effect fail CLOSED — listByUser and
@@ -16,6 +17,18 @@
 // restore, originating pack first, in one transaction).
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the booking-payment audit's read. Three
 // queries (bookings, then their users and packs), and every error throws.
+// REFACTOR-R5-P1-03: the one-free-call cap's DB backstop (bookings_one_free_call_per_user,
+// migration 0029). createBooking maps its 23505 to FreeSessionAlreadyUsedError;
+// reinstateBooking answers false on it, like on the exclusion constraint.
+// REFACTOR-R5-P2-02: claimForReschedule marks the reschedule's original `rescheduled`
+// (migration 0030), reinstateBooking clears it, and listHistoryByUser reads it along with
+// `credit_restored` (written by cancel_booking) — the row says what happened, so deriveAmount
+// gives a rescheduled original no amount and the history labels stop guessing.
+// REFACTOR-R5-P3-02: findByCancelToken and listByUser embed the pack size through the
+// credit_pack_id FK (`credit_packs(pack_size)`, the one bookings → credit_packs FK, so no
+// hint is needed) — was one credit_packs query per row, whose error was ignored, so a blip
+// read as "no pack". The per-row helper is gone.
+import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
@@ -39,6 +52,22 @@ function signToken(payload: string): string {
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
+
+// REFACTOR-R5-P1-03: the DB backstop of the one-free-call cap. Two concurrent requests
+// both pass hasActiveFreeSession; the second insert lands here. PostgREST names the index
+// in `message` ("duplicate key value violates unique constraint \"…\"").
+const FREE_CALL_INDEX = "bookings_one_free_call_per_user";
+
+function isFreeCallViolation(error: { code?: string; message?: string; details?: string }): boolean {
+  return error.code === "23505"
+    && `${error.message ?? ""} ${error.details ?? ""}`.includes(FREE_CALL_INDEX);
+}
+
+// REFACTOR-R5-P3-02: the embedded `credit_packs(pack_size)` of a booking row — an object
+// (many-to-one) or null when the booking has no pack.
+function embeddedPackSize(pack: { pack_size: number } | null): number | undefined {
+  return pack?.pack_size ?? undefined;
+}
 
 export class SupabaseBookingRepository implements IBookingRepository {
   // The review lookup lives here because this repository already owns the
@@ -71,7 +100,10 @@ export class SupabaseBookingRepository implements IBookingRepository {
       ...(record.creditPackId    ? { credit_pack_id:    record.creditPackId    } : {}),
     });
 
-    if (error) throw error;
+    if (error) {
+      if (isFreeCallViolation(error)) throw new FreeSessionAlreadyUsedError();
+      throw error;
+    }
 
     return { cancelToken, joinToken };
   }
@@ -81,7 +113,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id, credit_packs(pack_size)")
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .maybeSingle();
@@ -109,7 +141,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
     );
     if (!valid) return null;
 
-    const packSize = await this.getPackSize(booking.credit_pack_id);
+    const packSize = embeddedPackSize(booking.credit_packs);
 
     return {
       eventId,
@@ -157,13 +189,25 @@ export class SupabaseBookingRepository implements IBookingRepository {
   }
 
   async consumeCancelToken(token: string): Promise<boolean> {
+    return this.flipToCancelled(token, false);
+  }
+
+  // REFACTOR-R5-P2-02: the reschedule claim — the same compare-and-swap, plus the marker.
+  async claimForReschedule(token: string): Promise<boolean> {
+    return this.flipToCancelled(token, true);
+  }
+
+  private async flipToCancelled(token: string, rescheduled: boolean): Promise<boolean> {
     if (!HEX64.test(token)) return false;
 
     // UPDATE + WHERE status='confirmed' is atomic: PostgreSQL row-locks the
     // matching row, so concurrent calls can't both succeed.
     const { data, error } = await supabase
       .from("bookings")
-      .update({ status: "cancelled", cancel_token: null, join_token: null })
+      .update({
+        status: "cancelled", cancel_token: null, join_token: null,
+        ...(rescheduled ? { rescheduled: true } : {}),
+      })
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .select("id")
@@ -206,6 +250,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
         status:       "confirmed",
         cancel_token: signToken(cancelPayload),
         join_token:   signToken(`join:${cancelPayload}`),
+        rescheduled:  false, // REFACTOR-R5-P2-02
       })
       .eq("calendar_event_id", record.eventId)
       .eq("status", "cancelled")
@@ -213,6 +258,8 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .maybeSingle();
 
     if (error?.code === "23P01") return false; // exclusion_violation: the slot was re-taken
+    // REFACTOR-R5-P1-03: the user booked another free call while this one was claimed.
+    if (error && isFreeCallViolation(error)) return false;
     if (error) throw error;
     return data !== null;
   }
@@ -235,34 +282,27 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data, error } = await supabase
       .from("bookings")
-      .select("calendar_event_id, session_type, starts_at, ends_at, cancel_token, join_token, credit_pack_id")
+      .select("calendar_event_id, session_type, starts_at, ends_at, cancel_token, join_token, credit_pack_id, credit_packs(pack_size)")
       .eq("user_id", user.id)
       .eq("status", "confirmed")
       .order("starts_at", { ascending: true });
 
     if (error) throw error;
 
-    const results = await Promise.all(
-      (data ?? []).map(async row => {
-        const packSize = await this.getPackSize(row.credit_pack_id);
-        return {
-          cancelToken: row.cancel_token as string,
-          joinToken:   row.join_token as string,
-          record: {
-            eventId:     (row.calendar_event_id ?? "") as string,
-            email:       normalized,
-            name:        "",
-            sessionType: row.session_type as SessionType,
-            startsAt:    row.starts_at as string,
-            endsAt:      row.ends_at as string,
-            used:        false,
-            packSize,
-          } as BookingRecord,
-        };
-      }),
-    );
-
-    return results;
+    return (data ?? []).map(row => ({
+      cancelToken: row.cancel_token as string,
+      joinToken:   row.join_token as string,
+      record: {
+        eventId:     (row.calendar_event_id ?? "") as string,
+        email:       normalized,
+        name:        "",
+        sessionType: row.session_type as SessionType,
+        startsAt:    row.starts_at as string,
+        endsAt:      row.ends_at as string,
+        used:        false,
+        packSize:    embeddedPackSize(row.credit_packs),
+      } as BookingRecord,
+    }));
   }
 
   async listHistoryByUser(
@@ -284,7 +324,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
     //    Fetch one extra row as a has-more probe, then drop it.
     let query = supabase
       .from("bookings")
-      .select("id, calendar_event_id, session_type, starts_at, ends_at, status, note, credit_pack_id, stripe_payment_id")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, status, note, credit_pack_id, stripe_payment_id, credit_restored, rescheduled")
       .eq("user_id", user.id)
       .lt("starts_at", new Date().toISOString())
       .order("starts_at", { ascending: false })
@@ -330,6 +370,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
         pack,
         (row.stripe_payment_id ?? null) as string | null,
         payments,
+        row.rescheduled === true, // REFACTOR-R5-P2-02
       );
 
       return {
@@ -344,6 +385,9 @@ export class SupabaseBookingRepository implements IBookingRepository {
         amountCents,
         currency,
         review:      reviews.get(row.id as string) ?? null,
+        // REFACTOR-R5-P2-02: NULL credit_restored = not a pack cancel, or a legacy row.
+        creditRestored: (row.credit_restored ?? null) as boolean | null,
+        rescheduled:    row.rescheduled === true,
       };
     });
 
@@ -713,17 +757,5 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .single();
     if (error) throw error;
     return data.id;
-  }
-
-  private async getPackSize(
-    creditPackId: string | null,
-  ): Promise<number | undefined> {
-    if (!creditPackId) return undefined;
-    const { data } = await supabase
-      .from("credit_packs")
-      .select("pack_size")
-      .eq("id", creditPackId)
-      .maybeSingle();
-    return data?.pack_size ?? undefined;
   }
 }

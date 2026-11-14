@@ -22,9 +22,10 @@ docs/courses/
 └── llm-agents/          Modelos de Lenguaje: del Transformer al Agente
     ├── PLAN.md · STATUS.md
     ├── AUTHORING.md     its delta: the two shapes of a lesson, the terminal form, its terms
+    ├── AUTHORING.en.md  its English delta: the glossary, the identifier map (COURSE-C2-P3-03)
     ├── NOTATION.md      its per-block symbol tables, seeded (COURSE-C2-P0-04)
-    ├── phase-0 … phase-2
-    └── (notebooks/ — created by its Phase 1)
+    ├── phase-0 … phase-3
+    └── notebooks/       its Colab notebook
 ```
 
 ## Which file governs
@@ -33,7 +34,10 @@ docs/courses/
 2. The course's own `NOTATION.md` for its symbols; its `AUTHORING.md` **delta**, if it has one,
    for the parts of the contract that course does differently (the way `AUTHORING.en.md` does
    for English). A delta says what it replaces; everything it does not name still holds.
-3. The block task md for the lesson being written: its lesson spec, its "Mathematical content"
+3. For an English lesson: `AUTHORING.en.md`, the language delta, then the course's own
+   `AUTHORING.en.md`, if it has one, for what is both that course's and English's (its glossary,
+   and the identifier map its code uses across blocks; `llm-agents` has one, COURSE-C2-P3-03).
+4. The block task md for the lesson being written: its lesson spec, its "Mathematical content"
    or "The precise statements", its gotchas, and the header lines the `/course-lesson` command
    reads (course, shape, model, publication rule).
 

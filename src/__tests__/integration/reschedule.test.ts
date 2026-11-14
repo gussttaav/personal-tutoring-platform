@@ -4,8 +4,13 @@
 // REFACTOR-R4-P1-01: slots come from fixtures/slots (aligned, the right length).
 // REFACTOR-R4-P1-03: a pack reschedule moves the original's credit (no restore + decrement);
 // a failure after the old token's claim leaves the original booking in place, retryable.
+// REFACTOR-R5-P1-01: a reschedule token only works for its owner — another signed-in
+// account is refused with the original untouched, and the owner can still use the token.
+// REFACTOR-R5-P2-02: a successful reschedule marks the original `rescheduled`; a failed one
+// leaves it confirmed and unmarked; the new booking's own compensation never marks it.
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
+  invalidateForWindow: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
   setCached:  jest.fn().mockResolvedValue(undefined),
 }));
@@ -287,5 +292,71 @@ describe("REFACTOR-R4-P1-03: a successful reschedule", () => {
     expect((await bookings.findByCancelToken(rescheduled.cancelToken))?.stripePaymentId).toBe("pi_paid_001");
     expect((await bookings.findByStripePaymentId("pi_paid_001"))?.eventId).toBe(rescheduled.eventId);
     expect(await bookings.hasBookingForPayment("pi_paid_001")).toBe(true);
+  });
+});
+
+// ─── REFACTOR-R5-P1-01 ────────────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P1-01: a reschedule token only works for its owner", () => {
+  it("refuses another account, leaves the original intact, then works for the owner", async () => {
+    const ctx = await bookOriginalPack();
+    const { service, credits, original } = ctx;
+
+    await expect(
+      service.createBooking({
+        ...packInput(24),
+        email:           "mallory@example.com",
+        name:            "Mallory",
+        rescheduleToken: original.cancelToken,
+      }),
+    ).rejects.toMatchObject({ code: "RESCHEDULE_NOT_OWNER" });
+
+    await expectOriginalIntact(ctx);
+    expect((await credits.getBalance("carol@example.com"))?.credits).toBe(4);
+
+    const rescheduled = await service.createBooking({
+      ...packInput(24), rescheduleToken: original.cancelToken,
+    });
+    expect(rescheduled.eventId).not.toBe(original.eventId);
+    expect((await credits.getBalance("carol@example.com"))?.credits).toBe(4);
+  });
+});
+
+// ─── REFACTOR-R5-P2-02 ────────────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P2-02: the original of a reschedule says so", () => {
+  it("a successful reschedule leaves the original cancelled + rescheduled; the new one is unmarked", async () => {
+    const { bookings, service, original } = await bookOriginalPack();
+
+    const moved = await service.createBooking({ ...packInput(24), rescheduleToken: original.cancelToken });
+
+    expect((await bookings.findByEventId(original.eventId))?.status).toBe("cancelled");
+    expect(bookings.cancelOutcomeOf(original.eventId)).toEqual({ creditRestored: null, rescheduled: true });
+    expect(bookings.cancelOutcomeOf(moved.eventId)).toEqual({ creditRestored: null, rescheduled: false });
+  });
+
+  it("a failed reschedule's reinstate leaves the original confirmed + not rescheduled", async () => {
+    const ctx = await bookOriginalPack();
+    ctx.calendar.createEventShouldFail = true;
+
+    await expect(
+      ctx.service.createBooking({ ...packInput(24), rescheduleToken: ctx.original.cancelToken }),
+    ).rejects.toThrow("simulated failure");
+
+    expect((await ctx.bookings.findByEventId(ctx.original.eventId))?.status).toBe("confirmed");
+    expect(ctx.bookings.cancelOutcomeOf(ctx.original.eventId).rescheduled).toBe(false);
+  });
+
+  it("the new booking cancelled by its own compensation is not marked rescheduled", async () => {
+    const ctx = await bookOriginalPack();
+    jest.spyOn(ctx.sessions, "createSession").mockRejectedValueOnce(new Error("zoom_sessions insert failed"));
+
+    await expect(
+      ctx.service.createBooking({ ...packInput(24), rescheduleToken: ctx.original.cancelToken }),
+    ).rejects.toThrow("zoom_sessions insert failed");
+
+    expect((await ctx.bookings.findByEventId("evt-1"))?.status).toBe("cancelled");
+    expect(ctx.bookings.cancelOutcomeOf("evt-1").rescheduled).toBe(false);
+    expect(ctx.bookings.cancelOutcomeOf(ctx.original.eventId).rescheduled).toBe(false);
   });
 });

@@ -79,7 +79,7 @@ Settled in the design session or by inspection of the codebase; every task below
 | Capstone code | The Block 5 program lives in a **separate public repository** (one tag per lesson), linked from each lesson with `<RepoLink>`; **the lesson text is the source of truth** and the repo is the checkpoint a student clones to catch up. | A student `git clone`s a repo; nobody clones a subfolder of a Next.js site. Same "version it deliberately" rule as the Colab notebook: tags, never `main`. P0-05. |
 | Publication | Block 1 is authored `draft: true`; **the course goes public when Block 1 is complete** (all eight flipped in one PR, the P2-01 hand-off in the same release). Blocks 2–5 then publish **lesson by lesson**, as `dl-nlp` did after its launch. | The catalog shows a course from its first published lesson. One published lesson is a teaser, not a course; eight is a block someone can finish. |
 | Plan location | `docs/courses/llm-agents/`, one folder per course | Own PLAN/STATUS/phases/NOTATION/deltas; the shared contract one level up. `dl-nlp`'s docs moved into `docs/courses/dl-nlp/` on 2026-09-15 for the same reason; the platform's build history stays inside that course's plan (`README.md` explains). |
-| Language | **Spanish first**, English additive later, exactly as before | Translation is **not planned in this cycle** (see out of scope). Everything that made `dl-nlp`'s translation incremental applies unchanged. |
+| Language | **Spanish first**, English additive later, exactly as before | Translation was **not planned in this cycle** (see out of scope); it is now [Phase 3](phase-3-translation/README.md) (2026-11-13). Everything that made `dl-nlp`'s translation incremental applies unchanged. |
 | Repository, DB, rendering, Python, access | **Unchanged** from [`docs/courses/dl-nlp/PLAN.md`](../dl-nlp/PLAN.md) | Same repo, same Supabase (`course_slug` is text — a second course is a second value), static generation, Pyodide, free with sign-in for progress. |
 
 ### Standing constraints
@@ -106,6 +106,7 @@ Settled in the design session or by inspection of the codebase; every task below
 | 0 | **[Second course](phase-0-second-course/README.md)** | 5 | Manifest + «soon» landing, cross-course `<Leccion>`, the mini-GPT checkpoint + train script, the authoring contract for a systems course, terminal-lesson affordances (`<RepoLink>`, companion repo). |
 | 1 | **[Content](phase-1-content/README.md)** | 5 | The five blocks, ~40 lessons, ten new widgets built with their lessons. |
 | 2 | **[Launch](phase-2-launch/README.md)** | 2 | The hand-off from `dl-nlp` (its last bridge and landing point here), the «new course» announcement over the existing opt-in. |
+| 3 | **[English translation](phase-3-translation/README.md)** | 9 | Planned 2026-11-13, after the Spanish course closed: the English checkpoint and module siblings, the identifier map, 40 lessons, the English companion repository. |
 
 Roughly the cost of `dl-nlp`, which took July → September: one week of Phase 0, then content at
 the `/course-lesson` cadence. **The widgets are the expensive part** (ten, versus the first
@@ -252,6 +253,7 @@ constrains all three.
   later cycle with the same shape as `dl-nlp`'s Phase 11 — the mini-GPT would need an English
   corpus and checkpoint (`SPANISH_BOUND_CORPORA` precedent), which is the one thing that is not
   purely additive and is noted in P0-03.
+  *Since 2026-11-13 that cycle is [Phase 3](phase-3-translation/README.md).*
 - **Paid access, certificates, video, comments** — unchanged from the first plan.
 - **Splitting the platform's build history out of `dl-nlp`'s plan.** Phases 1–4, 6, 9 and 10
   built the machinery every course uses, inside the first course's tracker. They stay there;

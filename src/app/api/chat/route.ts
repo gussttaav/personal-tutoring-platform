@@ -27,41 +27,31 @@
  *           chips and proposal card on the same clock as the reply.
  *   CHAT-AGENT-P2-02: `voice: true` (a dictated turn) adds the voice-mode line to the
  *           contextNote (short, no markdown / links / lists), since the reply is read aloud.
+ *   REFACTOR-R5-P2-01: a thin route. Prices, prompt, ToolContext, contextNote and the
+ *           daily kill switch moved to ChatService.reply(); the route keeps CSRF, the
+ *           rate limits, the body parse, the request-scoped reads (ISR display figures,
+ *           schedule, prompt content, NEXT_LOCALE) and the error mapping
+ *           (ChatCapacityError → 503, anything else → 502). The kill switch is now
+ *           checked after the body parse, so an over-cap malformed body answers 400.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { buildChatSystemPrompt } from "@/constants/chat-prompt";
 import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
 import { getScheduleConfig } from "@/lib/schedule-config";
-import { DEFAULT_JOIN_OPEN_MINUTES, DEFAULT_TUTOR_ABSENT_ALERT_MINUTES } from "@/lib/booking-config"; // SESSION-JOIN-01
 import { getChatPromptContent } from "@/lib/chat-content";
 import { chatRatelimit, chatRatelimitAnon, chatRatelimitAnonDaily } from "@/lib/ratelimit";
-import { chatService, pricingService, userService } from "@/services";
+import { chatService } from "@/services";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
 import { getSession } from "@/lib/session";
-import { kv } from "@/infrastructure/redis/client";
 import { ChatRequestSchema } from "@/lib/schemas"; // CHAT-AGENT-P1-02
-import type { ToolContext } from "@/infrastructure/anthropic";
+import { ChatCapacityError } from "@/domain/errors"; // REFACTOR-R5-P2-01
 import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
-import { buildContextNote } from "@/lib/chat-context-note"; // CHAT-AGENT-P1-03
-
-const MAX_DAILY_CHAT_REQUESTS   = 1000; // model calls per day (CHAT-AGENT-P1-02)
 
 // CHAT-AGENT-P1-02: the tool loop's own deadline is 20 s; this makes the cap explicit.
 export const maxDuration = 25;
-
-/** CHAT-AGENT-P1-02: adds this reply's model calls to today's kill-switch counter. */
-async function countModelCalls(todayKey: string, modelCalls: number): Promise<void> {
-  try {
-    const total = await kv.incrby(todayKey, modelCalls);
-    if (total === modelCalls) await kv.expire(todayKey, 86400);
-  } catch (err) {
-    log("warn", "Chat kill-switch counter not updated", { service: "chat", error: String(err) });
-  }
-}
 
 async function postHandler(req: NextRequest) {
   // ── CSRF ───────────────────────────────────────────────────────────────────
@@ -106,23 +96,6 @@ async function postHandler(req: NextRequest) {
     }
   }
 
-  // REFACTOR-P2-03: Daily spend kill-switch. Per-IP rate limits cap individual
-  // abusers; this caps total cost across all users for the day.
-  // CHAT-AGENT-P1-02: checked here, counted after the call (by model calls).
-  const todayKey   = `chat:requests:${new Date().toISOString().slice(0, 10)}`;
-  const todaySpend = (await kv.get<number>(todayKey)) ?? 0;
-  if (todaySpend >= MAX_DAILY_CHAT_REQUESTS) {
-    log("error", "Chat daily request cap exceeded — circuit open", {
-      service: "chat",
-      todaySpend,
-      limit: MAX_DAILY_CHAT_REQUESTS,
-    });
-    return NextResponse.json(
-      { error: "Servicio temporalmente no disponible. Inténtalo más tarde." },
-      { status: 503 }
-    );
-  }
-
   let body: unknown;
   try {
     body = await req.json();
@@ -143,7 +116,6 @@ async function postHandler(req: NextRequest) {
   }
   const { message, sessionId, timezone, voice } = parsed.data;
 
-  let modelCalls = 0;
   try {
     // Inject live prices + policy figures so the assistant never quotes outdated
     // values (all three reads are cached, so this isn't a per-request DB hit).
@@ -153,82 +125,35 @@ async function postHandler(req: NextRequest) {
       getScheduleConfig(),
     ]);
 
-    // PRICING-STUDENT-01: an authenticated student may pay a private price. Quote
-    // theirs, or the assistant would contradict the prices on the page they are
-    // looking at. Costs one uncached read, and only when signed in; anonymous
-    // visitors keep the cached global figures above.
-    // CHAT-AGENT-P1-02: one lookup serves the private prices and the ToolContext.
-    const user = isAuthenticated ? await userService.findByEmail(session.user!.email!) : null;
-
-    let priceCents = {
-      session1h: prices.session1h.priceCents,
-      session2h: prices.session2h.priceCents,
-      pack5:     prices.pack5.priceCents,
-      pack10:    prices.pack10.priceCents,
-    };
-    if (isAuthenticated) {
-      if (user && (await pricingService.hasUserOverrides(user.id))) {
-        const own = await pricingService.getPublicPricing(user.id);
-        const byKey = new Map(
-          [...own.sessions, ...own.packs].map((r) => [r.productKey, r.amountCents]),
-        );
-        priceCents = {
-          session1h: byKey.get("session1h") ?? priceCents.session1h,
-          session2h: byKey.get("session2h") ?? priceCents.session2h,
-          pack5:     byKey.get("pack5")     ?? priceCents.pack5,
-          pack10:    byKey.get("pack10")    ?? priceCents.pack10,
-        };
-      }
-    }
-
-    const systemPrompt = buildChatSystemPrompt(
-      {
-        ...priceCents,
-        packValidityDays,
-        cancelHours: schedule.cancelMinNoticeHours,
-        // SESSION-JOIN-01: `??` covers a config cached before migration 0028.
-        joinOpenMinutes:         schedule.joinOpenMinutesBefore ?? DEFAULT_JOIN_OPEN_MINUTES,
-        tutorAbsentAlertMinutes: schedule.tutorAbsentAlertMinutes ?? DEFAULT_TUTOR_ABSENT_ALERT_MINUTES,
-      },
-      getChatPromptContent(),
-    );
-
-    // CHAT-AGENT-P1-02: identity comes from the session, never from tool input.
-    const toolContext: ToolContext = {
-      userId:   user?.id ?? null,
-      email:    session?.user?.email ?? null,
-      timezone: timezone ?? schedule.timezone,
-      locale:   (await cookies()).get("NEXT_LOCALE")?.value === "en" ? "en" : "es",
-      now:      new Date(),
-    };
-
-    const result = await chatService.ask({
+    // REFACTOR-R5-P2-01: identity is the server session's email, never a body field.
+    const result = await chatService.reply({
       message,
       sessionId: sessionId ?? null,
-      systemPrompt,
-      toolContext,
-      contextNote: buildContextNote(toolContext, { voice }), // CHAT-AGENT-P2-02: voice mode
-    });
-    modelCalls = result.modelCalls;
-    log("info", "Chat reply", {
-      service: "chat", modelCalls, actions: result.actions.map((a) => a.type),
+      email:     session?.user?.email ?? null,
+      timezone,
+      voice,
+      locale:    (await cookies()).get("NEXT_LOCALE")?.value === "en" ? "en" : "es",
+      display:   { prices, packValidityDays, schedule, content: getChatPromptContent() },
     });
     return NextResponse.json({
       reply:     result.reply,
       sessionId: result.sessionId,
       actions:   result.actions,
-      timezone:  toolContext.timezone, // CHAT-AGENT-P1-04
+      timezone:  result.timezone, // CHAT-AGENT-P1-04
     });
   } catch (err) {
-    // A failed turn counts as one call, as every request did before the tool loop.
-    modelCalls = 1;
+    // REFACTOR-P2-03: the daily kill switch is open (logged in ChatService).
+    if (err instanceof ChatCapacityError) {
+      return NextResponse.json(
+        { error: "Servicio temporalmente no disponible. Inténtalo más tarde." },
+        { status: 503 }
+      );
+    }
     log("error", "Chat model error", { service: "chat", error: String(err) });
     return NextResponse.json(
       { error: "Error al contactar con el asistente. Inténtalo de nuevo." },
       { status: 502 }
     );
-  } finally {
-    await countModelCalls(todayKey, modelCalls);
   }
 }
 

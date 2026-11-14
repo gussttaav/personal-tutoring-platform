@@ -3,12 +3,17 @@
 // Follows src/app/api/content/__tests__ (mock factories before the route import;
 // real NextRequest objects). What is pinned: the body goes through
 // ChatRequestSchema (a bad timezone is a 400, the old message errors are kept),
-// the ToolContext comes from the server session and never from the body, the
-// response carries `actions`, and the daily kill switch counts model calls.
+// the identity comes from the server session and never from the body, the
+// response carries `actions`, and the daily kill switch answers 503.
 // CHAT-AGENT-P1-03: the route passes a per-request contextNote built from that context.
 // CHAT-AGENT-P1-04: the response also names the timezone the tools used.
 // CHAT-AGENT-P2-02: `voice: true` appends the voice-mode line to the context note.
+// REFACTOR-R5-P2-01: the route is thin, so the mocks moved from kv / pricingService /
+// userService to chatService.reply. The ToolContext, contextNote, price overlay and
+// kill-switch counting are now pinned in src/services/__tests__/ChatService.test.ts;
+// here: what the route hands reply(), and how it maps the outcome to HTTP.
 import { NextRequest } from "next/server";
+import { ChatCapacityError } from "@/domain/errors";
 
 jest.mock("@/lib/ratelimit", () => ({
   chatRatelimit:          { limit: async () => ({ success: true }) },
@@ -26,46 +31,28 @@ jest.mock("next/headers", () => ({
   cookies: async () => ({ get: () => (mockLocaleCookie ? { value: mockLocaleCookie } : undefined) }),
 }));
 
-const mockKvGet    = jest.fn();
-const mockKvIncrby = jest.fn();
-const mockKvExpire = jest.fn();
-jest.mock("@/infrastructure/redis/client", () => ({
-  kv: {
-    get:    (...a: unknown[]) => mockKvGet(...a),
-    incrby: (...a: unknown[]) => mockKvIncrby(...a),
-    expire: (...a: unknown[]) => mockKvExpire(...a),
-  },
-}));
-
-const mockAsk = jest.fn();
-const mockFindByEmail = jest.fn();
+const mockReply = jest.fn();
 jest.mock("@/services", () => ({
-  chatService:    { ask: (...a: unknown[]) => mockAsk(...a) },
-  userService:    { findByEmail: (...a: unknown[]) => mockFindByEmail(...a) },
-  pricingService: { hasUserOverrides: async () => false, getPublicPricing: jest.fn() },
+  chatService: { reply: (...a: unknown[]) => mockReply(...a) },
 }));
 
 const price = (priceCents: number) => ({ priceCents });
+const PRICES = { session1h: price(1600), session2h: price(3000), pack5: price(7500), pack10: price(14000) };
+const SCHEDULE = {
+  timezone: "Europe/Madrid", cancelMinNoticeHours: 2, joinOpenMinutesBefore: 15, tutorAbsentAlertMinutes: 5,
+};
 jest.mock("@/lib/pricing-display", () => ({
-  getDisplayPrices: async () => ({
-    session1h: price(1600), session2h: price(3000), pack5: price(7500), pack10: price(14000),
-  }),
+  getDisplayPrices: async () => PRICES,
   getPackValidityDays: async () => 180,
 }));
-jest.mock("@/lib/schedule-config", () => ({
-  getScheduleConfig: async () => ({
-    timezone: "Europe/Madrid", cancelMinNoticeHours: 2, joinOpenMinutesBefore: 15, tutorAbsentAlertMinutes: 5,
-  }),
-}));
+jest.mock("@/lib/schedule-config", () => ({ getScheduleConfig: async () => SCHEDULE }));
 jest.mock("@/lib/chat-content", () => ({ getChatPromptContent: () => ({}) }));
-jest.mock("@/constants/chat-prompt", () => ({ buildChatSystemPrompt: () => "PROMPT" }));
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 
 import { POST } from "@/app/api/chat/route";
 
 const ORIGIN     = "http://localhost:3000";
 const SESSION_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-const TODAY_KEY  = `chat:requests:${new Date().toISOString().slice(0, 10)}`;
 
 function postReq(body: unknown): NextRequest {
   return new NextRequest(`${ORIGIN}/api/chat`, {
@@ -79,10 +66,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockLocaleCookie = undefined;
   mockGetSession.mockResolvedValue(null);
-  mockKvGet.mockResolvedValue(null);
-  mockKvIncrby.mockImplementation(async (_k: string, n: number) => n);
-  mockFindByEmail.mockResolvedValue(null);
-  mockAsk.mockResolvedValue({ reply: "Hola", sessionId: SESSION_ID, actions: [], modelCalls: 1 });
+  mockReply.mockImplementation(async (r: { timezone?: string; sessionId: string | null }) => ({
+    reply: "Hola", sessionId: r.sessionId ?? SESSION_ID, actions: [], timezone: r.timezone ?? "Europe/Madrid",
+  }));
 });
 
 describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
@@ -93,9 +79,10 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
     expect(await res.json()).toEqual({
       reply: "Hola", sessionId: SESSION_ID, actions: [], timezone: "Europe/Madrid",
     });
-    expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({
-      message: "hola", sessionId: SESSION_ID, systemPrompt: "PROMPT",
-    }));
+    expect(mockReply).toHaveBeenCalledWith({
+      message: "hola", sessionId: SESSION_ID, email: null, timezone: undefined, voice: undefined, locale: "es",
+      display: { prices: PRICES, packValidityDays: 180, schedule: SCHEDULE, content: {} },
+    });
   });
 
   it("passes the actions through", async () => {
@@ -103,7 +90,7 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
       type: "proposal", sessionType: "free15min",
       startIso: "2026-11-04T09:00:00.000Z", endIso: "2026-11-04T09:15:00.000Z",
     };
-    mockAsk.mockResolvedValue({ reply: "¿Te va bien?", sessionId: SESSION_ID, actions: [proposal], modelCalls: 2 });
+    mockReply.mockResolvedValue({ reply: "¿Te va bien?", sessionId: SESSION_ID, actions: [proposal], timezone: "Europe/Madrid" });
 
     const res = await POST(postReq({ message: "martes", sessionId: SESSION_ID }));
 
@@ -113,6 +100,7 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
   it("answers the visitor's timezone when one was sent (CHAT-AGENT-P1-04)", async () => {
     const res = await POST(postReq({ message: "hola", timezone: "America/Bogota" }));
 
+    expect(mockReply.mock.calls[0][0].timezone).toBe("America/Bogota");
     expect((await res.json()).timezone).toBe("America/Bogota");
   });
 
@@ -120,7 +108,7 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
     const res = await POST(postReq({ message: "hola", timezone: "Mars/Olympus_Mons" }));
 
     expect(res.status).toBe(400);
-    expect(mockAsk).not.toHaveBeenCalled();
+    expect(mockReply).not.toHaveBeenCalled();
   });
 
   it("keeps the old message errors", async () => {
@@ -137,21 +125,11 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
     const res = await POST(postReq({ message: "hola", sessionId: "not-a-uuid" }));
 
     expect(res.status).toBe(200);
-    expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({ sessionId: null }));
-  });
-
-  it("builds an anonymous ToolContext in the tutor's timezone when none is sent", async () => {
-    await POST(postReq({ message: "hola" }));
-
-    const { toolContext } = mockAsk.mock.calls[0][0];
-    expect(toolContext).toEqual({
-      userId: null, email: null, timezone: "Europe/Madrid", locale: "es", now: expect.any(Date),
-    });
+    expect(mockReply).toHaveBeenCalledWith(expect.objectContaining({ sessionId: null }));
   });
 
   it("takes identity from the session, never from the body", async () => {
     mockGetSession.mockResolvedValue({ user: { email: "alumno@example.com" } });
-    mockFindByEmail.mockResolvedValue({ id: "user-1" });
     mockLocaleCookie = "en";
 
     await POST(postReq({
@@ -159,65 +137,36 @@ describe("CHAT-AGENT-P1-02: POST /api/chat", () => {
       userId: "attacker", email: "victim@example.com",
     }));
 
-    expect(mockAsk.mock.calls[0][0].toolContext).toEqual({
-      userId: "user-1", email: "alumno@example.com", timezone: "America/New_York", locale: "en",
-      now: expect.any(Date),
-    });
+    const passed = mockReply.mock.calls[0][0];
+    expect(passed).toEqual(expect.objectContaining({
+      email: "alumno@example.com", timezone: "America/New_York", locale: "en",
+    }));
+    expect(passed).not.toHaveProperty("userId");
   });
 
-  it("passes the context note built from the ToolContext (CHAT-AGENT-P1-03)", async () => {
-    mockGetSession.mockResolvedValue({ user: { email: "alumno@example.com" } });
-    mockFindByEmail.mockResolvedValue({ id: "user-1" });
-
-    await POST(postReq({ message: "hola", timezone: "America/Bogota" }));
-
-    expect(mockAsk.mock.calls[0][0].contextNote).toMatch(
-      /^Fecha y hora actual del usuario: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}-05:00 \(\p{L}+\)\. Zona horaria del usuario: America\/Bogota\. Sesión iniciada: sí\. Idioma: es\.$/u,
-    );
-  });
-
-  it("adds the voice-mode line to the context note on a dictated turn only (CHAT-AGENT-P2-02)", async () => {
+  it("passes voice on a dictated turn only (CHAT-AGENT-P2-02)", async () => {
     await POST(postReq({ message: "hola", voice: true }));
     await POST(postReq({ message: "hola" }));
 
-    expect(mockAsk.mock.calls[0][0].contextNote).toMatch(/Idioma: es\. El usuario ha dictado este mensaje.*sin markdown, sin enlaces, sin listas\./);
-    expect(mockAsk.mock.calls[1][0].contextNote).toMatch(/Idioma: es\.$/);
+    expect(mockReply.mock.calls[0][0].voice).toBe(true);
+    expect(mockReply.mock.calls[1][0].voice).toBeUndefined();
   });
 
-  it("counts the reply's model calls in the kill switch", async () => {
-    mockKvGet.mockResolvedValue(10);
-    mockKvIncrby.mockResolvedValue(13);
-    mockAsk.mockResolvedValue({ reply: "ok", sessionId: SESSION_ID, actions: [], modelCalls: 3 });
-
-    await POST(postReq({ message: "hola" }));
-
-    expect(mockKvIncrby).toHaveBeenCalledWith(TODAY_KEY, 3);
-    expect(mockKvExpire).not.toHaveBeenCalled(); // not the first write of the day
-  });
-
-  it("sets the counter's expiry on the first write of the day", async () => {
-    await POST(postReq({ message: "hola" }));
-
-    expect(mockKvIncrby).toHaveBeenCalledWith(TODAY_KEY, 1);
-    expect(mockKvExpire).toHaveBeenCalledWith(TODAY_KEY, 86400);
-  });
-
-  it("opens the circuit at the cap without calling the model", async () => {
-    mockKvGet.mockResolvedValue(1000);
+  it("answers 503 with the old body when the kill switch is open", async () => {
+    mockReply.mockRejectedValue(new ChatCapacityError());
 
     const res = await POST(postReq({ message: "hola" }));
 
     expect(res.status).toBe(503);
-    expect(mockAsk).not.toHaveBeenCalled();
-    expect(mockKvIncrby).not.toHaveBeenCalled();
+    expect(await res.json()).toEqual({ error: "Servicio temporalmente no disponible. Inténtalo más tarde." });
   });
 
-  it("counts a failed turn as one call and answers 502", async () => {
-    mockAsk.mockRejectedValue(new Error("Anthropic API error 500"));
+  it("answers 502 on a model error", async () => {
+    mockReply.mockRejectedValue(new Error("Anthropic API error 500"));
 
     const res = await POST(postReq({ message: "hola" }));
 
     expect(res.status).toBe(502);
-    expect(mockKvIncrby).toHaveBeenCalledWith(TODAY_KEY, 1);
+    expect(await res.json()).toEqual({ error: "Error al contactar con el asistente. Inténtalo de nuevo." });
   });
 });

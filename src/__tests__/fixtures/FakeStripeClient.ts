@@ -7,6 +7,8 @@
 // REFACTOR-R4-P4-01: createRefund replays a keyed request like Stripe does — a reused
 // idempotencyKey issues no second refund. `refunds` holds the refunds actually issued;
 // refundCalls records every call with its key, replays included.
+// REFACTOR-R5-P3-03: createPaymentIntent starts an intent at `requires_payment_method`, as
+// Stripe does; setIntentStatus moves one on (e.g. to `succeeded` once the student pays).
 import type Stripe from "stripe";
 import type {
   IStripeClient, CreatePaymentIntentOptions, ListPaymentIntentsParams, PaymentAuditFacts,
@@ -68,7 +70,7 @@ export class FakeStripeClient implements IStripeClient {
     const intent: FakePaymentIntent = {
       id,
       client_secret: `${id}_secret`,
-      status:        "succeeded",
+      status:        "requires_payment_method",
       amount:        params.amount,
       currency:      params.currency,
       metadata:      (params.metadata ?? {}) as Record<string, string>,
@@ -78,6 +80,13 @@ export class FakeStripeClient implements IStripeClient {
       this.idempotencyToIntentId.set(options.idempotencyKey, id);
     }
     return intent as unknown as Stripe.PaymentIntent;
+  }
+
+  /** Test helper: move a created intent to another status (e.g. "succeeded" once paid). */
+  setIntentStatus(id: string, status: string): void {
+    const intent = this.intents.get(id);
+    if (!intent) throw new Error(`FakeStripeClient: no intent for id ${id}`);
+    intent.status = status;
   }
 
   getIdempotencyKeys(): string[] {

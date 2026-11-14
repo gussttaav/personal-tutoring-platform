@@ -1,5 +1,8 @@
 // ARCH-10: Domain error classes — thrown by services, mapped to HTTP status codes
 // by route handlers. Keeps business logic free of HTTP concerns.
+//
+// REFACTOR-R5-P1-01: RescheduleNotOwnerError (a reschedule token used by another account).
+// REFACTOR-R5-P2-01: ChatCapacityError (the assistant's daily kill switch is open).
 
 export class DomainError extends Error {
   constructor(message: string, public readonly code: string) {
@@ -28,6 +31,18 @@ export class InvalidSlotError extends DomainError {
 // again. Mapped to 409, like the other account-state conflicts.
 export class FreeSessionAlreadyUsedError extends DomainError {
   constructor() { super("Free intro call already used", "FREE_SESSION_ALREADY_USED"); }
+}
+
+// REFACTOR-R5-P1-01: a signed-in user asked to reschedule a booking that belongs to
+// another account. The token is valid, the caller just isn't its owner. Mapped to 403.
+export class RescheduleNotOwnerError extends DomainError {
+  constructor() { super("This booking belongs to another account", "RESCHEDULE_NOT_OWNER"); }
+}
+
+// REFACTOR-R5-P2-01: the chat assistant's model calls for today (UTC) reached the
+// global cap, so the circuit is open until tomorrow. Mapped to 503.
+export class ChatCapacityError extends DomainError {
+  constructor() { super("Chat assistant daily capacity reached", "CHAT_CAPACITY"); }
 }
 
 export class BookingNotFoundError extends DomainError {

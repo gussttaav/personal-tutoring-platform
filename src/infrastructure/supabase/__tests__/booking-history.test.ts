@@ -75,6 +75,20 @@ describe("deriveAmount", () => {
       .toEqual({ amountCents: null, currency: null });
   });
 
+  // REFACTOR-R5-P2-02: the price shows once, on the booking that's going ahead.
+  it("gives a rescheduled paid original no amount (the new booking carries the charge)", () => {
+    expect(deriveAmount("session1h", undefined, "pi_single", payments, true))
+      .toEqual({ amountCents: null, currency: null });
+    // …while the new booking, sharing the PaymentIntent, keeps it.
+    expect(deriveAmount("session1h", undefined, "pi_single", payments, false))
+      .toEqual({ amountCents: 7500, currency: "eur" });
+  });
+
+  it("gives a rescheduled pack original no amount either (its credit moved)", () => {
+    expect(deriveAmount("pack", { packSize: 10, stripePaymentId: "pi_pack" }, null, payments, true))
+      .toEqual({ amountCents: null, currency: null });
+  });
+
   it("never divides by zero on a malformed pack", () => {
     expect(deriveAmount("pack", { packSize: 0, stripePaymentId: "pi_pack" }, null, payments))
       .toEqual({ amountCents: null, currency: null });

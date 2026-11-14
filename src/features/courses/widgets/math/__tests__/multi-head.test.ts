@@ -17,6 +17,10 @@
  *    head separates them by a factor of sixty, and the noun→modifier head's answer for
  *    «llaves» is REVERSED once the four scores are summed before the softmax.
  *
+ * 4. COURSE-P11-08 — the English sentence of the English lesson, "this small mouse which
+ *    the cats chase sleeps", read through lesson 2's English lexicon, keeps the properties
+ *    the lesson argues from, and the weights its prose quotes are pinned here.
+ *
  * The scores are also recomputed here by an independent route — explicit loops over the
  * lexicon, no matmul, no shared kernel — so a bug inside either could not pass both.
  */
@@ -29,7 +33,16 @@ import {
   RULES,
   embedTokens,
 } from "../self-attention";
-import { H, HEADS, MH_PRESETS, isFlatRow, multiHeadMaps, rowPeak } from "../multi-head";
+import {
+  H,
+  HEADS,
+  MH_DEFAULT,
+  MH_PRESETS,
+  MH_PRESETS_EN,
+  isFlatRow,
+  multiHeadMaps,
+  rowPeak,
+} from "../multi-head";
 
 const FLAGSHIP = PRESETS[0]; // «las llaves del coche están ahí»
 
@@ -78,8 +91,12 @@ describe("the heads", () => {
 
 describe("the same numbers, a different place to normalise", () => {
   it("sums the h head scores back into lesson 2's single head, on every preset", () => {
-    for (const preset of MH_PRESETS) {
-      const { tokens, heads, single } = multiHeadMaps(preset);
+    const sweep = [
+      ...MH_PRESETS.map((p) => [p, "es"] as const),
+      ...MH_PRESETS_EN.map((p) => [p, "en"] as const),
+    ];
+    for (const [preset, locale] of sweep) {
+      const { tokens, heads, single } = multiHeadMaps(preset, locale);
       for (let i = 0; i < tokens.length; i++) {
         for (let j = 0; j < tokens.length; j++) {
           const summed = heads.reduce((acc, head) => acc + head.scores[i][j], 0) / Math.sqrt(H);
@@ -190,6 +207,66 @@ describe("the two-verb sentence the lesson opens on", () => {
   it("separates them only once the rules are combined", () => {
     expect(tokens[rowPeak(single.weights[at(tokens, "duerme")]).index]).toBe("ratón");
     expect(tokens[rowPeak(single.weights[at(tokens, "persiguen")]).index]).toBe("gatos");
+  });
+});
+
+describe("the English sentence (COURSE-P11-08)", () => {
+  const map = multiHeadMaps(MH_DEFAULT.en, "en");
+  const { tokens, known, heads, single } = map;
+  const w = (m: number[][], row: string, col: string) => m[at(tokens, row)][at(tokens, col)];
+
+  it("is the default, eight known tokens, with `sleeps` at the Spanish focus row", () => {
+    expect(MH_DEFAULT.en).toBe(MH_PRESETS_EN[3]);
+    expect(tokens).toEqual(["this", "small", "mouse", "which", "the", "cats", "chase", "sleeps"]);
+    expect(known.every(Boolean)).toBe(true);
+    expect(at(tokens, "sleeps")).toBe(7);
+  });
+
+  it("repeats no vector (AUTHORING.en.md §3)", () => {
+    const x = embedTokens(tokens, "en");
+    for (let a = 0; a < x.length; a++) {
+      for (let b = a + 1; b < x.length; b++) {
+        expect(Math.max(...x[a].map((v, f) => Math.abs(v - x[b][f])))).toBeGreaterThan(0.1);
+      }
+    }
+  });
+
+  it("gives every row of every head a distribution, on every English preset", () => {
+    for (const preset of MH_PRESETS_EN) {
+      const m = multiHeadMaps(preset, "en");
+      expect(m.known.every(Boolean)).toBe(true);
+      for (const head of m.heads) for (const row of head.weights) expect(total(row)).toBeCloseTo(1, 12);
+    }
+  });
+
+  it("finds the subject of `sleeps` in no head, and in the single one", () => {
+    // Head 1 ties the two nouns, 0.30 each.
+    expect(rowPeak(heads[0].weights[at(tokens, "sleeps")]).tied.map((j) => tokens[j]).sort()).toEqual([
+      "cats",
+      "mouse",
+    ]);
+    expect(w(heads[0].weights, "sleeps", "mouse")).toBeCloseTo(0.296, 3);
+    // Head 2 prefers `this` and `sleeps` itself, 0.32 each, over `mouse`.
+    expect(rowPeak(heads[1].weights[at(tokens, "sleeps")]).tied.map((j) => tokens[j]).sort()).toEqual([
+      "sleeps",
+      "this",
+    ]);
+    expect(w(heads[1].weights, "sleeps", "this")).toBeCloseTo(0.32, 2);
+    expect(w(heads[1].weights, "sleeps", "mouse")).toBeLessThan(w(heads[1].weights, "sleeps", "this"));
+    // Heads 3 and 4 say nothing about a verb.
+    expect(isFlatRow(heads[2].weights[at(tokens, "sleeps")])).toBe(true);
+    expect(isFlatRow(heads[3].weights[at(tokens, "sleeps")])).toBe(true);
+    // The rules summed answer `mouse`, 0.33.
+    expect(tokens[rowPeak(single.weights[at(tokens, "sleeps")]).index]).toBe("mouse");
+    expect(w(single.weights, "sleeps", "mouse")).toBeCloseTo(0.33, 2);
+  });
+
+  it("nearly drops `mouse` from the row of `chase` once the rules are summed", () => {
+    expect(tokens[rowPeak(single.weights[at(tokens, "chase")]).index]).toBe("cats");
+    expect(w(single.weights, "chase", "cats")).toBeCloseTo(0.4, 2);
+    expect(w(single.weights, "chase", "mouse")).toBeCloseTo(0.07, 2);
+    // …while head 1 still gives it 0.30.
+    expect(w(heads[0].weights, "chase", "mouse")).toBeCloseTo(0.296, 3);
   });
 });
 

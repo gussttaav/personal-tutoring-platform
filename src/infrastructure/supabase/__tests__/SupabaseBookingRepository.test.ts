@@ -7,7 +7,16 @@
 // earliest-expiring active pack with room, then nothing; non-pack; concurrency.
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — status and time filter, the pack owner
 // and PaymentIntent join, normalized timestamps.
+// REFACTOR-R5-P1-03: bookings_one_free_call_per_user (migration 0029) — a second
+// non-cancelled free call is FreeSessionAlreadyUsedError; cancelling frees it again; a
+// reinstate that would make two answers false.
+// REFACTOR-R5-P2-02 (migration 0030): cancel_booking writes credit_restored for pack rows
+// (true / false) and leaves it NULL otherwise; claimForReschedule sets rescheduled,
+// reinstateBooking clears it, and consumeCancelToken leaves it alone.
+// REFACTOR-R5-P3-02: listByUser and findByCancelToken read packSize through the embedded
+// credit_packs(pack_size) — two pack bookings from a 5-pack and a 10-pack keep 5 and 10.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
+import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
 import { uniqueFutureSlot, purgeTestUsers } from "./slot-helpers";
@@ -244,6 +253,86 @@ describeDb("SupabaseBookingRepository", () => {
     await cleanup(taker.email);
   });
 
+  // ─── REFACTOR-R5-P2-02: the reschedule marker ─────────────────────────────
+  describe("rescheduled (0030)", () => {
+    async function outcome(eventId: string) {
+      const { data, error } = await supabase
+        .from("bookings").select("status, rescheduled, credit_restored")
+        .eq("calendar_event_id", eventId).single();
+      if (error) throw error;
+      return data;
+    }
+
+    it("claimForReschedule cancels the row and marks it rescheduled; a second claim is false", async () => {
+      const record = baseRecord();
+      const { cancelToken } = await repo.createBooking(record);
+
+      expect(await repo.claimForReschedule(cancelToken)).toBe(true);
+      expect(await repo.claimForReschedule(cancelToken)).toBe(false);
+      expect(await outcome(record.eventId)).toEqual({
+        status: "cancelled", rescheduled: true, credit_restored: null,
+      });
+
+      await cleanup(record.email);
+    });
+
+    it("reinstateBooking resets rescheduled to false", async () => {
+      const record = baseRecord();
+      const { cancelToken } = await repo.createBooking(record);
+      const claimed = await repo.findByCancelToken(cancelToken);
+
+      await repo.claimForReschedule(cancelToken);
+      expect(await repo.reinstateBooking(claimed!)).toBe(true);
+      expect(await outcome(record.eventId)).toMatchObject({ status: "confirmed", rescheduled: false });
+
+      await cleanup(record.email);
+    });
+
+    it("consumeCancelToken (the new booking's compensation) does not mark rescheduled", async () => {
+      const record = baseRecord();
+      const { cancelToken } = await repo.createBooking(record);
+
+      expect(await repo.consumeCancelToken(cancelToken)).toBe(true);
+      expect(await outcome(record.eventId)).toMatchObject({ status: "cancelled", rescheduled: false });
+
+      await cleanup(record.email);
+    });
+  });
+
+  // REFACTOR-R5-P1-03: the one-free-call index.
+  describe("bookings_one_free_call_per_user", () => {
+    const freeRecord = (email?: string) => {
+      const r = baseRecord();
+      return { ...r, email: email ?? r.email, sessionType: "free15min" as const };
+    };
+
+    it("refuses a second non-cancelled free call; cancelling the first frees it", async () => {
+      const first  = freeRecord();
+      const second = freeRecord(first.email);
+      const { cancelToken } = await repo.createBooking(first);
+
+      await expect(repo.createBooking(second)).rejects.toBeInstanceOf(FreeSessionAlreadyUsedError);
+
+      await repo.consumeCancelToken(cancelToken);
+      await expect(repo.createBooking(second)).resolves.toMatchObject({ cancelToken: expect.any(String) });
+
+      await cleanup(first.email);
+    });
+
+    it("reinstateBooking returns false when the user booked another free call meanwhile", async () => {
+      const original = freeRecord();
+      const { cancelToken } = await repo.createBooking(original);
+      const claimed = await repo.findByCancelToken(cancelToken);
+      await repo.consumeCancelToken(cancelToken);
+      await repo.createBooking(freeRecord(original.email));
+
+      expect(await repo.reinstateBooking(claimed!)).toBe(false);
+      expect((await repo.findByEventId(original.eventId))?.status).toBe("cancelled");
+
+      await cleanup(original.email);
+    });
+  });
+
   it("findByCancelToken returns the booking's stripePaymentId", async () => {
     const stripePaymentId = `pi_test_${Date.now()}_${recordSeq}_fct`;
     const record = { ...baseRecord(), stripePaymentId };
@@ -389,10 +478,127 @@ describeDb("SupabaseBookingRepository", () => {
       }
     });
 
+    // REFACTOR-R5-P2-02: the outcome is persisted on the row.
+    async function creditRestoredOf(eventId: string): Promise<boolean | null> {
+      const { data, error } = await supabase
+        .from("bookings").select("credit_restored").eq("calendar_event_id", eventId).single();
+      if (error) throw error;
+      return data.credit_restored;
+    }
+
+    it("records credit_restored = true for a pack class whose pack had room", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const pack   = await seedPack(userId, inDays(90), 2);
+
+      try {
+        const record = packBooking(email, pack);
+        const { cancelToken } = await repo.createBooking(record);
+        await repo.cancelByToken(cancelToken);
+        expect(await creditRestoredOf(record.eventId)).toBe(true);
+      } finally {
+        await cleanupWithPacks(email);
+      }
+    });
+
+    it("records credit_restored = false when the originating pack expired and no other has room", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const pack   = await seedPack(userId, inDays(90), 2);
+
+      try {
+        const record = packBooking(email, pack);
+        const { cancelToken } = await repo.createBooking(record);
+        await supabase.from("credit_packs").update({ expires_at: inDays(-1) }).eq("id", pack);
+
+        expect(await repo.cancelByToken(cancelToken)).toMatchObject({ consumed: true, restored: false });
+        expect(await creditRestoredOf(record.eventId)).toBe(false);
+      } finally {
+        await cleanupWithPacks(email);
+      }
+    });
+
+    it("leaves credit_restored NULL for a session1h cancel", async () => {
+      const record = baseRecord(); // session1h
+      await seedUser(record.email);
+
+      try {
+        const { cancelToken } = await repo.createBooking(record);
+        await repo.cancelByToken(cancelToken);
+        expect(await creditRestoredOf(record.eventId)).toBeNull();
+      } finally {
+        await cleanupWithPacks(record.email);
+      }
+    });
+
     it("an unknown or malformed token consumes nothing", async () => {
       const none = { consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0 };
       expect(await repo.cancelByToken("not-a-valid-hex-token")).toEqual(none);
       expect(await repo.cancelByToken("0".repeat(64))).toEqual(none);
+    });
+  });
+
+  // ─── REFACTOR-R5-P3-02: pack size by join ─────────────────────────────────
+  describe("packSize by join", () => {
+    async function seedUser(email: string): Promise<string> {
+      const { data, error } = await supabase
+        .from("users").upsert({ email, name: "Test Student" }, { onConflict: "email" })
+        .select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    async function seedPack(userId: string, packSize: number): Promise<string> {
+      const { data, error } = await supabase.from("credit_packs").insert({
+        user_id:           userId,
+        pack_size:         packSize,
+        credits_remaining: packSize - 1,
+        stripe_payment_id: `pi_test_packsize_${Date.now()}_${recordSeq++}`,
+        expires_at:        new Date(Date.now() + 180 * 86_400_000).toISOString(),
+      }).select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    // bookings.credit_pack_id → credit_packs → users, so packs go between the two.
+    async function cleanupWithPacks(email: string) {
+      const { data: user } = await supabase
+        .from("users").select("id").eq("email", email).maybeSingle();
+      if (!user) return;
+      await supabase.from("bookings").delete().eq("user_id", user.id);
+      await supabase.from("credit_packs").delete().eq("user_id", user.id);
+      await supabase.from("users").delete().eq("id", user.id);
+    }
+
+    it("listByUser and findByCancelToken return each booking's own pack size", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const pack5  = await seedPack(userId, 5);
+      const pack10 = await seedPack(userId, 10);
+
+      try {
+        const fromFive = { ...baseRecord(), email, sessionType: "pack" as const, creditPackId: pack5 };
+        const fromTen  = { ...baseRecord(), email, sessionType: "pack" as const, creditPackId: pack10 };
+        const paid     = { ...baseRecord(), email };
+        const five = await repo.createBooking(fromFive);
+        const ten  = await repo.createBooking(fromTen);
+        const one  = await repo.createBooking(paid);
+
+        const list = await repo.listByUser(email);
+        const sizeOf = (eventId: string) => list.find(b => b.record.eventId === eventId)?.record.packSize;
+        expect(list).toHaveLength(3);
+        expect(sizeOf(fromFive.eventId)).toBe(5);
+        expect(sizeOf(fromTen.eventId)).toBe(10);
+        expect(sizeOf(paid.eventId)).toBeUndefined();
+
+        expect((await repo.findByCancelToken(five.cancelToken))?.packSize).toBe(5);
+        expect((await repo.findByCancelToken(ten.cancelToken))?.packSize).toBe(10);
+        const found = await repo.findByCancelToken(one.cancelToken);
+        expect(found).not.toBeNull();
+        expect(found!.packSize).toBeUndefined();
+      } finally {
+        await cleanupWithPacks(email);
+      }
     });
   });
 

@@ -71,6 +71,46 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 - [ ] `dl-nlp`'s last bridge and landing point at `llm-agents`; `/cursos` in prerequisite order
 - [ ] `launch:llm-agents` sent once, both locales, after a dry run
 
+## Phase 3 — English translation
+
+Write `content/courses/llm-agents/en/`: 40 lessons, one PR each, on the platform `dl-nlp`'s Phase 11
+built. What is Spanish here is less the prose than the assets: the mini-GPT and its corpus, seven
+frozen modules, the companion repository and every Block 5 measurement. See the
+[phase README](phase-3-translation/README.md). Planned 2026-11-13.
+
+| Task | Tag | Status | Owner | PR |
+|------|-----|--------|-------|----|
+| [00 Triage: classify 40 lessons](phase-3-translation/00-triage.md) | `COURSE-C2-P3-00` | ✅ | _tbd_ | local |
+| [01 Platform readiness](phase-3-translation/01-platform-readiness.md) | `COURSE-C2-P3-01` | ✅ | _tbd_ | local |
+| [02 The English mini-GPT](phase-3-translation/02-english-checkpoint.md) | `COURSE-C2-P3-02` | ✅ | _tbd_ | local |
+| [03 `llm-agents/AUTHORING.en.md`: glossary + identifier map](phase-3-translation/03-authoring-en.md) | `COURSE-C2-P3-03` | ✅ | _tbd_ | local |
+| [04 Block 1 — From the Transformer to the Language Model (9)](phase-3-translation/04-block-1.md) | `COURSE-C2-P3-04` | ⬜ | _tbd_ | |
+| [05 Block 2 — From Predicting Text to Following Instructions (8)](phase-3-translation/05-block-2.md) | `COURSE-C2-P3-05` | ⬜ | _tbd_ | |
+| [06 Block 3 — Talking to the Model Is Programming (7)](phase-3-translation/06-block-3.md) | `COURSE-C2-P3-06` | ⬜ | _tbd_ | |
+| [07 Block 4 — The Bridge: from Text to Actions (7)](phase-3-translation/07-block-4.md) | `COURSE-C2-P3-07` | ⬜ | _tbd_ | |
+| [08 Block 5 — A Coding Agent in the Terminal (9)](phase-3-translation/08-block-5.md) | `COURSE-C2-P3-08` | ⬜ | _tbd_ | |
+
+**Commands:** `/course-task` for P3-00 … P3-03 (run 00 → 01 → 03 → 02); `/course-translate` for the
+block tasks, one lesson per call, **only after P3-01** (until then its prerequisite check reads
+`dl-nlp`'s P11 tags and would wrongly pass).
+
+**Landing order:** P3-00 and P3-01 first (cheap). P3-03's identifier table, then P3-02, then the
+rest of P3-03. Then blocks in order, lessons in order. **`dl-nlp`'s P11-08 (at least 5.9) lands
+before Block 1**: 1·1 quotes its code by name.
+
+**Decisions taken by Gustavo (2026-11-13):** **D1** no new repository: the English code goes on an
+`en` branch of `agente-minimo`, tagged `en-b5-l1` … `en-b5-l9`; **D2** an English Colab notebook on
+OpenAssistant's English pairs; **D3** both Kaggle rows of lesson 39 re-run on the English benchmark.
+
+**Exit criteria**
+- [ ] 40 published lessons under `en/`; `fullyTranslated` true for `en`
+- [ ] Every `/en` lesson route indexable with reciprocal hreflang; no fallback `noindex` remains
+- [ ] A partially translated tree passes `pnpm lint:content` at every intermediate commit
+- [ ] `SPANISH_BOUND_CORPORA` holds no `llm-agents` entry
+- [ ] Every English cell and challenge run in the browser against the English assets; every English
+      Block 5 lesson verified from its English tag on the pinned chain
+- [ ] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
+
 ---
 
 ## Deviations
@@ -1686,3 +1726,154 @@ DeepSWE; URLs and figures checked). Runs on the local model, `qwen3:4b-instruct`
 - **Side effect:** with block 5 complete, `courseBuildStatus()` reports the course finished, so the
   catalog card and the landing lose «En construcción».
 
+**COURSE-C2-P3-00** — Done (2026-11-13), on `docs/llm-agents-p3-00-triage`. All 40 published
+lessons read (`00-pipeline-fixture.mdx` excluded as a draft fixture); each block md (04–08) now has
+its Classification table, «What changed from the planning pass», cross-course refs, the frozen-module
+identifiers its prose names (for P3-03), and a per-lesson artifact inventory with line refs. The
+phase README's planning estimate is replaced by the count. No code, no content, no `en/` file.
+- **The count: 1 transpose · 33 adapt · 6 rewrite** (planned 2 / 34 / 4). Re-runs: P ×20, P
+  (scripted) ×8, T ×9, C ×1, — ×2. New flag **P (scripted)**: cells on the scripted model only
+  (3·1, 3·6, Block 4 but 4·6), whose output is the author's strings, so re-authoring with the same
+  pattern reproduces the numbers.
+- **Moved rows:** 1·7 transpose → adapt (its cell hard-codes the checkpoint's 125 789 training
+  tokens and step 1 750); 2·3 adapt → rewrite (the evidence that the model reads the question is
+  Spanish article agreement, and `q-el-vino` rests on it); 3·4 adapt → rewrite (the causal mean's
+  asymmetry is measured on the opening `¿`; `q-el-signo`). 4·6's re-run is a real measurement (it
+  counts the whole novel with the BPE), not a scripted one.
+- **Corrections to the plan:** the `dl-nlp` code name crossing the course boundary is quoted by
+  **1·9** (`paso(entrada)`), not 1·1, and no lesson quotes `genera(…)`. The README's sequencing
+  bullet is fixed. **P3-03's md still says 1·1 / `genera`**; fix it when P3-03 runs. The
+  «`pedido`, 18 mentions» note was 5·8's, not 3·6's. The `asistente` and `agente`
+  `context-window` presets hold no text (labels come from messages), so their English-preset asset
+  rows in 06/07 are struck.
+- **Handed to later tasks** (in the README's count section): P3-01, add `context-window`'s measured
+  `compactacion` preset to `SPANISH_BOUND_CORPORA`, where it is missing. P3-02, seven corpus
+  properties the lessons rely on beyond the trainer's asserts: a zero-frequency held-out token
+  (1·6), no `{` or straight `"` (3·3), more than 128 000 tokens (4·6), a name never merged with its
+  space (1·9), the frame's answer word absent (2·1), a misleading dialogue tag and a vocabulary-gap
+  Q/A pair (3·7, 3·4). P3-03, decide the message roles before 4·2 freezes them (5·2's adapter
+  translates them into English today). P3-08 / 5·1, D1's "byte-identical `Modelfile`" has a Spanish
+  comment line.
+- **Cross-course:** 34 `curso="dl-nlp"` refs in 12 lessons, 10 of them to four lessons not yet in
+  `dl-nlp/en/` (`bert-y-gpt` ×4, `proyecto-transformer` ×3, `encoder-decoder-masking` ×2,
+  `fine-tuning-colab` ×1). The course's only `ancla` is 2·8 → 2·3's heading «Lo que la pérdida no
+  dice». Its English anchor follows 2·3's English heading.
+- Verified: none needed (documentation). Line refs checked against `es/` at `073c57d`.
+
+**COURSE-C2-P3-01** — Done (2026-11-13), on `course/llm-agents-p3-01-platform-readiness`. Phase 11's
+machinery covers `llm-agents` with no change; the two `dl-nlp`-shaped places are generalised and
+D1's tag invariant is linted.
+- **The stub proved the inheritance** (`en/01-una-sola-columna.mdx`, written, checked, **deleted**:
+  `en/` ships empty). `lint:content` passed and warned on `simply`; `pnpm build` prerendered it;
+  `/en/cursos/llm-agents/una-sola-columna` was `index, follow` with reciprocal `es`/`en` hreflang
+  while `/en/…/bpe-de-verdad` stayed `noindex` with none; the landing read «1 of 40 lessons are
+  already in English»; `/api/courses/search-index/llm-agents/en` carried the English title. In the
+  dev server all four references linked: `curso="dl-nlp"` → `vocabulario-oov` (translated, no
+  badge), → `proyecto-transformer` and the two forward refs `bpe-de-verdad`, `entrenar-un-mini-gpt`
+  (fallbacks, card marked «In Spanish», checked in the DOM; the pane's screenshot didn't show the
+  hover card). **Deviation:** 1·1 has no published predecessor in its own course, so the "backward"
+  reference is the cross-course one to the translated `vocabulario-oov`, and there are three
+  fallbacks, not two. Not checked on a phone.
+- **`/course-translate`** (`.claude/commands/course-translate.md`): prerequisites are now "every task
+  the phase README lists before the first block task is ✅ in STATUS.md, and the lesson has a class
+  row", named one by one; that reads P11-00 … 03 for `dl-nlp` and P3-00 … 03 here, so it **refuses
+  on this course until P3-02 and P3-03 land**. Plus: the notebook exception (only where the block md
+  asks; ask before pushing to the notebooks repo), a step-9 branch for terminal verification (fresh
+  clone of the starting tag, pinned chain, raw log beside the block md), and step 13's
+  companion-repo commit + tag after approval, asking before any push. **Note: `.claude/` is
+  gitignored, so this edit is local to the author's machine and is not in the branch's diff.**
+- **`AUTHORING.en.md` §7**: one rule for every sibling (`public/courses/<course>/<name>.en.<ext>`,
+  the Spanish file keeps its name, stated once instead of four times) and the new `.en.py` frozen-module
+  paragraph with its parity test. 485 lines before and after. The header still links the two course
+  deltas by path (`dl-nlp/AUTHORING.md`, `llm-agents/AUTHORING.md`); that's a list of deltas, not
+  an asset path, so it stays.
+- **`validate-repolinks.ts`** (new, fatal, beside `validateCrosslinks` in `lint:content`):
+  `REPO_TAG_ES = /^b5-l[1-9]$/` in `es/`, `REPO_TAG_EN = /^en-b5-l[1-9]$/` in `en/`, via
+  `REPO_TAG_BY_LOCALE`; a locale with no entry is not checked; a `<RepoLink>` with no `tag` (an MDX
+  comment) and fenced samples are skipped. 15 tests (temp trees + the real tree). Checked by hand both
+  ways: a `b5-l1` in an `en/` stub and an `en-b5-l1` in `es/33` each fail, naming the file. The 18
+  Spanish lesson `<RepoLink>`s (plus the fixture's 2) pass unchanged.
+- **`course.en.yml`**: "block 3 mixes; blocks 4 and 5" → "Block 3 … Blocks 4 and 5", and the same
+  slip in the FAQ answer above it ("Nothing until block 5" → "Block 5"), not named in the task.
+- **Triage hand-off** (from the phase README, not this task's file table): `context-window` added to
+  `SPANISH_BOUND_CORPORA` for its measured `compactacion` preset.
+- Verified: `pnpm lint` (0 errors, the 8 existing warnings), `pnpm lint:content`, `pnpm test`
+  (218 suites, 3 345 tests), `pnpm check:messages`, `pnpm build` (with the stub in place) all green.
+  `check:bundle` not run (the one client-side change is a string in `SPANISH_BOUND_CORPORA`).
+
+**COURSE-C2-P3-03** — Done (2026-11-13), on `docs/llm-agents-p3-03-authoring-en`. New
+`docs/courses/llm-agents/AUTHORING.en.md`, the fourth delta (this course's *and* English's): the
+identifier map, the English glossary, the terminal form in English, the two-reader test across the
+course boundary. 297 lines of prose plus the tables (the cap is 300).
+- **The identifier map** covers every public name of the seven frozen modules (functions, methods,
+  parameters, constants, dictionary keys, checkpoint JSON keys, the strings Block 4's tests compare
+  character for character), the names that cross lessons without a module (2·2's specials, 3·x's
+  JSON keys and helpers, 4·1/4·4/4·5/4·7's), and **every file in `agente-minimo`'s `b5-l9` tag**
+  with the repository's public names. Twelve collisions decided in the name, each with its reason.
+  The ones later tasks feel: **roles are the protocol's** (`system` / `user` / `assistant`), so the
+  English `api.py` has no `ROLES` and 5·2's rewrite loses its translation clause (its distractor (b)
+  needs a new point); the harness's `ejecutar` is `execute`, Block 5's tool is `run`, `correr.py` is
+  **`main.py`** (not the seed's `run.py`, which would collide with `tools/run.py`); the user's
+  `pedido` is `request`, so the HTTP body is a `payload` and an MCP message an `rpc`; tool classes
+  are nouns (`reading` / `writing` / `execution`); Block 3's `prueba` is an **item** (Block 4 keeps
+  *test*); builders `text` / `tool_use` / `tool_result`; `objeto` → `object_schema`, `muestra` →
+  `show`, `lista.txt` → `shopping.txt`; `AGENTE.md` → `AGENT.md` (not the `AGENTS.md` convention).
+- **The glossary** carries all 160 rows of §4, in order, keyed by the Spanish term. Changed shape:
+  *obey* (English *follow* collides as `seguir` did), *penalise* (RL's *discount* is $\gamma$),
+  *greedy generation* (`decode` is taken, 1·4's argument survives), a call *fails* / a test *does
+  not pass*, *working directory* + *folder*. The two sentence rows (*turn*, *response*) are written.
+- **Deviation: `paso`'s English name could not be taken from `dl-nlp`'s English 5.9**, which is not
+  translated (P11-08 still open). It is derived from `dl-nlp/en/`'s own conventions (en/20 `step`,
+  en/25 `generate`, `inputs`): `generate(step, go, eos, max_steps)`, `step(inputs)`. **Hand-off to
+  `dl-nlp`'s P11-08: its 5.9 must take these names** (not written into `dl-nlp`'s docs, which this
+  task does not own). The training step is `Adam.step`; the two never share a call site.
+- **Not yet checked against P3-02.** The test plan's check is `bpe.en.py` / `minigpt.en.py` written
+  from the table alone; any gap P3-02 finds is fixed in this file first.
+- **Also**: `llm-agents/AUTHORING.md` gets a pointer in its header; `docs/courses/README.md`'s
+  governing order gains step 3 (the language delta, then the course's English delta) and the tree
+  lists the file; `/course-translate` step 2 reads the course's English delta and refuses to invent a
+  name the map lacks (`.claude/` is gitignored: local only, as in P3-01). The task md's "1·1 quotes
+  `genera(…)`" wording is corrected to 1·9 / `paso(entrada)`, the fix P3-00 asked for.
+- Verified: none needed (documentation). Row count checked against §4 (160 = 160).
+
+**COURSE-C2-P3-02** — Done (2026-11-13), on `course/llm-agents-p3-02-english-checkpoint`. New
+`corpus.en.txt`, `bpe.en.py`, `minigpt.en.py`, `bpe-merges.en.json`, `minigpt.en.json` under
+`public/courses/llm-agents/` (only additions there: `git diff --stat public/` is empty);
+`train-minigpt.py --idioma {es,en}` (an `IDIOMAS` table and a `vista_inglesa()` that gives the
+English modules the script's Spanish names, delegating, so the arithmetic is the English file's);
+new `parity-en.py`; the README's English section; `llm-agents-assets.test.ts` (English siblings,
+explicit English keys, the same line structure as the Spanish files); the `corpus.txt` entry in
+`corpora.ts`.
+- **The corpus is *Cousin Phillis* (Gaskell, Gutenberg #4268), the only candidate that passes.**
+  All three task candidates were trained with the fixed recipe, each with its three prompts chosen
+  before the run (the protagonist's name, `“What`, `The sun was`): *Under the Greenwood Tree*
+  (318 778 chars, ppl 21.2) and *Silas Marner* (391 287, ppl 19.0) **fail property 2**: greedy
+  repeats no 4-gram in 32 tokens on any prompt. Nothing was tuned to make them pass. ***Phillis***
+  passes 1–4 (ppl 28.64, greedy repeats 3/3, top-p 0/3, SFT 0/5 → 1/5 with the template).
+- **Its costs, for Gustavo's review before Block 1 is translated:** it is **27 % shorter** than
+  *Marianela* (85 886 training tokens: **47.7 passes per token**, not 32.6, so 1·3's quiz changes
+  value); it **overfits after step 1000** (validation 3.355 → 3.471 at 2000), so the checkpoint is
+  step 1000 and 1·3's English curve will show overfitting the Spanish one does not; and property 1's
+  margin is thin (28.64 of 30). If that reads as two stories rather than one, the next move is more
+  candidates near 290 K characters, not a change to the recipe.
+- **Property 4, as re-stated:** strict increase of the leading-token match (minimum 1, where Spanish
+  keeps its 2 for the agreeing article) plus `^ The [a-z]+ is [a-z]+\.` after and not before. The
+  base checkpoint does **not** already start with ` The` (0/5), so the assert was not weakened.
+- **`--idioma es` reproduces the published Spanish hashes byte for byte** (`9086cb46…`,
+  `946ed0d4…`), and the English run reproduced itself (`76b9a122…`, `74467db1…`) across two runs.
+- **Machine: not the Spanish README's.** An i5-6300U (2016, 2 cores), Python 3.12.16 + NumPy 2.2.5
+  in Docker (`python:3.12-slim`: this machine only has Python 3.14, with no NumPy 2.2.5 wheel). The
+  English run took 676 s alone; the Spanish one, here, 1038 s in parallel with another run.
+- **Finding for 1·2:** English is not all one-byte. The corpus's 2 067 non-ASCII characters are all
+  typography (`“ ’ ” — ‘`), and merge 8 is `E2 80`, a token that is not a character; merges 51/52/54
+  complete the curly quotes. The multi-byte argument keeps corpus-side evidence, in punctuation.
+- **P3-03's check ("written from the table alone"): passed.** No public name was needed outside the
+  identifier map; only function-local variables were named on the spot (`words`, `pieces`, `best`,
+  `rank`, `axes`, `starts`, `order`, `cumulative`…), which the map does not cover by design.
+- **Property 5:** one throwaway cell in the local fixture (reverted, not committed): 1.13 s with the
+  English files uncached, 0.70 s warm, 16–19 ms per 64-token forward pass; greedy and top-p output
+  identical to CPython's. **Phone: not measured** (none available, as in P0-03); 2–3× puts it at
+  2–4 s, inside the cap.
+- Verified: both trainer runs' asserts; `parity-en.py` (16 checks, including the Spanish checkpoint
+  through `minigpt.en.py`); `pnpm test` (218 suites, 3 355 tests); `pnpm lint` (0 errors, the 8
+  existing warnings); `pnpm build` green.

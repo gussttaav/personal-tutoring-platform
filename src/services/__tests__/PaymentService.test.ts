@@ -15,6 +15,10 @@
 // refund record replays it), and the checkout keys carry the amount — suite at the end.
 // BOOKING-ATTRIBUTION-01: the student's source rides the PaymentIntent metadata from
 // checkout to the webhook's createBooking (and the admin retry's).
+// REFACTOR-R5-P1-02: markProcessed failing after a committed booking is not a failed
+// booking — webhook + admin-retry cases in the resolution and reprocess suites.
+// REFACTOR-R5-P3-03: a checkout key that replays an already-paid PaymentIntent gets a fresh
+// one; a still-payable replay is reused (double-click dedup) — suite at the end of this file.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -571,6 +575,43 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
     expect(bookings.createBooking).not.toHaveBeenCalled();
   });
 
+  // REFACTOR-R5-P1-02: markProcessed failing AFTER createBooking committed must not
+  // dead-letter a class that exists. The webhook answers 200 as a normal booking, and the
+  // next redelivery heals the marker through the booking-exists gate.
+  it("treats a markProcessed failure after a committed booking as booked, and a redelivery heals it", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(fullBooking);
+    paymentRepo.markProcessed.mockRejectedValueOnce(new Error("postgres blip"));
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
+
+    expect(bookings.createBooking).toHaveBeenCalledTimes(1);
+    expect(paymentRepo.recordFailedBooking).not.toHaveBeenCalled();
+    expect(mockSendDeadLetterEmail).not.toHaveBeenCalled();
+    expect(paymentRepo.recordPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ stripePaymentId: "pi_single_123", checkoutType: "single" }),
+    );
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledTimes(1);
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledWith(
+      "pi_single_123", expect.objectContaining({ status: "confirmed" }),
+    );
+    expect(paymentRepo.broadcastSingleSessionResolved).not.toHaveBeenCalledWith(
+      "pi_single_123", { status: "failed" },
+    );
+
+    // Stripe redelivers: the marker is still missing, but the booking now exists.
+    (bookings.hasBookingForPayment as jest.Mock).mockResolvedValue(true);
+    paymentRepo.markProcessed.mockClear();
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
+
+    expect(paymentRepo.markProcessed).toHaveBeenCalledWith("pi_single_123");
+    expect(bookings.createBooking).toHaveBeenCalledTimes(1);
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(paymentRepo.recordFailedBooking).not.toHaveBeenCalled();
+  });
+
   // 6. Dead-letter → failed (broadcast + polling).
   it("broadcasts status:failed and polling reports failed when booking dead-letters", async () => {
     const { service, paymentRepo, bookings } = makeService();
@@ -830,6 +871,35 @@ describe("PaymentService.reprocessFailedBooking", () => {
     expect(paymentRepo.clearFailedBooking).toHaveBeenCalledWith("pi_single_123");
   });
 
+  // REFACTOR-R5-P1-02: the retry books, then the marker write fails — still a success, the
+  // entry is cleared, and no fresh dead-letter is written over it.
+  it("returns ok:true and clears the entry when markProcessed fails after the retry booked", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.listFailedBookings.mockResolvedValue([deadLetterEntry]);
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.markProcessed.mockRejectedValue(new Error("postgres blip"));
+    paymentRepo.clearFailedBooking.mockResolvedValue(undefined);
+    stripe.retrievePaymentIntent.mockResolvedValue({
+      id:       "pi_single_123",
+      metadata: {
+        student_email:    "student@test.com",
+        student_name:     "Student",
+        start_iso:        "2099-12-01T10:00:00.000Z",
+        end_iso:          "2099-12-01T11:00:00.000Z",
+        session_duration: "1h",
+        reschedule_token: "",
+      },
+    } as unknown as Stripe.PaymentIntent);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+
+    const result = await service.reprocessFailedBooking("pi_single_123");
+
+    expect(result).toEqual({ ok: true, outcome: "booked" });
+    expect(paymentRepo.clearFailedBooking).toHaveBeenCalledWith("pi_single_123");
+    expect(paymentRepo.recordFailedBooking).not.toHaveBeenCalled();
+    expect(mockSendDeadLetterEmail).not.toHaveBeenCalled();
+  });
+
   // REFACTOR-R3-P1-02: a throwing re-check must surface as { ok: false }, not an
   // unhandled rejection — the fail-closed throw is caught by reprocessFailedBooking.
   it("returns ok:false when the slot re-check throws", async () => {
@@ -1071,7 +1141,7 @@ describe("per-student pricing at checkout", () => {
     const pricing     = new PricingService(pricingRepo, new InMemoryAuditRepository());
     const stripe      = mockStripe();
     (stripe.createPaymentIntent as jest.Mock).mockResolvedValue({
-      id: "pi_student", client_secret: "pi_student_secret",
+      id: "pi_student", client_secret: "pi_student_secret", status: "requires_payment_method",
     });
     const userSvc = {
       ensureUser:  jest.fn().mockResolvedValue(userId ?? TEST_USER_ID),
@@ -1167,7 +1237,7 @@ describe("REFACTOR-R4-P1-01: checkout validates the slot before any PaymentInten
 
   it("runs the validator with the session type the payment is for", async () => {
     const { service, bookings, stripe } = makeService();
-    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s" } as Stripe.PaymentIntent);
+    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s", status: "requires_payment_method" } as Stripe.PaymentIntent);
 
     await service.createSingleSessionCheckout({ ...params, duration: "2h" });
 
@@ -1199,7 +1269,7 @@ describe("BOOKING-ATTRIBUTION-01: the source rides the PaymentIntent", () => {
 
   it("checkout writes the source into the metadata and keys on it", async () => {
     const { service, stripe } = makeService();
-    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s" } as Stripe.PaymentIntent);
+    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s", status: "requires_payment_method" } as Stripe.PaymentIntent);
 
     await service.createSingleSessionCheckout({ ...params, attribution: linkedin });
     await service.createSingleSessionCheckout(params);
@@ -1797,4 +1867,158 @@ describe("REFACTOR-R4-P4-01: checkout keys carry the amount", () => {
       "single:ana@test.com:1h:2026-06-01T10:00:00.000Z:1600eur:6000000",
     ]);
   });
+});
+
+describe("REFACTOR-R5-P1-04: a paid checkout never carries a reschedule token", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+  });
+
+  it("writes an empty reschedule_token into the PaymentIntent metadata", async () => {
+    const { service, stripe } = makeService();
+    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s", status: "requires_payment_method" } as Stripe.PaymentIntent);
+
+    await service.createSingleSessionCheckout({
+      email: "student@test.com", name: "Student", duration: "1h",
+      startIso: "2099-12-01T10:00:00.000Z", endIso: "2099-12-01T11:00:00.000Z",
+    });
+
+    const [[intentParams]] = stripe.createPaymentIntent.mock.calls;
+    expect(intentParams.metadata).toHaveProperty("reschedule_token", "");
+  });
+
+  it("the webhook still hands a legacy intent's token to createBooking", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+    const event = fakeSingleEvent();
+    (event.data.object as Stripe.PaymentIntent).metadata.reschedule_token = "tok_legacy";
+
+    await service.processWebhookEvent(event);
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ rescheduleToken: "tok_legacy" }),
+    );
+  });
+});
+
+describe("REFACTOR-R5-P3-03: checkout never hands back a paid PaymentIntent", () => {
+  // Inside one 5-min window for the whole test: bucket 6_000_000.
+  const NOW = 6_000_000 * 300_000 + 60_000;
+  let nowSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    nowSpy = jest.spyOn(Date, "now").mockReturnValue(NOW);
+  });
+  afterEach(() => nowSpy.mockRestore());
+
+  function build() {
+    const fakeStripe = new FakeStripeClient();
+    const userSvc    = {
+      ensureUser:  jest.fn().mockResolvedValue("user-1"),
+      findByEmail: jest.fn().mockResolvedValue({ id: "user-1" }),
+    };
+    const service = new PaymentService(
+      fakeStripe,
+      mockCredits()  as unknown as CreditService,
+      mockBookings() as unknown as BookingService,
+      mockPaymentRepo(),
+      userSvc as unknown as UserService,
+      new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository()),
+      makeSchedule(),
+    );
+    return { service, fakeStripe };
+  }
+
+  const PACK     = { email: "ana@test.com", name: "Ana", packSize: 5 as const };
+  const SINGLE   = {
+    email: "ana@test.com", name: "Ana", duration: "1h" as const,
+    startIso: "2026-06-01T10:00:00.000Z", endIso: "2026-06-01T11:00:00.000Z",
+  };
+  const PACK_KEY = "pack:ana@test.com:5:7500eur:6000000";
+
+  it("pack: a replayed succeeded intent → a second, distinct, payable intent", async () => {
+    const { service, fakeStripe } = build();
+
+    const first = await service.createPackCheckout(PACK);
+    fakeStripe.setIntentStatus(first.paymentIntentId, "succeeded");
+    const second = await service.createPackCheckout(PACK);
+
+    expect(second.paymentIntentId).not.toBe(first.paymentIntentId);
+    await expect(fakeStripe.retrievePaymentIntent(second.paymentIntentId))
+      .resolves.toMatchObject({ status: "requires_payment_method", amount: 7500 });
+    expect(fakeStripe.getIdempotencyKeys()).toEqual([
+      PACK_KEY, `${PACK_KEY}:after:${first.paymentIntentId}`,
+    ]);
+  });
+
+  it("pack: a replayed requires_payment_method intent → the same intent (double-click dedup)", async () => {
+    const { service, fakeStripe } = build();
+
+    const a = await service.createPackCheckout(PACK);
+    const b = await service.createPackCheckout(PACK);
+
+    expect(b.paymentIntentId).toBe(a.paymentIntentId);
+    expect(fakeStripe.getIdempotencyKeys()).toEqual([PACK_KEY]);
+  });
+
+  it("pack: a double-click on the second purchase still dedups, and a third purchase gets its own intent", async () => {
+    const { service, fakeStripe } = build();
+
+    const first = await service.createPackCheckout(PACK);
+    fakeStripe.setIntentStatus(first.paymentIntentId, "succeeded");
+    const second      = await service.createPackCheckout(PACK);
+    const secondAgain = await service.createPackCheckout(PACK);
+    expect(secondAgain.paymentIntentId).toBe(second.paymentIntentId);
+
+    fakeStripe.setIntentStatus(second.paymentIntentId, "succeeded");
+    const third = await service.createPackCheckout(PACK);
+
+    expect(new Set([first, second, third].map(c => c.paymentIntentId)).size).toBe(3);
+    await expect(fakeStripe.retrievePaymentIntent(third.paymentIntentId))
+      .resolves.toMatchObject({ status: "requires_payment_method" });
+  });
+
+  it("single session: a replayed succeeded intent → a fresh one; a pending replay → the same one", async () => {
+    const { service, fakeStripe } = build();
+
+    const a = await service.createSingleSessionCheckout(SINGLE);
+    const b = await service.createSingleSessionCheckout(SINGLE);
+    expect(b.paymentIntentId).toBe(a.paymentIntentId);
+
+    fakeStripe.setIntentStatus(a.paymentIntentId, "succeeded");
+    const c = await service.createSingleSessionCheckout(SINGLE);
+
+    expect(c.paymentIntentId).not.toBe(a.paymentIntentId);
+    await expect(fakeStripe.retrievePaymentIntent(c.paymentIntentId))
+      .resolves.toMatchObject({ status: "requires_payment_method" });
+  });
+
+  it.each(["processing", "canceled", "requires_capture"])(
+    "a replayed %s intent is not payable → a fresh one",
+    async (status) => {
+      const { service, fakeStripe } = build();
+
+      const first = await service.createPackCheckout(PACK);
+      fakeStripe.setIntentStatus(first.paymentIntentId, status);
+      const second = await service.createPackCheckout(PACK);
+
+      expect(second.paymentIntentId).not.toBe(first.paymentIntentId);
+    },
+  );
+
+  it.each(["requires_confirmation", "requires_action"])(
+    "a replayed %s intent is still payable → the same one",
+    async (status) => {
+      const { service, fakeStripe } = build();
+
+      const first = await service.createPackCheckout(PACK);
+      fakeStripe.setIntentStatus(first.paymentIntentId, status);
+      const second = await service.createPackCheckout(PACK);
+
+      expect(second.paymentIntentId).toBe(first.paymentIntentId);
+    },
+  );
 });

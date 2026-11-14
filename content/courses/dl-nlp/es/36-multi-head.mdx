@@ -442,9 +442,9 @@ for hh in (1, 2, 4, 8, 16):
 `} />
 
 Las dos filas impresas son la misma posición vista por dos cabezas, y no se parecen en nada: la
-primera pone $0.591$ sobre la posición $1$ y la segunda $0.531$ sobre la $5$, con la que la primera
-gastaba $0.005$. Aquí las cabezas se han separado sólo porque `rng` les dio matrices distintas, que
-es todo lo que las separa también en un modelo entrenado. Y la tabla es la cancelación de arriba
+primera pone $0.591$ sobre la posición $0$, la suya, y la segunda $0.531$ sobre la $4$, con la que
+la primera gastaba $0.005$. Aquí las cabezas se han separado sólo porque `rng` les dio matrices
+distintas, que es todo lo que las separa también en un modelo entrenado. Y la tabla es la cancelación de arriba
 comprobada: las tres columnas de la derecha no se mueven de $786\,432$, $262\,144$ y $1\,048\,576$
 mientras $d_k$ baja de $512$ a $32$.
 

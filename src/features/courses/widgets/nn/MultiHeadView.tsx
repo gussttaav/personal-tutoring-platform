@@ -23,9 +23,12 @@
  * COURSE-P11-02 — the copy is `courses.widgets.multi-head-view`. The four heads ARE the
  * four rules of `math/self-attention`, so their names are translated by INDEX
  * (`heads.0.short`, `heads.0.name`, …) and the corpora test pins the Spanish values to
- * `HEADS`, which is what keeps the two from drifting apart. The presets stay Spanish for
- * the same reason `self-attention-heatmap`'s do — see SPANISH_BOUND_CORPORA in
- * ../corpora.ts.
+ * `HEADS`, which is what keeps the two from drifting apart. The default sentence stayed
+ * Spanish until an English lexicon existed (see the COURSE-P11-08 note below).
+ *
+ * COURSE-P11-08 — no longer Spanish-bound: the widget picks lexicon and default sentence
+ * by locale (`MH_DEFAULT`, `lexiconLocale`). English opens on "this small mouse which the
+ * cats chase sleeps", on the row of `sleeps`, the same position as «duerme».
  *
  * Block 5 review — no preset buttons: the input already takes any sentence, and the
  * lesson reads only the default one («el ratón…», MH_PRESETS[3]), so a row of other
@@ -34,7 +37,7 @@
 
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { rowSums } from "../math/attention-alignment";
@@ -42,12 +45,13 @@ import {
   D_K_HEAD,
   H,
   HEADS,
-  MH_PRESETS,
+  MH_DEFAULT,
+  MH_FOCUS_ROW,
   isFlatRow,
   multiHeadMaps,
   rowPeak,
 } from "../math/multi-head";
-import { LEXICON_WORDS, MAX_TOKENS } from "../math/self-attention";
+import { MAX_TOKENS, lexiconLocale, lexiconWords } from "../math/self-attention";
 import { WidgetButton } from "../primitives/WidgetButton";
 
 const LABEL_W = 78;
@@ -73,14 +77,15 @@ export default function MultiHeadView() {
   // `t` is the token count in this file, so the translator is `tr`.
   const tr = useTranslations("courses.widgets.multi-head-view");
   const tc = useTranslations("courses.widgets.common");
-  const [text, setText] = useState<string>(MH_PRESETS[3]);
+  const lex = lexiconLocale(useLocale());
+  const [text, setText] = useState<string>(MH_DEFAULT[lex]);
   // «un verbo busca sustantivos»: head 1, the first one the lesson reads in «duerme»'s row.
   const [view, setView] = useState(0);
-  // «duerme» in that sentence: the row the lesson's motivation argues from.
-  const [row, setRow] = useState(7);
+  // «duerme» / `sleeps` in that sentence: the row the lesson's motivation argues from.
+  const [row, setRow] = useState(MH_FOCUS_ROW[lex]);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const map = useMemo(() => multiHeadMaps(text), [text]);
+  const map = useMemo(() => multiHeadMaps(text, lex), [text, lex]);
   const { tokens, known, truncated, heads, single } = map;
   const t = tokens.length;
 
@@ -346,7 +351,7 @@ export default function MultiHeadView() {
       ) : null}
 
       <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-        {tr("footnote", { h: H, lexicon: LEXICON_WORDS.length, dk: D_K_HEAD })}
+        {tr("footnote", { h: H, lexicon: lexiconWords(lex).length, dk: D_K_HEAD })}
         {unknown.length > 0 ? tr("footnoteUnknown", { words: unknown.join(", ") }) : ""}
         {truncated ? tr("footnoteTruncated", { max: MAX_TOKENS }) : ""}
       </p>

@@ -104,6 +104,7 @@ export const paymentService = new PaymentService(
 
 // CHAT-AGENT-P1-03: the assistant can look up and propose free-call slots; the user's
 // click on the card books through /api/book, never the model.
+// REFACTOR-R5-P2-01: userService + pricingService feed reply()'s identity and prices.
 export const chatService = new ChatService(
   new ClaudeClient(),
   createFreeCallTools({
@@ -111,6 +112,8 @@ export const chatService = new ChatService(
     booking:      bookingService,
     schedule:     scheduleService,
   }),
+  userService,
+  pricingService,
 );
 
 export const subscriptionService = new SubscriptionService(supabaseSubscriptionRepository, userService);

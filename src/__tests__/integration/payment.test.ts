@@ -14,6 +14,7 @@ jest.mock("@/infrastructure/google", () => ({
 }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
+  invalidateForWindow: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
   setCached:  jest.fn().mockResolvedValue(undefined),
 }));

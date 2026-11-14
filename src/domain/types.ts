@@ -111,6 +111,7 @@ export interface BookingRecord {
 export type BookingStatus = "confirmed" | "completed" | "cancelled" | "no_show";
 
 // BOOKING-HISTORY-01: one past booking, enriched for the history surface.
+// REFACTOR-R5-P2-02: creditRestored / rescheduled say why a cancelled row was cancelled.
 // `amountCents` is the price actually paid (derived from the payments row, not
 // from the admin-editable `pricing` table, so past bookings stay accurate when
 // prices change). It is null for free15min and for rows with no payment record.
@@ -126,6 +127,12 @@ export interface BookingHistoryEntry {
   amountCents: number | null;
   currency:    string | null;  // null whenever amountCents is null
   review:      { rating: number; comment: string | null } | null;
+  // REFACTOR-R5-P2-02 (additive; the mobile app ignores them until it reads them):
+  // creditRestored — a cancelled pack class: was its credit returned? null / missing = not a
+  // pack cancel, or a row cancelled before migration 0030. rescheduled — this row is the
+  // original of a reschedule: its credit or payment moved to the new booking.
+  creditRestored?: boolean | null;
+  rescheduled?:    boolean;
 }
 
 // Keyset page. `nextCursor` is an opaque "<startsAt>_<id>" token; null on the

@@ -11,6 +11,13 @@
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit. A pack class's pack (owner + payment id)
 // comes from `seedCreditPack` — the credits fake keeps one pack per user and no payment
 // id per pack. `listUpcomingForPaymentAuditShouldFail` simulates the read failing.
+// REFACTOR-R5-P1-03: emulates bookings_one_free_call_per_user (migration 0029) — a second
+// non-cancelled free15min for one user fails the insert with FreeSessionAlreadyUsedError
+// and the reinstate with `false`, like the Supabase impl.
+// REFACTOR-R5-P2-02: claimForReschedule marks the original `rescheduled` (reinstateBooking
+// clears it), cancelByToken records a pack class's `creditRestored`, and listHistoryByUser
+// returns both — the three behaviours of migration 0030 / the Supabase impl.
+import { FreeSessionAlreadyUsedError } from "@/domain/errors";
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type {
   BookingHistoryEntry,
@@ -46,11 +53,19 @@ export class InMemoryBookingRepository implements IBookingRepository {
   // REFACTOR-R4-P3-03
   listUpcomingForPaymentAuditShouldFail = false;
   private auditPacks           = new Map<string, { ownerEmail: string; stripePaymentId: string }>(); // packId → pack
+  // REFACTOR-R5-P2-02
+  private rescheduledIds       = new Set<string>();                // eventId
+  private creditRestoredById   = new Map<string, boolean>();       // eventId → pack cancel outcome
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
   ): Promise<{ cancelToken: string; joinToken: string }> {
     if (this.createBookingShouldFail) throw new Error("InMemoryBookingRepository: simulated insert failure");
+    // REFACTOR-R5-P1-03: the partial unique index. Synchronous with the write below, like
+    // the index: an await here would let two concurrent inserts both pass.
+    if (record.sessionType === "free15min" && this.holdsFreeCall(record.email)) {
+      throw new FreeSessionAlreadyUsedError();
+    }
     const cancelToken = randomUUID();
     const joinToken   = randomUUID();
     const full: BookingRecord = { ...record, used: false };
@@ -86,6 +101,22 @@ export class InMemoryBookingRepository implements IBookingRepository {
     return true;
   }
 
+  // REFACTOR-R5-P2-02: the reschedule claim — consumeCancelToken plus the marker.
+  async claimForReschedule(token: string): Promise<boolean> {
+    const entry = this.cancelTokens.get(token);
+    if (!(await this.consumeCancelToken(token)) || !entry) return false;
+    this.rescheduledIds.add(entry.record.eventId);
+    return true;
+  }
+
+  /** REFACTOR-R5-P2-02: test helper — the row's 0030 columns. */
+  cancelOutcomeOf(eventId: string): { creditRestored: boolean | null; rescheduled: boolean } {
+    return {
+      creditRestored: this.creditRestoredById.get(eventId) ?? null,
+      rescheduled:    this.rescheduledIds.has(eventId),
+    };
+  }
+
   // REFACTOR-R4-P1-04: mirrors cancel_booking. Nothing is written before the checks pass, so
   // a simulated failure leaves the booking confirmed and the token usable. The credits fake
   // keeps one pack per user, so the RPC's fallback ("earliest-expiring active pack with
@@ -114,6 +145,8 @@ export class InMemoryBookingRepository implements IBookingRepository {
         if (fallback && fallback !== origin && await this.credits.restoreCreditToPack(fallback)) target = fallback;
       }
     }
+    // REFACTOR-R5-P2-02: cancel_booking writes credit_restored for pack rows only.
+    if (isPack) this.creditRestoredById.set(record.eventId, target !== null);
     const credits = this.credits ? (await this.credits.getCredits(record.email))?.credits ?? 0 : 0;
 
     return {
@@ -133,9 +166,13 @@ export class InMemoryBookingRepository implements IBookingRepository {
     const tokens = this.consumedTokens.get(record.eventId);
     const stored = this.bookings.get(record.eventId);
     if (!tokens || !stored) return false;
+    // REFACTOR-R5-P1-03: the partial unique index (the original is still 'cancelled' here,
+    // so any non-cancelled free call found is another one).
+    if (stored.sessionType === "free15min" && this.holdsFreeCall(stored.email)) return false;
     this.consumedTokens.delete(record.eventId);
     this.cancelTokens.set(tokens.cancelToken, { joinToken: tokens.joinToken, record: stored });
     this.statuses.set(record.eventId, "confirmed");
+    this.rescheduledIds.delete(record.eventId); // REFACTOR-R5-P2-02
     return true;
   }
 
@@ -192,6 +229,8 @@ export class InMemoryBookingRepository implements IBookingRepository {
       amountCents: null,
       currency:    null,
       review:      null,
+      creditRestored: this.creditRestoredById.get(eventId) ?? null, // REFACTOR-R5-P2-02
+      rescheduled:    this.rescheduledIds.has(eventId),
     }));
 
     const last = slice[slice.length - 1];
@@ -211,6 +250,11 @@ export class InMemoryBookingRepository implements IBookingRepository {
 
   // REFACTOR-R4-P1-01: mirrors the Supabase impl — any non-cancelled free15min row.
   async hasActiveFreeSession(email: string): Promise<boolean> {
+    return this.holdsFreeCall(email);
+  }
+
+  // REFACTOR-R5-P1-03: the predicate of bookings_one_free_call_per_user, synchronous.
+  private holdsFreeCall(email: string): boolean {
     const target = email.toLowerCase();
     for (const [eventId, record] of this.bookings) {
       if (record.email.toLowerCase() !== target || record.sessionType !== "free15min") continue;

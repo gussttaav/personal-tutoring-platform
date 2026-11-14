@@ -11,15 +11,22 @@
 // getLocale rejection must not fail a cancellation that already committed.
 // BOOKING-ATTRIBUTION-01: a first booking records its type + source on the user
 // (best-effort, never on a reschedule or a failed booking).
+// REFACTOR-R5-P1-01: a reschedule token only works for its owner — refused for another
+// account before any write, and still usable by the owner afterwards.
+// REFACTOR-R5-P1-03: the insert itself can refuse a second free call (the DB index behind
+// the cap) — the saga undoes the calendar event and the error reaches the caller as is.
+// REFACTOR-R5-P3-01: availability invalidation gets the booking window + tutor timezone
+// (invalidateForWindow), never the UTC date of the start.
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
+  invalidateForWindow: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
   setCached:  jest.fn().mockResolvedValue(undefined),
 }));
 
 import { BookingService } from "../BookingService";
-import { InvalidCursorError } from "@/domain/errors";
+import { InvalidCursorError, RescheduleNotOwnerError } from "@/domain/errors";
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
@@ -35,7 +42,8 @@ import {
   InvalidSlotError, FreeSessionAlreadyUsedError,
 } from "@/domain/errors";
 import type { BookingRecord, WeeklyHours } from "@/domain/types";
-import { alignedSlot, allDaySchedule } from "@/__tests__/fixtures/slots";
+import { alignedSlot, allDaySchedule, slotAtLocal } from "@/__tests__/fixtures/slots";
+import { invalidateForWindow } from "@/lib/availability-cache";
 import { log } from "@/lib/logger";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
@@ -45,6 +53,8 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   findByCancelToken:          jest.fn().mockResolvedValue(null),
   findByJoinToken:            jest.fn().mockResolvedValue(null),
   consumeCancelToken:         jest.fn().mockResolvedValue(true),
+  // REFACTOR-R5-P2-02: the reschedule claim (marks the original `rescheduled`).
+  claimForReschedule:         jest.fn().mockResolvedValue(true),
   // REFACTOR-R4-P1-04: default = a pack class whose credit went back to its own pack.
   cancelByToken:              jest.fn().mockResolvedValue({
     consumed: true, restored: true, restoredPackId: "pack-1", fromOriginating: true, credits: 5,
@@ -208,8 +218,10 @@ const baseFreeInput = () => ({
   sessionType: "free15min" as const,
 });
 
+// REFACTOR-R5-P1-01: the record belongs to the same student as the inputs above — a
+// reschedule only works for the token's owner, so a mismatch here would be a refusal.
 const baseCancelRecord = (overrides: Partial<BookingRecord> = {}): BookingRecord => ({
-  eventId: "evt1", email: "s@t.com", name: "S",
+  eventId: "evt1", email: "student@test.com", name: "S",
   sessionType: "pack", startsAt: hoursFromNow(5), endsAt: hoursFromNow(6),
   used: false, ...overrides,
 });
@@ -483,6 +495,60 @@ describe("BookingService.createBooking (reschedule)", () => {
   });
 });
 
+// ─── REFACTOR-R5-P1-01: a reschedule token only works for its owner ──────────
+
+describe("REFACTOR-R5-P1-01: a reschedule token only works for its owner", () => {
+  const ownersPack = () => baseCancelRecord({
+    eventId: "old-evt", email: "ana@x.com", sessionType: "pack", startsAt: hoursFromNow(5),
+    packSize: 10, creditPackId: "pack-orig",
+  });
+
+  it("refuses another account before any write, and still releases the lock", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(ownersPack());
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    const service     = makeService({
+      bookings, calendar, credits: new CreditService(creditsRepo, mockAuditRepo()),
+    });
+    const input = { ...basePackInput(), email: "bob@y.com", rescheduleToken: "tkn" };
+
+    await expect(service.createBooking(input)).rejects.toThrow(RescheduleNotOwnerError);
+    await expect(service.createBooking(input)).rejects.toMatchObject({ code: "RESCHEDULE_NOT_OWNER" });
+
+    expect(bookings.claimForReschedule).not.toHaveBeenCalled();
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+    expect(bookings.releaseSlotLock).toHaveBeenCalledWith(input.startIso);
+  });
+
+  it("the same token then works for its owner", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(ownersPack());
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking({ ...basePackInput(), email: "bob@y.com", rescheduleToken: "tkn" }))
+      .rejects.toThrow(RescheduleNotOwnerError);
+    await expect(service.createBooking({ ...basePackInput(), email: "ana@x.com", rescheduleToken: "tkn" }))
+      .resolves.toBeDefined();
+
+    expect(bookings.claimForReschedule).toHaveBeenCalledTimes(1);
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
+  });
+
+  it("compares case- and whitespace-insensitively", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(ownersPack());
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking({ ...basePackInput(), email: "Ana@X.com ", rescheduleToken: "tkn" }))
+      .resolves.toBeDefined();
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
+  });
+});
+
 // ─── REFACTOR-R4-P1-03: reschedule keeps the original until the new one commits ──
 
 describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one commits", () => {
@@ -514,7 +580,7 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
     await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
       .rejects.toThrow("Calendar down");
 
-    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
     expect(bookings.reinstateBooking).toHaveBeenCalledWith(original);
     expectOriginalUntouched(calendar, sessions, bookings);
   });
@@ -549,7 +615,7 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
     // The new booking is cancelled BEFORE the reinstate (compensations run in reverse),
     // so an overlapping original can come back without tripping the exclusion constraint.
     expect(bookings.consumeCancelToken).toHaveBeenCalledWith("ctkn");
-    const cancelNew = bookings.consumeCancelToken.mock.invocationCallOrder[1]!;
+    const cancelNew = bookings.consumeCancelToken.mock.invocationCallOrder[0]!;
     expect(cancelNew).toBeLessThan(bookings.reinstateBooking.mock.invocationCallOrder[0]!);
     expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
     expectOriginalUntouched(calendar, sessions, bookings);
@@ -593,7 +659,7 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
   it("a rejection before the claim has nothing to reinstate", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(oldPack());
-    bookings.consumeCancelToken.mockResolvedValue(false); // a concurrent reschedule won
+    bookings.claimForReschedule.mockResolvedValue(false); // a concurrent reschedule won
     const service  = makeService({ bookings });
 
     await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
@@ -882,7 +948,7 @@ describe("BookingService.cancelByToken", () => {
 
     await service.cancelByToken("tkn", "es");
 
-    expect(users.getLocale).toHaveBeenCalledWith("s@t.com");
+    expect(users.getLocale).toHaveBeenCalledWith("student@test.com");
     expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "en" })
     );
@@ -986,7 +1052,7 @@ describe("REFACTOR-R4-P1-04: cancelByToken reports what the RPC did", () => {
     expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ creditsRestored: true }),
     );
-    expect(audit.append).toHaveBeenCalledWith("s@t.com", {
+    expect(audit.append).toHaveBeenCalledWith("student@test.com", {
       action: "restore", credits: 7, packId: "pack-other",
     });
   });
@@ -1347,6 +1413,85 @@ describe("BookingService.finalizePastSession", () => {
   });
 });
 
+// ─── sweepPendingTerminations ─────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P2-03: BookingService.sweepPendingTerminations", () => {
+  const seedDueRows = async () => {
+    const { InMemoryBookingRepository } = await import("@/__tests__/fixtures/InMemoryBookingRepository");
+    const bookingRepo = new InMemoryBookingRepository();
+    const now = Date.now();
+    await bookingRepo.recordPendingTermination("evt-1", now - 3 * 60_000);
+    await bookingRepo.recordPendingTermination("evt-2", now - 2 * 60_000);
+    await bookingRepo.recordPendingTermination("evt-3", now - 1 * 60_000);
+    // evt-2 has already failed twice: the sweep must write attempts + 1 = 3.
+    await bookingRepo.recordPendingTerminationFailure("evt-2", 2, "earlier failure");
+    return bookingRepo;
+  };
+
+  it("clears the rows that finalize, records and counts the one that fails, keeps going", async () => {
+    const bookingRepo = await seedDueRows();
+    const recordFailure = jest.spyOn(bookingRepo, "recordPendingTerminationFailure");
+    const sessions = mockSessions();
+    sessions.deleteByEventId.mockImplementation(async (eventId: string) => {
+      if (eventId === "evt-2") throw new Error("zoom_sessions delete failed");
+    });
+    const service = makeService({
+      bookings: bookingRepo as unknown as jest.Mocked<IBookingRepository>,
+      sessions,
+    });
+
+    const result = await service.sweepPendingTerminations({ maxBatch: 50, maxAttempts: 5 });
+
+    expect(result).toEqual({ cleared: 2, failed: 1, examined: 3 });
+    // Every row was attempted, the failing middle one did not stop the third.
+    expect(sessions.deleteByEventId.mock.calls.map(([id]) => id)).toEqual(["evt-1", "evt-2", "evt-3"]);
+    expect(recordFailure).toHaveBeenCalledTimes(1);
+    expect(recordFailure).toHaveBeenCalledWith(
+      "evt-2", 3, "Error: zoom_sessions delete failed",
+    );
+    // The cleared rows are gone; the failed one stays, with its attempts incremented.
+    const pending = bookingRepo.getPendingTerminations();
+    expect([...pending.keys()]).toEqual(["evt-2"]);
+    expect(await bookingRepo.listDuePendingTerminations(50, 5)).toEqual([
+      { eventId: "evt-2", attempts: 3 },
+    ]);
+  });
+
+  it("passes maxBatch and maxAttempts to the listing", async () => {
+    const bookings = mockBookings();
+    bookings.listDuePendingTerminations.mockResolvedValue([]);
+    const service = makeService({ bookings });
+
+    const result = await service.sweepPendingTerminations({ maxBatch: 7, maxAttempts: 2 });
+
+    expect(bookings.listDuePendingTerminations).toHaveBeenCalledWith(7, 2);
+    expect(result).toEqual({ cleared: 0, failed: 0, examined: 0 });
+  });
+
+  it("propagates a listing error (the route answers 500)", async () => {
+    const bookings = mockBookings();
+    bookings.listDuePendingTerminations.mockRejectedValue(new Error("query failed"));
+    const service = makeService({ bookings });
+
+    await expect(
+      service.sweepPendingTerminations({ maxBatch: 50, maxAttempts: 5 }),
+    ).rejects.toThrow("query failed");
+    expect(bookings.recordPendingTerminationFailure).not.toHaveBeenCalled();
+  });
+
+  it("propagates a failure to record a row's failure, as the route-side loop did", async () => {
+    const bookings = mockBookings();
+    bookings.listDuePendingTerminations.mockResolvedValue([{ eventId: "evt-1", attempts: 0 }]);
+    bookings.findByEventId.mockRejectedValue(new Error("bookings read failed"));
+    bookings.recordPendingTerminationFailure.mockRejectedValue(new Error("DB down"));
+    const service = makeService({ bookings });
+
+    await expect(
+      service.sweepPendingTerminations({ maxBatch: 50, maxAttempts: 5 }),
+    ).rejects.toThrow("DB down");
+  });
+});
+
 // BOOKING-HISTORY-01. The service is a pass-through here — the enrichment and the
 // keyset live in the repository — so this asserts the wiring only. The logic that
 // can actually be got wrong is covered by the unit tests over booking-history.ts
@@ -1560,7 +1705,7 @@ describe("REFACTOR-R4-P1-01: createBooking validates before any side effect", ()
       email: "student@test.com", name: "Student", sessionType: "session1h", rescheduleToken: "tkn",
       startIso: s.startIso, endIso: new Date(new Date(s.startIso).getTime() + 5 * 3_600_000).toISOString(),
     })).rejects.toBeInstanceOf(InvalidSlotError);
-    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+    expect(bookings.claimForReschedule).not.toHaveBeenCalled();
   });
 
   it("locks the slot for the session type's length", async () => {
@@ -1629,5 +1774,132 @@ describe("REFACTOR-R4-P1-01: free-call cap", () => {
 
     await expect(service.createBooking(baseFreeInput())).rejects.toThrow("db down");
     expect(calendar.createEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe("REFACTOR-R5-P1-03: free-call cap enforced by the insert", () => {
+  it("a concurrent free call that passed the read but lost the insert is compensated and refused", async () => {
+    const bookings = mockBookings();
+    bookings.createBooking.mockRejectedValue(new FreeSessionAlreadyUsedError());
+    const calendar = mockCalendar();
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toBeInstanceOf(FreeSessionAlreadyUsedError);
+
+    expect(calendar.createEvent).toHaveBeenCalledTimes(1);
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+    expect(bookings.releaseSlotLock).toHaveBeenCalled();
+    expect(bookings.recordPendingTermination).not.toHaveBeenCalled();
+  });
+});
+
+// ─── REFACTOR-R5-P2-02: cancel and reschedule tell the truth ─────────────────
+
+describe("REFACTOR-R5-P2-02: the claim marks the original, the email knows the session type", () => {
+  it("a reschedule claims the original with claimForReschedule, never consumeCancelToken", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5), packSize: 10, creditPackId: "pack-orig",
+    }));
+    const service = makeService({ bookings });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+  });
+
+  it("the new booking's own compensation still uses consumeCancelToken (no rescheduled mark)", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5), packSize: 10, creditPackId: "pack-orig",
+    }));
+    const sessions = mockSessions();
+    sessions.createSession.mockRejectedValue(new Error("zoom_sessions insert failed"));
+    const service = makeService({ bookings, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" })).rejects.toThrow();
+
+    expect(bookings.claimForReschedule).toHaveBeenCalledTimes(1);
+    expect(bookings.claimForReschedule).toHaveBeenCalledWith("tkn");
+    expect(bookings.consumeCancelToken).toHaveBeenCalledTimes(1);
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("ctkn");
+  });
+
+  it.each(["pack", "session1h", "session2h", "free15min"] as const)(
+    "the cancellation email is told the session type (%s)",
+    async (sessionType) => {
+      const bookings = mockBookings();
+      bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ sessionType, startsAt: hoursFromNow(5) }));
+      if (sessionType !== "pack") {
+        bookings.cancelByToken.mockResolvedValue({
+          consumed: true, restored: false, restoredPackId: null, fromOriginating: false, credits: 0,
+        });
+      }
+      const email   = mockEmail();
+      const service = makeService({ bookings, email });
+
+      await service.cancelByToken("tkn");
+
+      expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionType, creditsRestored: sessionType === "pack" }),
+      );
+    },
+  );
+});
+
+// ─── REFACTOR-R5-P3-01 ────────────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P3-01: availability is invalidated on the tutor's dates", () => {
+  beforeEach(() => (invalidateForWindow as jest.Mock).mockClear());
+
+  it("createBooking near local midnight passes the window and the tutor's timezone", async () => {
+    // 00:30 Madrid = 23:30 or 22:30 UTC the previous day: slice(0, 10) would be wrong.
+    const slot    = slotAtLocal("free15min", 10, "00:30");
+    const service = makeService();
+
+    await service.createBooking({ ...baseFreeInput(), ...slot });
+
+    expect(slot.startIso.slice(11, 16)).not.toBe("00:30");
+    expect(invalidateForWindow).toHaveBeenCalledWith(slot.startIso, slot.endIso, "Europe/Madrid");
+  });
+
+  it("cancelByToken passes the booking's window and the tutor's timezone", async () => {
+    const bookings = mockBookings();
+    const record   = baseCancelRecord({ startsAt: hoursFromNow(5), endsAt: hoursFromNow(6) });
+    bookings.findByCancelToken.mockResolvedValue(record);
+    const service  = makeService({ bookings });
+
+    await service.cancelByToken("tkn");
+
+    expect(invalidateForWindow).toHaveBeenCalledWith(record.startsAt, record.endsAt, "Europe/Madrid");
+  });
+
+  it("a config read error after the cancel committed only skips the invalidation", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ startsAt: hoursFromNow(5) }));
+    const schedule = mockSchedule();
+    (schedule.getConfig as jest.Mock)
+      .mockResolvedValueOnce(await schedule.getConfig()) // the cancel-window check
+      .mockRejectedValueOnce(new Error("config unavailable"));
+    const service  = makeService({ bookings, schedule });
+
+    await expect(service.cancelByToken("tkn")).resolves.toBeDefined();
+    expect(invalidateForWindow).not.toHaveBeenCalled();
+  });
+
+  it("a reschedule invalidates the original's window too", async () => {
+    const bookings = mockBookings();
+    const original = baseCancelRecord({
+      sessionType: "free15min", startsAt: hoursFromNow(30), endsAt: hoursFromNow(30.25),
+    });
+    bookings.findByCancelToken.mockResolvedValue(original);
+    const service  = makeService({ bookings });
+
+    const input = { ...baseFreeInput(), rescheduleToken: "tkn" };
+    await service.createBooking(input);
+
+    expect(invalidateForWindow).toHaveBeenCalledWith(input.startIso, input.endIso, "Europe/Madrid");
+    expect(invalidateForWindow).toHaveBeenCalledWith(original.startsAt, original.endsAt, "Europe/Madrid");
   });
 });

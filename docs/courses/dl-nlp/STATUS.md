@@ -1557,6 +1557,18 @@ the user's push.
 
 - `es/09-la-neurona.mdx` — 11 sites (2 quiz explanations, 8 prose, 1 `print()` arg).
 
+**COURSE-P5-00 — raya removed from prose, Block 5 Spanish** (started 2026-11-12, branch
+`course/l37-analogia-reloj`). Same convention as Block 2 above, plus the widget's `messages/es.json`
+strings (they render on the lesson page; `en.json` untouched). Per lesson: `pnpm lint:content` green,
+`0` rayas in the rendered article. Awaits the user's push.
+
+- `es/37-codificacion-posicional.mdx` — 18 sites (summary, 5 quiz, 1 challenge, 1 reading note, 10
+  prose; the one after the angle-sum `aligned` became a full stop on its last row) + 3
+  `positional-encoding` strings. Same branch, user-requested review: the odometer analogy became an
+  analogue clock, the explorable moved below the dot-product derivation with a reading guide, the
+  last pair's wavelength corrected (≈60 600 at `d_model = 512`, not «unas 63 000»), and a RoPE
+  paragraph + RoFormer reading entry added.
+
 **COURSE-P5-00 — the mark on a multi-line `aligned` derivation** (2026-09-08, branch
 `course/block-2-review-and-translate`). User-reported while reviewing Block 2 lesson 2: the
 "display maths is punctuated" pass (2026-08-05 above) required the sentence's mark on the closing

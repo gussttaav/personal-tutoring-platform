@@ -336,6 +336,9 @@
       "pillCancelled": "Cancelada",
       "payCredit": "1 crédito del pack",
       "payCreditRefunded": "crédito devuelto",
+      "payCreditMoved": "crédito pasado a la nueva clase",
+      "payCreditNotRestored": "crédito no devuelto",
+      "payRescheduled": "pagada en la clase reprogramada",
       "payCard": "{amount} · tarjeta",
       "payFree": "Gratis",
       "end": "Fin del historial",
@@ -876,6 +879,7 @@
       "outsideRescheduleWindow": "El plazo para reprogramar ha finalizado.",
       "sessionTypeMismatch": "El tipo de sesión no coincide con la reserva original.",
       "rescheduleTokenConsumed": "Este enlace de reprogramación ya ha sido usado.",
+      "rescheduleNotOwner": "Esta clase se reservó con otra cuenta. Inicia sesión con la cuenta con la que la reservaste para reprogramarla.",
       "requiresPayment": "Esta reserva requiere pago.",
       "invalidCancelToken": "El enlace de cancelación no es válido.",
       "outsideCancelWindow": "El plazo para cancelar ha finalizado.",
@@ -1560,7 +1564,7 @@
       "positional-encoding": {
         "position": "posición en la frase",
         "coordinate": "coordenada de d_model",
-        "coordinateValue": "{v} — {fn, select, sine {seno} other {coseno}} del par {pair}",
+        "coordinateValue": "{v} ({fn, select, sine {seno} other {coseno}} del par {pair})",
         "shift": "desplazamiento k",
         "fastestPair": "el par más rápido",
         "slowestPair": "el par más lento",
@@ -1569,13 +1573,13 @@
         "positionsUnit": "{count} posiciones",
         "coordinateLine": "La coordenada <c>{col}</c> es el {fn, select, sine {seno} other {coseno}} del par {pair}, que gira a <r>{rate}</r> radianes por posición: vuelve al mismo sitio cada {cycle}.",
         "valueLine": "En la posición <p>{pos}</p> esa coordenada vale <a>{here}</a>, y {k} posiciones más allá vale <b>{there}</b>",
-        "valueLineSame": " —el mismo número: esta pareja gira tan despacio que no separa las dos posiciones—.",
+        "valueLineSame": " (el mismo número: esta pareja gira tan despacio que no separa las dos posiciones).",
         "valueLineEnd": ".",
         "dotHeading": "Lo que dos posiciones a distancia {k} puntúan entre ellas:",
         "dotFrom": "desde {pos} → ",
         "dotElsewhere": "desde {pos} → ",
         "dotNote": "Mueve la posición y ese número no se mueve: vale {value} en toda la frase. Cambia k y cambia.",
-        "footnote": "{rows} posiciones y {cols} de las coordenadas, que es lo que cabe en una pantalla; un modelo del artículo tiene 512. Aquí no hay nada puesto a mano: son la fórmula del artículo y su constante {base}, y los colores dicen el signo —verde positivo, azul negativo, oscuro cerca de cero—."
+        "footnote": "{rows} posiciones y {cols} de las coordenadas, que es lo que cabe en una pantalla; un modelo del artículo tiene 512. Aquí no hay nada puesto a mano: son la fórmula del artículo y su constante {base}, y los colores dicen el signo: verde positivo, azul negativo, oscuro cerca de cero."
       },
       "transformer-architecture": {
         "groupAria": "Arquitectura del Transformer; usa las flechas para recorrer las cajas del diagrama",
@@ -2139,7 +2143,8 @@
       "intro": "Hola {name}, hemos cancelado tu reserva.",
       "labelSession": "Sesión cancelada",
       "creditsRestoredMsg": "✓ Tu crédito ha sido devuelto automáticamente a tu pack. Puedes reservar otra clase desde <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
-      "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles."
+      "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles.",
+      "noCreditRestoredMsg": "No hemos podido devolver el crédito a un pack activo (el pack de esta clase ha caducado). Escríbeme a contacto@gustavoai.dev y lo resolvemos."
     },
     "courseLaunch": {
       "subject": "Ya está publicado: {courseTitle}",

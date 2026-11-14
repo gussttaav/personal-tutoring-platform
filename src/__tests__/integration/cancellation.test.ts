@@ -5,8 +5,11 @@
 // cancel_booking RPC), so it is built with the credits fake. New cases: an expired pack
 // (creditsRestored false end to end), a failed RPC (booking still cancellable), and two
 // concurrent cancels (one wins, one credit).
+// REFACTOR-R5-P2-02: the outcome lands on the row (creditRestored true / false for a pack
+// class, null otherwise) and the email is told the session type.
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
+  invalidateForWindow: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
   setCached:  jest.fn().mockResolvedValue(undefined),
 }));
@@ -52,7 +55,8 @@ async function bookOnePack() {
 }
 
 const cancellationEmail = (email: FakeEmailClient) =>
-  email.sent.find(e => e.type === "cancellationConfirmation")?.params as { creditsRestored: boolean } | undefined;
+  email.sent.find(e => e.type === "cancellationConfirmation")?.params as
+    { creditsRestored: boolean; sessionType: string } | undefined;
 
 describe("Cancellation flow — pack session", () => {
   it("restores credit and removes cancel token after cancelling a pack booking", async () => {
@@ -190,5 +194,44 @@ describe("Cancellation flow — error cases", () => {
     await expect(service.cancelByToken(cancelToken)).rejects.toMatchObject({
       code: "OUTSIDE_CANCEL_WINDOW",
     });
+  });
+});
+
+// ─── REFACTOR-R5-P2-02 ────────────────────────────────────────────────────────
+
+describe("REFACTOR-R5-P2-02: the cancel outcome is recorded on the row", () => {
+  it("a pack class with room in its pack → creditRestored true; the email knows it's a pack", async () => {
+    const { service, bookingRepo, email, cancelToken } = await bookOnePack();
+    const { eventId } = (await bookingRepo.findByCancelToken(cancelToken))!;
+
+    await service.cancelByToken(cancelToken);
+
+    expect(bookingRepo.cancelOutcomeOf(eventId)).toEqual({ creditRestored: true, rescheduled: false });
+    expect(cancellationEmail(email)).toMatchObject({ sessionType: "pack", creditsRestored: true });
+  });
+
+  it("a pack class whose pack expired → creditRestored false", async () => {
+    const { service, creditsRepo, bookingRepo, email, cancelToken } = await bookOnePack();
+    const { eventId } = (await bookingRepo.findByCancelToken(cancelToken))!;
+    creditsRepo.setExpiresAt("bob@example.com", new Date(Date.now() - 60_000).toISOString());
+
+    await service.cancelByToken(cancelToken);
+
+    expect(bookingRepo.cancelOutcomeOf(eventId)).toEqual({ creditRestored: false, rescheduled: false });
+    expect(cancellationEmail(email)).toMatchObject({ sessionType: "pack", creditsRestored: false });
+  });
+
+  it("a non-pack cancel leaves creditRestored null", async () => {
+    const bookingRepo = new InMemoryBookingRepository(new InMemoryCreditsRepository());
+    const email       = new FakeEmailClient();
+    const service     = buildTestBookingService({ bookings: bookingRepo, email });
+    const booked      = await service.createBooking({
+      ...packInput(), ...alignedSlot("session1h", 6), sessionType: "session1h",
+    });
+
+    await service.cancelByToken(booked.cancelToken);
+
+    expect(bookingRepo.cancelOutcomeOf(booked.eventId)).toEqual({ creditRestored: null, rescheduled: false });
+    expect(cancellationEmail(email)).toMatchObject({ sessionType: "session1h", creditsRestored: false });
   });
 });

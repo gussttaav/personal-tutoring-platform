@@ -1,5 +1,6 @@
 // REFACTOR-P3-03: stateful in-memory kv mock so coalescing can be exercised —
 // the loser-of-lock caller must be able to re-read what the winner wrote.
+// REFACTOR-R5-P3-01: invalidateForWindow deletes the tutor-local dates, not the UTC one.
 jest.mock("@/infrastructure/redis/client", () => {
   const store = new Map<string, unknown>();
   return {
@@ -16,7 +17,7 @@ jest.mock("@/infrastructure/redis/client", () => {
   };
 });
 
-import { cacheTTLSeconds, getOrCompute } from "@/lib/availability-cache";
+import { cacheTTLSeconds, getOrCompute, invalidateForWindow } from "@/lib/availability-cache";
 import { kv } from "@/infrastructure/redis/client";
 
 describe("cacheTTLSeconds", () => {
@@ -99,5 +100,42 @@ describe("REFACTOR-P3-03: getOrCompute cache coalescing", () => {
 
     expect(result).toEqual(cached);
     expect(computeFn).not.toHaveBeenCalled();
+  });
+});
+
+describe("REFACTOR-R5-P3-01: invalidateForWindow keys on the tutor's local date", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  // currentVersion() reads avail:version, which is unset in the mock store → v0.
+  const deletedDates = () =>
+    [...new Set((kv.del as jest.Mock).mock.calls.map(([key]: [string]) => key.split(":")[2]))].sort();
+
+  it("00:30 Madrid (23:30 UTC the day before, winter) clears the local date", async () => {
+    await invalidateForWindow("2026-11-12T23:30:00Z", "2026-11-12T23:45:00Z", "Europe/Madrid");
+
+    expect(deletedDates()).toEqual(["2026-11-13"]);
+    expect(kv.del).toHaveBeenCalledWith("avail:v0:2026-11-13:15");
+    expect(kv.del).toHaveBeenCalledWith("avail:v0:2026-11-13:120");
+    expect(kv.del).toHaveBeenCalledTimes(4);
+  });
+
+  it("a window crossing local midnight (23:00–01:00 Madrid, winter) clears both dates", async () => {
+    await invalidateForWindow("2026-11-12T22:00:00Z", "2026-11-13T00:00:00Z", "Europe/Madrid");
+
+    expect(deletedDates()).toEqual(["2026-11-12", "2026-11-13"]);
+    expect(kv.del).toHaveBeenCalledTimes(8);
+  });
+
+  it("summer time (UTC+2): 22:30Z is already the next local day", async () => {
+    await invalidateForWindow("2026-07-14T22:30:00Z", "2026-07-14T23:30:00Z", "Europe/Madrid");
+
+    expect(deletedDates()).toEqual(["2026-07-15"]);
+  });
+
+  it("a daytime window clears one date once", async () => {
+    await invalidateForWindow("2026-11-12T10:00:00Z", "2026-11-12T11:00:00Z", "Europe/Madrid");
+
+    expect(deletedDates()).toEqual(["2026-11-12"]);
+    expect(kv.del).toHaveBeenCalledTimes(4);
   });
 });

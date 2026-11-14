@@ -6,11 +6,16 @@
 //
 // REFACTOR-R4-P1-02: the gate fails closed — a read error behind it must reject the
 // deletion, never read as "no credits / no bookings" (see the in-memory suite at the end).
+//
+// REFACTOR-R5-P3-01: an erased account's imminent classes invalidate availability on the
+// tutor's local dates (BookingService.getTimezone → invalidateForWindow).
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
+  invalidateForWindow: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { AccountService } from "../AccountService";
+import { invalidateForWindow } from "@/lib/availability-cache";
 import { BookingService } from "../BookingService";
 import { CreditService } from "../CreditService";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
@@ -72,13 +77,14 @@ function make(opts: { bookings?: UserBooking[]; credits?: number } = {}) {
   const bookings = {
     listForUser:       jest.fn().mockResolvedValue(opts.bookings ?? []),
     getCancelWindowMs: jest.fn().mockResolvedValue(CANCEL_WINDOW_MS),
+    getTimezone:       jest.fn().mockResolvedValue("Europe/Madrid"),
   } as unknown as BookingService;
 
   const credits = {
     getBalance: jest.fn().mockResolvedValue(balance),
   } as unknown as CreditService;
 
-  return { service: new AccountService(users, bookings, credits, calendar), users, calendar };
+  return { service: new AccountService(users, bookings, credits, calendar), users, calendar, bookings };
 }
 
 describe("AccountService.getDeletionEligibility", () => {
@@ -213,6 +219,26 @@ describe("AccountService.deleteAccount", () => {
     // Only the still-upcoming one: the past booking has no live calendar event.
     expect(calendar.deleteEvent).toHaveBeenCalledTimes(1);
     expect(calendar.deleteEvent).toHaveBeenCalledWith(imminent.eventId);
+    expect(users.deleteAccount).toHaveBeenCalledWith(EMAIL);
+  });
+
+  it("REFACTOR-R5-P3-01: invalidates each imminent class's window in the tutor's timezone", async () => {
+    (invalidateForWindow as jest.Mock).mockClear();
+    const imminent = booking(0.5 * HOUR);
+    const { service } = make({ bookings: [imminent] });
+
+    await service.deleteAccount(EMAIL, EMAIL);
+
+    expect(invalidateForWindow).toHaveBeenCalledWith(imminent.startsAt, imminent.endsAt, "Europe/Madrid");
+  });
+
+  it("REFACTOR-R5-P3-01: a timezone read error skips the invalidation, never the erasure", async () => {
+    (invalidateForWindow as jest.Mock).mockClear();
+    const { service, users, bookings } = make({ bookings: [booking(0.5 * HOUR)] });
+    (bookings.getTimezone as jest.Mock).mockRejectedValue(new Error("config unavailable"));
+
+    await expect(service.deleteAccount(EMAIL, EMAIL)).resolves.toBeUndefined();
+    expect(invalidateForWindow).not.toHaveBeenCalled();
     expect(users.deleteAccount).toHaveBeenCalledWith(EMAIL);
   });
 

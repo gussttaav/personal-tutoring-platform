@@ -13,6 +13,8 @@
  * COURSE-C2-P0-04 — + the longest fenced code block joins the budget report (advisory).
  * CONTENT-DOLLAR-01 — + a `$` used as a currency sign in a post or lesson fails (remark-math
  *                      would typeset the text between two of them as a formula).
+ * COURSE-C2-P3-01 — + a `<RepoLink tag>` must have its lesson locale's shape (`b5-lN` in
+ *                    `es/`, `en-b5-lN` in `en/`), beside the crosslink pass.
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the
@@ -63,6 +65,7 @@ import { notationWarnings } from "@/lib/courses/validate-notation";
 import { validatePyCellFlags } from "@/lib/courses/validate-pycells";
 import { validateQuizRefs } from "@/lib/courses/validate-quizzes";
 import { validateReading } from "@/lib/courses/validate-reading";
+import { validateRepoLinks } from "@/lib/courses/validate-repolinks";
 import { structureWarnings } from "@/lib/courses/validate-structure";
 import { lessonLocale, voiceWarnings } from "@/lib/courses/validate-voice";
 
@@ -78,6 +81,7 @@ try {
   validateQuizRefs();
   validateChallengeRefs();
   validateCrosslinks();
+  validateRepoLinks();
   validateReading();
   // CONTENT-DOLLAR-01: covers posts AND lessons, so it sits after the course passes it
   // shares no state with.

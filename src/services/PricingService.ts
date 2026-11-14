@@ -8,6 +8,9 @@
 // read that can be student-specific goes through resolve() below — the ONE place
 // an override replaces a default — so the charge path and the display path can
 // never disagree about what a given student pays.
+//
+// REFACTOR-R5-P2-01: getEffectivePriceCents() returns the four effective prices from
+// ONE resolve(), for the chat assistant's prompt (which used to read user_pricing twice).
 import type { IPricingRepository } from "@/domain/repositories/IPricingRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
 import type {
@@ -21,6 +24,9 @@ import { log } from "@/lib/logger";
 
 // Pack hours, used to derive the per-class rate and the strikethrough original.
 const PACK_HOURS: Record<"pack5" | "pack10", number> = { pack5: 5, pack10: 10 };
+
+/** REFACTOR-R5-P2-01: the charge amount in cents of each paid product, for one student. */
+export type EffectivePriceCents = Record<"session1h" | "session2h" | "pack5" | "pack10", number>;
 
 export class PricingService {
   constructor(
@@ -116,6 +122,26 @@ export class PricingService {
       sessions,
       packs,
       packValidityDays: settings.packValidityDays,
+    };
+  }
+
+  /**
+   * REFACTOR-R5-P2-01: the four effective prices in cents (public, or this student's
+   * overrides) from ONE resolve(). The chat prompt used to read user_pricing twice per
+   * turn to get these.
+   */
+  async getEffectivePriceCents(userId?: string): Promise<EffectivePriceCents> {
+    const byKey = new Map((await this.resolve(userId)).map((r) => [r.productKey, r.amountCents]));
+    const need = (key: ProductKey): number => {
+      const v = byKey.get(key);
+      if (v == null) throw new Error(`No price configured for product ${key}`);
+      return v;
+    };
+    return {
+      session1h: need("session1h"),
+      session2h: need("session2h"),
+      pack5:     need("pack5"),
+      pack10:    need("pack10"),
     };
   }
 

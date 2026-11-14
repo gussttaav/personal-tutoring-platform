@@ -9,10 +9,12 @@
  * Set the header manually in cron-job.org: Authorization: Bearer <CRON_SECRET>
  *
  * CRON-AUTH-01: an unset CRON_SECRET must reject, not match the literal "Bearer undefined".
+ *
+ * REFACTOR-R5-P2-03: the sweep lives in BookingService.sweepPendingTerminations; this route
+ * only authenticates, logs and answers. Same JSON and status codes as before.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseBookingRepository } from "@/infrastructure/supabase";
 import { bookingService } from "@/services";
 import { log } from "@/lib/logger";
 
@@ -25,31 +27,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let rows: { eventId: string; attempts: number }[];
+  let result: { cleared: number; failed: number; examined: number };
   try {
-    rows = await supabaseBookingRepository.listDuePendingTerminations(MAX_BATCH, MAX_ATTEMPTS);
+    result = await bookingService.sweepPendingTerminations({
+      maxBatch:    MAX_BATCH,
+      maxAttempts: MAX_ATTEMPTS,
+    });
   } catch (err) {
     log("error", "Cron: pending_terminations query failed", { error: String(err) });
     return NextResponse.json({ error: "Query failed" }, { status: 500 });
   }
 
-  let cleared = 0, failed = 0;
-  for (const row of rows) {
-    try {
-      await bookingService.finalizePastSession(row.eventId);
-      await supabaseBookingRepository.deletePendingTermination(row.eventId);
-      cleared++;
-    } catch (err) {
-      await supabaseBookingRepository.recordPendingTerminationFailure(
-        row.eventId,
-        row.attempts + 1,
-        String(err),
-      );
-      failed++;
-      log("warn", "Cron: failed to terminate session", { eventId: row.eventId, error: String(err) });
-    }
-  }
-
-  log("info", "Cron: pending_terminations sweep complete", { cleared, failed, examined: rows.length });
-  return NextResponse.json({ cleared, failed, examined: rows.length });
+  log("info", "Cron: pending_terminations sweep complete", result);
+  return NextResponse.json(result);
 }

@@ -3,6 +3,12 @@
 // TTL depends on how far out the date is; cache is invalidated on any
 // booking create/cancel that affects the date (per-date `invalidate`), and
 // globally when the admin edits the schedule (`bumpScheduleVersion`).
+//
+// REFACTOR-R5-P3-01: the cache is keyed by the TUTOR's calendar day; a booking's UTC
+// date (`iso.slice(0, 10)`) is the wrong key between local midnight and the UTC offset.
+// Booking call sites invalidate through `invalidateForWindow`, which maps the instants to
+// the tutor's local dates; a window crossing local midnight touches two days.
+import { formatInTimeZone } from "date-fns-tz";
 import { kv } from "@/infrastructure/redis/client";
 
 // Global version namespace. A schedule edit affects every future date, so rather
@@ -52,6 +58,16 @@ export async function setCached<T>(date: string, duration: number, value: T): Pr
 export async function invalidate(date: string): Promise<void> {
   const version = await currentVersion();
   await Promise.all([15, 30, 60, 120].map(d => kv.del(cacheKey(version, date, d))));
+}
+
+// REFACTOR-R5-P3-01: invalidates every tutor-local date a booking window touches (the
+// start's and the end's, deduped).
+export async function invalidateForWindow(startIso: string, endIso: string, timezone: string): Promise<void> {
+  const dates = new Set([
+    formatInTimeZone(new Date(startIso), timezone, "yyyy-MM-dd"),
+    formatInTimeZone(new Date(endIso),   timezone, "yyyy-MM-dd"),
+  ]);
+  await Promise.all([...dates].map(invalidate));
 }
 
 // REFACTOR-P3-03: Coalesce concurrent cache misses for the same key. The first

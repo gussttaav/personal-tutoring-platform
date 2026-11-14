@@ -52,6 +52,27 @@
 //
 // CHAT-AGENT-P1-03: hasActiveFreeSession — thin delegate, so the chat assistant's tools
 // can tell a visitor they already hold their free call before proposing one.
+//
+// REFACTOR-R5-P1-01: a reschedule token only works for its owner. The token is HMAC-bound
+// to the owner's email, so the original booking's email is compared with the caller's
+// right after the lookup, before the claim: anyone else gets RescheduleNotOwnerError and
+// nothing is consumed, torn down or moved.
+//
+// REFACTOR-R5-P2-02: the reschedule claim goes through claimForReschedule, which marks the
+// original `rescheduled` (the new booking's own compensation keeps consumeCancelToken and
+// does not). The cancellation email gets the session type, so it can tell a pack class whose
+// credit couldn't be restored from a paid single session, and say nothing about money for a
+// free call.
+//
+// REFACTOR-R5-P2-03: the session-cleanup cron's sweep (sweepPendingTerminations) moved here
+// from its route, which now only authenticates, logs and answers. A listing error propagates
+// (the route answers 500); a per-row error is recorded on the row and counted, never thrown.
+//
+// REFACTOR-R5-P3-01: availability invalidation goes by the tutor's local dates
+// (invalidateForWindow), not the instant's UTC date: a 00:30 Madrid class is 23:30 UTC the
+// day before, and a class crossing local midnight touches two days. getTimezone() gives
+// AccountService the same timezone. cancelByToken reads it after the RPC has committed, so
+// a config read error there only skips the (best-effort) invalidation.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -63,14 +84,18 @@ import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "./CreditService";
 import { ScheduleService } from "./ScheduleService";
 import {
-  DomainError, FreeSessionAlreadyUsedError, InvalidSlotError, SlotUnavailableError,
+  DomainError, FreeSessionAlreadyUsedError, InvalidSlotError, RescheduleNotOwnerError,
+  SlotUnavailableError,
 } from "@/domain/errors";
 import { log } from "@/lib/logger";
-import { invalidate as invalidateAvailability } from "@/lib/availability-cache";
+import { invalidateForWindow } from "@/lib/availability-cache";
 import {
   SESSION_DURATION_MINUTES, SLOT_ALIGNMENT_MINUTES, isWithinBlocks,
 } from "@/lib/booking-config";
 import { toZonedTime } from "date-fns-tz";
+
+// REFACTOR-R5-P1-01: emails compare case- and whitespace-insensitively.
+const normalizeEmail = (email: string) => email.toLowerCase().trim();
 
 // ─── Input / output types ─────────────────────────────────────────────────────
 
@@ -155,6 +180,11 @@ export class BookingService {
   async getCancelWindowMs(): Promise<number> {
     const config = await this.schedule.getConfig();
     return config.cancelMinNoticeHours * 60 * 60_000;
+  }
+
+  // REFACTOR-R5-P3-01: the tutor's timezone, which keys the availability cache by day.
+  async getTimezone(): Promise<string> {
+    return (await this.schedule.getConfig()).timezone;
   }
 
   // REFACTOR-R4-P1-01: the server decides what is bookable. Returns null when the slot
@@ -246,6 +276,15 @@ export class BookingService {
             "INVALID_RESCHEDULE_TOKEN",
           );
         }
+        // REFACTOR-R5-P1-01: the token is HMAC-bound to its owner's email (findByCancelToken
+        // verified it against users.email). Refuse anyone else BEFORE the claim, so nothing is
+        // consumed, torn down or moved, and the owner's link keeps working.
+        if (normalizeEmail(oldRecord.email) !== normalizeEmail(input.email)) {
+          log("warn", "Reschedule refused: caller is not the booking's owner", {
+            service: "BookingService", eventId: oldRecord.eventId,
+          });
+          throw new RescheduleNotOwnerError();
+        }
         // Reuse the config already fetched above (no second read). cancelMinNoticeHours
         // governs both cancellation and rescheduling.
         const cancelWindowMs = config.cancelMinNoticeHours * 60 * 60_000;
@@ -262,7 +301,8 @@ export class BookingService {
           );
         }
 
-        const consumed = await this.bookings.consumeCancelToken(input.rescheduleToken);
+        // REFACTOR-R5-P2-02: the claim also marks the row `rescheduled` (reinstate clears it).
+        const consumed = await this.bookings.claimForReschedule(input.rescheduleToken);
         if (!consumed) {
           throw new DomainError(
             "Reschedule token has already been consumed.",
@@ -336,7 +376,7 @@ export class BookingService {
         description: `delete Calendar event ${calResult.eventId}`,
         run: async () => { await this.calendar.deleteEvent(calResult.eventId); },
       });
-      await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
+      await invalidateForWindow(input.startIso, input.endIso, config.timezone).catch(() => {});
 
       // 6. Booking record — written before the pending_terminations row (step 7), so the
       //    daily /api/internal/session-cleanup cron always finds the booking it has to mark
@@ -434,7 +474,7 @@ export class BookingService {
       //     Zoom session exist and nothing below can throw, so the claim's compensation
       //     can no longer run against an original that is half gone.
       if (oldRecord) {
-        await this.teardownRescheduledOriginal(oldRecord);
+        await this.teardownRescheduledOriginal(oldRecord, config.timezone);
       } else {
         await this.recordFirstBooking(input);
       }
@@ -492,7 +532,9 @@ export class BookingService {
       );
     }
 
-    await invalidateAvailability(record.startsAt.slice(0, 10)).catch(() => {});
+    await this.getTimezone()
+      .then(timezone => invalidateForWindow(record.startsAt, record.endsAt, timezone))
+      .catch(() => {});
 
     const isPack   = record.sessionType === "pack";
     const isSingle = record.sessionType === "session1h" || record.sessionType === "session2h";
@@ -560,6 +602,7 @@ export class BookingService {
         studentName:     record.name,
         sessionLabel:    emailLabel,
         startIso:        record.startsAt,
+        sessionType:     record.sessionType, // REFACTOR-R5-P2-02
         creditsRestored,
         locale:          emailLocale,
       }),
@@ -595,6 +638,29 @@ export class BookingService {
       }
     }
     await this.sessions.deleteByEventId(eventId);
+  }
+
+  // REFACTOR-R5-P2-03: the session-cleanup cron's sweep (was in its route). A listing error
+  // propagates (the route answers 500); a per-row error is recorded and counted, never thrown.
+  // recordPendingTerminationFailure itself can throw (DB down): that propagates too and fails
+  // the run, as it did when the loop lived in the route.
+  async sweepPendingTerminations(opts: { maxBatch: number; maxAttempts: number }): Promise<{
+    cleared: number; failed: number; examined: number;
+  }> {
+    const rows = await this.bookings.listDuePendingTerminations(opts.maxBatch, opts.maxAttempts);
+    let cleared = 0, failed = 0;
+    for (const row of rows) {
+      try {
+        await this.finalizePastSession(row.eventId);
+        await this.bookings.deletePendingTermination(row.eventId);
+        cleared++;
+      } catch (err) {
+        await this.bookings.recordPendingTerminationFailure(row.eventId, row.attempts + 1, String(err));
+        failed++;
+        log("warn", "Cron: failed to terminate session", { eventId: row.eventId, error: String(err) });
+      }
+    }
+    return { cleared, failed, examined: rows.length };
   }
 
   async listForUser(email: string): Promise<UserBooking[]> {
@@ -665,7 +731,7 @@ export class BookingService {
     }
   }
 
-  private async teardownRescheduledOriginal(old: BookingRecord): Promise<void> {
+  private async teardownRescheduledOriginal(old: BookingRecord, timezone: string): Promise<void> {
     const steps: [string, () => Promise<void>][] = [
       ["calendar event",      () => this.calendar.deleteEvent(old.eventId)],
       ["zoom session",        () => this.sessions.deleteByEventId(old.eventId)],
@@ -680,7 +746,7 @@ export class BookingService {
         });
       }
     }
-    await invalidateAvailability(old.startsAt.slice(0, 10)).catch(() => {});
+    await invalidateForWindow(old.startsAt, old.endsAt, timezone).catch(() => {});
   }
 
   private async sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {

@@ -62,6 +62,14 @@ mark arrives with two jobs (the failure this section exists to prevent) and the 
 > **The loose sense is the only use of quotation marks in a lesson.** Quoted speech and quoted
 > output belong in `<W>` or in a code fence.
 
+**A criterion, question or rule the Spanish sets in `«…»` becomes indirect speech.** Spanish puts
+a question a word "asks" in angle quotes («¿es un sustantivo?», «el sustantivo que tengo a la
+izquierda»), and under the rule above English cannot carry it across in quotation marks: it is
+neither the loose sense nor a string the lesson talks about. Recast it so it needs no mark: "asking
+whether a word is a noun doesn't tell <W>mouse</W> from <W>cats</W>", "learn to look for the noun on
+its left", "no term saying that head 2 takes care of agreement". *Settled by
+`en/36-multi-head.mdx` (COURSE-P11-08).*
+
 A cited line or aphorism is a third thing, and it takes neither mark: not quotation marks (loose sense
 only) and not italics (which already has its two jobs above, and in Spanish only marked the line as
 foreign, a reason that disappears in English). Set it plain, introduced by a colon and closed by a
@@ -175,12 +183,29 @@ on the first copy instead. So the sentence is chosen so that no two of its token
 keeping a singular determiner between the subject and the verb as «del» does in Spanish. Check it in
 the rendered widget, unprojected, row by row. *Settled by `en/34-self-attention.mdx` (COURSE-P11-08).*
 
+**An agreement example that needs a determiner to carry number uses one that has it.** English
+marks number on far fewer words than Spanish: in the widgets' lexicon `the`, `my` and every adjective
+carry number 0, and only `this`/`that`/`a`/`each` (singular) and `these`/`those` (plural) carry one.
+So where the Spanish argument leans on a determiner agreeing with a verb as well as the subject does
+(«¿concuerda conmigo en número?» does not tell a subject from a determiner), the English sentence
+uses `this` or `these` there, never `the`: <W>this small mouse which the cats chase sleeps</W>, where
+the agreement head on <W>sleeps</W> ties <W>this</W> with the verb itself. Not `that` as a relative
+pronoun either, which the lexicon reads as a singular determiner; write `which`. *Settled by
+`en/36-multi-head.mdx` (COURSE-P11-08).*
+
 **A reversal example is two real words with no repeated letter.** A lesson that reverses a string
 names letters by position (the output's first letter is the input's last), and a repeated letter
 makes that ambiguous: in <W>stressed</W> / <W>desserts</W> the <W>s</W> the decoder must "remember
 from the start" also sits in the middle. So the pair is chosen, not translated, and its letters are
 all distinct: <W>live</W> / <W>evil</W> for the Spanish <W>roma</W> / <W>amor</W>. *Settled by
 `en/26-seq2seq.mdx` (COURSE-P11-06).*
+
+**An example that rests on the distance between two words re-counts it in English.** English word
+order moves the determiner, the adjective and the noun relative to each other (<W>la casa
+amarilla</W> → <W>the yellow house</W>), so a Spanish "one position back" can become two. Count the
+positions in the English phrase and write the number it gives, rather than carrying the Spanish one
+across: <W>the</W> in <W>the yellow house</W>, seen from <W>house</W>, is two positions back.
+*Settled by `en/37-codificacion-posicional.mdx` (COURSE-P11-08).*
 
 **Block 4's language pair stays Spanish→English, and its Spanish is glossed, not translated.** The
 block is about translation, so one side of every example is a language other than English whichever
@@ -300,6 +325,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | one of the $h$ attentions run in parallel | head — inside the compound *multi-head attention* | |
 | $\mathbb{E}[\cdot]$ · how far a centred quantity lands from zero | mean · standard deviation | expectation, expected value, average; and never the letter $\sigma$, which NOTATION.md §4 reserves |
 | how many positions a coordinate takes to come back round | wavelength | period; frequency, which is $\omega_i$ — a different number |
+| the offset $k$ between two positions · what $\mathbf{M}_k$ does to a pair | shift (the `positional-encoding` widget's label, and the challenge's `shift()`) · rotation; *turn* only for the clock hands of the analogy | offset, displacement. *Settled by `en/37-codificacion-posicional.mdx` (COURSE-P11-08)* |
 | the line carrying a sublayer's input around it | residual connection, and *the residuals* for several | skip connection, shortcut |
 | training against raw text before any task | pre-training, to pre-train | prior training |
 | the vector the stack gives one position | contextual representation | contextual embedding — *embedding* names the static object |
@@ -382,14 +408,14 @@ free draft`. What stays fixed is the source's *identity* — surnames, the work'
 `url` and `lang` (an English source is `en` in both locales) — and `kind`, an enum the reader
 localises on its own. "Translate only the note" means keep the source, not keep the Spanish.
 
-**A `<Figure>` whose asset has source text set into it gets an English sibling, `<name>.en.svg`.**
-The SVG's `alt`, `caption` and any label baked into the drawing are the lesson talking, translated
-like the prose — but the file itself is a static asset that `src` names by path, with no locale
-resolution behind it (`src/lib/courses/mdx-components.tsx` passes `src` straight to an `<img>`). So
-the English lesson cannot point at the Spanish file without inheriting its Spanish labels. Copy it to
-`<name>.en.svg` beside the original in `public/courses/dl-nlp/`, translate the text set into it and
-the `aria-label`, and point `src` at the sibling; the Spanish file keeps its name and its Spanish.
-Figures are not widgets, so P11-02 does not own them and the redraw is the translating lesson's.
+**Every locale-bound asset gets an English sibling, `<name>.en.<ext>`, beside the original in
+`public/courses/<course>/`; the English lesson points at it, and the Spanish file keeps its name and
+its Spanish.** A `<Figure>`'s `src` and a cell's `open_url("/courses/<course>/…")` name an asset by
+path, with no locale resolution behind them, so pointing at the original inherits its Spanish.
+
+**A figure with source text set into it: `<name>.en.svg`.** Its `alt`, `caption`, `aria-label` and
+every label baked into the drawing are the lesson talking, translated like the prose. Figures are not
+widgets, so P11-02 does not own them and the redraw is the translating lesson's.
 *Settled by `en/03-vocabulario-oov.mdx` (COURSE-P11-04): `suma-armonica.svg` → `suma-armonica.en.svg`.*
 
 **And re-measure every string you put into the sibling.** The geometry is copied byte for byte, so
@@ -401,28 +427,28 @@ so a faithful translation that does not fit is not the one that ships.
 *Settled by `en/17-implementar-mlp.mdx` (COURSE-P11-05): `bucle-entrenamiento`'s caption came out
 374px wide in a 360px `viewBox`, against the Spanish 328px.*
 
-**A data file a `<PyCell>` fetches at runtime gets an English sibling, `<name>.en.txt`.** The cell
-reads it by path (`open_url("/courses/dl-nlp/…")`), with no locale resolution behind it, exactly
-like a figure's `src`. Write the English text beside the original in `public/courses/dl-nlp/`, point
-the English cell's `open_url` at it, and re-derive every number the prose quotes from it (length,
-$\lvert V \rvert$, anything trained on it) in the browser; the Spanish file keeps its name.
-*Settled by `en/25-proyecto-char-lm.mdx` (COURSE-P11-06): `corpus-mar.txt` → `corpus-mar.en.txt`.*
+**A data file a `<PyCell>` fetches at runtime: `<name>.en.txt`.** Point the English cell's `open_url`
+at it and re-derive every number the prose quotes from it (length, $\lvert V \rvert$, anything trained
+on it) in the browser. *Settled by `en/25-proyecto-char-lm.mdx` (COURSE-P11-06): `corpus-mar.txt` →
+`corpus-mar.en.txt`.*
 
-**A widget whose default data is a locale-bound committed asset gets an English sibling asset, and the
-widget picks it per locale.** A few widgets read a *data file*, not just strings — `embedding-projection`
-plots a committed 2D projection of ~200 words. P11-02 can move a widget's strings but not this data, so
-it lists such widgets in `SPANISH_BOUND_CORPORA` (`src/features/courses/widgets/corpora.ts`) and leaves
-the English asset to the lesson that embeds it. Build an English sibling beside the original in
-`public/courses/dl-nlp/` (e.g. `embeddings-sample.en.json`), make the widget locale-aware — a per-locale
-source file, default selection and any analogy words — and guard its teaching property in the widget's
-data test. The Spanish asset keeps its name and its data, and the widget is removed from
-`SPANISH_BOUND_CORPORA` once its English data exists. This is the same rule as the figure sibling above,
-one layer up: the asset, not just the label, is the lesson talking. Where the Spanish asset is a
-word list on a projection, the cheapest faithful English version is a **1:1 translation onto the same
-coordinates** — same layout, same density, same analogy geometry — not a fresh, sparser layout.
-*Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04): `embeddings-sample.en.json`, the Spanish
-218-word list translated 1:1 onto its coordinates, with the `king − man + woman → queen` analogy;
-reused by 1.8.*
+**A frozen module a `<PyCell>` loads: `<name>.en.py`.** It is one lesson's cell code, frozen, so the
+rule above reaches it: translated against the course's identifier map (in the course's own English
+delta), with a test that runs both modules on the same inputs and asserts the same outputs; that
+parity test is what lets it be trusted without re-reviewing its maths. *Decided by COURSE-C2-P3-01.*
+
+**A widget whose default data is a committed asset: a sibling the widget picks per locale.** Some
+widgets read a *data file*, not just strings — `embedding-projection` plots a committed 2D projection
+of ~200 words. P11-02 could move a widget's strings but not its data, so such widgets are listed in
+`SPANISH_BOUND_CORPORA` (`src/features/courses/widgets/corpora.ts`) and the English asset is left to
+the lesson that embeds it: build the sibling (e.g. `embeddings-sample.en.json`), make the widget
+locale-aware (a per-locale source file, default selection and any analogy words), guard its teaching
+property in the widget's data test, and remove the widget from `SPANISH_BOUND_CORPORA`. Where the
+Spanish asset is a word list on a projection, the cheapest faithful English version is a **1:1
+translation onto the same coordinates** — same layout, same density, same analogy geometry — not a
+fresh, sparser layout. *Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04):
+`embeddings-sample.en.json`, the Spanish 218-word list translated 1:1 onto its coordinates, with the
+`king − man + woman → queen` analogy; reused by 1.8.*
 
 ## 8. What this delta does not replace
 

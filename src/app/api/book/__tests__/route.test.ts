@@ -2,8 +2,11 @@
 // slot validator's domain errors. The validation itself lives in BookingService
 // (BookingService.test.ts); the route only has to get the status codes right.
 // BOOKING-ATTRIBUTION-01: the route forwards the browser's source and labels the app's.
+// REFACTOR-R5-P1-01: a reschedule token used by another account is a 403.
 import { NextRequest } from "next/server";
-import { FreeSessionAlreadyUsedError, InvalidSlotError, SlotUnavailableError } from "@/domain/errors";
+import {
+  FreeSessionAlreadyUsedError, InvalidSlotError, RescheduleNotOwnerError, SlotUnavailableError,
+} from "@/domain/errors";
 
 // Counting fake for the sliding-window limiter: 10 hits per key, then blocked.
 const LIMIT = 10;
@@ -117,6 +120,17 @@ describe("REFACTOR-R4-P1-01: POST /api/book slot-validation errors", () => {
     expect(mockCreateBooking).toHaveBeenCalledWith(expect.objectContaining({
       email: "ana@test.com", startIso: BODY.startIso, endIso: BODY.endIso, sessionType: "free15min",
     }));
+  });
+});
+
+describe("REFACTOR-R5-P1-01: POST /api/book reschedule owner check", () => {
+  it("maps RescheduleNotOwnerError to 403 RESCHEDULE_NOT_OWNER", async () => {
+    mockCreateBooking.mockRejectedValue(new RescheduleNotOwnerError());
+
+    const res = await POST(makeReq({ ...BODY, rescheduleToken: "someone-elses-token" }));
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "RESCHEDULE_NOT_OWNER" });
   });
 });
 

@@ -33,6 +33,12 @@
  * course announcement: render for the dry run, locale from `users.locale`, everything
  * interpolated escaped, no operator-typed text at all (title and summary come from the
  * post's frontmatter).
+ *
+ * REFACTOR-R5-P2-02: the cancellation confirmation picks its money line from the session
+ * type, not from creditsRestored alone: a pack class with its credit back
+ * (creditsRestoredMsg), a pack class whose credit couldn't be restored (noCreditRestoredMsg,
+ * it used to get the paid-session refund line), a paid single session (refundMsg), and no
+ * money line at all for the free call.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -273,6 +279,7 @@ export async function sendCancellationConfirmationEmail(params: {
   studentName: string;
   sessionLabel: string;
   startIso: string;
+  sessionType: SessionType;
   creditsRestored: boolean;
   locale: 'es' | 'en';
 }): Promise<void> {
@@ -285,7 +292,15 @@ export async function sendCancellationConfirmationEmail(params: {
   const dateLabel  = formatDate(params.startIso, params.locale, { weekday: "long" });
   const startLabel = formatTime(params.startIso, params.locale);
 
-  const creditsHtml = t.raw("creditsRestoredMsg").replace("{baseUrl}", BASE_URL);
+  // REFACTOR-R5-P2-02: one money line per case, none for the free call.
+  let moneyHtml = "";
+  if (params.sessionType === "pack") {
+    moneyHtml = params.creditsRestored
+      ? `<p style="color:#3ddc84">${t.raw("creditsRestoredMsg").replace("{baseUrl}", BASE_URL)}</p>`
+      : `<p>${t("noCreditRestoredMsg")}</p>`;
+  } else if (params.sessionType === "session1h" || params.sessionType === "session2h") {
+    moneyHtml = `<p>${t("refundMsg")}</p>`;
+  }
 
   await send({
     to: params.to,
@@ -299,10 +314,7 @@ export async function sendCancellationConfirmationEmail(params: {
         </p>
         <div class="label">${t("labelSession")}</div>
         <div class="value">${safeSessionLabel} · ${dateLabel} · ${startLabel}</div>
-        ${params.creditsRestored ? `
-          <p style="color:#3ddc84">${creditsHtml}</p>` : `
-          <p>${t("refundMsg")}</p>`
-        }
+        ${moneyHtml}
       </div>
       <div class="footer"><p style="margin:0">Gustavo Torres Guerrero ·
         <a href="${BASE_URL}">gustavoai.dev</a> · <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>
