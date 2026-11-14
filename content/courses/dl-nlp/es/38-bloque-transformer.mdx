@@ -3,8 +3,8 @@ slug: bloque-transformer
 title: "Apilar sin perder lo de abajo"
 block: 5
 order: 6
-minutes: 28
-summary: "La capa de atención ya está completa, y el artículo pone seis una encima de otra. Componer seis funciones multiplica seis derivadas, que es exactamente la cuenta con la que se estrelló el bloque 3, así que apilar no es repetir: hace falta algo alrededor de cada subcapa. Son dos cosas y las dos caben en una línea. La suma —la subcapa devuelve lo que ha calculado más lo que le entró— abre un camino de la salida a la entrada que no atraviesa ninguna matriz, y de paso obliga a que d_model sea un solo número en todo el modelo, que es para lo que estaba la proyección de salida de multi-head. El layer norm centra cada fila con sus propias coordenadas, sin mirar a las demás posiciones ni a las demás frases del batch. Y entre las dos subcapas del bloque está el perceptrón por posiciones, que parece fontanería y lleva el doble de parámetros que la atención."
+minutes: 32
+summary: "La capa de atención ya está completa, y el artículo pone seis una encima de otra. Componer seis funciones multiplica seis derivadas, que es exactamente la cuenta con la que se estrelló el bloque 3, así que apilar no es repetir: hace falta algo alrededor de cada subcapa. Son dos cosas y las dos caben en una línea. La suma (la subcapa devuelve lo que ha calculado más lo que le entró) abre un camino de la salida a la entrada que no atraviesa ninguna matriz, y de paso obliga a que d_model sea un solo número en todo el modelo, que es para lo que estaba la proyección de salida de multi-head. El layer norm centra cada fila con sus propias coordenadas, sin mirar a las demás posiciones ni a las demás frases del batch. Y la segunda subcapa es el perceptrón por posiciones, que parece fontanería y es la pieza que calcula: con sus pesos ya decididos, la atención entrega una combinación lineal de lo que lee, y juntar en una fila un no y un bien es el XOR del bloque 2, que pide una capa oculta. Por eso lleva el doble de parámetros que la atención."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Un jacobiano diagonal, porque sumar es una operación coordenada a coordenada y eso anula las derivadas cruzadas entre coordenadas distintas.' }
       - { id: d, text: 'Nada nuevo en la derivada. Lo que la suma arregla es la pasada hacia delante; el gradiente sigue siendo el producto de los $N$ jacobianos de las subcapas.' }
     answer: a
-    explanation: 'La (a). Derivar $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ da $\mathbf{I}$ más el jacobiano de la subcapa, y multiplicar $N$ paréntesis de esa forma reparte el producto en $2^{N}$ sumandos —uno por cada manera de elegir, en cada paréntesis, la identidad o la subcapa—. Uno de esos $2^{N}$ elige la identidad $N$ veces. La (b) se inventa una aritmética: la suma no quita ningún factor del producto, añade un sumando dentro de cada factor. La (c) confunde la operación con su jacobiano: la suma sí es coordenada a coordenada, y por eso su jacobiano es $\mathbf{I}$, pero el de la subcapa que la acompaña no tiene por qué ser diagonal y no lo es. La (d) parte en dos algo que es una sola cosa: el camino de vuelta es el de ida recorrido al revés, así que un sumando que no atraviesa ninguna matriz hacia arriba tampoco la atraviesa hacia abajo.'
+    explanation: 'La (a). Derivar $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ da $\mathbf{I}$ más el jacobiano de la subcapa, y multiplicar $N$ paréntesis de esa forma reparte el producto en $2^{N}$ sumandos, uno por cada manera de elegir, en cada paréntesis, la identidad o la subcapa. Uno de esos $2^{N}$ elige la identidad $N$ veces. La (b) se inventa una aritmética: la suma no quita ningún factor del producto, añade un sumando dentro de cada factor. La (c) confunde la operación con su jacobiano: la suma sí es coordenada a coordenada, y por eso su jacobiano es $\mathbf{I}$, pero el de la subcapa que la acompaña no tiene por qué ser diagonal y no lo es. La (d) parte en dos algo que es una sola cosa: el camino de vuelta es el de ida recorrido al revés, así que un sumando que no atraviesa ninguna matriz hacia arriba tampoco la atraviesa hacia abajo.'
     hint: 'Deriva $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ respecto de $\mathbf{x}$ y mira los dos sumandos que salen.'
   - id: q-anchura-constante
     type: single
@@ -29,7 +29,7 @@ quiz:
       - { id: c, text: 'Que sus parámetros midan lo mismo que los de la subcapa anterior, para que las dos sumas trabajen con escalas comparables.' }
       - { id: d, text: 'Que no cambie la escala de lo que recibe. De eso se encarga la subcapa misma, y por eso el layer norm va antes de la suma y no después.' }
     answer: a
-    explanation: 'La (a), y es una restricción de formas antes que de nada más: $\mathbf{X}$ y $\text{Sublayer}(\mathbf{X})$ se suman casilla a casilla, de modo que la subcapa tiene prohibido devolver otra anchura. Cada una hace su viaje de ida y vuelta —la atención baja a $d_v$ por cabeza y $\mathbf{W}^O$ la devuelve, el perceptrón sube a $d_{\text{ff}}$ y $\mathbf{W}_2$ la devuelve— y la anchura del modelo es la misma en la primera capa y en la sexta. La (b) es falsa de raíz: sumar es derivable y la subcapa sigue siendo lo que era. La (c) confunde la forma con la escala; nada obliga a que dos subcapas tengan parámetros parecidos. La (d) le atribuye a la subcapa un trabajo que hace la caja de después, y además invierte el orden del artículo, que normaliza la suma ya hecha.'
+    explanation: 'La (a), y es una restricción de formas antes que de nada más: $\mathbf{X}$ y $\text{Sublayer}(\mathbf{X})$ se suman casilla a casilla, de modo que la subcapa tiene prohibido devolver otra anchura. Cada una hace su viaje de ida y vuelta (la atención baja a $d_v$ por cabeza y $\mathbf{W}^O$ la devuelve, el perceptrón sube a $d_{\text{ff}}$ y $\mathbf{W}_2$ la devuelve), y la anchura del modelo es la misma en la primera capa y en la sexta. La (b) es falsa de raíz: sumar es derivable y la subcapa sigue siendo lo que era. La (c) confunde la forma con la escala; nada obliga a que dos subcapas tengan parámetros parecidos. La (d) le atribuye a la subcapa un trabajo que hace la caja de después, y además invierte el orden del artículo, que normaliza la suma ya hecha.'
     hint: '¿Qué tienen que cumplir dos matrices para poder sumarse?'
   - id: q-que-eje-normaliza
     type: multi
@@ -40,8 +40,19 @@ quiz:
       - { id: c, text: 'No cambia si la frase se alarga o se acorta.' }
       - { id: d, text: 'Sigue teniendo media $0$ y desviación típica $1$ después de aplicar $\boldsymbol{\gamma}$ y $\boldsymbol{\beta}$, que se limitan a repartir las coordenadas dentro de la fila.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras, y las tres salen de lo mismo: $\mu_t$ y $s_t$ se calculan con los $d_{\text{model}}$ números de la fila $t$ y con ningún otro, así que ni las demás posiciones, ni las demás frases del *batch*, ni $T$ entran en la cuenta. Eso es lo que mantiene en pie la afirmación de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>: las cajas que mezclan posiciones siguen siendo las tres de atención y ninguna más. La (d) es falsa y merece la pena verla despacio: $\boldsymbol{\gamma}$ multiplica coordenada a coordenada y $\boldsymbol{\beta}$ suma, así que la fila sale con la media y la escala que esos dos vectores decidan —que es justamente para lo que están—. La normalización a media $0$ y desviación $1$ es un paso intermedio, no la salida.'
+    explanation: 'Las tres primeras, y las tres salen de lo mismo: $\mu_t$ y $s_t$ se calculan con los $d_{\text{model}}$ números de la fila $t$ y con ningún otro, así que ni las demás posiciones, ni las demás frases del *batch*, ni $T$ entran en la cuenta. Eso es lo que mantiene en pie la afirmación de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>: las cajas que mezclan posiciones siguen siendo las tres de atención y ninguna más. La (d) es falsa y merece la pena verla despacio: $\boldsymbol{\gamma}$ multiplica coordenada a coordenada y $\boldsymbol{\beta}$ suma, así que la fila sale con la media y la escala que esos dos vectores decidan, que es justamente para lo que están. La normalización a media $0$ y desviación $1$ es un paso intermedio, no la salida.'
     hint: '¿Qué números entran en $\mu_t$ y en $s_t$, y cuáles no?'
+  - id: q-para-que-el-perceptron
+    type: single
+    prompt: 'En la frase <W>no está mal</W>, la atención ya ha llevado a la fila de <W>mal</W> la noticia de que hay un <W>no</W> delante. ¿Por qué hace falta todavía el perceptrón por posiciones?'
+    options:
+      - { id: a, text: 'Porque, con los pesos de atención ya decididos, lo que llega a la fila es una combinación lineal de filas, y el sentimiento es un XOR de dos de sus coordenadas: hace falta una no linealidad que mire las dos a la vez.' }
+      - { id: b, text: 'Porque la atención no puede escribir en la fila de <W>mal</W> nada que venga de otra posición, y llevarle esa información es el trabajo del perceptrón por posiciones.' }
+      - { id: c, text: 'Porque el *softmax* es lineal, y el bloque necesita al menos una función no lineal en algún sitio.' }
+      - { id: d, text: 'Porque el *layer norm* borra la coordenada que ha traído la atención, y el perceptrón la reconstruye a partir de las demás.' }
+    answer: a
+    explanation: 'La (a). La atención hace su parte: deja en la misma fila si hay un <W>no</W> y si la palabra que valora es <W>bien</W> o <W>mal</W>. Pero esas son las dos coordenadas del cuadrado del bloque 2, y ninguna función afín separa sus diagonales, porque <W>no</W> no aporta un signo propio: le da la vuelta al otro. La (b) invierte el reparto: mezclar posiciones es lo único que hace la atención, y el perceptrón por posiciones no puede hacerlo, porque cada fila pasa por él sola. La (c) es falsa: el *softmax* no es lineal, pero su no linealidad decide de dónde se lee, no qué se hace con lo leído. La (d) se inventa un efecto: el *layer norm* centra la fila y la divide entera por un mismo número, y lo que traía cada coordenada sigue ahí.'
+    hint: 'Escribe las cuatro frases con dos coordenadas, si hay <W>no</W> y si la palabra es <W>bien</W>, y busca dónde ha salido ese cuadrado antes.'
   - id: q-donde-estan-los-parametros
     type: numeric
     prompt: 'Con $d_{\text{model}} = 512$ y $d_{\text{ff}} = 2\,048$, ¿cuántos parámetros tienen las dos matrices del perceptrón por posiciones, sin contar los sesgos?'
@@ -54,7 +65,7 @@ quiz:
     type: boolean
     prompt: 'Normalizar la salida de la subcapa y sumarle la entrada después, $\mathbf{x} + \text{LayerNorm}\left(\text{Sublayer}(\mathbf{x})\right)$, es una operación distinta de la del artículo.'
     answer: true
-    explanation: 'Cierto, y las tres versiones que circulan conviene tenerlas separadas. El artículo escribe $\text{LayerNorm}\left(\mathbf{x} + \text{Sublayer}(\mathbf{x})\right)$: primero suma, después normaliza, de modo que la normalización se aplica también al sumando que venía de abajo. La variante de la pregunta normaliza sólo lo que la subcapa ha producido y deja $\mathbf{x}$ intacto, así que el camino de la identidad queda limpio del todo —y a cambio la entrada de la capa siguiente ya no está normalizada, que era el motivo de poner la caja—. Y la tercera, la que usan hoy casi todas las implementaciones, es $\mathbf{x} + \text{Sublayer}\left(\text{LayerNorm}(\mathbf{x})\right)$: normalizar lo que entra en la subcapa. Las tres son razonables y las tres dan modelos distintos; esta lección deriva la primera, que es la del artículo.'
+    explanation: 'Cierto, y las tres versiones que circulan conviene tenerlas separadas. El artículo escribe $\text{LayerNorm}\left(\mathbf{x} + \text{Sublayer}(\mathbf{x})\right)$: primero suma, después normaliza, de modo que la normalización se aplica también al sumando que venía de abajo. La variante de la pregunta normaliza sólo lo que la subcapa ha producido y deja $\mathbf{x}$ intacto, así que el camino de la identidad queda limpio del todo. A cambio, la entrada de la capa siguiente ya no está normalizada, que era el motivo de poner la caja. Y la tercera, la que usan hoy casi todas las implementaciones, es $\mathbf{x} + \text{Sublayer}\left(\text{LayerNorm}(\mathbf{x})\right)$: normalizar lo que entra en la subcapa. Las tres son razonables y las tres dan modelos distintos; esta lección deriva la primera, que es la del artículo.'
     hint: 'Escribe las dos expresiones y pregúntate a qué se le aplica la normalización en cada una.'
 challenges:
   - id: ch-bloque-transformer
@@ -223,6 +234,14 @@ reading:
     lang: en
     url: 'https://arxiv.org/abs/2002.04745'
     note: 'Contesta lo que la lección deja abierto: normalizar antes de la subcapa (pre-norm) y no después deja el gradiente sano al arrancar y quita el calentamiento de la tasa. El post-norm del artículo lo necesita. Medido, no demostrado.'
+  - kind: paper
+    title: 'Transformer Feed-Forward Layers Are Key-Value Memories'
+    authors: 'Geva, Schuster, Berant y Levy'
+    year: '2020'
+    venue: 'arXiv:2012.14913'
+    lang: en
+    url: 'https://arxiv.org/abs/2012.14913'
+    note: 'Mira qué guardan los parámetros del perceptrón por posiciones: cada columna de W1 se enciende ante un patrón del texto y su fila de W2 empuja hacia las palabras que suelen seguirlo. Lo estudia en modelos de lenguaje, no en un encoder.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 6. */}
@@ -235,8 +254,8 @@ que sale de cada una haciendo de entrada de la siguiente.
 Repetir seis veces una operación que ya funciona suena a no hacer nada, y es justo donde se estrelló
 el bloque 3. Allí lo que se repetía era un paso de la recurrencia, y componer una función consigo
 misma multiplica derivadas: un producto de muchos factores parecidos se va a cero o se dispara, y lo
-que venía de abajo no llega arriba. La profundidad de un Transformer no la pone la frase —la ponen
-las capas, y son seis se alargue el texto lo que se alargue—, pero seis productos siguen siendo seis
+que venía de abajo no llega arriba. La profundidad de un Transformer no la pone la frase sino
+las capas, que son seis se alargue el texto lo que se alargue. Pero seis productos siguen siendo seis
 productos. Esta lección es lo que hay que ponerle alrededor a una subcapa para que esa cuenta salga
 distinta, y son dos cosas.
 
@@ -251,8 +270,8 @@ es la mitad de lo que la caja suma.
 />
 
 <Callout type="intuition" title="La idea en una frase">
-Una subcapa no sustituye lo que recibe, se lo suma —y ese sumando que nadie ha tocado es el camino
-por el que lo de abajo llega arriba, haya las capas que haya en medio—.
+Una subcapa no sustituye lo que recibe: se lo suma, y ese sumando que nadie ha tocado es el camino
+por el que lo de abajo llega arriba, haya las capas que haya en medio.
 </Callout>
 
 ## Ninguna subcapa reemplaza lo que recibe
@@ -263,7 +282,7 @@ $$
 \mathbf{X} + \text{Sublayer}(\mathbf{X}),
 $$
 
-donde $\text{Sublayer}$ es un hueco —como el $\varphi$ del bloque 2 o el $a$ del bloque anterior— que
+donde $\text{Sublayer}$ es un hueco (como el $\varphi$ del bloque 2 o el $a$ del bloque anterior) que
 ocupa la atención multi-head en la primera subcapa y el perceptrón por posiciones en la segunda. Lo
 interesante está en su derivada. Pon las $T$ filas de $\mathbf{X}$ una debajo de otra, como en
 <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué falla el MLP (*multilayer perceptron*) en secuencias</Leccion>, y llama
@@ -281,7 +300,7 @@ multiplica $N$ paréntesis así, cada uno con su identidad dentro.
 
 <Details summary="Dos bloques, multiplicados">
 
-Con dos bloques —y subíndices para distinguir la subcapa de cada uno— el producto se abre así:
+Con dos bloques, y subíndices para distinguir la subcapa de cada uno, el producto se abre así:
 
 $$
 \left(\mathbf{I} + \frac{\partial\,\text{Sublayer}_2}{\partial\mathbf{x}}\right)\left(\mathbf{I} + \frac{\partial\,\text{Sublayer}_1}{\partial\mathbf{x}}\right) = \mathbf{I} + \frac{\partial\,\text{Sublayer}_1}{\partial\mathbf{x}} + \frac{\partial\,\text{Sublayer}_2}{\partial\mathbf{x}} + \frac{\partial\,\text{Sublayer}_2}{\partial\mathbf{x}}\frac{\partial\,\text{Sublayer}_1}{\partial\mathbf{x}}.
@@ -308,8 +327,8 @@ que vale $\mathbf{I}$ es lo que la lleva hasta arriba.
 La suma trae una restricción escondida: $\mathbf{X}$ y $\text{Sublayer}(\mathbf{X})$ se suman
 casilla a casilla, así que la subcapa tiene prohibido devolver otra forma que no sea
 $T \times d_{\text{model}}$. Ninguna de las dos la respeta por dentro y las dos hacen el viaje de
-vuelta: la atención multi-head baja a $d_v$ por cabeza y $\mathbf{W}^O$ la devuelve —para esto lo
-dejó señalado <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>—, y el perceptrón por
+vuelta: la atención multi-head baja a $d_v$ por cabeza y $\mathbf{W}^O$ la devuelve (para esto lo
+dejó señalado <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>), y el perceptrón por
 posiciones sube a $d_{\text{ff}}$ y vuelve a bajar.
 
 Eso convierte a $d_{\text{model}}$ en el único número que hay que elegir para todo el modelo. En el
@@ -338,7 +357,7 @@ $$
 \hat{x}_{tj} = \frac{x_{tj} - \mu_t}{\sqrt{s_t^{2} + \varepsilon}}, \qquad \text{LayerNorm}(\mathbf{x}_t) = \boldsymbol{\gamma} \odot \hat{\mathbf{x}}_t + \boldsymbol{\beta}.
 $$
 
-$\varepsilon$ es una constante pequeña —$10^{-5}$ en casi todas las implementaciones— que evita
+$\varepsilon$ es una constante pequeña ($10^{-5}$ en casi todas las implementaciones) que evita
 dividir entre cero si una fila tiene sus coordenadas iguales. Los otros dos parecen
 deshacer el trabajo que se acaba de hacer, y en parte lo hacen: dejar cada fila con media $0$ y
 desviación $1$ es una condición que nadie ha pedido, y $\boldsymbol{\gamma}$ y $\boldsymbol{\beta}$
@@ -356,13 +375,13 @@ después a una frase suelta.
 
 Con la fila no aparece ninguna de las tres, porque $\mu_t$ y $s_t$ salen de la fila $t$ y de nada
 más. Guarda la tercera: la caja «Suma y layer norm» *no mezcla posiciones*, y por eso la
-afirmación de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> —tres de las quince cajas miran más allá de su propia
-fila— sigue en pie ahora que sabemos qué hacen las otras doce.
+afirmación de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> (tres de las quince cajas miran más allá de su propia
+fila) sigue en pie ahora que sabemos qué hacen las otras doce.
 
 ## La subcapa que no mira a ninguna otra posición
 
 Falta la segunda subcapa: la que el artículo llama FFN (*feed-forward network*) y esta lección llama
-el perceptrón por posiciones —los dos nombres son la misma caja—. Por dentro es el perceptrón
+el perceptrón por posiciones (los dos nombres son la misma caja). Por dentro es el perceptrón
 multicapa del bloque 2 con dos capas y ReLU en medio, aplicado a una fila cada vez:
 
 $$
@@ -376,12 +395,51 @@ posición en lugar de una vez por ejemplo, y la ReLU es el $\max(0, \cdot)$ del 
 
 Las dos matrices son *las mismas para todas las posiciones*: la fila $3$ y la fila $300$ pasan por
 los mismos parámetros, así que la subcapa no puede enterarse de cuál está transformando. Eso es lo
-que significa «por posiciones» y lo que la deja fuera de las cajas que mezclan. Su papel sale de ahí
-por descarte: la atención no transforma, mezcla, y éste es el único sitio donde el contenido de una
-posición pasa por una no linealidad propia.
+que significa «por posiciones» y lo que la deja fuera de las cajas que mezclan.
 
-El reparto no es el que sugiere el dibujo. Con $d_{\text{model}} = 512$ y
-$d_{\text{ff}} = 2\,048$:
+### Lo que la atención no puede calcular
+
+Una caja que no mira a las demás posiciones pide una razón para estar, y la razón está en lo que la
+atención *no* hace. Llamemos $\alpha^{(i)}_{ts}$ al peso que la cabeza $i$ le da a la posición $s$
+al calcular la fila $t$, y $\mathbf{W}^O_i$ a las $d_v$ filas de $\mathbf{W}^O$ que multiplican lo
+que devuelve esa cabeza. Abriendo el $\text{Concat}$ de <Leccion slug="multi-head">la lección sobre
+la atención multi-head</Leccion>, la fila $t$ de $\text{MultiHead}(\mathbf{X})$ es
+
+$$
+\sum_{i=1}^{h}\sum_{s=1}^{T}\alpha^{(i)}_{ts}\,\mathbf{x}_s\mathbf{W}^V_i\mathbf{W}^O_i.
+$$
+
+El *softmax* vive entero dentro de los $\alpha$, y lo que deciden los $\alpha$ es *de dónde* se lee.
+Lo que se hace con lo leído es otra cosa: una media ponderada de filas, cada una pasada por dos
+matrices. Con los pesos ya decididos, la fila $t$ es una función lineal de las filas de
+$\mathbf{X}$. La suma de la primera sección también lo es. El *layer norm* sí es no lineal, pero no
+tiene parámetros con los que aprender una combinación: centra la fila, la divide entera por un mismo
+número, y $\boldsymbol{\gamma}$ y $\boldsymbol{\beta}$ trabajan coordenada a coordenada. Ninguno de
+sus parámetros mira dos coordenadas a la vez.
+
+Vuelve a las cuatro frases de <Leccion slug="xor-y-capas-ocultas">la lección sobre el XOR</Leccion>:
+<W>está bien</W>, <W>está mal</W>, <W>no está bien</W> y <W>no está mal</W>. Aquí <W>no</W> y
+<W>bien</W> ocupan filas distintas, y llevar a la fila de <W>bien</W> la noticia de que hay un
+<W>no</W> delante es el trabajo de la atención. Pero cuando lo ha llevado, esa fila contiene las dos
+coordenadas del cuadrado de aquella lección, y allí quedó demostrado que ninguna neurona sola separa
+sus diagonales: <W>no</W> no aporta un signo propio, le da la vuelta al de la palabra que le sigue.
+Componer funciones lineales da otra función lineal, así que apilar más atención no lo arregla. Los
+dos datos están juntos y la atención no tiene una pieza hecha para combinarlos.
+
+El perceptrón por posiciones es la capa oculta que aquel cuadrado pedía, puesta en cada bloque y
+aplicada a cada fila. Su ReLU deja que lo que sale dependa de *si* una combinación de coordenadas es
+positiva, que es lo que ninguna función lineal hace, y sus $d_{\text{ff}}$ unidades son coordenadas
+nuevas, en las que el cuadrado deja de ser un XOR.
+
+La atención reúne; el perceptrón por posiciones calcula.
+
+La concesión: he razonado con los pesos ya decididos, y no vienen decididos. Los $\alpha$ salen de
+$\mathbf{X}$, de modo que la atención entera sí es no lineal en lo que recibe, y nada impide que una
+red entrenada le saque partido. Pero esa no linealidad está puesta para elegir de dónde leer, y
+usarla para combinar las coordenadas de una misma fila es pedirle a una pieza el trabajo de otra.
+
+Que es la pieza que calcula se nota en el reparto, que no es el que sugiere el dibujo. Con
+$d_{\text{model}} = 512$ y $d_{\text{ff}} = 2\,048$:
 
 $$
 2 d_{\text{model}} d_{\text{ff}} = 2\,097\,152 \quad\text{frente a}\quad 4 d_{\text{model}}^{2} = 1\,048\,576.
@@ -408,11 +466,11 @@ Y ahora la concesión. El artículo normaliza *después* de sumar, y eso deja el
 *layer norm* encima del camino de la identidad: el sumando que vale $\mathbf{I}$ está dentro del
 paréntesis, pero lo que sale de la caja ha pasado además por una normalización, así que el camino
 limpio de la primera sección no es tan limpio. Casi todas las implementaciones de hoy escriben
-$\mathbf{X} + \text{Sublayer}\left(\text{LayerNorm}(\mathbf{X})\right)$ —normalizar lo que *entra*
-en la subcapa y dejar la suma sin tocar—, que es lo que se conoce como *pre-norm*. Cuál entrena
+$\mathbf{X} + \text{Sublayer}\left(\text{LayerNorm}(\mathbf{X})\right)$ (normalizar lo que *entra*
+en la subcapa y dejar la suma sin tocar), que es lo que se conoce como *pre-norm*. Cuál entrena
 mejor queda fuera de este curso; que son dos operaciones distintas, no.
 
-## Las dos piezas en NumPy
+## Las tres piezas en NumPy
 
 La primera celda es el *layer norm* sobre cinco posiciones. Mira tres cosas: la media y la
 desviación típica de cada fila, qué devuelven $\boldsymbol{\gamma}$ y $\boldsymbol{\beta}$, y qué le
@@ -494,20 +552,85 @@ for n in (1, 2, 4, 6, 8, 12):
 
 Cada número es una derivada medida por sondeo numérico: cuánto se mueve la salida entera al empujar
 una sola coordenada de la entrada. Sin la suma cae de $0.109$ con una capa a
-$5.182 \times 10^{-7}$ con doce —siete órdenes de magnitud, y con doce capas, no con doce mil—,
-porque es un producto de doce factores pequeños. Con la suma se queda entre $1.00$ y $1.80$ todo el
+$5.182 \times 10^{-7}$ con doce, porque es un producto de doce factores pequeños: siete órdenes
+de magnitud, y con doce capas, no con doce mil. Con la suma se queda entre $1.00$ y $1.80$ todo el
 camino: el sumando que no atraviesa ninguna matriz vale $1$, y los demás sólo lo corrigen.
+
+La tercera pone a prueba el perceptrón por posiciones con las frases del XOR, alargadas con
+palabras de relleno entre el <W>no</W> y la palabra que valora. La cabeza de atención la he puesto
+yo a mano: la última posición lee todas por igual y copia a una coordenada libre la que marca si una
+palabra es <W>no</W>. Después intento leer el sentimiento de esa última fila con una sola neurona,
+ajustada con `np.linalg.lstsq` (los pesos de menor error cuadrático medio, calculados de una vez),
+primero sobre la fila tal cual y después sobre la fila pasada por la subida del perceptrón y su
+ReLU. Como en la celda anterior, quito el *layer norm* para ver la pieza sola, y $\mathbf{W}_1$ y
+$\mathbf{b}_1$ los saco al azar: sólo se ajusta la lectura.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(3)
+d_model, d_ff = 8, 32
+
+# Coordenada 0: "esta palabra es no". Coordenada 1: +1 si es bien, -1 si es mal.
+# Coordenada 2: libre, la escribe la atencion. El resto: relleno (esta, muy, hoy...).
+def frase():
+    negada, buena = rng.random() < 0.5, rng.random() < 0.5
+    relleno = rng.normal(size=(rng.integers(1, 4), d_model)) * 0.5
+    relleno[:, :3] = 0.0
+    no = np.eye(d_model)[[0]] if negada else np.zeros((0, d_model))
+    valora = np.zeros((1, d_model))
+    valora[0, 1] = 1.0 if buena else -1.0
+    return np.vstack([no, relleno, valora]), negada, buena
+
+# La cabeza: la ultima posicion lee todas por igual y copia su coordenada 0 en la 2.
+W_VO = np.zeros((d_model, d_model))
+W_VO[0, 2] = 1.0
+
+def fila_final(X):
+    alpha = np.full(len(X), 1 / len(X))         # los pesos de la ultima fila
+    return X[-1] + alpha @ X @ W_VO             # la suma: x_t + MultiHead(X)_t
+
+datos = [frase() for _ in range(800)]
+H = np.array([fila_final(X) for X, _, _ in datos])
+neg = np.array([n for _, n, _ in datos])
+bue = np.array([b for _, _, b in datos])
+y = (bue != neg).astype(float)                  # 1 si la frase habla bien
+
+W1, b1 = rng.normal(size=(d_model, d_ff)), rng.normal(size=d_ff)
+lecturas = {"la fila tal cual": H,
+            "tras la ReLU": np.maximum(0.0, H @ W1 + b1)}
+
+print(f"{'':18s}{'esta bien':>10s}{'esta mal':>10s}{'no esta bien':>14s}{'no esta mal':>13s}")
+for nombre, F in lecturas.items():
+    F = np.hstack([F, np.ones((len(F), 1))])    # columna de unos: el sesgo
+    w = np.linalg.lstsq(F[:500], y[:500], rcond=None)[0]
+    ok = ((F @ w > 0.5) == (y > 0.5))[500:]     # acierto en 300 frases no vistas
+    n, b = neg[500:], bue[500:]
+    tipos = [(False, True), (False, False), (True, True), (True, False)]
+    aciertos = [ok[(n == a) & (b == c)].mean() for a, c in tipos]
+    print(f"{nombre:18s}" + "".join(f"{x:{w}.2f}" for x, w in zip(aciertos, (10, 10, 14, 13))))
+`} />
+
+Cada número es la fracción de frases de ese tipo que la neurona clasifica bien, entre $300$ que no
+ha visto al ajustarse. Sobre la fila tal cual acierta todas las de tres tipos y ninguna de
+<W>no está mal</W>: es lo más que una recta le saca a las esquinas de un XOR, dejarse una fuera. Tras
+la ReLU acierta las cuatro, con una subida que no ha aprendido nada. Treinta y dos unidades al azar ya
+le dan a la lectura coordenadas en las que el cuadrado se separa; entrenar $\mathbf{W}_1$ es elegir
+cuáles.
 
 ## Comprueba tu intuición
 
-Cinco preguntas: qué añade la suma a la derivada, qué le exige a la subcapa, qué números entran al
-normalizar una fila, dónde están los parámetros y qué cambia al mover el *layer norm* de sitio.
+Seis preguntas: qué añade la suma a la derivada, qué le exige a la subcapa, qué números entran al
+normalizar una fila, para qué está el perceptrón por posiciones, dónde están sus parámetros y qué
+cambia al mover el *layer norm* de sitio.
 
 <Quiz id="q-que-anade-la-suma" />
 
 <Quiz id="q-anchura-constante" />
 
 <Quiz id="q-que-eje-normaliza" />
+
+<Quiz id="q-para-que-el-perceptron" />
 
 <Quiz id="q-donde-estan-los-parametros" />
 
