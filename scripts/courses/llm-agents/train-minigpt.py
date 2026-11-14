@@ -1,10 +1,13 @@
 """COURSE-C2-P0-03 — Entrena el mini-GPT del curso llm-agents y escribe el checkpoint.
+COURSE-C2-P3-02 — `--idioma en` entrena el ingles con la MISMA receta: otro corpus, otros
+prompts y otro SFT (IDIOMAS, abajo), los modulos hermanos bpe.en.py y minigpt.en.py, y la
+salida con el sufijo .en. `--idioma es` (por defecto) es la ejecucion de siempre.
 
 Extremo a extremo, con semilla, en NumPy: BPE sobre el corpus -> ventanas -> entrenamiento ->
 LAS PROPIEDADES DIDACTICAS (asertos: un checkpoint que falla una no se publica) -> escribe
 `bpe-merges.json` y `minigpt.json` -> imprime los numeros que las lecciones citan.
 
-    python train-minigpt.py [--corpus RUTA] [--salida DIRECTORIO] [--pasos N]
+    python train-minigpt.py [--idioma {es,en}] [--corpus RUTA] [--salida DIRECTORIO] [--pasos N]
 
 Por defecto lee y escribe en public/courses/llm-agents/. Importa el modelo y el tokenizador
 DESDE ESE DIRECTORIO: minigpt.py y bpe.py son los ficheros que las celdas cargan con
@@ -32,6 +35,7 @@ import json
 import re
 import sys
 import time
+import types
 
 import numpy as np
 
@@ -68,34 +72,112 @@ PPL_MAX = 30.0                                   # 1: perplejidad en texto no vi
 N_GENERAR = 32                                   # 2 y 3: tokens generados por prompt
 N_GRAMA = 4                                      # "repite" = un 4-grama aparece dos veces en 32 tokens
 TOP_P = 0.9
-PROMPTS = ["La Nela", "—¿Qué", "El sol se"]     # tres prompts fijos, en el registro del corpus
 PASOS_SFT = 200                                  # 4: pasos de ajuste supervisado
 ETA_SFT = 1e-3
-# El conjunto de instrucciones de la leccion 2·3: diez pares, mas uno reservado para medir.
-SFT_PARES = [
-    ("¿De qué color es el cielo?", "El cielo es azul."),
-    ("¿De qué color es la nieve?", "La nieve es blanca."),
-    ("¿De qué color es la hierba?", "La hierba es verde."),
-    ("¿De qué color es el carbón?", "El carbón es negro."),
-    ("¿De qué color es la sangre?", "La sangre es roja."),
-    ("¿De qué color es el sol?", "El sol es amarillo."),
-    ("¿De qué color es la noche?", "La noche es negra."),
-    ("¿De qué color es el mar?", "El mar es azul."),
-    ("¿De qué color es la leche?", "La leche es blanca."),
-    ("¿De qué color es el oro?", "El oro es amarillo."),
-]
-SFT_RESERVADO = ("¿De qué color es la tierra?", "La tierra es")   # reservado: nunca entra en el SFT
-PLANTILLA = "Pregunta: {}\nRespuesta:"
-# Lo que el SFT ensena en 200 pasos sobre diez pares es el FORMATO de respuesta, no el color:
-# se mide (a) cuantos tokens iniciales de la respuesta reservada coinciden — el espacio y el
-# articulo que concuerda, «La» — y (b) que la continuacion sea una frase completa con la
-# plantilla «El/La <algo> es <algo>.»; el sustantivo lo pone el modelo (una respuesta que
-# memorizo), y eso es la leccion. Antes del SFT no se cumple ninguna de las dos.
-PLANTILLA_RESPUESTA = re.compile(r"^ (El|La) [^\W\d_]+ es [^\W\d_]+\.")
+
+# COURSE-C2-P3-02 — Lo que cambia con el idioma: el corpus, los modulos, los prompts y el SFT.
+# Los hiperparametros de arriba NO: los dos checkpoints son la misma receta (la leccion 1·7
+# los compara y la 1·3 cuenta un solo entrenamiento).
+IDIOMAS = {
+    "es": {
+        "sufijo": "",                            # corpus.txt, bpe.py, minigpt.py -> bpe-merges.json, minigpt.json
+        # Tres prompts fijos, en el registro del corpus.
+        "prompts": ["La Nela", "—¿Qué", "El sol se"],
+        # El conjunto de instrucciones de la leccion 2·3: diez pares, mas uno reservado para medir.
+        "sft_pares": [
+            ("¿De qué color es el cielo?", "El cielo es azul."),
+            ("¿De qué color es la nieve?", "La nieve es blanca."),
+            ("¿De qué color es la hierba?", "La hierba es verde."),
+            ("¿De qué color es el carbón?", "El carbón es negro."),
+            ("¿De qué color es la sangre?", "La sangre es roja."),
+            ("¿De qué color es el sol?", "El sol es amarillo."),
+            ("¿De qué color es la noche?", "La noche es negra."),
+            ("¿De qué color es el mar?", "El mar es azul."),
+            ("¿De qué color es la leche?", "La leche es blanca."),
+            ("¿De qué color es el oro?", "El oro es amarillo."),
+        ],
+        "sft_reservado": ("¿De qué color es la tierra?", "La tierra es"),   # nunca entra en el SFT
+        "plantilla": "Pregunta: {}\nRespuesta:",
+        # Lo que el SFT ensena en 200 pasos sobre diez pares es el FORMATO de respuesta, no el
+        # color: se mide (a) cuantos tokens iniciales de la respuesta reservada coinciden — el
+        # espacio y el articulo que concuerda, «La»: de ahi el minimo de 2 — y (b) que la
+        # continuacion sea una frase completa con la plantilla «El/La <algo> es <algo>.»; el
+        # sustantivo lo pone el modelo (una respuesta que memorizo), y eso es la leccion. Antes
+        # del SFT no se cumple ninguna de las dos.
+        "plantilla_respuesta": re.compile(r"^ (El|La) [^\W\d_]+ es [^\W\d_]+\."),
+        "coincidencia_min": 2,
+    },
+    "en": {
+        "sufijo": ".en",                         # corpus.en.txt, bpe.en.py, minigpt.en.py -> *.en.json
+        # El corpus es Cousin Phillis (Gaskell): el unico de los tres candidatos medidos que
+        # cumple las cuatro propiedades con esta receta (README, «La version inglesa»).
+        # El nombre de la protagonista, una comilla de apertura con una palabra interrogativa,
+        # una oracion sin terminar: los tres papeles de los prompts espanoles.
+        "prompts": ["Phillis", "“What", "The sun was"],
+        # Los pares del widget chat-template en ingles (corpora.ts); el reservado, «the earth»,
+        # tiene un sustantivo que no esta en los diez.
+        "sft_pares": [
+            ("What colour is the sky?", "The sky is blue."),
+            ("What colour is the snow?", "The snow is white."),
+            ("What colour is the grass?", "The grass is green."),
+            ("What colour is the coal?", "The coal is black."),
+            ("What colour is the blood?", "The blood is red."),
+            ("What colour is the sun?", "The sun is yellow."),
+            ("What colour is the night?", "The night is black."),
+            ("What colour is the sea?", "The sea is blue."),
+            ("What colour is the milk?", "The milk is white."),
+            ("What colour is the gold?", "The gold is yellow."),
+        ],
+        "sft_reservado": ("What colour is the earth?", "The earth is"),
+        "plantilla": "Question: {}\nAnswer:",
+        # La propiedad 4 re-enunciada: el ingles no tiene concordancia, « The» vale para los
+        # once pares, asi que el articulo no es nada que el SFT ensene. Se aserta lo que si
+        # ensena: la plantilla de respuesta aparece despues y no antes, y la coincidencia de
+        # tokens iniciales con la respuesta reservada crece estrictamente (minimo 1).
+        "plantilla_respuesta": re.compile(r"^ The [a-z]+ is [a-z]+\."),
+        "coincidencia_min": 1,
+    },
+}
+# Los del idioma de la ejecucion; main() los fija antes de usarlos.
+PROMPTS = SFT_PARES = SFT_RESERVADO = PLANTILLA = PLANTILLA_RESPUESTA = None
 
 
 def formatear(pregunta, respuesta=""):
     return PLANTILLA.format(pregunta) + (" " + respuesta if respuesta else "")
+
+
+def vista_inglesa():
+    """bpe.en.py y minigpt.en.py, vistos con los nombres de este script.
+
+    Los modulos ingleses son los espanoles con los nombres traducidos (AUTHORING.en.md §1;
+    parity-en.py lo comprueba). El script los llama por los nombres espanoles: esta vista solo
+    renombra, cada nombre delega en el ingles y la aritmetica es la del fichero ingles.
+    """
+    en_bpe, en_mg = importar("bpe.en", ASSETS), importar("minigpt.en", ASSETS)
+    assert {k: v for k, v in en_mg.CONFIG.items() if k != "n_layers"} == \
+        {k: v for k, v in mg.CONFIG.items() if k != "n_capas"} and en_mg.CONFIG["n_layers"] == mg.CONFIG["n_capas"]
+
+    class MiniGPT(en_mg.MiniGPT):
+        def __init__(self, cfg=en_mg.CONFIG, semilla=0):
+            super().__init__(cfg, seed=semilla)
+
+        n_parametros = en_mg.MiniGPT.n_parameters
+        adelante = en_mg.MiniGPT.forward
+        perdida = en_mg.MiniGPT.loss
+        guardar = en_mg.MiniGPT.save
+        cargar = classmethod(en_mg.MiniGPT.load.__func__)
+
+        def generar(self, prompt, n, temperatura=1.0, top_k=None, top_p=None, rng=None):
+            return self.generate(prompt, n, temperature=temperatura, top_k=top_k, top_p=top_p, rng=rng)
+
+    class Adam(en_mg.Adam):
+        paso = en_mg.Adam.step
+
+    vbpe = types.SimpleNamespace(N_BYTES=en_bpe.N_BYTES, quitar_cabecera=en_bpe.strip_header,
+                                 entrenar=en_bpe.train, codificar=en_bpe.encode,
+                                 decodificar=en_bpe.decode, vocabulario=en_bpe.vocabulary)
+    vmg = types.SimpleNamespace(CONFIG=en_mg.CONFIG, ventanas=en_mg.windows, MiniGPT=MiniGPT, Adam=Adam)
+    return vbpe, vmg
 
 
 # ── Utilidades ───────────────────────────────────────────────────────────────────────────
@@ -132,15 +214,28 @@ def linea(titulo):
 # ── Main ─────────────────────────────────────────────────────────────────────────────────
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--corpus", default=os.path.join(ASSETS, "corpus.txt"))
+    ap.add_argument("--idioma", choices=sorted(IDIOMAS), default="es")
+    ap.add_argument("--corpus", default=None, help="por defecto corpus<sufijo>.txt del idioma")
     ap.add_argument("--salida", default=ASSETS)
     ap.add_argument("--pasos", type=int, default=PASOS)
     args = ap.parse_args()
     t0 = time.time()
 
+    # COURSE-C2-P3-02 — el idioma fija los modulos, los datos de las propiedades y los nombres.
+    global bpe, mg, PROMPTS, SFT_PARES, SFT_RESERVADO, PLANTILLA, PLANTILLA_RESPUESTA
+    idioma = IDIOMAS[args.idioma]
+    if args.idioma == "en":
+        bpe, mg = vista_inglesa()
+    PROMPTS, SFT_PARES, SFT_RESERVADO = idioma["prompts"], idioma["sft_pares"], idioma["sft_reservado"]
+    PLANTILLA, PLANTILLA_RESPUESTA = idioma["plantilla"], idioma["plantilla_respuesta"]
+    sufijo = idioma["sufijo"]
+    corpus = args.corpus or os.path.join(ASSETS, "corpus%s.txt" % sufijo)
+    salida_bpe, salida_modelo = "bpe-merges%s.json" % sufijo, "minigpt%s.json" % sufijo
+    print("idioma: %s   corpus: %s" % (args.idioma, os.path.relpath(corpus, RAIZ)))
+
     # 1. Corpus y tokenizador
     linea("1. Corpus y BPE")
-    with open(args.corpus, encoding="utf-8") as f:
+    with open(corpus, encoding="utf-8") as f:
         texto = bpe.quitar_cabecera(f.read())
     print("corpus: %d caracteres, %d bytes" % (len(texto), len(texto.encode("utf-8"))))
     fusiones = bpe.entrenar(texto, N_FUSIONES)
@@ -185,7 +280,7 @@ def main():
     linea("3. Checkpoint redondeado a %d decimales" % DECIMALES)
     checkpoint = modelo.guardar(DECIMALES)
     modelo = mg.MiniGPT.cargar(checkpoint)
-    print("minigpt.json: %d bytes (%.2f MB)" % (len(checkpoint.encode()), len(checkpoint.encode()) / 2 ** 20))
+    print("%s: %d bytes (%.2f MB)" % (salida_modelo, len(checkpoint.encode()), len(checkpoint.encode()) / 2 ** 20))
 
     # 4. Propiedades didacticas
     linea("4. Propiedades didacticas")
@@ -240,7 +335,8 @@ def main():
     print("   prompt reservado: %r   (respuesta que se mide: %r)" % (formatear(SFT_RESERVADO[0]), " " + SFT_RESERVADO[1]))
     print("   antes   %d/%d tokens, plantilla %-3s -> %r" % (c_antes, len(esperado), "si" if PLANTILLA_RESPUESTA.match(t_antes) else "no", t_antes))
     print("   despues %d/%d tokens, plantilla %-3s -> %r" % (c_despues, len(esperado), "si" if PLANTILLA_RESPUESTA.match(t_despues) else "no", t_despues))
-    assert c_antes < c_despues and c_despues >= 2, "propiedad 4: el SFT no cambia el arranque de la continuacion"
+    assert c_antes < c_despues and c_despues >= idioma["coincidencia_min"], \
+        "propiedad 4: el SFT no cambia el arranque de la continuacion"
     assert PLANTILLA_RESPUESTA.match(t_despues) and not PLANTILLA_RESPUESTA.match(t_antes), "propiedad 4: sin plantilla de respuesta"
     print("5. la ida en Pyodide se mide en el navegador (README); referencia en CPython:")
     X = np.array([ids[:T]])
@@ -253,11 +349,11 @@ def main():
     linea("5. Salida")
     os.makedirs(args.salida, exist_ok=True)
     fusiones_json = json.dumps([list(par) for par in fusiones], separators=(",", ":"))
-    for nombre, contenido in (("bpe-merges.json", fusiones_json), ("minigpt.json", checkpoint)):
+    for nombre, contenido in ((salida_bpe, fusiones_json), (salida_modelo, checkpoint)):
         ruta = os.path.join(args.salida, nombre)
         with open(ruta, "w", encoding="utf-8") as f:
             f.write(contenido + "\n")
-        print("%-16s %8d bytes  sha256 %s" % (nombre, len(contenido) + 1, sha256(contenido + "\n")))
+        print("%-19s %8d bytes  sha256 %s" % (nombre, len(contenido) + 1, sha256(contenido + "\n")))
     print("listo en %.0f s" % (time.time() - t0))
 
 

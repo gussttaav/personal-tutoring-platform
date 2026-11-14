@@ -82,7 +82,7 @@ frozen modules, the companion repository and every Block 5 measurement. See the
 |------|-----|--------|-------|----|
 | [00 Triage: classify 40 lessons](phase-3-translation/00-triage.md) | `COURSE-C2-P3-00` | ✅ | _tbd_ | local |
 | [01 Platform readiness](phase-3-translation/01-platform-readiness.md) | `COURSE-C2-P3-01` | ✅ | _tbd_ | local |
-| [02 The English mini-GPT](phase-3-translation/02-english-checkpoint.md) | `COURSE-C2-P3-02` | ⬜ | _tbd_ | |
+| [02 The English mini-GPT](phase-3-translation/02-english-checkpoint.md) | `COURSE-C2-P3-02` | ✅ | _tbd_ | local |
 | [03 `llm-agents/AUTHORING.en.md`: glossary + identifier map](phase-3-translation/03-authoring-en.md) | `COURSE-C2-P3-03` | ✅ | _tbd_ | local |
 | [04 Block 1 — From the Transformer to the Language Model (9)](phase-3-translation/04-block-1.md) | `COURSE-C2-P3-04` | ⬜ | _tbd_ | |
 | [05 Block 2 — From Predicting Text to Following Instructions (8)](phase-3-translation/05-block-2.md) | `COURSE-C2-P3-05` | ⬜ | _tbd_ | |
@@ -1835,3 +1835,45 @@ course boundary. 297 lines of prose plus the tables (the cap is 300).
   name the map lacks (`.claude/` is gitignored: local only, as in P3-01). The task md's "1·1 quotes
   `genera(…)`" wording is corrected to 1·9 / `paso(entrada)`, the fix P3-00 asked for.
 - Verified: none needed (documentation). Row count checked against §4 (160 = 160).
+
+**COURSE-C2-P3-02** — Done (2026-11-13), on `course/llm-agents-p3-02-english-checkpoint`. New
+`corpus.en.txt`, `bpe.en.py`, `minigpt.en.py`, `bpe-merges.en.json`, `minigpt.en.json` under
+`public/courses/llm-agents/` (only additions there: `git diff --stat public/` is empty);
+`train-minigpt.py --idioma {es,en}` (an `IDIOMAS` table and a `vista_inglesa()` that gives the
+English modules the script's Spanish names, delegating, so the arithmetic is the English file's);
+new `parity-en.py`; the README's English section; `llm-agents-assets.test.ts` (English siblings,
+explicit English keys, the same line structure as the Spanish files); the `corpus.txt` entry in
+`corpora.ts`.
+- **The corpus is *Cousin Phillis* (Gaskell, Gutenberg #4268), the only candidate that passes.**
+  All three task candidates were trained with the fixed recipe, each with its three prompts chosen
+  before the run (the protagonist's name, `“What`, `The sun was`): *Under the Greenwood Tree*
+  (318 778 chars, ppl 21.2) and *Silas Marner* (391 287, ppl 19.0) **fail property 2**: greedy
+  repeats no 4-gram in 32 tokens on any prompt. Nothing was tuned to make them pass. ***Phillis***
+  passes 1–4 (ppl 28.64, greedy repeats 3/3, top-p 0/3, SFT 0/5 → 1/5 with the template).
+- **Its costs, for Gustavo's review before Block 1 is translated:** it is **27 % shorter** than
+  *Marianela* (85 886 training tokens: **47.7 passes per token**, not 32.6, so 1·3's quiz changes
+  value); it **overfits after step 1000** (validation 3.355 → 3.471 at 2000), so the checkpoint is
+  step 1000 and 1·3's English curve will show overfitting the Spanish one does not; and property 1's
+  margin is thin (28.64 of 30). If that reads as two stories rather than one, the next move is more
+  candidates near 290 K characters, not a change to the recipe.
+- **Property 4, as re-stated:** strict increase of the leading-token match (minimum 1, where Spanish
+  keeps its 2 for the agreeing article) plus `^ The [a-z]+ is [a-z]+\.` after and not before. The
+  base checkpoint does **not** already start with ` The` (0/5), so the assert was not weakened.
+- **`--idioma es` reproduces the published Spanish hashes byte for byte** (`9086cb46…`,
+  `946ed0d4…`), and the English run reproduced itself (`76b9a122…`, `74467db1…`) across two runs.
+- **Machine: not the Spanish README's.** An i5-6300U (2016, 2 cores), Python 3.12.16 + NumPy 2.2.5
+  in Docker (`python:3.12-slim`: this machine only has Python 3.14, with no NumPy 2.2.5 wheel). The
+  English run took 676 s alone; the Spanish one, here, 1038 s in parallel with another run.
+- **Finding for 1·2:** English is not all one-byte. The corpus's 2 067 non-ASCII characters are all
+  typography (`“ ’ ” — ‘`), and merge 8 is `E2 80`, a token that is not a character; merges 51/52/54
+  complete the curly quotes. The multi-byte argument keeps corpus-side evidence, in punctuation.
+- **P3-03's check ("written from the table alone"): passed.** No public name was needed outside the
+  identifier map; only function-local variables were named on the spot (`words`, `pieces`, `best`,
+  `rank`, `axes`, `starts`, `order`, `cumulative`…), which the map does not cover by design.
+- **Property 5:** one throwaway cell in the local fixture (reverted, not committed): 1.13 s with the
+  English files uncached, 0.70 s warm, 16–19 ms per 64-token forward pass; greedy and top-p output
+  identical to CPython's. **Phone: not measured** (none available, as in P0-03); 2–3× puts it at
+  2–4 s, inside the cap.
+- Verified: both trainer runs' asserts; `parity-en.py` (16 checks, including the Spanish checkpoint
+  through `minigpt.en.py`); `pnpm test` (218 suites, 3 355 tests); `pnpm lint` (0 errors, the 8
+  existing warnings); `pnpm build` green.

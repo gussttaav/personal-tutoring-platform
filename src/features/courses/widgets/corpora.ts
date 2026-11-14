@@ -2,6 +2,8 @@
  * COURSE-P11-02 — Per-locale default corpora for the explorables.
  * COURSE-C2-P3-01 — `context-window` joins `SPANISH_BOUND_CORPORA`: its `compactacion` preset
  *                   holds sizes measured on the Spanish Block 5 run.
+ * COURSE-C2-P3-02 — the `corpus.txt` entry records that the English corpus and checkpoint
+ *                   exist, and what still depends on the Spanish ones.
  *
  * A widget's interface text is translation (see `messages/*.json`, namespace
  * `courses.widgets.*`). Its DEFAULT CORPUS is not: the sentences below were chosen so
@@ -263,13 +265,19 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "quote them. The English course needs its own permisos.en.py beside harness.en.py.",
   // COURSE-C2-P0-03 — the llm-agents mini-GPT is trained on this Spanish corpus, and
   // its checkpoint (minigpt.json) and merge table (bpe-merges.json) are functions of it.
+  // COURSE-C2-P3-02 — the English sibling exists; the entry stays until the English lessons
+  // and presets that still read the Spanish checkpoint have moved.
   "courses/llm-agents/corpus.txt":
     "Marianela (Galdós, public domain), the corpus the llm-agents Block 1 mini-GPT is " +
     "trained on. Every text the checkpoint generates, every merge in bpe-merges.json and " +
-    "every number the Block 1–3 lessons quote is a function of it. The English course " +
-    "needs an English corpus AND its own checkpoint, re-trained by " +
-    "scripts/courses/llm-agents/train-minigpt.py (corpus path and output directory are " +
-    "its parameters) — plus new lesson prose, since the quoted samples change with it.",
+    "every number the Block 1–3 lessons quote is a function of it. The English sibling " +
+    "exists: corpus.en.txt (Gaskell's Cousin Phillis), with bpe-merges.en.json and " +
+    "minigpt.en.json trained from it by `train-minigpt.py --idioma en` (same recipe, same " +
+    "seed) and the modules bpe.en.py and minigpt.en.py. What still depends on the Spanish " +
+    "corpus: the English lessons' prose, which must quote the English checkpoint's own " +
+    "samples and numbers, and every preset or figure made from the Spanish checkpoint " +
+    "(sampling-explorer, kv-cache and logit-mask above, minigpt-entrenamiento.svg), each " +
+    "re-made from the English one by the English lesson that embeds it.",
 };
 
 /**
