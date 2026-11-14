@@ -83,6 +83,13 @@ the word that flips a sentence; and it never takes quotation marks. The spelling
 the lesson's own `reading` entry gives in `title`. *Settled by `en/33-adios-recurrencia.mdx`
 (COURSE-P11-08).*
 
+A widget's label quoted in prose (a box of the `transformer-architecture` diagram, a button) is a
+string the lesson talks about, so it takes `<W>`, spelled exactly as the English widget renders it
+(`messages/en.json`), never a free translation: <W>Add and layer norm</W>, <W>Masked
+self-attention</W>. In a `caption` it takes `"…"` under the plain-text prop exception below. The
+Spanish sets these labels in `«…»`, which in English would be neither job of the quotation marks.
+*Settled by `en/38-bloque-transformer.mdx` (COURSE-P11-08).*
+
 The `<W>` boundary is [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)'s,
 unchanged. Its plain-text prop exception carries over: `caption`, `alt` and `summary` are strings, so
 a string the lesson talks about is written `"tokenisation"` there.
@@ -327,6 +334,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | how many positions a coordinate takes to come back round | wavelength | period; frequency, which is $\omega_i$ — a different number |
 | the offset $k$ between two positions · what $\mathbf{M}_k$ does to a pair | shift (the `positional-encoding` widget's label, and the challenge's `shift()`) · rotation; *turn* only for the clock hands of the analogy | offset, displacement. *Settled by `en/37-codificacion-posicional.mdx` (COURSE-P11-08)* |
 | the line carrying a sublayer's input around it | residual connection, and *the residuals* for several | skip connection, shortcut |
+| the operation $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ that line performs (`la suma`) | the sum | the addition, the skip; *add* only inside the widget label <W>Add and layer norm</W>. *Settled by `en/38-bloque-transformer.mdx` (COURSE-P11-08)* |
 | training against raw text before any task | pre-training, to pre-train | prior training |
 | the vector the stack gives one position | contextual representation | contextual embedding — *embedding* names the static object |
 | BERT's objective | masked language modelling (MLM), expanded once per lesson | masked language model — the course spends `language model` on the next-token network, which BERT is not |
