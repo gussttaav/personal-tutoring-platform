@@ -1,0 +1,637 @@
+---
+slug: por-que-un-perceptron-en-el-transformer
+title: "Why we need a perceptron in the Transformer when we already have attention"
+date: "2026-11-17"
+minutes: 27
+summary: "In every Transformer block, after the attention, there is a two-layer perceptron that hardly anyone explains and that holds two thirds of the parameters. Why attention cannot do its job, what it stores that attention has nowhere to keep, why it has that shape and what has been tried in its place, from gates to mixtures of experts."
+draft: false
+reading:
+  - kind: paper
+    title: "Attention is Not All You Need: Pure Attention Loses Rank Doubly Exponentially with Depth"
+    authors: "Yihe Dong, Jean-Baptiste Cordonnier and Andreas Loukas"
+    year: "2021"
+    venue: "arXiv:2103.03404"
+    lang: en
+    url: "https://arxiv.org/abs/2103.03404"
+    note: "The title everyone remembers. Section 3 is the one to read: its three subheadings sum up the whole paper. The residual connection is crucial, the perceptron helps and layer norm does nothing."
+  - kind: paper
+    title: "Transformer Feed-Forward Layers Are Key-Value Memories"
+    authors: "Mor Geva, Roei Schuster, Jonathan Berant and Omer Levy"
+    year: "2021"
+    venue: "EMNLP 2021"
+    lang: en
+    url: "https://arxiv.org/abs/2012.14913"
+    note: "The perceptron read as a memory, checked by hand: which texts switch on each key and which words each value pushes, layer by layer, in a 16-layer model."
+  - kind: paper
+    title: "Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space"
+    authors: "Mor Geva, Avi Caciularu, Kevin Ro Wang and Yoav Goldberg"
+    year: "2022"
+    venue: "EMNLP 2022"
+    lang: en
+    url: "https://arxiv.org/abs/2203.14680"
+    note: "The follow-up: each value of the perceptron is a small update over the vocabulary, and switching on ten of them by hand nearly halves the toxic text GPT-2 produces."
+  - kind: paper
+    title: "Locating and Editing Factual Associations in GPT"
+    authors: "Kevin Meng, David Bau, Alex Andonian and Yonatan Belinkov"
+    year: "2022"
+    venue: "NeurIPS 2022"
+    lang: en
+    url: "https://arxiv.org/abs/2202.05262"
+    note: "Where a language model keeps the fact that a place is in a given city: in the perceptrons of the middle layers. And how to change it with a single rank-one update to one matrix."
+  - kind: paper
+    title: "Augmenting Self-attention with Persistent Memory"
+    authors: "Sainbayar Sukhbaatar, Edouard Grave, Guillaume Lample and others"
+    year: "2019"
+    venue: "arXiv:1907.01470"
+    lang: en
+    url: "https://arxiv.org/abs/1907.01470"
+    note: "Its section 4.1 writes the perceptron as attention over fixed vectors, and the rest of the paper replaces it with exactly that at no loss. Its ablation without those vectors is the most direct evidence that they are needed."
+  - kind: paper
+    title: "GLU Variants Improve Transformer"
+    authors: "Noam Shazeer"
+    year: "2020"
+    venue: "arXiv:2002.05202"
+    lang: en
+    url: "https://arxiv.org/abs/2002.05202"
+    note: "Four pages and a table that gave almost every current model its perceptron, with the 2/3 adjustment that keeps the parameter count flat and a conclusion that makes no attempt to explain anything."
+  - kind: paper
+    title: "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity"
+    authors: "William Fedus, Barret Zoph and Noam Shazeer"
+    year: "2021"
+    venue: "JMLR"
+    lang: en
+    url: "https://arxiv.org/abs/2101.03961"
+    note: "Mixture of experts stripped to the minimum: many perceptrons per layer and only one per token. Figure 2 makes it plain which piece of the block gets multiplied."
+  - kind: paper
+    title: "Memory Layers at Scale"
+    authors: "Vincent-Pierre Berges, Barlas Oğuz, Daniel Haziza and others"
+    year: "2024"
+    venue: "arXiv:2412.09764"
+    lang: en
+    url: "https://arxiv.org/abs/2412.09764"
+    note: "The memory reading taken to its limit: replace the perceptron of a few layers with a table of millions of keys. The biggest gains are on factual questions."
+  - kind: paper
+    title: "One Wide Feedforward is All You Need"
+    authors: "Telmo Pessoa Pires, António V. Lopes, Yannick Assogba and Hendra Setiawan"
+    year: "2023"
+    venue: "WMT 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2309.01826"
+    note: "What happens in translation if the perceptrons are shared across layers or dropped from the decoder: little is lost, and widening the one that remains is a gain. A measure of how much they repeat each other."
+  - kind: paper
+    title: "MetaFormer Is Actually What You Need for Vision"
+    authors: "Weihao Yu, Mi Luo, Pan Zhou and others"
+    year: "2022"
+    venue: "CVPR 2022"
+    lang: en
+    url: "https://arxiv.org/abs/2111.11418"
+    note: "The experiment in reverse: remove the attention, put an average over neighbours in its place and keep the perceptron. In vision it works, which says something about which half of the block is replaceable."
+areas: ["ia", "matematicas"]
+cover: "/blog/por-que-un-perceptron-en-el-transformer/dos-mitades.en.svg"
+tags: ["deep-learning", "llm", "nlp"]
+aiImages: true
+---
+
+{/*
+  BLOG-26: Why we need a perceptron in the Transformer when we already have attention.
+  English translation of content/blog/es/por-que-un-perceptron-en-el-transformer.mdx.
+
+  The thesis, the notation, the sources and every number are those of the Spanish post; its
+  header comment lists where each one comes from (checked on arXiv on 2026-11-14). Figures:
+  the .en.svg variants, from scripts/figures/por-que-un-perceptron-en-el-transformer, whose
+  aria-label is the alt of each <img> here, word for word.
+*/}
+
+In the paper that introduced the Transformer, attention takes up most of the section on the
+architecture, a figure of its own and another whole section justifying its cost. The perceptron that
+follows it in every block gets one paragraph: five sentences and an equation. That proportion has
+been inherited by almost everything written since, courses included, and it is the opposite of what
+the parameters say. In [GPT-3](https://arxiv.org/abs/2005.14165) two out of every three parameters
+in each block belong to that perceptron; in [Mixtral](https://arxiv.org/abs/2401.04088), a 2024
+model that has eight copies of it per layer, $97$%.
+
+This article asks what it is there for, and the question is not rhetorical. Attention already
+combines the positions of the text with weights that depend on the content; a box that works on
+each position separately, with the same weights for all of them, looks like the least Transformer
+part of the Transformer. The answer has four parts: what attention cannot compute, what the
+perceptron stores that attention has nowhere to keep, why it has this shape and not another, and
+what has been tried in its place. First, though, a red herring needs clearing away. The paper with
+the most famous title on the subject, [*Attention is not all you need*](https://arxiv.org/abs/2103.03404),
+proves something true and important, but the perceptron is not the hero of its proof.
+
+## The block, in the usual notation
+
+A text of $T$ tokens enters each block as a matrix
+$\mathbf{X} \in \mathbb{R}^{T \times d_{\text{model}}}$, with one row per position. The block has
+two sublayers, and each is wrapped in a sum and a normalisation,
+$\text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right)$. Whether the normalisation
+comes before or after the sublayer (current models normalise what goes in) changes nothing in what
+follows. The first sublayer is multi-head attention,
+
+$$
+\text{MultiHead}(\mathbf{X}) = \text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O,
+\qquad
+\text{head}_i = \text{softmax}\left(\frac{\mathbf{X}\mathbf{W}^Q_i\left(\mathbf{X}\mathbf{W}^K_i\right)^{\top}}{\sqrt{d_k}}\right)\mathbf{X}\mathbf{W}^V_i,
+$$
+
+and the second is what the original paper calls the FFN (*feed-forward network*, a network with no
+recurrence) and what I will call the **position-wise perceptron**: a two-layer perceptron with a
+ReLU (*rectified linear unit*, $\max(0, \cdot)$ applied coordinate by coordinate) in between,
+
+$$
+\text{FFN}(\mathbf{X}) = \text{ReLU}\left(\mathbf{X}\mathbf{W}_1 + \mathbf{1}_T\mathbf{b}_1^{\top}\right)\mathbf{W}_2 + \mathbf{1}_T\mathbf{b}_2^{\top},
+$$
+
+with $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$,
+$\mathbf{W}_2 \in \mathbb{R}^{d_{\text{ff}} \times d_{\text{model}}}$ and $\mathbf{1}_T$ a column
+of $T$ ones, which repeats each bias once per row. In the
+[original paper](https://arxiv.org/abs/1706.03762), $d_{\text{model}} = 512$ and
+$d_{\text{ff}} = 2{,}048$: the hidden layer is four times as wide as the model.
+
+Two properties follow from the formula, and they define the piece. The first is that
+$\mathbf{W}_1$ and $\mathbf{W}_2$ are the same for every row, so row $t$ of the output depends only
+on row $t$ of the input. The paper says so in two sentences: it is applied to each position
+"separately and identically", and it is equivalent to two convolutions with a kernel of size $1$.
+The second is that each block has its own matrices. Six blocks, six different perceptrons.
+
+So the block splits the work into two halves that don't overlap. Attention is the only piece that
+moves information from one row to another; the perceptron transforms each row without being able
+to look at the others.
+
+<figure>
+  <img
+    src="/blog/por-que-un-perceptron-en-el-transformer/dos-mitades.en.svg"
+    alt="Two panels, each with the same five rows of the input matrix, one per position of the text, stacked from top to bottom. On the left, attention: arrows leaving all five rows converge on row 3, which receives a weighted average of all of them; it is the only part of the block that moves information from one position to another. On the right, the position-wise perceptron: each row, on its own, widens from d_model to d_ff coordinates, goes through the ReLU and comes back to d_model, with no arrows between rows and the same two matrices, W1 and W2, for all of them."
+    width="760"
+    height="280"
+  />
+  <figcaption>
+    The two sublayers of a block. Attention mixes rows; the perceptron mixes the coordinates of
+    each row. Neither does the other's job.
+  </figcaption>
+</figure>
+
+## The red herring in the famous title
+
+*Attention is not all you need*, by Dong, Cordonnier and Loukas (2021), studies what happens when
+you stack attention layers and nothing else: no sum around them, no perceptron and no
+normalisation. Its result is easy to grasp by looking at what a head does to a row. The weights
+$\alpha_{ts}$ that come out of the *softmax* are positive and add up to $1$ in each row, so row $t$
+of the output is a weighted average of the rows of $\mathbf{X}\mathbf{W}^V$. Stacking layers means
+taking averages of averages, and averages of averages tend to look alike.
+
+To measure how much, call the **residual** of $\mathbf{X}$ whatever it has beyond having all its
+rows equal: $\operatorname{res}(\mathbf{X}) = \mathbf{X} - \mathbf{1}_T\mathbf{x}^{\top}$, with
+$\mathbf{x}$ the vector that makes that difference as small as possible. A matrix whose rows are
+all equal has rank $1$, and a small residual means every position is saying almost the same thing.
+The central theorem bounds the residual after $L$ layers of pure attention, and gathering its
+constants (they depend on the norms of the weight matrices, the number of heads and $d_k$) into a
+single $c$, it reads
+
+$$
+\left\lVert \operatorname{res}\left(\mathbf{X}^{(L)}\right) \right\rVert \le c^{\frac{3^{L}-1}{2}}\, \left\lVert \operatorname{res}(\mathbf{X}) \right\rVert^{3^{L}}.
+$$
+
+The exponent is $3^{L}$: in each layer the residual is, at worst, cubed. With $c = 1$ and an
+initial residual of $0.5$, the bound is $0.125$ after one layer, $0.002$ after two and
+$7 \cdot 10^{-9}$ after three. That is why the authors call the convergence *doubly* exponential.
+The cube has an intuitive reading: similar rows produce similar scores, similar scores give almost
+uniform weights, and almost uniform weights average even more. The likeness feeds on itself.
+
+What matters for this article is the next section, where the paper puts back the pieces it had
+removed. Its three subheadings sum it up: the residual connection is crucial, the perceptron helps
+and normalisation does nothing.
+
+- **The residual connection** (*skip connection*, the sum $\mathbf{X} + \text{Sublayer}(\mathbf{X})$)
+  breaks the bound completely. With it, among the paths from the input to the output there is
+  always one that goes through no attention at all, and the authors show there are infinitely many
+  choices of weights for which the residual never shrinks, however many layers are stacked.
+- **The perceptron** enters the bound as one more factor in the base: its Lipschitz constant, the
+  most the function can stretch a distance. The more it stretches, the slower everything
+  converges, but the convergence is still doubly exponential. The authors describe it as a tug of
+  war and put a price on it: stretching a lot makes the model more sensitive to small perturbations
+  of the input. In their experiments on BERT, ALBERT and XLNet with the residual connections
+  removed, the perceptron does not seem to slow the collapse, although they themselves warn that
+  these models were not retrained without them.
+- **Normalisation** plays no part: centring and scaling the rows can be written as multiplying the
+  matrix and adding the same vector to every row, and multiplying cannot raise the rank, nor does
+  that vector change the residual.
+
+The title talks about attention, and the conclusion about the sum. The perceptron is a supporting
+actor in the proof, and rank collapse is not why it is there: the residual connection prevents it
+on its own. There is more evidence that, with the sum and without a perceptron, a Transformer can
+already do things.
+[*A Mathematical Framework for Transformer Circuits*](https://transformer-circuits.pub/2021/framework/index.html),
+from Anthropic (2021), deliberately studies attention-only models, and with two layers **induction
+heads** appear: pairs of heads that find an earlier occurrence of the current token in the context
+and copy the one that came after it, a general way of learning from the text itself. The authors
+leave the perceptron out because, they write, they have had much less success understanding it. It
+is an honest way of saying it is the hard part.
+
+So the question still stands. If the sum prevents the collapse and attention alone can already copy
+from the context, what is missing?
+
+## What attention cannot compute
+
+One specific operation is missing, and you can see it by opening up the $\text{Concat}$. Call
+$\alpha^{(i)}_{ts}$ the weight head $i$ gives to position $s$ when computing row $t$, and
+$\mathbf{W}^O_i$ the $d_v$ rows of $\mathbf{W}^O$ that multiply what that head returns. Row $t$ of
+$\text{MultiHead}(\mathbf{X})$ is
+
+$$
+\sum_{i=1}^{h}\sum_{s=1}^{T}\alpha^{(i)}_{ts}\,\mathbf{x}_s\mathbf{W}^V_i\mathbf{W}^O_i,
+$$
+
+where $\mathbf{x}_s$ is row $s$ of $\mathbf{X}$. All of the *softmax* lives inside the $\alpha$, and
+what the $\alpha$ decide is *where* to read from. What is done with what has been read is another
+matter: a weighted average of rows, each multiplied by two matrices. Once the weights are decided,
+row $t$ is a linear function of the rows of $\mathbf{X}$. The residual sum is linear too.
+Normalisation isn't, but its parameters, $\boldsymbol{\gamma}$ and $\boldsymbol{\beta}$, work
+coordinate by coordinate: none of them looks at two coordinates at once.
+
+A small example shows why that is a problem. Take four phrases, "it's good", "it's bad", "it's not
+good" and "it's not bad", and assume attention has done its job well: it has brought to the row of
+"good" or "bad" the news of whether there is a "not" in front. That row now holds two coordinates
+that matter, $n = -1$ if there is a negation and $n = +1$ if not, and $p = +1$ for "good" and
+$p = -1$ for "bad". The sentiment of the phrase is their product, $n \cdot p$: "not" has no sign of
+its own, it flips the sign of the word after it.
+
+No affine function of $(n, p)$ gives that product at all four corners. If $a n + b p + c$ were
+equal to $n p$, subtracting the two phrases without a negation would give $2b = 2$, and subtracting
+the two with one, $2b = -2$. This is XOR (*exclusive or*), the example used to teach that a single
+neuron is not enough, and it sits entirely inside one row. Composing linear functions gives another
+linear function, so stacking more attention does not fix it: the two pieces of data are together
+and attention has no piece built to combine them.
+
+The perceptron does. With two hidden units it solves it exactly, because for
+$n, p \in \{-1, +1\}$
+
+$$
+n\,p = 1 - \lvert n - p \rvert = 1 - \text{ReLU}(n - p) - \text{ReLU}(p - n).
+$$
+
+In terms of the block's formula, that is two columns of $\mathbf{W}_1$ reading $n - p$ and $p - n$,
+two rows of $\mathbf{W}_2$ subtracting what comes out of the ReLU, and a bias $\mathbf{b}_2$ that
+supplies the $1$. The ReLU lets the output depend on *whether* a combination of coordinates is
+positive, which is exactly what no linear function does. This site's deep learning course devotes a
+section of [the lesson on the Transformer block](/en/cursos/dl-nlp/bloque-transformer) to this,
+with the XOR square from [the lesson on hidden layers](/en/cursos/dl-nlp/xor-y-capas-ocultas).
+
+There is a concession to make. I have reasoned with the weights already decided, and they don't
+come decided: the $\alpha$ come from $\mathbf{X}$, so attention as a whole is non-linear in its
+input, and a trained network can make use of that. But that non-linearity is there to choose where
+to read from, and using it to combine the coordinates of a single row means asking one piece to do
+another's job. Theory divides the roles the same way. The proof that Transformers are
+[universal approximators](https://arxiv.org/abs/1912.10077) of sequence-to-sequence functions (Yun
+and others, 2020) uses attention for one thing only, letting each position know what context it is
+in, and leaves everything else to the perceptron: discretising the input at the start and, at the
+end, turning each combination of row and context into the right output value. The sections of the
+proof are titled accordingly: quantisation by feed-forward layers, contextual mapping by
+self-attention, function value mapping by feed-forward layers.
+
+Attention gathers; the perceptron computes.
+
+## Where the parameters and the operations are
+
+That it is the piece doing the computing shows in the budget. Per block, attention has four
+$d_{\text{model}} \times d_{\text{model}}$ matrices (the query, key and value matrices of all the
+heads together, plus $\mathbf{W}^O$) and the perceptron has two of size
+$d_{\text{model}} \times d_{\text{ff}}$:
+
+$$
+\underbrace{2\, d_{\text{model}}\, d_{\text{ff}}}_{\text{perceptron}} = 8\, d_{\text{model}}^{2}
+\quad\text{versus}\quad
+\underbrace{4\, d_{\text{model}}^{2}}_{\text{attention}},
+\qquad\text{with } d_{\text{ff}} = 4\, d_{\text{model}}.
+$$
+
+Two thirds of the block, not counting biases or normalisations, which are vectors. GPT-3 keeps
+$d_{\text{ff}} = 4\, d_{\text{model}}$ at every size, and in the largest ($96$ blocks with
+$d_{\text{model}} = 12{,}288$) that is $1{,}208$ million perceptron parameters per block against
+$604$ million for attention. Current models change the matrices but not the proportion: LLaMA uses
+three matrices instead of two and shrinks $d_{\text{ff}}$ so they add up to the same (the
+alternatives section comes back to this), and its later versions share keys and values across
+groups of heads ([GQA](https://arxiv.org/abs/2305.13245), *grouped-query attention*), which slims
+the attention down and fattens the perceptron's share.
+
+And then there is Mixtral, which has eight perceptrons per block. With $d_{\text{model}} = 4{,}096$,
+$d_{\text{ff}} = 14{,}336$, three matrices per perceptron and eight key and value heads of $128$
+coordinates each, the sums for one block are
+
+$$
+\underbrace{8 \cdot 3 \cdot 4{,}096 \cdot 14{,}336}_{\text{perceptrons}} = 1{,}409 \text{ M}
+\quad\text{versus}\quad
+\underbrace{2 \cdot 4{,}096^{2} + 2 \cdot 4{,}096 \cdot 1{,}024}_{\text{attention}} = 42 \text{ M}.
+$$
+
+That is $97$% of the block. Multiplied by the $32$ blocks, and with the two *embedding* matrices
+($32{,}000$ words by $4{,}096$ coordinates, at the input and at the output), it comes to about
+$46{,}700$ million parameters, the $47$ billion Mistral AI publishes. Each token uses only two of
+the eight perceptrons, and even so the perceptron is $89$% of the parameters each token uses in
+each block.
+
+The operations tell a similar story, with a twist that depends on the length of the text. For the
+token at position $T$, counting each multiply followed by an add as two operations, a layer with
+$d_{\text{ff}} = 4\, d_{\text{model}}$ does
+
+$$
+\underbrace{8\, d_{\text{model}}^{2}}_{\text{projections } Q, K, V, O}
++ \underbrace{4\, T\, d_{\text{model}}}_{\text{scores and weighted sum}}
++ \underbrace{16\, d_{\text{model}}^{2}}_{\text{perceptron}}.
+$$
+
+The middle term is the only one that grows with $T$: comparing the query with $T$ keys and adding
+up $T$ values. Dividing, the perceptron's share is
+$4\, d_{\text{model}} / (6\, d_{\text{model}} + T)$: two thirds for a short text, and exactly half
+when $T = 2\, d_{\text{model}}$.
+
+<figure>
+  <img
+    src="/blog/por-que-un-perceptron-en-el-transformer/reparto-de-flops.en.svg"
+    alt="Line chart. On the horizontal axis, the position of the token in the text, T, on a logarithmic scale from 256 to 131,072. On the vertical axis, the fraction of one layer's operations done by the position-wise perceptron, from 0 to 100%. Three curves, one per model width: d_model equal to 768, to 4,096 and to 12,288. All three start near two thirds, 67%, and fall as T grows; each crosses 50% exactly at T equal to twice d_model: at 1,536, at 8,192 and at 24,576. With d_model equal to 768 and T equal to 131,072 the perceptron is down to 2%; with 12,288, to 24%."
+    width="720"
+    height="330"
+  />
+  <figcaption>
+    The share of a layer's operations done by the perceptron, for the token at position $T$,
+    according to the sum above. The quadratic cost of attention, the thing most often said about
+    it, only overtakes the perceptron beyond twice the width of the model.
+  </figcaption>
+</figure>
+
+For GPT-3 that crossover is at $24{,}576$ tokens, twelve times the $2{,}048$-token context it was
+trained with. Throughout its training, the perceptron's share in each layer never fell below
+$64$%. The figure needs reading carefully: these are operations, not time. A model generating text
+is usually limited by how long it takes to read the weights and the key-value cache from memory,
+not by how long it takes to multiply, and that budget is a different one.
+
+What matters about the budget is what it leads to. Whenever people have wanted to give a model more
+capacity without paying for it on every token, what they have multiplied is the perceptron, and
+that story is in the second-to-last section.
+
+## A memory with its keys written into the weights
+
+To see what those parameters store, it helps to rewrite the perceptron column by column. Call
+$\mathbf{k}_j$ column $j$ of $\mathbf{W}_1$ and $\mathbf{v}_j$ row $j$ of $\mathbf{W}_2$. For a row
+$\mathbf{x}$,
+
+$$
+\text{FFN}(\mathbf{x}) = \sum_{j=1}^{d_{\text{ff}}} \text{ReLU}\left(\mathbf{x}\,\mathbf{k}_j + b_{1,j}\right)\mathbf{v}_j + \mathbf{b}_2^{\top}.
+$$
+
+Written like this, it has the same shape as an attention head: compare the input with some keys,
+turn the comparisons into weights and add up some values with those weights. There are three
+differences, and all three matter. In attention the keys and values come from the text, and in the
+perceptron they are stored in the parameters: they are the same for any text. Attention has $T$
+keys, as many as there are positions, and the perceptron has $d_{\text{ff}}$. And the *softmax*
+shares one unit of weight among all the keys, while the ReLU normalises nothing and leaves many of
+them at exactly zero.
+
+<figure>
+  <img
+    src="/blog/por-que-un-perceptron-en-el-transformer/memoria-clave-valor.en.svg"
+    alt="Two rows with the same structure from left to right: an input, some keys it is compared with, some weights and a sum of values. At the top, one attention head: the query of row t is compared with T keys taken from the text itself, one per position; the softmax turns the T scores into positive weights that add up to one, and the output is the sum of the T values, also taken from the text, with those weights. At the bottom, the position-wise perceptron: row t is compared with d_ff keys stored in the parameters, the columns of W1, the same for any text; the ReLU leaves each coefficient at zero or at a positive number, unnormalised, and the output is the sum of d_ff values stored in the rows of W2, with those coefficients. Many coefficients are zero, and their values do not enter the sum."
+    width="760"
+    height="262"
+  />
+  <figcaption>
+    The same sum of keys, weights and values. Attention looks up what is in the text; the
+    perceptron looks up what it learnt during training.
+  </figcaption>
+</figure>
+
+The equivalence has been taken literally. In
+[*Augmenting Self-attention with Persistent Memory*](https://arxiv.org/abs/1907.01470)
+(Sukhbaatar and others, 2019), swapping the ReLU for a *softmax* and removing the biases turns the
+perceptron into attention over $d_{\text{ff}}$ fixed vectors. The authors take the next step: they
+remove the perceptron and add those vectors, which they call **persistent memory**, to the keys and
+values of every head, alongside the ones from the text. With as many vectors as the ReLU had units,
+the parameter count is the same. On enwik8, a benchmark that measures in bits per character how
+well a model compresses the first hundred million bytes of the English Wikipedia, their
+$114$-million-parameter model matches, at $0.98$, the best model of the time, which had $209$
+million. And the most telling ablation is in the same table: with zero persistent vectors, that is,
+with attention and nothing acting as a perceptron, the model performs poorly. The piece can be
+disguised as attention; what cannot be done is to remove what it stores.
+
+What it stores has been examined in several ways. [*Transformer Feed-Forward Layers Are Key-Value
+Memories*](https://arxiv.org/abs/2012.14913) (Geva and others, 2021) takes a $16$-layer language
+model trained on WikiText-103, a corpus of English Wikipedia articles, with
+$d_{\text{model}} = 1{,}024$ and $d_{\text{ff}} = 4{,}096$, and for a sample of keys finds the
+pieces of text that switch them on most strongly and asks people to describe what they have in
+common. Every key has at least one recognisable pattern, $3.6$ on average. In layers $1$ to $9$
+shallow patterns dominate, such as ending in a particular word; in layers $10$ to $16$, semantic
+ones, such as being about a topic. For the values, they project each $\mathbf{v}_j$ onto the
+vocabulary and look at which word it pushes: in the lower layers it almost never matches the word
+that follows the text switching on its key, and from layer $11$ on it matches in up to $3.5$% of
+cases, against $0.0004$% by chance. No memory works alone: a typical example switches on between
+$10$ and $50$% of the $4{,}096$, and what the whole layer predicts differs from what any one of them
+predicts in at least two out of three examples.
+
+The [follow-up](https://arxiv.org/abs/2203.14680) (Geva and others, 2022) reads each term
+$\text{ReLU}(\cdot)\,\mathbf{v}_j$ as a small update that raises the probability of a group of
+words, often a recognisable concept. And it puts that to use: switching on ten value vectors of
+GPT-2 by hand, $0.01$% of the total, lowers the share of toxic continuations from $58.5$% to
+$30.8$%, at the cost of raising the perplexity (the exponential of the mean loss per token; lower is
+better) from $21.7$ to $25.3$.
+
+Two other papers go looking for specific facts. [*Knowledge Neurons*](https://arxiv.org/abs/2104.08696)
+(Dai and others, 2022) uses a gradient-based attribution method to locate, in BERT, the hidden
+units of the perceptron that most influence whether the model completes a fact correctly, and most
+of them are in the top layers. Switching them off lowers the probability of the correct answer by
+$29$% on average, and doubling their activation raises it by $31$%.
+[ROME](https://arxiv.org/abs/2202.05262) (*Rank-One Model Editing*, Meng and others, 2022) goes
+further, in GPT-2 XL and GPT-J. First it corrupts the input of sentences such as "the Eiffel Tower
+is in" and restores the internal states one at a time to see which ones bring back the right
+answer: the decisive ones are the perceptrons of the middle layers, at the last token of the
+subject, with an effect four times that of attention at the same token. Then it edits one of those
+perceptrons, treating its second matrix as a linear associative memory, with a rank-one update: a
+single outer product, and the model comes to believe something else about that subject,
+consistently, even when asked in other words.
+
+All of this comes with a caveat that rules out reading it as a table of facts with one row per
+neuron. Networks represent more features than they have units, by overlapping them, which is known
+as [superposition](https://arxiv.org/abs/2209.10652), and that is why a single unit fires for
+things that have nothing to do with each other. That each of Geva's keys responds to several
+patterns is the same observation seen from the inside. The memory is real, but it is spread out.
+
+## Why it has this shape
+
+With both readings in hand, the piece that computes and the memory, the design decisions can be
+reviewed one by one. Some have a reason behind them; others, only habit.
+
+**One hidden layer.** It is the minimum that breaks linearity, and in theory one is enough: a
+perceptron with one wide enough hidden layer approximates any continuous function on a bounded
+domain. The XOR above needed one, not two. None of the models cited in this article puts more than
+one hidden layer in the perceptron; the improvements that stuck came from changing its width, its
+activation or how many there are, not its depth.
+
+**Wider than the model.** In the memory reading, $d_{\text{ff}}$ is the number of slots; in the
+computing reading, the number of new features that can be built from each row, and in more
+dimensions it is easier for whatever needs separating to end up separable by a plane. Both readings
+ask for widening. What neither asks for is a factor of four: $2{,}048 / 512$ is the number in the
+original paper, which does not justify it, and GPT-3 kept it at every size. The
+[scaling laws](https://arxiv.org/abs/2001.08361) study by Kaplan and others (2020) measured how much
+it matters, and the answer is not much: with the number of parameters fixed, the loss depends only
+very weakly on $d_{\text{ff}}$, on the number of layers and on the number of heads, and varies by a
+few per cent across a wide range of shapes. A model with $6$ layers and
+$d_{\text{model}} = 4{,}288$ comes within $3$% of one with $48$ layers and $1{,}600$. The four is a
+convention that works, not an optimum.
+
+**Back to $d_{\text{model}}$.** This one is not a choice. The sum
+$\mathbf{X} + \text{FFN}(\mathbf{X})$ is element by element, so what comes out must have the width
+of what went in. The perceptron goes up to $d_{\text{ff}}$ to work and comes back down to hand the
+result over.
+
+**Position-wise.** Using the same matrices for every row does two things. It makes the number of
+parameters independent of $T$, so the same model reads a sentence or a book. And it keeps the
+perceptron from competing with attention: if it could look at the other rows it would also have to
+learn to mix them, and the division of labour from the first section would disappear. The next
+section shows that this independence also has a very large practical consequence, because it is
+what allows each token to be routed on its own.
+
+## What has been tried in its place
+
+### Another non-linearity, and a gate
+
+The first change was the activation. GPT and BERT replaced the ReLU with the
+[GELU](https://arxiv.org/abs/1606.08415) (*Gaussian error linear unit*, 2016), which multiplies the
+input by the probability that a standard normal falls below it, $x\,\Phi(x)$: a smoothed ReLU,
+differentiable at zero and with a small negative dip.
+
+The change that stuck came in 2020. In [*GLU Variants Improve
+Transformer*](https://arxiv.org/abs/2002.05202), Noam Shazeer (one of the authors of the
+Transformer) tries perceptrons with a **gate**: two projections of the input instead of one, one of
+them passed through an activation, multiplied element by element before the second layer,
+
+$$
+\text{FFN}_{\text{SwiGLU}}(\mathbf{X}) = \left(\text{Swish}\left(\mathbf{X}\mathbf{W}_1\right) \odot \mathbf{X}\mathbf{V}\right)\mathbf{W}_2,
+$$
+
+with $\text{Swish}(z) = z\,\sigma(z)$, $\sigma$ the sigmoid and $\odot$ the element-wise product.
+The variants change the gate's activation: none (*bilinear*), a sigmoid (GLU, for *gated linear
+unit*), a ReLU (ReGLU), a GELU (GEGLU) or a Swish (SwiGLU). There are three matrices instead of
+two, so to avoid adding parameters Shazeer shrinks $d_{\text{ff}}$ by a factor of $2/3$, from
+$3{,}072$ to $2{,}048$ in his model. These are the mean losses (the logarithm of the perplexity) he
+measures on T5-base at the end of pre-training:
+
+| perceptron | ReLU | GELU | Swish | GLU | bilinear | ReGLU | SwiGLU | GEGLU |
+|---|---|---|---|---|---|---|---|---|
+| loss | $1.677$ | $1.679$ | $1.683$ | $1.663$ | $1.648$ | $1.645$ | $1.636$ | $1.633$ |
+
+Changing the activation without a gate moves nothing, and every gate improves things. The paper's
+conclusion is famous because it explains nothing: it attributes the variants' success "as all
+else, to divine benevolence".
+
+I will venture a reading the paper does not make, and it comes from the example of the four
+phrases. The sentiment was a product, $n \cdot p$. The ReLU computed it with two units and a trick;
+a bilinear gate computes it with one, because it multiplies two projections of the row and one can
+read $n$ while the other reads $p$. What the gate adds is a direct way for one coordinate to
+modulate another, which is exactly the operation attention lacks. That the bilinear variant, with
+no activation of any kind, beats the ReLU fits that reading. It does not prove it.
+
+Practice did not wait for the explanation. [PaLM](https://arxiv.org/abs/2204.02311) uses SwiGLU
+with $d_{\text{ff}} = 4\, d_{\text{model}}$, paying for the extra parameters, and
+[LLaMA](https://arxiv.org/abs/2302.13971) uses it with $\tfrac{2}{3} \cdot 4\, d_{\text{model}}$,
+Shazeer's adjustment. A good share of the open models that followed copy that line.
+
+### Many perceptrons, and one per token
+
+A **mixture of experts** (MoE) puts several perceptrons in each layer, the experts, plus a small
+network, the *router*, that decides which ones each token uses. The parameters grow with the number
+of experts, and the computation per token only with the ones used. Its history in language
+modelling is a list of where in the block it goes.
+
+- [Shazeer and others (2017)](https://arxiv.org/abs/1701.06538) place it between two layers of an
+  LSTM (*long short-term memory*) recurrent network, with up to $137$ billion parameters.
+- [GShard](https://arxiv.org/abs/2006.16668) (2020) replaces every other perceptron of a
+  Transformer with experts, two experts per token, and reaches $600$ billion.
+- [Switch Transformer](https://arxiv.org/abs/2101.03961) (2021) replaces the perceptron and keeps a
+  single expert per token, and in pre-training it is up to seven times faster than the dense model
+  with the same computation.
+- Mixtral (2024) replaces every perceptron with eight experts, two per token, and
+  [DeepSeekMoE](https://arxiv.org/abs/2401.06066) (2024) splits them into many small experts and
+  sets aside a few that every token uses; its 16-billion-parameter model matches LLaMA 2 7B with
+  $40$% of its computation.
+
+In all of them, what gets multiplied is the perceptron. There is a structural reason for this,
+beyond the parameters: since the perceptron works on each row separately, each token can go to a
+different expert without anything else changing. Attention does not lend itself to that split as
+easily, because its job is to mix rows.
+
+### A real memory
+
+If the perceptron is a memory, you can try building one on purpose.
+[*Large Memory Layers with Product Keys*](https://arxiv.org/abs/1907.05242) (Lample and others,
+2019) replaces the perceptron of some layers with a table of $512^2$, about $262{,}000$ key-value
+slots, from which each token reads only the ones most similar to it, and it organises the keys as
+the product of two small sets so that finding them is cheap. A $12$-layer model with memory beats a
+$24$-layer one without, and is twice as fast at inference.
+[*Memory Layers at Scale*](https://arxiv.org/abs/2412.09764) (Berges and others, 2024) takes the
+idea to up to $128$ billion memory parameters and a trillion training tokens. It beats dense models
+that spend more than twice the computation, and mixtures of experts matched on both computation and
+parameters, and the gains are largest where the memory reading says they should be: on factual
+questions. In their $1.3$-billion-parameter model, accuracy on Natural Questions, a benchmark of
+real questions put to Google's search engine, goes from $7.8$% to $20.8$%.
+
+### Removing it, sharing it or moving it
+
+Removing it with nothing in its place has come up twice already: the ablation without persistent
+memory performs poorly, and attention-only models are studied for being easier to understand, not
+for being better. The other two experiments say more.
+
+Sharing it: [*One Wide Feedforward is All You Need*](https://arxiv.org/abs/2309.01826) (Pires and
+others, 2023) tests what happens with fewer perceptrons in English-to-German translation. Using a
+single one for the six encoder layers and none in the decoder leaves the model at $60$% of the
+parameters, $22$% faster at translating, and costs it $0.3$ BLEU points (*bilingual evaluation
+understudy*, the metric that counts the fragments in common with a reference translation), from
+$35.6$ to $35.3$. If that shared perceptron is widened until the original parameter count is
+restored, it rises to $36.5$: better than the starting model. Perceptrons in different layers
+repeat each other a good deal, at least in translation; what does not work is going without any.
+
+Moving it: the [sandwich Transformer](https://arxiv.org/abs/1911.03864) (Press and others, 2020)
+tries reordering the sublayers without changing how many there are, and the best orderings put more
+attention at the bottom and more perceptron at the top. On WikiText-103 the perplexity drops from
+$18.63$ to $17.96$ at no cost in parameters or time, although in translation it makes no
+difference. PaLM takes another route and computes the two sublayers in parallel on the same
+normalised input,
+$\mathbf{X} + \text{FFN}(\text{LayerNorm}(\mathbf{X})) + \text{MultiHead}(\text{LayerNorm}(\mathbf{X}))$,
+which trains $15$% faster at large scale because the first multiplications of the two can be fused.
+It loses a little quality at $8$ billion parameters and none at $62$.
+
+### The experiment in reverse
+
+The most striking test does not touch the perceptron at all, but the other half.
+[MetaFormer](https://arxiv.org/abs/2111.11418) (Yu and others, 2022) takes a vision Transformer and
+replaces the attention with the dumbest thing it can think of: averaging each patch of the image
+with its neighbours (*pooling*), without a single parameter. It keeps the sum, the normalisation and
+the perceptron. The result, PoolFormer, reaches $82.1$% on ImageNet, the classic image
+classification benchmark, $0.3$ points more than DeiT-B, a reference vision Transformer, with $35$%
+fewer parameters. A few months earlier, [MLP-Mixer](https://arxiv.org/abs/2105.01601) had replaced
+the attention with another perceptron that mixes positions, and its authors concluded that neither
+convolutions nor attention are necessary.
+
+This needs careful reading: it is vision, not language. In an image the neighbours say almost
+everything about a patch, while in a text the word that matters may be two pages away, which is
+what an average over neighbours cannot fetch and attention can. But the experiment shows what has
+been kept in every variant in this article, in vision and in language: the way positions are mixed
+has changed a great deal, and the perceptron that transforms each position has never been missing.
+
+## What remains
+
+The Transformer has two halves because there are two jobs. One is deciding where to read from,
+which depends on the text and is what attention does. The other is doing something with what has
+been read: combining the coordinates of a single row in a way no weighted average can reach, as in
+the XOR of the four phrases, and bringing in what the model learnt that is not in the text. That is
+the perceptron, an attention whose keys and values are written into the weights. The residual
+connection, usually left in third place in explanations, is what stops the stack from collapsing.
+
+Almost everything about its shape is convention: the four, the ReLU, having one per block. The
+variants that survived changed everything except one thing. They have given it gates, multiplied it
+into experts, turned it into a table of millions of slots, shared it and moved it around, and in all
+of them there is still, in every layer, a non-linear computation that works on each position
+separately.
+
+So the next time a Transformer diagram draws the attention big and a little box labelled FFN on
+top, it is worth remembering the real budget. Attention gave the architecture its name. The
+perceptron holds two thirds of the parameters and most of the operations, and it is where the model
+keeps what it knows.
