@@ -40,6 +40,15 @@
 // (src/hooks/useReadAloud.ts): the browser's speech synthesis reads the reply to a dictated
 // message, a voice on the device is preferred, but a network voice (Chrome's «Google …») sends
 // the reply text to its provider; the header's speaker button turns it off.
+//
+// ATTRIBUTION-MEMORY-01: the «Procedencia de tu primera reserva» / "Where your first booking
+// came from" item must match src/lib/attribution.ts + recordFirstBooking (UTM tags, the
+// referring site's host, the landing path, kept in memory only, written once to the users
+// row, the app labelled mobile_app). The «Cookies y almacenamiento» / "Cookies and storage"
+// section is the inventory of what the site puts on the device: every cookie and
+// localStorage/sessionStorage key a visitor can get (the admin's own are left out). All of it
+// is exempt from consent (LSSI-CE art. 22.2); a new key that is not, or analytics that store
+// anything, needs a consent banner first, not just a line here.
 
 import { Link } from "@/i18n/navigation";
 
@@ -62,6 +71,7 @@ function PrivacidadContentEs() {
         <li><strong>Datos de pago</strong> — gestionados exclusivamente por Stripe. Nunca se almacenan datos de tarjeta.</li>
         <li><strong>Créditos y reservas</strong> — el saldo de clases compradas se guarda en una base de datos segura asociada a tu email.</li>
         <li><strong>Identificadores de dispositivo</strong> — los servicios integrados (Stripe, Zoom, Google) generan identificadores técnicos del dispositivo para prevenir el fraude en los pagos, gestionar las sesiones de vídeo y entregar actualizaciones de la aplicación. No se usan con fines publicitarios ni de seguimiento.</li>
+        <li><strong>Procedencia de tu primera reserva</strong> — si llegas al sitio desde un enlace con etiquetas de campaña (<code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>) o desde otra web, y reservas en esa misma visita, se guarda en tu cuenta, una sola vez, de dónde llegaste: esas etiquetas, el dominio de la web de origen (sin la dirección completa) y la primera página que abriste. También se anotan el tipo y la fecha de tu primera reserva, y las reservas hechas desde la aplicación móvil figuran como «aplicación móvil». Solo sirve para saber qué canales traen alumnos. Hasta que reservas, este dato no se guarda en ningún sitio, ni siquiera en tu navegador: se olvida al recargar o cerrar la pestaña. Se elimina con tu cuenta.</li>
       </ul>
 
       <h3>Cómo se usan</h3>
@@ -78,6 +88,10 @@ function PrivacidadContentEs() {
         <li><strong>Stripe</strong> — procesamiento de pagos. <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener noreferrer">Política de Stripe</a>.</li>
         <li><strong>Zoom</strong> — tecnología de aula virtual integrada en la plataforma para la realización de las sesiones. <a href="https://explore.zoom.us/es/privacy/" target="_blank" rel="noopener noreferrer">Política de Zoom</a>.</li>
         <li><strong>Supabase</strong> — base de datos donde se almacenan de forma segura las reservas, el saldo de créditos y los datos de cuenta.</li>
+        <li><strong>Vercel</strong> — alojamiento del sitio y estadísticas de visitas. Las estadísticas no usan cookies ni guardan nada en tu dispositivo: cuentan las visitas de forma agregada (página, web de procedencia, país, tipo de dispositivo y navegador) y el número de reservas por canal. <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Política de Vercel</a>.</li>
+        <li><strong>Sentry</strong> — registro de errores técnicos: cuando algo falla recibe un informe con la página, el navegador y el detalle del error, y datos de rendimiento de una parte de las visitas. No usa cookies. <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer">Política de Sentry</a>.</li>
+        <li><strong>Resend</strong> — envío de los emails de confirmación y recordatorio, que recibe tu dirección de email. <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Política de Resend</a>.</li>
+        <li><strong>jsDelivr</strong> — red de distribución desde la que se descarga el intérprete de Python de los cursos, solo cuando pulsas «Ejecutar» en una lección. Recibe tu dirección IP, como cualquier servidor web. <a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net" target="_blank" rel="noopener noreferrer">Política de jsDelivr</a>.</li>
       </ul>
 
       <h3>Asistente de IA</h3>
@@ -108,8 +122,15 @@ function PrivacidadContentEs() {
       <p>Para proteger las clases que ya has pagado, esa opción no está disponible mientras te queden créditos sin usar en un pack activo o clases reservadas que todavía puedes cancelar tú mismo. En esos casos la propia página te indica qué hacer: cancelar esas clases, o escribir a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> para gestionar el reembolso antes de cerrar la cuenta.</p>
       <p>Stripe conserva sus propios registros de las transacciones para cumplir con sus obligaciones legales y fiscales, aunque la copia local se elimine. Para cualquier otra solicitud sobre tus datos —acceso, rectificación o eliminación— escribe a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
 
-      <h3>Cookies</h3>
-      <p>Solo se usan cookies estrictamente necesarias para la autenticación (NextAuth). Sin cookies de seguimiento ni publicidad.</p>
+      <h3>Cookies y almacenamiento en tu dispositivo</h3>
+      <p>El sitio solo guarda en tu dispositivo lo necesario para darte el servicio que pides o para recordar tus preferencias. No se usan cookies de analítica, publicidad ni seguimiento, y por eso no se te pide consentimiento.</p>
+      <ul>
+        <li><strong>Sesión</strong> — las cookies de inicio de sesión (NextAuth) te mantienen identificado y protegen los formularios frente a peticiones falsificadas.</li>
+        <li><strong>Idioma</strong> — la cookie <code>NEXT_LOCALE</code> recuerda si prefieres el sitio en español o en inglés.</li>
+        <li><strong>Pagos</strong> — al abrir la reserva de una clase o la compra de un pack, Stripe instala sus cookies (<code>__stripe_mid</code>, <code>__stripe_sid</code>) para prevenir el fraude en los pagos.</li>
+        <li><strong>Almacenamiento local del navegador</strong> (no son cookies) — los últimos mensajes del asistente mientras la pestaña está abierta, el identificador de la conversación y si quieres que te lea las respuestas; un identificador anónimo y tu voto, solo si valoras una lección o un artículo; los filtros del blog y la búsqueda de los cursos; y un aviso de que el intérprete de Python ya está en la caché.</li>
+      </ul>
+      <p>Puedes borrar todo esto desde la configuración de tu navegador. Si borras las cookies de sesión tendrás que volver a iniciar sesión.</p>
 
       <h3>Cambios en esta política</h3>
       <p>Cualquier cambio relevante se comunicará por email a los usuarios con cuenta activa.</p>
@@ -268,6 +289,7 @@ function PrivacidadContentEn() {
         <li><strong>Payment data</strong> — managed exclusively by Stripe. Card details are never stored.</li>
         <li><strong>Credits and bookings</strong> — your class balance is stored in a secure database linked to your email.</li>
         <li><strong>Device identifiers</strong> — the integrated services (Stripe, Zoom, Google) generate technical device identifiers to prevent payment fraud, manage video sessions and deliver app updates. They are not used for advertising or tracking purposes.</li>
+        <li><strong>Where your first booking came from</strong> — if you reach the site through a link with campaign tags (<code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>) or from another website, and you book during that same visit, where you came from is saved to your account, once: those tags, the domain of the referring site (not the full address) and the first page you opened. The type and date of your first booking are recorded too, and bookings made from the mobile app are labelled &quot;mobile app&quot;. It is used only to learn which channels bring students. Until you book, this is not saved anywhere, not even in your browser: it is forgotten when you reload or close the tab. It is deleted along with your account.</li>
       </ul>
 
       <h3>How data is used</h3>
@@ -284,6 +306,10 @@ function PrivacidadContentEn() {
         <li><strong>Stripe</strong> — payment processing. <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe Privacy Policy</a>.</li>
         <li><strong>Zoom</strong> — virtual classroom technology integrated into the platform for conducting sessions. <a href="https://explore.zoom.us/en/privacy/" target="_blank" rel="noopener noreferrer">Zoom Privacy Policy</a>.</li>
         <li><strong>Supabase</strong> — database where bookings, credit balances and account data are stored securely.</li>
+        <li><strong>Vercel</strong> — site hosting and visit statistics. The statistics use no cookies and store nothing on your device: they count visits in aggregate (page, referring site, country, device type and browser) and the number of bookings per channel. <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Vercel Privacy Policy</a>.</li>
+        <li><strong>Sentry</strong> — technical error logging: when something breaks it receives a report with the page, the browser and the error details, plus performance data from a share of visits. It uses no cookies. <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer">Sentry Privacy Policy</a>.</li>
+        <li><strong>Resend</strong> — delivery of the confirmation and reminder emails, which receives your email address. <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Resend Privacy Policy</a>.</li>
+        <li><strong>jsDelivr</strong> — content delivery network that serves the courses&apos; Python interpreter, only when you press &quot;Run&quot; in a lesson. Like any web server, it receives your IP address. <a href="https://www.jsdelivr.com/terms/privacy-policy-jsdelivr-net" target="_blank" rel="noopener noreferrer">jsDelivr Privacy Policy</a>.</li>
       </ul>
 
       <h3>AI assistant</h3>
@@ -314,8 +340,15 @@ function PrivacidadContentEn() {
       <p>To protect classes you have already paid for, that option is not available while you hold unused credits in an active pack or booked classes you can still cancel yourself. In those cases the page tells you what to do: cancel those classes, or write to <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> to arrange a refund before closing the account.</p>
       <p>Stripe keeps its own records of transactions to meet its legal and tax obligations, even though the local copy is deleted. For any other request about your data — access, rectification or erasure — write to <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
 
-      <h3>Cookies</h3>
-      <p>Only strictly necessary cookies are used for authentication (NextAuth). No tracking or advertising cookies.</p>
+      <h3>Cookies and storage on your device</h3>
+      <p>The site only stores on your device what it needs to provide the service you ask for or to remember your preferences. No analytics, advertising or tracking cookies are used, which is why you are not asked for consent.</p>
+      <ul>
+        <li><strong>Session</strong> — the sign-in cookies (NextAuth) keep you signed in and protect forms against forged requests.</li>
+        <li><strong>Language</strong> — the <code>NEXT_LOCALE</code> cookie remembers whether you prefer the site in Spanish or English.</li>
+        <li><strong>Payments</strong> — when you open a class booking or a pack purchase, Stripe sets its cookies (<code>__stripe_mid</code>, <code>__stripe_sid</code>) to prevent payment fraud.</li>
+        <li><strong>Browser local storage</strong> (not cookies) — the assistant&apos;s latest messages while the tab is open, the conversation identifier and whether you want replies read aloud; an anonymous identifier and your vote, only if you rate a lesson or a post; the blog filters and the course search; and a note that the Python interpreter is already cached.</li>
+      </ul>
+      <p>You can clear all of this in your browser settings. If you clear the session cookies you will need to sign in again.</p>
 
       <h3>Changes to this policy</h3>
       <p>Any significant changes will be communicated by email to users with an active account.</p>
