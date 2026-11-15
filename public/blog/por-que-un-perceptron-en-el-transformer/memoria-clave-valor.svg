@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 262" width="760" height="262" role="img"
+ aria-label="Dos filas con la misma estructura de izquierda a derecha: una entrada, unas claves con las que se compara, unos pesos y una suma de valores. Arriba, una cabeza de atención: la consulta de la fila t se compara con T claves que salen del propio texto, una por posición; el softmax convierte las T puntuaciones en pesos positivos que suman uno, y la salida es la suma de los T valores, también sacados del texto, con esos pesos. Abajo, el perceptrón por posiciones: la fila t se compara con d_ff claves guardadas en los parámetros, las columnas de W1, iguales para cualquier texto; la ReLU deja cada coeficiente en cero o en un número positivo, sin normalizar, y la salida es la suma de d_ff valores guardados en las filas de W2, con esos coeficientes. Muchos coeficientes son cero, y sus valores no entran en la suma.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.z { stroke: #3b3b3e; stroke-dasharray: 2 2; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .ln { fill: none; stroke: #86948a; stroke-width: 1.2; }
+  .ln.m { stroke: #4edea3; stroke-width: 2; }
+  .ln.w { stroke: #e8a24c; stroke-width: 2; }
+  .ln.t { stroke: #bbcabf; stroke-width: 2; }
+  .ln.g { stroke: #2a2a2c; stroke-width: 1; }
+  .ln.d { stroke: #86948a; stroke-dasharray: 4 3; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="hd m" x="40.0" y="32.0">UNA CABEZA DE ATENCIÓN</text>
+<rect class="bx g" x="40.0" y="46.0" width="100.0" height="40.0" rx="4"/>
+<text class="lb" x="90.0" y="70.0">consulta de t</text>
+<path class="ar" d="M142.0,66.0 L168.0,66.0"/>
+<rect class="bx m" x="170.0" y="46.0" width="130.0" height="40.0" rx="4"/>
+<text class="lb m" x="235.0" y="63.0">T claves</text>
+<text class="sb" x="235.0" y="77.0">del texto</text>
+<path class="ar" d="M302.0,66.0 L328.0,66.0"/>
+<rect class="bx m" x="330.0" y="46.0" width="120.0" height="40.0" rx="4"/>
+<text class="lb m" x="390.0" y="63.0">softmax</text>
+<text class="sb" x="390.0" y="77.0">suman 1</text>
+<path class="ar" d="M452.0,66.0 L478.0,66.0"/>
+<rect class="bx m" x="480.0" y="46.0" width="130.0" height="40.0" rx="4"/>
+<text class="lb m" x="545.0" y="63.0">T valores</text>
+<text class="sb" x="545.0" y="77.0">del texto</text>
+<path class="ar" d="M612.0,66.0 L638.0,66.0"/>
+<rect class="bx g" x="640.0" y="46.0" width="80.0" height="40.0" rx="4"/>
+<text class="lb" x="680.0" y="70.0">salida</text>
+<rect class="m" x="340.0" y="104.0" width="7" height="4.0"/>
+<rect class="m" x="351.0" y="94.0" width="7" height="14.0"/>
+<rect class="m" x="362.0" y="102.0" width="7" height="6.0"/>
+<rect class="m" x="373.0" y="105.0" width="7" height="3.0"/>
+<rect class="m" x="384.0" y="99.0" width="7" height="9.0"/>
+<rect class="m" x="395.0" y="106.0" width="7" height="2.0"/>
+<rect class="m" x="406.0" y="103.0" width="7" height="5.0"/>
+<rect class="m" x="417.0" y="105.0" width="7" height="3.0"/>
+<rect class="m" x="428.0" y="107.0" width="7" height="1.0"/>
+<text class="sb" x="380.0" y="124.0" style="text-anchor:middle">lo que se lee cambia con cada texto</text>
+<text class="hd w" x="40.0" y="156.0">EL PERCEPTRÓN POR POSICIONES</text>
+<rect class="bx g" x="40.0" y="170.0" width="100.0" height="40.0" rx="4"/>
+<text class="lb" x="90.0" y="194.0">fila t</text>
+<path class="ar" d="M142.0,190.0 L168.0,190.0"/>
+<rect class="bx w" x="170.0" y="170.0" width="130.0" height="40.0" rx="4"/>
+<text class="lb w" x="235.0" y="187.0">d_ff claves</text>
+<text class="sb" x="235.0" y="201.0">columnas de W1</text>
+<path class="ar" d="M302.0,190.0 L328.0,190.0"/>
+<rect class="bx w" x="330.0" y="170.0" width="120.0" height="40.0" rx="4"/>
+<text class="lb w" x="390.0" y="187.0">ReLU</text>
+<text class="sb" x="390.0" y="201.0">≥ 0, muchos 0</text>
+<path class="ar" d="M452.0,190.0 L478.0,190.0"/>
+<rect class="bx w" x="480.0" y="170.0" width="130.0" height="40.0" rx="4"/>
+<text class="lb w" x="545.0" y="187.0">d_ff valores</text>
+<text class="sb" x="545.0" y="201.0">filas de W2</text>
+<path class="ar" d="M612.0,190.0 L638.0,190.0"/>
+<rect class="bx g" x="640.0" y="170.0" width="80.0" height="40.0" rx="4"/>
+<text class="lb" x="680.0" y="194.0">salida</text>
+<path class="ln" d="M340.0,232.0 L347.0,232.0"/>
+<rect class="w" x="351.0" y="220.0" width="7" height="12.0"/>
+<path class="ln" d="M362.0,232.0 L369.0,232.0"/>
+<path class="ln" d="M373.0,232.0 L380.0,232.0"/>
+<rect class="w" x="384.0" y="225.0" width="7" height="7.0"/>
+<path class="ln" d="M395.0,232.0 L402.0,232.0"/>
+<rect class="w" x="406.0" y="216.0" width="7" height="16.0"/>
+<path class="ln" d="M417.0,232.0 L424.0,232.0"/>
+<rect class="w" x="428.0" y="228.0" width="7" height="4.0"/>
+<text class="sb" x="380.0" y="248.0" style="text-anchor:middle">lo que se lee está escrito en los pesos</text>
+</svg>
