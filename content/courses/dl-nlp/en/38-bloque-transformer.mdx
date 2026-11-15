@@ -654,5 +654,5 @@ encoder can look at the whole sentence because it has it in front of it; a decod
 output token by token, and while writing the fourth it cannot look at the fifth, which doesn't exist
 yet. That is <Leccion slug="encoder-decoder-masking">the next lesson, on the encoder, the decoder and
 the masks</Leccion>, and the good news is that it doesn't touch a single line of what we have so far:
-crossing out the future is done by adding to the grid of scores a matrix of zeros and minus
+blanking out the future is done by adding to the grid of scores a matrix of zeros and minus
 infinities before the softmax.
