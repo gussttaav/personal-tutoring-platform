@@ -13,10 +13,10 @@
 
 import { track } from "@vercel/analytics";
 import type { SessionType } from "@/domain/types";
-import { readStoredAttribution } from "@/lib/attribution";
+import { readPageAttribution } from "@/lib/attribution";
 
 export function trackBooking(sessionType: SessionType): void {
-  const a = readStoredAttribution();
+  const a = readPageAttribution();
   try {
     track(sessionType === "free15min" ? "intro_call_booked" : "class_booked", {
       sessionType,

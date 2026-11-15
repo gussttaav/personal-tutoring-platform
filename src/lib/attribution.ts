@@ -3,27 +3,32 @@
  *
  * Answers "where did the student who booked this class come from?". On the first
  * page load of a visit, `AttributionCapture` (root layout) hands the URL and
- * `document.referrer` to `captureFirstTouch`, which stores the visit in localStorage
- * if it is ATTRIBUTED (UTM tags, or else an external referrer) and nothing unexpired
- * is stored yet. `api-client` then sends `readStoredAttribution()` with every booking
- * and paid checkout, and the server records it on the student's users row at their
- * FIRST booking only (IUserRepository.recordFirstBooking).
+ * `document.referrer` to `captureFirstTouch`, which keeps the visit in memory if it is
+ * ATTRIBUTED (UTM tags, or else an external referrer) and nothing is kept yet.
+ * `api-client` then sends `readPageAttribution()` with every booking and paid
+ * checkout, and the server records it on the student's users row at their FIRST
+ * booking only (IUserRepository.recordFirstBooking).
  *
- * First touch, deliberately: a visitor who arrives from a LinkedIn post and books a
- * week later from a Google search is credited to LinkedIn. Direct visits never
- * overwrite anything (they carry no information), and an entry expires after
- * ATTRIBUTION_TTL_DAYS so a stale source does not claim a booking months later.
+ * ATTRIBUTION-MEMORY-01: memory only, nothing is written to the visitor's device.
+ * Storing it (localStorage, 90 days, until 2026-11) was marketing measurement, which
+ * the cookie rules (LSSI-CE art. 22.2 / ePrivacy art. 5(3)) only allow with consent;
+ * keeping it in a module variable needs none. The price: it lives as long as the
+ * page's JavaScript does. A booking made in the same tab after in-app navigation is
+ * credited (the PaymentIntent metadata carries a paid class past the Stripe step);
+ * a reload, a new tab, a later visit or the full-page OAuth fallback starts with
+ * nothing. Direct visits never overwrite anything (they carry no information). Any
+ * entry a browser kept from before is deleted on the first load.
  *
  * The mobile app has no landing page and sends nothing; the routes label its
  * requests (cookieless bearer) with MOBILE_APP_ATTRIBUTION via `resolveRequestAttribution`.
  *
- * Pure apart from the two storage helpers, which no-op outside a browser.
+ * Pure apart from the in-memory first touch, which stays empty outside a browser.
  */
 
 import type { BookingAttribution } from "@/domain/types";
 
-export const ATTRIBUTION_STORAGE_KEY = "gai:attribution:v1";
-export const ATTRIBUTION_TTL_DAYS    = 90;
+/** Where the first touch used to be stored; only read to delete it (ATTRIBUTION-MEMORY-01). */
+export const LEGACY_ATTRIBUTION_STORAGE_KEY = "gai:attribution:v1";
 
 export const MOBILE_APP_ATTRIBUTION: BookingAttribution = { source: "mobile_app", medium: "app" };
 
@@ -34,11 +39,6 @@ const INTERNAL_REFERRER_HOSTS = [/(^|\.)accounts\.google\.com$/, /(^|\.)stripe\.
 const MAX_TAG  = 100; // utm_* — mirrors AttributionSchema / migration 0025
 const MAX_HOST = 200;
 const MAX_PATH = 200;
-
-interface StoredAttribution {
-  attribution: BookingAttribution;
-  capturedAt:  number; // ms since epoch
-}
 
 function bareHost(host: string): string {
   return host.toLowerCase().replace(/^www\./, "");
@@ -83,17 +83,6 @@ export function parseLandingAttribution(href: string, referrer: string): Booking
   return null;
 }
 
-/** Keeps the stored first touch unless it is missing or expired. Returns what is stored after. */
-export function selectFirstTouch(
-  stored:    StoredAttribution | null,
-  candidate: BookingAttribution | null,
-  nowMs:     number,
-): StoredAttribution | null {
-  const fresh = stored && nowMs - stored.capturedAt < ATTRIBUTION_TTL_DAYS * 86_400_000 ? stored : null;
-  if (fresh) return fresh;
-  return candidate ? { attribution: candidate, capturedAt: nowMs } : null;
-}
-
 /**
  * Server side: the attribution to persist for a request. A cookieless bearer request
  * is the mobile app, which never sends one of its own.
@@ -106,34 +95,27 @@ export function resolveRequestAttribution(
   return isMobileApp ? MOBILE_APP_ATTRIBUTION : undefined;
 }
 
-// ─── Browser storage ─────────────────────────────────────────────────────────
+// ─── In-memory first touch ───────────────────────────────────────────────────
 
-function readStored(): StoredAttribution | null {
-  try {
-    const raw = window.localStorage.getItem(ATTRIBUTION_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredAttribution;
-    return parsed && typeof parsed.capturedAt === "number" && parsed.attribution ? parsed : null;
-  } catch {
-    return null;
-  }
-}
+let firstTouch: BookingAttribution | null = null;
 
-/** Called once per full page load by AttributionCapture. */
-export function captureFirstTouch(href: string, referrer: string, nowMs = Date.now()): void {
+/** Called once per full page load by AttributionCapture. Keeps the first attributed touch. */
+export function captureFirstTouch(href: string, referrer: string): void {
   if (typeof window === "undefined") return;
-  const stored = readStored();
-  const next   = selectFirstTouch(stored, parseLandingAttribution(href, referrer), nowMs);
-  if (!next || next === stored) return;
   try {
-    window.localStorage.setItem(ATTRIBUTION_STORAGE_KEY, JSON.stringify(next));
-  } catch { /* storage blocked (private mode) — attribution is best-effort */ }
+    window.localStorage.removeItem(LEGACY_ATTRIBUTION_STORAGE_KEY);
+  } catch { /* storage blocked (private mode) — nothing was stored there either */ }
+  firstTouch ??= parseLandingAttribution(href, referrer);
 }
 
-/** The stored first touch, if any and unexpired. Safe to call anywhere. */
-export function readStoredAttribution(nowMs = Date.now()): BookingAttribution | undefined {
-  if (typeof window === "undefined") return undefined;
-  return selectFirstTouch(readStored(), null, nowMs)?.attribution;
+/** This page's first touch, if any. Safe to call anywhere. */
+export function readPageAttribution(): BookingAttribution | undefined {
+  return firstTouch ?? undefined;
+}
+
+/** Test-only: forget the first touch, as a new page load would. */
+export function __resetPageAttribution(): void {
+  firstTouch = null;
 }
 
 function compact(a: BookingAttribution): BookingAttribution {

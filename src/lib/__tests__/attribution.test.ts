@@ -2,22 +2,20 @@
  * @jest-environment jsdom
  */
 // BOOKING-ATTRIBUTION-01: first-touch capture, request labelling and the Stripe
-// metadata round trip.
+// metadata round trip. ATTRIBUTION-MEMORY-01: the first touch lives in memory only.
 import {
-  ATTRIBUTION_STORAGE_KEY,
-  ATTRIBUTION_TTL_DAYS,
+  LEGACY_ATTRIBUTION_STORAGE_KEY,
   MOBILE_APP_ATTRIBUTION,
+  __resetPageAttribution,
   attributionFromMetadata,
   attributionToMetadata,
   captureFirstTouch,
   parseLandingAttribution,
-  readStoredAttribution,
+  readPageAttribution,
   resolveRequestAttribution,
-  selectFirstTouch,
 } from "../attribution";
 
 const SITE = "https://www.gustavoai.dev";
-const DAY  = 86_400_000;
 
 describe("parseLandingAttribution", () => {
   it("reads the UTM tags, lowercased, plus the landing path", () => {
@@ -53,39 +51,41 @@ describe("parseLandingAttribution", () => {
   });
 });
 
-describe("selectFirstTouch", () => {
-  const stored = { attribution: { source: "linkedin" }, capturedAt: 1_000 };
-
-  it("keeps an unexpired first touch over a newer visit", () => {
-    expect(selectFirstTouch(stored, { source: "x" }, 1_000 + DAY)).toBe(stored);
+describe("captureFirstTouch / readPageAttribution", () => {
+  beforeEach(() => {
+    __resetPageAttribution();
+    window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
-  it("replaces an expired first touch", () => {
-    const now = 1_000 + ATTRIBUTION_TTL_DAYS * DAY;
-    expect(selectFirstTouch(stored, { source: "x" }, now))
-      .toEqual({ attribution: { source: "x" }, capturedAt: now });
+  it("keeps the first attributed visit over later ones", () => {
+    captureFirstTouch(`${SITE}/mentoria?utm_source=linkedin`, "");
+    captureFirstTouch(`${SITE}/?utm_source=x`, "https://google.com/");
+    expect(readPageAttribution()).toEqual({ source: "linkedin", landingPath: "/mentoria" });
   });
 
-  it("a direct visit never clears or creates anything", () => {
-    expect(selectFirstTouch(null, null, 5)).toBeNull();
-    expect(selectFirstTouch(stored, null, 5)).toBe(stored);
-  });
-});
-
-describe("captureFirstTouch / readStoredAttribution", () => {
-  beforeEach(() => window.localStorage.clear());
-
-  it("stores the first attributed visit and keeps it", () => {
-    captureFirstTouch(`${SITE}/mentoria?utm_source=linkedin`, "", 1_000);
-    captureFirstTouch(`${SITE}/?utm_source=x`, "https://google.com/", 2_000);
-    expect(readStoredAttribution(3_000)).toEqual({ source: "linkedin", landingPath: "/mentoria" });
+  it("a direct visit keeps nothing, and a later attributed one still counts", () => {
+    captureFirstTouch(`${SITE}/`, "");
+    expect(readPageAttribution()).toBeUndefined();
+    captureFirstTouch(`${SITE}/blog/rag`, "https://www.google.com/");
+    expect(readPageAttribution()).toEqual({ referrerHost: "google.com", landingPath: "/blog/rag" });
   });
 
-  it("reads nothing once expired, and survives garbage in storage", () => {
-    captureFirstTouch(`${SITE}/?utm_source=linkedin`, "", 0);
-    expect(readStoredAttribution(ATTRIBUTION_TTL_DAYS * DAY)).toBeUndefined();
-    window.localStorage.setItem(ATTRIBUTION_STORAGE_KEY, "{not json");
-    expect(readStoredAttribution()).toBeUndefined();
+  it("writes nothing to the device", () => {
+    captureFirstTouch(`${SITE}/mentoria?utm_source=linkedin`, "https://www.linkedin.com/");
+    expect(window.localStorage.length).toBe(0);
+    expect(window.sessionStorage.length).toBe(0);
+    expect(document.cookie).toBe("");
+  });
+
+  it("deletes the entry older versions stored, without reading it back", () => {
+    window.localStorage.setItem(
+      LEGACY_ATTRIBUTION_STORAGE_KEY,
+      JSON.stringify({ attribution: { source: "old" }, capturedAt: Date.now() }),
+    );
+    captureFirstTouch(`${SITE}/`, "");
+    expect(window.localStorage.getItem(LEGACY_ATTRIBUTION_STORAGE_KEY)).toBeNull();
+    expect(readPageAttribution()).toBeUndefined();
   });
 });
 
