@@ -22,7 +22,10 @@
  *
  * THE SECOND TOGGLE IS LESSON 7's (encoder, decoder y máscaras), and only lesson 7 shows
  * it, with the `mask` prop (`<Explorable id="self-attention-heatmap" mask />`): lesson 2
- * has not introduced masking, so there it would be a control with no meaning yet.
+ * has not introduced masking, so there it would be a control with no meaning yet. The
+ * `mask` variant hides the projections toggle in turn: lesson 7 is about what the mask
+ * does, lesson 2 already made the projections point, and a second toggle only competed
+ * with the one the lesson is about. `project` stays at its initial `true` there.
  * «Con máscara causal»
  * blanks every cell to the right of the diagonal — position i may look at 1..i and at
  * nothing after — and the rows that survive renormalise themselves, so the sum column
@@ -150,14 +153,16 @@ export default function SelfAttentionHeatmap(props: Record<string, unknown>) {
         />
       </label>
 
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-        <WidgetButton active={project} aria-pressed={project} onClick={() => setProject(true)}>
-          {tr("withProjections")}
-        </WidgetButton>
-        <WidgetButton active={!project} aria-pressed={!project} onClick={() => setProject(false)}>
-          {tr("withoutProjections")}
-        </WidgetButton>
-      </div>
+      {showMask ? null : (
+        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+          <WidgetButton active={project} aria-pressed={project} onClick={() => setProject(true)}>
+            {tr("withProjections")}
+          </WidgetButton>
+          <WidgetButton active={!project} aria-pressed={!project} onClick={() => setProject(false)}>
+            {tr("withoutProjections")}
+          </WidgetButton>
+        </div>
+      )}
 
       {showMask ? (
         <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
