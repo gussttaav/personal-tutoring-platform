@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" width="760" height="280" role="img"
+ aria-label="Dos paneles, cada uno con las mismas cinco filas de la matriz de entrada, una por posición del texto, apiladas de arriba abajo. A la izquierda, la atención: flechas que salen de las cinco filas convergen en la fila 3, que recibe una media ponderada de todas; es lo único del bloque que mueve información de una posición a otra. A la derecha, el perceptrón por posiciones: cada fila, sola, se ensancha de d_model a d_ff coordenadas, pasa por la ReLU y vuelve a d_model, sin flechas entre filas y con las mismas dos matrices, W1 y W2, para todas.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.10); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.z { stroke: #3b3b3e; stroke-dasharray: 2 2; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .ln { fill: none; stroke: #86948a; stroke-width: 1.2; }
+  .ln.m { stroke: #4edea3; stroke-width: 2; }
+  .ln.w { stroke: #e8a24c; stroke-width: 2; }
+  .ln.t { stroke: #bbcabf; stroke-width: 2; }
+  .ln.g { stroke: #2a2a2c; stroke-width: 1; }
+  .ln.d { stroke: #86948a; stroke-dasharray: 4 3; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="hd m" x="190.0" y="30.0" style="text-anchor:middle">ATENCIÓN: MEZCLA FILAS</text>
+<rect class="bx g" x="40.0" y="62.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="85.0" y="77.0">fila 1</text>
+<rect class="bx g" x="250.0" y="62.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="295.0" y="77.0">fila 1</text>
+<rect class="bx g" x="40.0" y="96.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="85.0" y="111.0">fila 2</text>
+<rect class="bx g" x="250.0" y="96.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="295.0" y="111.0">fila 2</text>
+<rect class="bx g" x="40.0" y="130.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="85.0" y="145.0">fila 3</text>
+<rect class="bx m" x="250.0" y="130.0" width="90.0" height="22.0" rx="4"/>
+<text class="lb m" x="295.0" y="145.0">fila 3</text>
+<rect class="bx g" x="40.0" y="164.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="85.0" y="179.0">fila 4</text>
+<rect class="bx g" x="250.0" y="164.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="295.0" y="179.0">fila 4</text>
+<rect class="bx g" x="40.0" y="198.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="85.0" y="213.0">fila 5</text>
+<rect class="bx g" x="250.0" y="198.0" width="90.0" height="22.0" rx="4"/>
+<text class="sb" x="295.0" y="213.0">fila 5</text>
+<path class="ar" d="M132.0,73.0 Q190.0,107.0 248.0,141.0"/>
+<path class="ar" d="M132.0,107.0 Q190.0,124.0 248.0,141.0"/>
+<path class="ar m" d="M132.0,141.0 Q190.0,141.0 248.0,141.0"/>
+<path class="ar" d="M132.0,175.0 Q190.0,158.0 248.0,141.0"/>
+<path class="ar" d="M132.0,209.0 Q190.0,175.0 248.0,141.0"/>
+<text class="sb" x="190.0" y="248.0" style="text-anchor:middle">la fila 3 recibe una media</text>
+<text class="sb" x="190.0" y="262.0" style="text-anchor:middle">ponderada de las cinco</text>
+<path class="ln g" d="M380.0,24.0 L380.0,266.0"/>
+<text class="hd w" x="575.0" y="30.0" style="text-anchor:middle">PERCEPTRÓN: TRANSFORMA CADA FILA</text>
+<rect class="bx g" x="420.0" y="62.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="455.0" y="77.0">d_model</text>
+<path class="ar w" d="M492.0,73.0 L520.0,73.0"/>
+<rect class="bx w" x="522.0" y="58.0" width="106.0" height="30.0" rx="4"/>
+<text class="sb" x="575.0" y="77.0">d_ff · ReLU</text>
+<path class="ar w" d="M630.0,73.0 L658.0,73.0"/>
+<rect class="bx g" x="660.0" y="62.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="695.0" y="77.0">d_model</text>
+<rect class="bx g" x="420.0" y="96.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="455.0" y="111.0">d_model</text>
+<path class="ar w" d="M492.0,107.0 L520.0,107.0"/>
+<rect class="bx w" x="522.0" y="92.0" width="106.0" height="30.0" rx="4"/>
+<text class="sb" x="575.0" y="111.0">d_ff · ReLU</text>
+<path class="ar w" d="M630.0,107.0 L658.0,107.0"/>
+<rect class="bx g" x="660.0" y="96.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="695.0" y="111.0">d_model</text>
+<rect class="bx g" x="420.0" y="130.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="455.0" y="145.0">d_model</text>
+<path class="ar w" d="M492.0,141.0 L520.0,141.0"/>
+<rect class="bx w" x="522.0" y="126.0" width="106.0" height="30.0" rx="4"/>
+<text class="sb" x="575.0" y="145.0">d_ff · ReLU</text>
+<path class="ar w" d="M630.0,141.0 L658.0,141.0"/>
+<rect class="bx g" x="660.0" y="130.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="695.0" y="145.0">d_model</text>
+<rect class="bx g" x="420.0" y="164.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="455.0" y="179.0">d_model</text>
+<path class="ar w" d="M492.0,175.0 L520.0,175.0"/>
+<rect class="bx w" x="522.0" y="160.0" width="106.0" height="30.0" rx="4"/>
+<text class="sb" x="575.0" y="179.0">d_ff · ReLU</text>
+<path class="ar w" d="M630.0,175.0 L658.0,175.0"/>
+<rect class="bx g" x="660.0" y="164.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="695.0" y="179.0">d_model</text>
+<rect class="bx g" x="420.0" y="198.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="455.0" y="213.0">d_model</text>
+<path class="ar w" d="M492.0,209.0 L520.0,209.0"/>
+<rect class="bx w" x="522.0" y="194.0" width="106.0" height="30.0" rx="4"/>
+<text class="sb" x="575.0" y="213.0">d_ff · ReLU</text>
+<path class="ar w" d="M630.0,209.0 L658.0,209.0"/>
+<rect class="bx g" x="660.0" y="198.0" width="70.0" height="22.0" rx="4"/>
+<text class="sb" x="695.0" y="213.0">d_model</text>
+<text class="tx w" x="506.0" y="52.0" style="text-anchor:middle">W1</text>
+<text class="tx w" x="644.0" y="52.0" style="text-anchor:middle">W2</text>
+<text class="sb" x="575.0" y="248.0" style="text-anchor:middle">cada fila sola, con los</text>
+<text class="sb" x="575.0" y="262.0" style="text-anchor:middle">mismos W1 y W2 para todas</text>
+</svg>
