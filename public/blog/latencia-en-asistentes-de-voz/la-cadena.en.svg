@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img"
+ aria-label="The chain of a cascaded voice assistant, in five steps from left to right, with Twilio's target under each. Microphone and network in, 95 ms: the voice reaches the server. End of turn and speech to text, 350 ms: the system decides the user has finished while the transcript is closed. Language model, 375 ms to the first token. Speech synthesis, 100 ms to the first audio. Way back and hops between services, 195 ms. Below the model, dashed, tools, RAG and MCP servers, each one another round before answering. A proportional bar splits the 1,115 ms total.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #fbbf24; fill: rgba(251,191,36,0.10); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); stroke-dasharray: 4 3; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .ms { font-size: 13px; font-weight: 700; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #fbbf24; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 4 3; marker-end: url(#ax); }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="12.0" y="22.0">ONE TURN, FROM THE MOMENT THE USER STOPS SPEAKING</text>
+<rect class="bx " x="12.0" y="44.0" width="132.0" height="54.0" rx="6"/>
+<text class="lb" x="78.0" y="67.0">Microphone and network</text>
+<text class="sb" x="78.0" y="83.0">the voice reaches the server</text>
+<text class="ms" x="78.0" y="118.0">95 ms</text>
+<rect class="bx w" x="166.0" y="44.0" width="132.0" height="54.0" rx="6"/>
+<text class="lb w" x="232.0" y="67.0">End of turn</text>
+<text class="sb" x="232.0" y="83.0">and speech to text</text>
+<text class="ms" x="232.0" y="118.0">350 ms</text>
+<path class="ar" d="M146.0,71.0 L163.0,71.0"/>
+<rect class="bx m" x="320.0" y="44.0" width="132.0" height="54.0" rx="6"/>
+<text class="lb m" x="386.0" y="67.0">Language model</text>
+<text class="sb" x="386.0" y="83.0">to the first token</text>
+<text class="ms" x="386.0" y="118.0">375 ms</text>
+<path class="ar" d="M300.0,71.0 L317.0,71.0"/>
+<rect class="bx " x="474.0" y="44.0" width="132.0" height="54.0" rx="6"/>
+<text class="lb" x="540.0" y="67.0">Speech synthesis</text>
+<text class="sb" x="540.0" y="83.0">to the first audio</text>
+<text class="ms" x="540.0" y="118.0">100 ms</text>
+<path class="ar" d="M454.0,71.0 L471.0,71.0"/>
+<rect class="bx " x="628.0" y="44.0" width="132.0" height="54.0" rx="6"/>
+<text class="lb" x="694.0" y="67.0">Way back and hops</text>
+<text class="sb" x="694.0" y="83.0">between services</text>
+<text class="ms" x="694.0" y="118.0">195 ms</text>
+<path class="ar" d="M608.0,71.0 L625.0,71.0"/>
+<rect class="bx x" x="261.0" y="150.0" width="250.0" height="46.0" rx="6"/>
+<text class="lb x" x="386.0" y="169.0">Tools, RAG, MCP</text>
+<text class="sb" x="386.0" y="185.0">each one, another round before answering</text>
+<path class="ar x" d="M356.0,126.0 L356.0,147.0"/>
+<path class="ar x" d="M416.0,149.0 L416.0,128.0"/>
+<rect x="12.0" y="232" width="61.2" height="18" fill="#3c4a42"/>
+<rect x="74.7" y="232" width="229.5" height="18" fill="#fbbf24"/>
+<rect x="305.7" y="232" width="246.0" height="18" fill="#4edea3"/>
+<rect x="553.3" y="232" width="64.5" height="18" fill="#bbcabf"/>
+<rect x="619.3" y="232" width="127.2" height="18" fill="#3c4a42"/>
+<text class="lb" x="380.0" y="276.0">1,115 ms in total (Twilio's target)</text>
+</svg>
