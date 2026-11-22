@@ -17,6 +17,10 @@
  * bibliography and get a hover card when it matches. That is the one component this
  * module needs; it is deliberately NOT `lessonMdxComponents`, for the reason above.
  *
+ * BLOG-27 — and `PostFigure`, the one other component a post may write: an interactive figure
+ * resolved by id against the blog's own figure registry (src/features/blog/figures/), each
+ * figure a lazy client chunk. Still not `lessonMdxComponents`, and still for the same reason.
+ *
  * Frontmatter is only STRIPPED here (via `parseFrontmatter`); typed validation belongs
  * to the registry — do not duplicate it.
  */
@@ -32,6 +36,7 @@ import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 
 import { SHIKI_THEME } from "@/constants/shiki-theme";
+import { PostFigure } from "@/features/blog/figures/PostFigure";
 import { makePostLink, type PostRefCtx } from "./PostRef";
 
 /** unified `PluggableList`, reached through next-mdx-remote's options type. */
@@ -73,14 +78,14 @@ export interface RenderedPost {
  * BLOG-06: `ctx` is the post's own `reading` list plus the request locale, so the `a`
  * override can tell a bibliography link from any other and render its card in the
  * reader's language. Omitted (e.g. a future caller with no bibliography to check
- * against), links render exactly as `compileMDX` would with no components at all.
+ * against), links render exactly as `compileMDX` would with no override.
  */
 export async function renderPost(source: string, ctx?: PostRefCtx): Promise<RenderedPost> {
   const { compileMDX } = await import("next-mdx-remote/rsc");
 
   return compileMDX<PostFrontmatter>({
     source,
-    components: ctx ? { a: makePostLink(ctx) } : undefined,
+    components: ctx ? { a: makePostLink(ctx), PostFigure } : { PostFigure },
     options: {
       parseFrontmatter: true,
       // next-mdx-remote v6 defaults `blockJS` to TRUE, which silently strips every JSX

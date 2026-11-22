@@ -1,0 +1,709 @@
+---
+slug: latencia-en-asistentes-de-voz
+title: "Por qué un asistente de voz tarda en contestar, y dónde se van los milisegundos"
+date: "2026-11-24"
+minutes: 26
+summary: "Entre dos personas, el silencio antes de una respuesta dura unos 200 milisegundos; un asistente de voz bien montado tarda más de un segundo, y con una herramienta de por medio, varios. Qué pasa desde que dejas de hablar hasta que oyes la respuesta, cuánto cuesta cada paso según las cifras publicadas, por qué las herramientas, el RAG y MCP multiplican la espera, y las técnicas que la esconden o la recortan."
+draft: false
+reading:
+  - kind: paper
+    title: "Universals and cultural variation in turn-taking in conversation"
+    authors: "Tanya Stivers, N. J. Enfield, Penelope Brown y otros"
+    year: "2009"
+    venue: "PNAS"
+    lang: en
+    url: "https://www.pnas.org/doi/10.1073/pnas.0903616106"
+    note: "Diez idiomas de cinco continentes, el mismo tipo de pregunta en todos y el tiempo hasta la respuesta medido en vídeo. La figura 2 es la comparación entera: del japonés, el más rápido, al danés, el más lento, hay menos de medio segundo."
+  - kind: paper
+    title: "From text to talk: Harnessing conversational corpora for humane and diversity-aware language technology"
+    authors: "Mark Dingemanse y Andreas Liesenfeld"
+    year: "2022"
+    venue: "ACL 2022"
+    lang: en
+    url: "https://aclanthology.org/2022.acl-long.385/"
+    note: "Repite la medida de Stivers con todos los cambios de turno en 24 idiomas, el español entre ellos. La figura 4 tiene la distribución de cada uno, y el apéndice A.1 comprueba que las preguntas de sí o no dan casi lo mismo."
+  - kind: paper
+    title: "Timing in turn-taking and its implications for processing models of language"
+    authors: "Stephen C. Levinson y Francisco Torreira"
+    year: "2015"
+    venue: "Frontiers in Psychology"
+    lang: en
+    url: "https://www.frontiersin.org/articles/10.3389/fpsyg.2015.00731/full"
+    note: "El problema de fondo: preparar una palabra cuesta unos 600 ms y una frase sencilla, 1,5 s, pero el hueco entre turnos es de 200 ms. La sección 6 explica cómo encaja: se prepara la respuesta mientras el otro aún habla."
+  - kind: blog
+    title: "A Guide to Core Latency in AI Voice Agents (Cascaded Edition)"
+    authors: "Phil Bredeson (Twilio)"
+    year: "2025"
+    venue: "Twilio"
+    lang: en
+    url: "https://www.twilio.com/en-us/blog/developers/best-practices/guide-core-latency-ai-voice-agents"
+    note: "El presupuesto de un asistente de voz por componentes, con objetivo y límite para cada uno, y la base de la figura interactiva de este artículo. La sección sobre voz a texto explica por qué el fin de turno suele ser lo más lento."
+  - kind: paper
+    title: "Stream RAG: Instant and Accurate Spoken Dialogue Systems with Streaming Tool Usage"
+    authors: "Siddhant Arora, Haidar Khan, Kai Sun y otros"
+    year: "2025"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2510.02044"
+    note: "Cuánto cuesta una búsqueda en un modelo que oye y habla, y cómo se adelanta lanzándola mientras el usuario aún habla. La tabla 3 desglosa la espera: escribir la consulta, buscar y generar la respuesta."
+  - kind: paper
+    title: "Full-Duplex-Bench-v3: Benchmarking Tool Use for Full-Duplex Voice Agents Under Real-World Disfluency"
+    authors: "Guan-Ting Lin, Chen Chen, Zhehuai Chen y Hung-yi Lee"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2604.04847"
+    note: "Seis asistentes de voz con herramientas ante voz humana real, con dudas y rectificaciones. La tabla 6 separa el primer sonido, la llamada a la herramienta y la respuesta con el dato; la sección 6.2, qué pasa al llamar antes de tiempo."
+  - kind: paper
+    title: "EVA-Bench: A New End-to-end Framework for Evaluating Voice Agents"
+    authors: "Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz y otros"
+    year: "2026"
+    venue: "EMNLP 2026 (Findings)"
+    lang: en
+    url: "https://arxiv.org/abs/2605.13841"
+    note: "Doce asistentes de voz, en cascada y de voz a voz, en conversaciones completas con herramientas. La tabla 27 da la latencia media de cada uno con y sin herramientas, y el apéndice E.4.3 explica por qué ninguno puede aspirar a 200 ms."
+  - kind: paper
+    title: "Hiding Tool Latency in On-Device Cascaded Voice Agent through Speculative Execution"
+    authors: "Kyudan Jung, Hyunsin Park, Yoonhyung Lee y otros"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2610.07641"
+    note: "Ejecución especulativa en un móvil: las búsquedas salen con la transcripción a medias y sus resultados esperan en una caché. Cinco páginas; la tabla 1 tiene la mediana y el percentil 99 con y sin especular."
+  - kind: paper
+    title: "Heartbeat Thinking: Speculative Reasoning and Tool Execution While Listening in Realtime Voice Agents"
+    authors: "Zhenyu Zhang, Kewei Fu, Yongqi Tong y otros"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2610.26233"
+    note: "Un modelo que piensa cada medio segundo sobre lo que lleva oído y lanza las herramientas antes de que el usuario acabe. La tabla 5 compara cuándo llega la llamada correcta y la respuesta con tres sistemas en cascada."
+  - kind: paper
+    title: "Moshi: a speech-text foundation model for real-time dialogue"
+    authors: "Alexandre Défossez, Laurent Mazaré, Manu Orsini y otros"
+    year: "2024"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2410.00037"
+    note: "El primer modelo abierto que escucha y habla a la vez. La introducción es la mejor explicación de por qué una cascada de tres modelos tarda y pierde información; la sección 3.4.4 cuenta cómo decide cuándo hablar."
+areas: ["ia"]
+cover: "/blog/latencia-en-asistentes-de-voz/la-cadena.svg"
+tags: ["llm", "agentes", "rendimiento", "rag"]
+aiImages: true
+---
+
+{/*
+  BLOG-27 — Por qué un asistente de voz tarda en contestar, y dónde se van los milisegundos.
+
+  Tesis: en voz, la latencia no es una cualidad más, es la condición para que haya conversación.
+  El hueco humano es de unos 200 ms; una cascada bien montada gasta algo más de un segundo, y el
+  paso más caro no es el modelo, sino decidir que el usuario ha terminado. Cada herramienta, cada
+  búsqueda y cada servidor remoto añade una vuelta entera. Casi todo lo que se hace para
+  remediarlo consiste en solapar pasos o en empezar antes: empezar a hablar antes de tener la
+  respuesta (frase puente) y empezar a buscar antes de que el usuario acabe (especulación).
+
+  El ejemplo es la Clínica Arce, INVENTADA, con su línea de teléfono atendida por un asistente.
+
+  Artículo conceptual: ningún número medido por nosotros. Los citados son de las fuentes, leídos
+  en ellas:
+    - Stivers et al. 2009: 10 idiomas, preguntas de sí o no, desde el final de la pregunta hasta
+      el comienzo de la respuesta (gestos incluidos). Media de todo el conjunto +208 ms; moda de
+      cada idioma entre 0 y 200 ms, moda global 0; japonés +7, danés +469; las medias de cada
+      idioma, a ≈250 ms de la media común.
+    - Dingemanse y Liesenfeld 2022 (ACL): todos los cambios de turno en conversaciones de dos, 24
+      idiomas con al menos 1000 cada uno, 674 223 en total; media 59 ms, 46 % con un ligero solapamiento
+      final (figura 4). El español es CALLHOME (llamadas de teléfono), n = 26 348; el catalán, 7846. La
+      figura no da un valor numérico por idioma. Apéndice A.1: las preguntas de sí o no de 10 idiomas
+      no difieren mucho del total. Sistemas que alternan entre escuchar y hablar: «behind the curve
+      approximately half of the time».
+    - Server Benetó 2026 (RESLA 39(1), DOI 10.58859/resla.869): español peninsular, 2 conversaciones y
+      2 tertulias, 54 min. Medianas: Piscina −37, Carnet −54,5, Colgados del aro −257,5, Amigas y
+      conocidas −380 ms.
+    - Levinson y Torreira 2015: nombrar un dibujo, ~600 ms (Indefrey y Levelt 2004); describir una
+      escena sencilla, ~1500 ms (Griffin y Bock 2000); se empieza a preparar la respuesta «hasta un
+      segundo o más» antes de que acabe el turno del otro (§6.4).
+    - Twilio (Bredeson, 17 nov 2025): objetivos de lanzamiento, mediana. Boca a oído 1115 ms (límite
+      1400); voz a texto 350 (500), primer token 375 (750), primer byte de voz 100 (250). Leyenda de
+      la cascada: dispositivo a borde 40, búfer 30, decodificación 25. «Al menos diez» trayectos de
+      red: dos tramos de voz y ocho saltos entre servicios. El fin de turno es «the long pole in
+      the tent»; los valores por defecto, «around 500ms». Abortar bien: vaciar el audio, cortar el
+      modelo, cancelar las herramientas y limpiar el historial. Las herramientas quedan fuera del
+      alcance de la guía.
+    - LiveKit, documentación del detector de turno: retraso mínimo 0,5 s y máximo 3,0 s sin él;
+      0,3 y 2,5 con él. Blog v1.1 (20 nov 2026), inglés, presupuesto de cortes del 5 %: 462 ms frente
+      a 543 de v1. Blog del modelo de texto (12 dic 2025): 39 % menos falsas interrupciones.
+    - Pipecat Smart Turn v3: oye el audio, base Whisper Tiny, ~8 M de parámetros, 8 MB cuantizado,
+      hasta 10 ms en algunas CPU, 23 idiomas.
+    - OpenAI Realtime: server_vad (silencio) y semantic_vad (clasificador de las palabras, con
+      eagerness); ejemplo silence_duration_ms 500; conversation.item.truncate borra el texto que el
+      usuario no ha oído.
+    - Whisper-Streaming (Macháček et al. 2023): Whisper se entrenó con fragmentos de hasta 30 s;
+      LocalAgreement-2; 3,3 s de latencia media en inglés.
+    - Qiu et al. (Salesforce, arXiv 2603.05413), tabla 4, nube: voz a texto 402 ms, primer token
+      457, primer byte de voz 221 (medianas); el búfer de frases como «la pieza crítica».
+    - Ethiraj et al. (arXiv 2508.04721), tabla 1: búsqueda con FAISS 0,008 s de media.
+    - Stream RAG, tablas 1 y 3 (Qwen2.5-7B, AudioCRAG sintético): primer token 1,34 s sin
+      herramienta y 5,90 s con ella; medianas de escribir la consulta 0,59, resultados 2,78 y
+      respuesta 2,52; aciertos 11,1 → 26,3 → 34,2 %; ahorro ~20 % del tiempo de herramienta; la
+      búsqueda es sobre el corpus de CRAG con reordenación, no sobre la web en vivo; la latencia
+      sintética excluye la detección de fin de turno.
+    - Full-Duplex-Bench-v3, tabla 6 (s, medias, herramientas simuladas de latencia cero):
+      GPT-Realtime 6,36 / 3,89 / 6,89; Gemini Live 3.1 3,95 / 2,21 / 4,25; Ultravox 3,88 / 6,01 /
+      8,40; cascada 8,78 / 3,15 / 10,12. Ultravox: 88,0 % de frases puente, 47,9 % de
+      interrupciones. Llamadas antes de tiempo: Grok 41,6 %, GPT-Realtime 10,8 %. Rectificaciones:
+      GPT-Realtime 0,588, cascada 0,176.
+    - EVA-Bench, tabla 27: con herramientas frente a sin ellas, de +0,15 s (Whisper + Qwen3.5-27B +
+      Voxtral) a +5,60 s (Ultravox-Realtime); GPT-Realtime-1.5 2,395 / 1,011. Apéndice E.4.3: «a
+      target no evaluated voice agent can meet»; los más rápidos rondan 1 s sin herramientas, la
+      mayoría de las cascadas 2-5 s.
+    - Jung et al. (Qualcomm), tabla 1: Galaxy S26 Ultra, Llama-3.2-3B; mediana 5,79 → 4,60 s, p99
+      19,76 → 15,10 s; F1 de herramienta 44,8 → 60,6 %. Ejemplo: búsqueda de ~10 s, de 17 s a 8 s.
+    - Heartbeat Thinking, tabla 5: llamada correcta a −4,37 s del final del habla; respuesta a 4,39 s
+      frente a 6,90 (ventanas) y 8,08 (Pipecat); 4,0 % de grabaciones con resultados desfasados.
+    - Moshi: 160 ms teóricos (80 de la trama de Mimi + 80 de retardo acústico), 200 en la práctica;
+      escucha y habla a la vez; la cascada pierde emoción, acento y sonidos.
+    - Anthropic, caché de prompts (tabla): libro de 100 000 tokens, primer token 11,5 → 2,4 s;
+      10 000 tokens, 1,6 → 1,1 s.
+    - MCP: revisión 2025-11-25, stdio y Streamable HTTP, saludo initialize; la 2026-07-28 lo
+      elimina (sin estado) y pide un orden determinista en tools/list por la caché de prompts.
+    - Fibra: ~200 km por milisegundo; Madrid-costa este de EE. UU., ~6000 km en línea recta →
+      ≥ 30 ms por tramo, ≥ 60 ms por ida y vuelta (la figura usa 60).
+
+  La figura interactiva (`latency-budget`, src/features/blog/figures/latency-budget/model.ts) usa
+  estas mismas constantes: el turno por defecto suma exactamente los 1115 ms de Twilio. Si cambia
+  una, cambian las dos. Las figuras estáticas, en public/blog/latencia-en-asistentes-de-voz/, las
+  genera scripts/figures/latencia-en-asistentes-de-voz/make_svgs.py (Python sin dependencias;
+  escribe el .svg y el .en.svg). El alt de cada <img> es el aria-label del SVG.
+*/}
+
+La Clínica Arce, una clínica dental inventada, contesta el teléfono con un asistente de voz. Una
+paciente llama y pregunta:
+
+> ¿Tenéis algún hueco el jueves por la tarde para una limpieza?
+
+Y no pasa nada. Pasan dos segundos, tres. La paciente, que no sabe si la llamada se ha cortado,
+dice «¿hola?», justo cuando el asistente empieza a contestar. Los dos hablan a la vez, el asistente
+oye el «¿hola?», se calla para escucharlo y vuelve a empezar. La respuesta era correcta: había un
+hueco a las cinco. La conversación no.
+
+En un chat de texto, esa espera habría pasado desapercibida. Mientras el modelo consulta la agenda,
+la pantalla enseña tres puntos que se mueven, y quien escribe sabe que la respuesta viene. Al
+teléfono, el silencio no tiene puntos. Lo único que la paciente sabe del asistente es lo que oye, y
+lo que oye son tres segundos sin nada, en una conversación donde lo normal es contestar en una
+fracción de segundo.
+
+Este artículo va de esos segundos: de dónde salen, cuánto se lleva cada paso entre que la paciente
+deja de hablar y empieza a oír la respuesta, por qué consultar la agenda, buscar en documentos o
+llamar a un servidor externo los multiplica, y qué se hace para recuperarlos. Todas las cifras son de
+fuentes publicadas, enlazadas donde aparecen. Ninguna está medida aquí.
+
+## Lo que tarda una persona en contestar
+
+En 2009, un grupo de lingüistas grabó conversaciones espontáneas en
+[diez idiomas](https://www.pnas.org/doi/10.1073/pnas.0903616106) de cinco continentes, del japonés
+y el danés al tzeltal de México y el yélî dnye de Papúa Nueva Guinea. En cada uno buscaron el mismo
+momento: una pregunta de sí o no y su respuesta. Midieron el tiempo desde que acaba la pregunta
+hasta que empieza la respuesta, contando como respuesta también un gesto, como asentir. La media de
+todo el conjunto fue de 208 milisegundos. Lo más frecuente en cada idioma estaba entre 0 y 200 ms, y
+lo más frecuente en el conjunto entero era exactamente 0: la respuesta empieza en el instante en que
+acaba la pregunta.
+
+Hay diferencias entre culturas, pero son pequeñas. Los japoneses de la muestra contestaban de media
+a los 7 ms; los daneses, a los 469. Todas las medias quedaban a unos 250 ms de la media común, más o
+menos lo que dura una sílaba.
+
+El estudio de Stivers solo miraba preguntas de sí o no, y el español no estaba entre sus diez
+idiomas. En 2022, Mark Dingemanse y Andreas Liesenfeld [repitieron la medida](https://aclanthology.org/2022.acl-long.385/)
+con todos los cambios de turno de conversaciones entre dos personas en 24 idiomas, español y catalán
+incluidos. En el caso del español, eran llamadas de teléfono. Sobre 674 223 cambios de turno, la media
+fue de 59 ms, y casi la mitad de los turnos (el 46 %) empezaba un poco antes de que acabase el
+anterior. Una medida reciente del español peninsular, con [cuatro grabaciones](https://doi.org/10.58859/resla.869),
+va en la misma dirección: en las dos conversaciones, el siguiente empezaba a hablar de mediana entre
+37 y 55 ms antes de que el otro terminase; en dos tertulias de televisión, entre 258 y 380 ms antes.
+
+Huecos tan cortos son un problema para quien estudia cómo se produce el lenguaje, porque hablar es lento.
+Nombrar un dibujo, una sola palabra, cuesta unos 600 ms desde que se ve hasta que se empieza a
+pronunciar; describir una escena sencilla, como «el niño da una patada al balón», alrededor de
+1,5 segundos. Levinson y Torreira [lo resumen](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.00731/full)
+así: si el hueco entre turnos es de 200 ms y preparar una respuesta cuesta entre 600 y 1500, la
+respuesta tiene que empezar a prepararse mientras el otro aún está hablando. Y eso es lo que miden
+los experimentos que citan: quien escucha empieza a planear lo que va a decir en cuanto puede,
+a veces un segundo o más antes de que el otro termine, y predice cuándo va a terminar a partir de lo
+que va diciendo y de cómo lo dice.
+
+Una persona, por tanto, no contesta rápido porque piense rápido, sino porque no espera. Escucha y
+prepara a la vez, y cuando el otro acaba, la respuesta ya está casi lista. Ese es el listón que
+pone la conversación, y casi nada en un asistente de voz funciona así por defecto: cada paso espera a
+que termine el anterior. Quien llama no conoce estos números, pero los ha vivido toda su vida, y un
+silencio de un segundo le suena a duda, a que no le han entendido o a que la llamada se ha cortado.
+
+## Lo que pasa entre que hablas y oyes la respuesta
+
+La forma más común de montar un asistente de voz es una cadena de tres modelos, que se suele llamar
+*cascada*: uno pasa la voz a texto, un modelo de lenguaje escribe la respuesta, y otro convierte esa
+respuesta en voz. Entre ellos hay red, búferes y una pieza que decide cuándo ha terminado de hablar
+el usuario. La alternativa, un único modelo que oye y habla, tiene su propia sección más abajo.
+
+<figure>
+  <img
+    src="/blog/latencia-en-asistentes-de-voz/la-cadena.svg"
+    alt="La cadena de un asistente de voz en cascada, en cinco pasos de izquierda a derecha, con el objetivo de Twilio debajo de cada uno. Micrófono y red de ida, 95 ms: la voz llega al servidor. Fin de turno y voz a texto, 350 ms: se decide que el usuario ha terminado mientras se cierra la transcripción. Modelo de lenguaje, 375 ms hasta el primer token. Síntesis de voz, 100 ms hasta el primer audio. Vuelta y saltos entre servicios, 195 ms. Debajo del modelo, en discontinuo, las herramientas, el RAG y los servidores MCP, cada uno otra vuelta antes de contestar. Una barra proporcional reparte los 1115 ms del total."
+    width="760"
+    height="300"
+  />
+  <figcaption>
+    Un turno en una cascada, con el presupuesto de Twilio debajo de cada paso. El reloj empieza
+    cuando el usuario deja de hablar; lo que pasa mientras habla, como la transcripción, no cuenta
+    si termina a tiempo.
+  </figcaption>
+</figure>
+
+Para poner números a cada paso, la referencia más útil que conozco es la
+[guía de Twilio](https://www.twilio.com/en-us/blog/developers/best-practices/guide-core-latency-ai-voice-agents)
+sobre latencia en asistentes de voz, de noviembre de 2025. Twilio vende la infraestructura de
+telefonía sobre la que se montan muchos de estos asistentes, y publica un presupuesto por componentes
+con dos cifras para cada uno: un objetivo (la mediana que debería conseguir un asistente recién
+lanzado, sin trucos especiales) y un límite superior. El objetivo total, desde que el usuario deja de
+hablar hasta que la respuesta le llega al oído, es de 1115 ms, con un límite de 1400. Es más de cinco
+veces el hueco humano, y es el punto de partida razonable, no un mal resultado.
+
+### La red y el audio
+
+La voz sale del micrófono en paquetes. El códec más usado en voz por internet,
+[Opus](https://datatracker.ietf.org/doc/html/rfc6716), la corta en tramas de entre 2,5 y 60 ms, y
+su especificación dice que 20 ms son una buena elección para casi todo. Cada trama tiene que
+llenarse antes de enviarse, y el códec necesita además un poco de audio por delante para
+comprimir bien. Luego está el viaje: en la guía de Twilio, 40 ms desde el dispositivo hasta el
+primer servidor, 30 en el búfer que absorbe las irregularidades de la red (*jitter buffer*: los
+paquetes no llegan a ritmo constante, y el búfer los guarda un momento para reproducirlos
+seguidos) y 25 en decodificar. Son 95 ms antes de que el servidor haya oído el final de la frase.
+
+Ese viaje no se hace una vez. Twilio cuenta al menos diez trayectos de red en un turno: la voz de
+ida, la voz de vuelta y ocho saltos entre servicios, porque el reconocimiento de voz, el modelo de
+lenguaje y la síntesis suelen ser tres proveedores en tres sitios. Cada salto añade poco si los
+servicios están cerca y bastante si no lo están. La luz en la fibra recorre unos 200 km por
+milisegundo, y entre Madrid y la costa este de Estados Unidos hay unos 6000 km en línea recta: 30 ms
+de ida y 60 de ida y vuelta como mínimo físico, y el cable nunca va en línea recta.
+
+### Saber que has terminado
+
+El reloj empieza cuando el usuario deja de hablar, pero el sistema no lo sabe en ese instante. La
+gente hace pausas a mitad de frase: para pensar, para respirar, para buscar una palabra. Si el
+asistente contesta a la primera pausa, interrumpe; si espera demasiado, parece lento. Decidir cuándo
+ha terminado el turno se llama *detección de fin de turno* (*endpointing* o *turn detection* en
+inglés), y la guía de Twilio lo dice sin rodeos: suele ser lo más lento de toda la cadena, porque se
+ajusta para no cortar a nadie.
+
+La forma más sencilla es un temporizador de silencio. Un detector de actividad de voz (VAD, del
+inglés *voice activity detection*), un modelo pequeño que distingue la voz del ruido de fondo,
+marca cuándo deja de haber voz, y si el silencio dura más de un umbral, el turno se da por acabado.
+Según Twilio, la mayoría de los valores por defecto rondan los 500 ms. La API de voz de OpenAI
+pone ese mismo valor en su [configuración de ejemplo](https://developers.openai.com/api/docs/guides/realtime-vad),
+y hay sistemas que esperan 700 u 800. Bajar el umbral es arriesgado, avisa la guía: un asistente
+que corta a la gente a mitad de frase es peor que uno lento.
+
+Medio segundo de silencio es más del doble del hueco humano entero, y el temporizador solo empieza
+a contar cuando ya no hay voz. La mejora obvia es no limitarse a contar silencio y fijarse en lo que
+se ha dicho y en cómo. «El jueves por la tarde, para una limpieza» suena acabado; «el jueves
+por la tarde, o si no...» no. Eso hacen los modelos de fin de turno, que hoy son de dos tipos:
+
+- Los que leen la transcripción. LiveKit, una plataforma abierta para montar asistentes de voz,
+  tiene uno basado en un modelo de lenguaje pequeño (Qwen2.5 de 500 millones de parámetros) que
+  estima la probabilidad de que la frase esté terminada, y la versión que publicó en diciembre de
+  2025 corta a la gente un 39 % menos que la anterior.
+- Los que oyen el audio. [Smart Turn](https://github.com/pipecat-ai/smart-turn), de Pipecat, otra
+  plataforma abierta, parte del codificador de Whisper Tiny, tiene unos 8 millones de parámetros,
+  ocupa 8 MB y tarda unos 10 ms en algunas CPU. Al trabajar con el audio, puede usar la
+  entonación y el ritmo, que dicen mucho de si alguien ha terminado y que la transcripción pierde.
+
+La documentación de LiveKit enseña bien qué compra uno de estos modelos. Sin él, el asistente
+espera entre 0,5 y 3 segundos de silencio; con su detector, entre 0,3 y 2,5, y el modelo decide
+dónde caer dentro de ese margen. En la [última versión](https://livekit.com/blog/turn-detector-v1-1),
+de noviembre de 2026, que oye el audio y además lee lo último que dijo el asistente, detectar el
+fin de turno en inglés cuesta 462 ms si se acepta cortar al usuario en un 5 % de los turnos. El compromiso está en esa
+frase: no hay un número sin el otro. Cuanto antes se decide, más veces se corta a alguien.
+
+### Pasar la voz a texto
+
+Mientras el usuario habla, el reconocimiento automático de voz (ASR, del inglés
+*automatic speech recognition*) va transcribiendo. Si funciona en *streaming*, es decir, si va
+emitiendo texto a medida que llega el audio en lugar de esperar a tener la grabación entera, casi
+todo su trabajo ocurre durante la frase, y al final solo le queda confirmar las últimas palabras.
+Por eso Twilio pone el reconocimiento y el fin de turno en la misma línea del presupuesto, 350 ms de
+objetivo y 500 de límite: ocurren a la vez, y lo que se espera es sobre todo la decisión de que el
+turno ha acabado.
+
+No todos los modelos de reconocimiento funcionan así. Whisper, el de OpenAI, se entrenó con
+fragmentos de hasta 30 segundos que contienen una frase completa, y no está pensado para ir
+transcribiendo sobre la marcha. Se puede forzar, como hace [Whisper-Streaming](https://arxiv.org/abs/2307.14743):
+volver a transcribir el audio acumulado cada poco y dar por buena solo la parte en la que coinciden
+dos pasadas seguidas. Pero el resultado, en el artículo que lo presenta, son 3,3 segundos de
+latencia media en inglés. Para una conversación, el reconocimiento tiene que estar diseñado para
+*streaming* desde el principio.
+
+### El modelo: el primer token
+
+Con el turno cerrado y la transcripción completa, el modelo de lenguaje recibe el texto y empieza a
+escribir. Lo que importa aquí no es cuánto tarda en escribir la respuesta entera, sino cuánto tarda
+en escribir la primera palabra, porque esa palabra ya se puede pasar a voz. Se mide como tiempo
+hasta el primer token (TTFT, del inglés *time to first token*), y el objetivo de Twilio es de 375 ms,
+con un límite de 750.
+
+Ese tiempo tiene dos partes. Primero, el modelo lee todo lo que recibe de una vez: las
+instrucciones del sistema, la descripción de las herramientas que puede usar, la conversación hasta
+ahora y la última frase. Esa lectura se llama *prefill*, y crece con la longitud del texto de
+entrada. Después genera el primer token, y a partir de ahí los demás de uno en uno. Una conversación
+larga con unas instrucciones largas hace más lento el primer token de cada turno, aunque la frase
+del usuario sea corta.
+
+La herramienta más eficaz contra el *prefill* es la caché de prompts: el proveedor guarda el
+resultado de haber leído un comienzo de texto, y la siguiente petición que empiece igual se lo
+salta. En la tabla con la que Anthropic [presentó la suya](https://claude.com/blog/prompt-caching),
+una conversación con un libro de 100 000 tokens pasaba de 11,5 a 2,4 segundos hasta el primer token,
+y un prompt de 10 000 tokens, de 1,6 a 1,1. En voz, donde las instrucciones y las herramientas son
+las mismas en todos los turnos, es casi obligatoria, con una condición: lo fijo va al principio y lo
+que cambia, al final, porque la caché solo sirve para un comienzo idéntico.
+
+La otra parte del primer token es el razonamiento. Los modelos que piensan antes de contestar
+generan primero tokens de razonamiento, que el usuario no oye, y el primer token de la respuesta
+llega después de todos ellos. Artificial Analysis, que mide la velocidad de los modelos de los
+principales proveedores, lo separa explícitamente: su «tiempo hasta el primer token de la
+respuesta» incluye el tiempo de razonamiento. En texto, un modelo que piensa diez segundos
+antes de contestar puede compensar. En voz, esos diez segundos son silencio. Por eso los asistentes
+de voz usan modelos rápidos, con poco o ningún razonamiento, y prefieren uno pequeño que conteste
+ya a uno grande que conteste mejor dentro de cuatro segundos.
+
+### Del texto a la voz
+
+La síntesis de voz (TTS, del inglés *text-to-speech*) recibe el texto y devuelve audio. Lo que
+cuenta es el tiempo hasta el primer fragmento de audio, porque el resto se reproduce mientras se
+genera: el objetivo de Twilio es de 100 ms, con 250 de límite. Es el paso más barato de la cadena,
+siempre que no espere a tener la respuesta entera.
+
+Lo habitual es no mandarle tokens sueltos, porque la entonación de una frase depende de la frase
+entera, sino ir acumulando lo que escribe el modelo y enviarle cada frase en cuanto termina. Un
+equipo de Salesforce que montó un asistente completo desde cero y [documentó cada paso](https://arxiv.org/abs/2603.05413)
+llama a ese búfer de frases «la pieza crítica» del sistema: es lo que permite que la primera frase
+suene mientras el modelo escribe la segunda.
+
+### La suma
+
+Con los objetivos de Twilio, la cuenta queda así: 95 ms de red de ida, 350 hasta cerrar el turno y
+la transcripción, 375 hasta el primer token, 100 hasta el primer audio, y 195 para la vuelta y los
+saltos entre servicios, que es lo que falta hasta los 1115 del total. En un asistente real se
+parece bastante: el de Salesforce, con servicios en la nube, daba medianas de 402 ms en el
+reconocimiento, 457 en el primer token y 221 en la síntesis.
+
+Lo que destaca de esa cuenta es dónde está el tiempo. El modelo de lenguaje, que es lo que
+cualquiera señalaría como lento, se lleva un tercio. Casi otro tercio es esperar a que el usuario
+termine, y el resto es red y síntesis. Ningún paso es caro por sí solo; lo caro es que van en fila.
+
+## Solapar en lugar de esperar
+
+Si cada paso esperase a que termine el anterior por completo, nada de esto saldría. El
+reconocimiento esperaría a tener la grabación entera, el modelo escribiría la respuesta completa
+antes de pasarla a voz, y la voz se generaría entera antes de empezar a sonar. Cada uno de esos
+pasos tardaría lo que tarda su trabajo entero, y la suma se iría a varios segundos.
+
+Lo que hace que una cascada quepa en un segundo es lo mismo que hace que una persona quepa en
+200 ms: cada paso empieza antes de que el anterior acabe. El reconocimiento transcribe mientras
+el usuario habla. El modelo empieza a escribir en cuanto tiene el texto, y su primera frase sale
+hacia la síntesis antes de que escriba la segunda. La síntesis empieza a enviar audio antes de
+terminar la frase. Lo que se suma no son las duraciones, sino lo que tarda cada paso en empezar a
+producir algo.
+
+Fuera de eso, las técnicas que recortan tiempo son conocidas, y la guía de OpenAI sobre
+[latencia](https://developers.openai.com/api/docs/guides/latency-optimization) las ordena en siete
+principios, que en voz se traducen así: un modelo más rápido, respuestas más cortas, menos texto
+de entrada (o el mismo, con caché), menos llamadas seguidas, las que queden en paralelo, hacer que
+la espera se note menos y no usar un modelo de lenguaje para lo que no lo necesita, como contestar
+«de nada». Hay una más que es propia de la voz: poner los tres servicios cerca, en la misma región o
+en la misma máquina, porque cada salto entre ellos es un viaje de ida y vuelta.
+
+## Cuando el usuario interrumpe
+
+En una conversación, la gente se interrumpe. Si el asistente está a mitad de una explicación sobre
+los tipos de limpieza y la paciente dice «vale, vale, el jueves a las cinco», el asistente tiene que
+callarse en el acto. Eso se llama *barge-in*, y tiene más consecuencias de las que parece.
+
+Callarse no es solo dejar de reproducir audio. La guía de Twilio enumera cuatro cosas que hay que
+hacer: vaciar el audio que ya se ha enviado y aún no ha sonado, cortar al modelo que sigue
+escribiendo, cancelar las herramientas que estén en marcha y limpiar el historial de la
+conversación. Lo último es lo menos evidente. El modelo escribe más rápido de lo que se habla, así
+que cuando la paciente interrumpe, el texto de la respuesta suele estar mucho más adelante que el
+audio. Si el historial guarda la respuesta entera, en el siguiente turno el modelo creerá que dijo
+cosas que la paciente nunca oyó. La API de voz de OpenAI tiene un mensaje solo para esto, el que
+[recorta una respuesta](https://developers.openai.com/api/docs/api-reference/realtime-client-events/conversation/item/truncate)
+hasta el milisegundo en que se interrumpió y borra el texto que no llegó a sonar, para que en el
+contexto no quede nada que el usuario no haya oído.
+
+La interrupción también pone a prueba la detección de fin de turno, desde el otro lado. Un «ajá»
+mientras el asistente habla no es una interrupción, es la forma en que la gente indica que sigue
+escuchando. Un sistema que se calla ante cada «ajá» es tan incómodo como uno que no se calla nunca.
+
+## Cuando el modelo tiene que ir a buscar algo
+
+Hasta aquí, el asistente contesta con lo que sabe. Pero la paciente de la Clínica Arce no pregunta
+nada que el modelo sepa: pregunta por la agenda del jueves. Para contestar, el modelo tiene que
+consultarla, y ahí la cuenta de antes deja de valer. La guía de Twilio lo admite desde el principio:
+sus números son para la latencia del núcleo de la cadena, y deja fuera, a propósito, los picos
+que vienen de las herramientas y del razonamiento.
+
+### Una herramienta es otra vuelta entera
+
+Cuando un modelo usa una herramienta, no la ejecuta él. Escribe una petición con un formato fijo,
+por ejemplo «consulta la agenda del jueves de 15:00 a 20:00», y el programa que lo rodea la
+ejecuta y le devuelve el resultado. Con el resultado, el modelo hace una segunda llamada y escribe
+la respuesta. Eso tiene tres costes que la cascada sin herramientas no paga:
+
+1. Escribir la petición. El modelo no la puede ejecutar a medias: la herramienta necesita la
+   petición completa, con todos sus argumentos. Hay que esperar al primer token y además a todos los
+   demás de la petición.
+2. Ejecutarla. Lo que tarde la herramienta: una consulta a una base de datos local, unos
+   milisegundos; una búsqueda en documentos con reordenación, segundos.
+3. Volver a empezar. El modelo recibe el resultado y tiene que leerlo, con todo lo anterior, antes
+   de escribir la respuesta: otro primer token, y con un texto de entrada más largo.
+
+El equipo de Meta y la Universidad Carnegie Mellon que presentó [Stream RAG](https://arxiv.org/abs/2510.02044)
+midió esas partes en un sistema de diálogo hablado construido sobre Qwen2.5 de 7.000 millones de
+parámetros, con una herramienta de búsqueda. La mediana para escribir la consulta fue de 0,59 s; la de la búsqueda, con
+la reordenación de los resultados, 2,78 s, y la de empezar a generar la respuesta después, 2,52.
+Sin herramienta, el modelo tardaba 1,34 s en empezar a contestar; con ella, 5,90. La herramienta
+mejoraba mucho las respuestas, que pasaban de acertar el 11,1 % de las preguntas al 26,3 %,
+porque el modelo dejaba de inventar, pero cuadruplicaba la espera.
+
+En sistemas completos, la diferencia se ve igual. [EVA-Bench](https://arxiv.org/abs/2605.13841),
+una evaluación de doce asistentes de voz en conversaciones completas con herramientas, midió la
+latencia media de cada uno en los turnos con herramienta y en los turnos sin ella. Todos eran más
+lentos con herramienta. La diferencia iba de 0,15 s, en una cascada con un modelo abierto rápido, a
+5,6 s; el GPT-Realtime-1.5 de OpenAI pasaba de 1,0 a 2,4 s. La propia escala con la que puntúan
+la rapidez da más margen a esos turnos, para absorber lo que tarda la herramienta.
+
+### RAG: buscar antes de preguntar
+
+La búsqueda en documentos, conocida como RAG (del inglés *retrieval-augmented generation*, generación
+aumentada por recuperación; está explicada con calma en
+[otro artículo](/blog/de-rag-a-rag-agentico)), se puede montar de dos maneras, y en voz la diferencia
+importa.
+
+En la forma clásica, la búsqueda no es una herramienta del modelo. El programa toma la transcripción
+del usuario, busca con ella los fragmentos más parecidos y se los pasa al modelo junto con la
+pregunta. No hay una primera llamada para escribir la consulta: la consulta es la propia frase del
+usuario. El coste es solo la búsqueda, y puede ser muy pequeño. Un
+[asistente de voz para telecomunicaciones](https://arxiv.org/abs/2508.04721) que buscaba en un
+índice vectorial local (un índice que encuentra los textos más parecidos sin compararlos todos,
+como se cuenta en [este artículo](/blog/indices-vectoriales)) tardaba 8 ms de media en la
+búsqueda, menos que un salto de red.
+
+En la forma agéntica, el modelo decide si buscar, qué buscar y si volver a buscar con lo que ha
+encontrado. Es más flexible, y cada búsqueda es una herramienta más, con sus tres costes. Un RAG
+agéntico que hace tres búsquedas seguidas paga tres vueltas.
+
+En las dos formas hay un coste que no aparece en la búsqueda: los fragmentos encontrados se añaden
+al texto de entrada, y el modelo tiene que leerlos antes del primer token. Cinco fragmentos de
+quinientos tokens son 2500 tokens más de *prefill* en cada turno, y como cambian en cada pregunta,
+no se aprovechan de la caché de prompts. Cuando lo que se consulta es pequeño y fijo (los
+horarios de la clínica, sus tarifas, sus normas) a veces compensa más no buscar y meterlo
+todo en las instrucciones, donde sí se cachea; es la idea de la
+[generación aumentada por caché](/blog/cuando-no-hace-falta-buscar).
+
+### MCP: la herramienta está en otra máquina
+
+MCP (*Model Context Protocol*) es el protocolo abierto con el que un modelo se conecta a
+herramientas que ofrece otro programa, un servidor MCP, en lugar de tenerlas programadas en el
+propio asistente. La [especificación](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+define dos formas de hablar con ese servidor. Con stdio, el asistente lo arranca como un proceso más
+en la misma máquina y se comunican por la entrada y la salida estándar, sin red. Con Streamable
+HTTP, el servidor está en otra parte y cada mensaje es una petición HTTP.
+
+La comodidad de MCP es que la clínica puede conectar su asistente al servidor del programa de
+agenda que ya usa, sin escribir la integración. El coste es que cada llamada a una herramienta
+remota es al menos un viaje de ida y vuelta por la red, además de lo que tarde la herramienta. Si
+el servidor está en otro continente, son al menos 60 ms por llamada solo por física. Si la conexión
+no está abierta, hay que establecerla primero: un viaje para la conexión TCP y otro para el
+cifrado TLS antes de la petición. Y hasta la revisión de noviembre de 2025 del protocolo, una
+sesión nueva empezaba además con un saludo, el mensaje `initialize`, que la revisión de julio de
+2026 [eliminó](https://modelcontextprotocol.io/specification/2026-07-28/changelog) al hacer el
+protocolo sin estado.
+
+Hay un segundo coste, menos visible. El asistente pide al servidor la lista de sus herramientas y se
+la pasa al modelo en cada turno, con su nombre, su descripción y sus parámetros. Un servidor con
+cuarenta herramientas son muchos tokens de *prefill* en cada frase del usuario, aunque se use una.
+La misma revisión de 2026 pide a los servidores que devuelvan la lista siempre en el mismo orden,
+precisamente para que la caché de prompts del modelo pueda reutilizarla.
+
+### Varias herramientas seguidas
+
+Lo peor no es una herramienta, sino varias que dependen unas de otras. «¿Tenéis hueco el jueves por
+la tarde? Y si es así, ¿me lo reserváis?» son al menos dos: consultar la agenda y, con el
+resultado, reservar. La segunda no puede empezar hasta que termine la primera, y cada una es una
+vuelta entera. Los agentes que en texto encadenan cinco o seis llamadas sin que nadie lo note son,
+en voz, quince segundos de silencio.
+
+La figura de debajo permite hacer estas cuentas. Empieza con el turno de Twilio, que suma sus
+1115 ms, y deja cambiar cómo se decide el fin de turno, añadir una búsqueda antes del modelo, añadir
+hasta tres herramientas seguidas y mover la herramienta a un servidor MCP remoto. Todos los tiempos
+son de las fuentes de este artículo.
+
+<PostFigure
+  id="latency-budget"
+  caption="Un turno de voz, con el tiempo empezando cuando el usuario deja de hablar. La línea verde continua es el momento en que empieza a oír la respuesta; la discontinua, si hay frase puente, el primer sonido. Las líneas grises discontinuas son las referencias: el hueco medio entre personas, 59 ms contando todos los turnos y 208 en preguntas de sí o no, y el objetivo de Twilio. Los tiempos son los objetivos de Twilio para la cadena básica, las medianas de Stream RAG para escribir una consulta y buscar con reordenación, y 60 ms como mínimo físico por cada ida y vuelta a otro continente."
+  height={900}
+/>
+
+Con una herramienta que tarda lo que la búsqueda de Stream RAG, la respuesta llega a los 4,5
+segundos. Con tres seguidas, por encima de los 11. Bajar el fin de turno de 800 a 350 ms recupera
+casi medio segundo, que en el turno sin herramientas es mucho y en el de tres herramientas
+es poco. Lo que más pesa, en cuanto hay herramientas, es cuántas vueltas se dan.
+
+## Cómo se esconde la espera
+
+Hay dos formas de que una espera inevitable se note menos: decir algo mientras tanto y empezar
+antes. Las dos están en la figura de arriba.
+
+### La frase puente
+
+La más antigua es hacer lo que haría una recepcionista: «un momento, lo miro». El modelo escribe
+primero una frase corta, que sale hacia la síntesis de voz, y después la petición a la herramienta,
+que se ejecuta mientras la frase suena. La guía de Twilio la menciona como la forma de enmascarar
+los retrasos del modelo y de las herramientas, y en la figura se ve qué hace: el primer sonido
+vuelve a los 1115 ms del turno sin herramientas, aunque la respuesta con el dato siga llegando igual
+de tarde.
+
+Funciona porque la paciente ya sabe que la han oído y que algo está pasando, que es justo lo que
+le faltaba en el ejemplo del principio. Pero tiene un límite claro. Una frase puente compra unos
+segundos, no diez, y si se repite en cada turno, el asistente suena a alguien que no sabe nada sin
+mirarlo. Hay además un riesgo menos obvio: si el modelo habla antes de saber qué va a hacer, puede
+comprometerse a algo que luego no cumple. En la evaluación de
+[Full-Duplex-Bench-v3](https://arxiv.org/abs/2604.04847), un conjunto de pruebas de asistentes de
+voz con herramientas, Ultravox, un modelo de voz abierto, era el más rápido en emitir el primer
+sonido (3,88 s de media), pero el más lento en llegar a la llamada a la herramienta (6,01). El 88 %
+de sus respuestas empezaban con una frase puente, y en casi la mitad de los turnos hablaba antes de
+que el usuario hubiera terminado.
+
+### Empezar antes de que termine
+
+La otra forma es la que usan las personas: no esperar al final de la frase. Si a mitad de «¿tenéis
+algún hueco el jueves por la tarde para...?» ya está claro que hay que consultar la agenda del
+jueves, la consulta puede salir en ese momento, con la transcripción a medias, y su resultado estar
+listo cuando la paciente termine. Si al final la frase pedía otra cosa, el resultado se tira. Se
+llama *ejecución especulativa*, y desde 2025 hay varios trabajos que la miden.
+
+- Stream RAG lanza búsquedas con la transcripción parcial cada cierto tiempo, o deja que el
+  propio modelo decida cuándo lanzar una nueva, y recorta en torno a un 20 % el tiempo que se
+  espera a la búsqueda. Sus autores advierten que, con audio sintético, no han contado la
+  detección de fin de turno, y que con voz humana, que deja más silencio al final, el ahorro es
+  mayor.
+- Un equipo de Qualcomm hizo lo mismo [en un móvil](https://arxiv.org/abs/2610.07641), con un modelo
+  de 3.000 millones de parámetros, búsquedas en la web y los resultados guardados en una caché de la
+  que el modelo los toma cuando la transcripción se cierra. La mediana bajó de 5,79 a 4,60 s y el
+  percentil 99 (el tiempo que solo supera una de cada cien respuestas) de 19,8 a 15,1. Con una
+  búsqueda de unos diez segundos, la respuesta pasaba de 17 s a 8.
+- [Heartbeat Thinking](https://arxiv.org/abs/2610.26233) lleva la idea más lejos: un modelo revisa
+  cada medio segundo lo que lleva oído y lanza las herramientas que ya puede, mientras el usuario
+  sigue hablando. La llamada correcta llegaba de media 4,4 segundos antes de que el usuario
+  terminase, y la respuesta, a los 4,4 s del final, frente a los 8,1 de la mejor cascada sin especular.
+
+En la figura, la casilla de especular supone que la petición se entiende un segundo antes de que
+el usuario termine, que según estos trabajos es quedarse corto. Con una herramienta de 2,78 s, eso
+recupera casi un segundo y medio: el segundo de ventaja y lo que el turno tardaba en cerrarse.
+
+### Lo que no conviene esconder
+
+Especular tiene un precio, y no es solo el de las búsquedas que se tiran. La gente rectifica a
+mitad de frase («el jueves, no, perdona, el viernes»), y una herramienta lanzada antes de tiempo
+puede quedarse con el dato equivocado. Full-Duplex-Bench-v3 lo estudió con grabaciones de personas
+reales que dudan y se corrigen. En uno de sus ejemplos, un asistente buscaba viajes al destino que
+el usuario acababa de corregir, porque la llamada había salido 2,3 segundos antes de que terminara
+de hablar. Ni el mejor sistema evaluado resolvía bien más del 59 % de los casos con
+rectificación, y la cascada, el 18 %. En Heartbeat Thinking, un 4 % de las grabaciones acababan
+usando resultados desfasados.
+
+De ahí sale la regla que siguen todos estos trabajos: solo se especula con herramientas que leen.
+Consultar la agenda del jueves por si acaso no hace daño; reservar el jueves a las cinco por si
+acaso, sí. Las herramientas que cambian algo esperan a que el usuario haya terminado, y a menudo a
+que lo confirme.
+
+## Modelos que oyen y hablan
+
+La cascada tiene un problema que no es de tiempo: al pasar la voz a texto se pierde todo lo que no
+es texto. El tono de pregunta, la duda, la ironía, el ruido de fondo, si quien habla es un niño. Y
+el modelo de lenguaje tampoco puede expresar nada de eso en la respuesta, porque solo escribe
+palabras. La alternativa es un único modelo que recibe audio y devuelve audio, que se suele llamar
+de voz a voz (*speech-to-speech*).
+
+El ejemplo más claro es [Moshi](https://arxiv.org/abs/2410.00037), de Kyutai, un laboratorio francés,
+publicado en 2024. Además de ser un solo modelo, es *full-duplex*: escucha y habla a la vez,
+continuamente, como en una llamada de teléfono, en lugar de alternar turnos. Siempre está generando
+audio, que a veces es voz y a veces es silencio, y decide él mismo cuándo hablar, sin un detector de
+fin de turno aparte. Su latencia teórica es de 160 ms, 80 de la trama de audio con la que trabaja y
+80 más de margen, y en la práctica, 200: el hueco humano. Las APIs de voz de OpenAI y de Google
+también son un solo modelo que recibe y devuelve audio, aunque no publican sus detalles, y la de
+OpenAI, por ejemplo, sigue decidiendo el turno con un detector aparte.
+
+¿Resuelve eso el problema? Para la conversación sin herramientas, en buena parte sí: en EVA-Bench,
+los sistemas de voz a voz eran los que más turnos contestaban a tiempo, con latencias medias de 1 a
+1,3 segundos sin herramientas, frente a los 2,2 a 4,3 de las cascadas evaluadas. Pero con herramientas
+la herramienta sigue tardando lo mismo, y el modelo sigue teniendo que escribir la petición y leer
+el resultado. En Full-Duplex-Bench-v3, donde las herramientas eran simuladas y contestaban al
+instante, los modelos de voz a voz tardaban de media entre 4,3 y 8,4 segundos en dar el dato, y la
+cascada, 10,1. Más rápido, pero lejos de los 200 ms.
+
+Hay también costes de otro tipo. En una cascada se puede elegir cada pieza (el mejor
+reconocimiento para el español, el modelo de lenguaje que mejor usa las herramientas, la voz que
+prefiera la clínica), leer lo que el modelo escribió antes de que suene y comprobarlo. Un modelo de
+voz a voz es una caja más cerrada, se evalúa peor y suele dar menos donde elegir. El precio de esa
+libertad también se ve en EVA-Bench: las tres cascadas que más acertaban pasaban de 5 segundos de
+media en los turnos con herramienta.
+
+## Cómo medirlo
+
+Si hay que quedarse con una sola recomendación práctica de todas las fuentes, es medir cada paso
+por separado y con percentiles. La media de la latencia esconde lo que el usuario recuerda, que es
+la vez que esperó seis segundos. Lo que se mira es la mediana (lo que le pasa al usuario típico) y
+un percentil alto, el 95 o el 99 (lo que le pasa una vez de cada veinte o de cada cien), y en una
+cadena de pasos en fila, los percentiles altos de cada uno se suman en el peor momento. El asistente
+de Salesforce lo ilustra: su modelo tenía una mediana de 337 ms hasta el primer token, pero la
+primera petición, con el servidor aún frío, tardó 4,3 segundos.
+
+Para medirlo hace falta poner una marca de tiempo en cada frontera: cuándo dejó de hablar el
+usuario según el audio, cuándo se cerró el turno, cuándo llegó el primer token, cuándo salió el
+primer audio, cuándo empezó a sonar. Las dos primeras no son la misma, y la diferencia es el
+precio de la detección de fin de turno, el número que más se olvida. Y todo se mide con voz real,
+por la red real: los trabajos de arriba que usan audio sintético avisan de que la voz humana deja
+más silencio al final de la frase, y de que cambia la cuenta.
+
+Las cifras de este artículo no se pueden comparar entre sí sin cuidado: cada fuente empieza y
+acaba el reloj en un sitio distinto, unas incluyen la red y otras no, unas miden el primer sonido
+y otras la respuesta con el dato. Lo que sí es común a todas es la estructura: dónde se va el
+tiempo y qué lo multiplica.
+
+## Qué te llevas
+
+- **El listón está por debajo de 200 ms**: es el hueco medio en las preguntas de sí o no, y contando
+  todos los cambios de turno la media baja a 59 ms, con casi la mitad de los turnos solapados. Ningún
+  asistente actual se acerca, y menos con herramientas. Una cascada bien montada ronda el segundo sin
+  ellas; el objetivo razonable de partida, según Twilio, son 1115 ms.
+- **Lo más lento suele ser decidir que el usuario ha terminado.** Un temporizador de silencio de
+  medio segundo se come casi la mitad del presupuesto; un modelo de fin de turno que oye la
+  entonación y lee las palabras lo recorta, a cambio de cortar a alguien de vez en cuando.
+- **Todo cabe porque los pasos se solapan**: reconocimiento en *streaming*, el modelo que empieza a
+  escribir con el texto completo, frases que pasan a voz en cuanto terminan. Un paso que espera a
+  terminar antes de dar nada rompe la cuenta entera.
+- **Cada herramienta es otra vuelta**: escribir la petición, ejecutarla y volver a leer. Con una,
+  la respuesta pasa a varios segundos; con varias seguidas, a más de diez. Un RAG que busca con la
+  frase del usuario antes de llamar al modelo se ahorra la primera parte; uno agéntico la paga en
+  cada búsqueda.
+- **MCP remoto añade red y tokens**: un viaje de ida y vuelta por llamada, más si hay que abrir la
+  conexión, y la lista de herramientas leída en cada turno. Un servidor cerca y una lista corta, en
+  orden fijo y en caché, lo dejan en casi nada.
+- **La espera que queda se esconde de dos formas**: una frase puente para que el primer sonido
+  llegue a tiempo, y empezar a buscar con la frase a medias para que el dato llegue antes. La
+  segunda solo con herramientas que leen, porque la gente rectifica.
+- **Los modelos de voz a voz** se acercan a los 200 ms en la conversación, pero con herramientas
+  siguen pagando cada vuelta, y se eligen y se evalúan peor que una cascada.
+
+Si la paciente de la Clínica Arce hubiera oído «un momento, lo miro» al segundo de terminar, y la
+consulta a la agenda hubiera salido en cuanto dijo «el jueves por la tarde», la respuesta habría
+llegado un par de segundos después, sin silencio de por medio y sin ningún «¿hola?». No es la
+conversación entre dos personas, pero se le parece lo suficiente como para que nadie cuelgue.

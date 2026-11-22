@@ -1070,6 +1070,86 @@
       "moreTopics": "+{count} topics",
       "fewerTopics": "Fewer topics",
       "clear": "Clear filters"
+    },
+    "figures": {
+      "common": {
+        "error": "This interactive figure could not be loaded."
+      },
+      "latencyBudget": {
+        "ms": "{value} ms",
+        "seconds": "{value} s",
+        "aria": "Timeline of one voice turn: the first sound arrives {first} ms after the user stops speaking, and the answer {answer} ms after.",
+        "axis": "Time since the user stopped speaking. Hatched bars start earlier, while they are still talking.",
+        "presets": {
+          "label": "Example cases",
+          "chat": "Conversation only",
+          "rag": "With RAG",
+          "tool": "One tool",
+          "agent": "Three tools over MCP"
+        },
+        "readout": {
+          "firstSound": "First sound",
+          "answer": "Answer with the data",
+          "vsTarget": "Answer: {ratio} × the 1,115 ms target. First sound: {human} × the average gap between two people on yes/no questions."
+        },
+        "refs": {
+          "allTurns": "people, all turns (59 ms)",
+          "human": "people, yes/no questions (208 ms)",
+          "target": "Twilio target (1,115 ms)"
+        },
+        "lanes": {
+          "user": "User",
+          "network": "Network",
+          "listen": "End of turn",
+          "model": "Model",
+          "tool": "Tools",
+          "voice": "Voice"
+        },
+        "bars": {
+          "speech": "speaking",
+          "listen": "done yet?",
+          "search": "search",
+          "callGen": "call {n}",
+          "toolRun": "tool {n}",
+          "ttft": "first token",
+          "filler": "filler",
+          "tts": "voice"
+        },
+        "listen": {
+          "label": "How the system decides the user has finished",
+          "model": "End-of-turn model (350 ms)",
+          "silence500": "Fixed 500 ms silence",
+          "silence800": "Fixed 800 ms silence"
+        },
+        "search": {
+          "label": "Search documents before calling the model (RAG)",
+          "none": "No",
+          "local": "Local vector index (8 ms)",
+          "rerank": "With re-ranking (2.78 s)"
+        },
+        "tools": {
+          "label": "Tool calls, one after another"
+        },
+        "toolMs": {
+          "label": "How long each tool takes",
+          "local": "Local lookup (8 ms)",
+          "rerank": "Search with re-ranking (2.78 s)"
+        },
+        "host": {
+          "label": "Where the tool runs",
+          "note": "Remote means on another continent: at least 60 ms per round trip.",
+          "inProcess": "In the same process",
+          "mcpOpen": "Remote MCP server, open connection",
+          "mcpFresh": "Remote MCP server, new connection"
+        },
+        "filler": {
+          "label": "Say a filler phrase first (\"one moment, let me check\")"
+        },
+        "speculative": {
+          "label": "Start the first search while the user is still talking",
+          "note": "Assumes the request is already clear one second before they finish."
+        }
+      }
     }
   },
   "courses": {
