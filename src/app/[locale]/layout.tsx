@@ -40,8 +40,9 @@ import "../globals.css";
  * ONE credit state (one /api/credits per load, one tab-focus refetch) instead of one per
  * `useUserSession()` call site. Client-only, no server data.
  *
- * BOOKING-ATTRIBUTION-01: `AttributionCapture` stores the visit's first-touch source
- * (UTM tags / external referrer) so a later booking can carry it. Renders nothing.
+ * BOOKING-ATTRIBUTION-01: `AttributionCapture` keeps the visit's first-touch source
+ * (UTM tags / external referrer) in memory so a booking in the same tab can carry it
+ * (ATTRIBUTION-MEMORY-01: nothing on the device). Renders nothing.
  *
  * CHAT-GLOBAL-01: `ChatProvider` mounts the AI assistant once for every page it is offered on
  * (`isChatRoute`), and holds its open state for the FAB, the Navbar icon and the Footer link.

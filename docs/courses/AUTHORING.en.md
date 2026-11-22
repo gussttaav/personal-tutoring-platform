@@ -83,6 +83,13 @@ the word that flips a sentence; and it never takes quotation marks. The spelling
 the lesson's own `reading` entry gives in `title`. *Settled by `en/33-adios-recurrencia.mdx`
 (COURSE-P11-08).*
 
+A widget's label quoted in prose (a box of the `transformer-architecture` diagram, a button) is a
+string the lesson talks about, so it takes `<W>`, spelled exactly as the English widget renders it
+(`messages/en.json`), never a free translation: <W>Add and layer norm</W>, <W>Masked
+self-attention</W>. In a `caption` it takes `"…"` under the plain-text prop exception below. The
+Spanish sets these labels in `«…»`, which in English would be neither job of the quotation marks.
+*Settled by `en/38-bloque-transformer.mdx` (COURSE-P11-08).*
+
 The `<W>` boundary is [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)'s,
 unchanged. Its plain-text prop exception carries over: `caption`, `alt` and `summary` are strings, so
 a string the lesson talks about is written `"tokenisation"` there.
@@ -320,18 +327,21 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | how a row of weights divides its unit among the positions (`reparto`) | to share out, a share-out; an even share for the uniform one | distribution as the noun, which is the probability object the row also is; spread. *Settled by `en/30-bahdanau.mdx`, `en/31-luong.mdx` and `en/34-self-attention.mdx`* |
 | the three roles of one attention call | query, key, value | request, lookup, content as the name of a role; *lookup* stays free for the dictionary operation Block 4's analogy starts from |
 | the two-layer network applied to each position on its own | position-wise perceptron | feed-forward network (true of every layer in Blocks 2–3, so it says the one thing that is not the point); dense layer |
-| the decoder sublayer taking its keys and values from the encoder | encoder-decoder attention | cross-attention |
+| the decoder sublayer taking its keys and values from the encoder | encoder-decoder attention; `enc_dec` in code | cross-attention, and `cross` as an identifier, which smuggles the banned name back in through the cell. *Identifier settled by `en/39-encoder-decoder-masking.mdx` (COURSE-P11-08)* |
 | the whole formula, divisor included · the operation inside it | *scaled dot-product* · dot product | scalar product |
 | one of the $h$ attentions run in parallel | head — inside the compound *multi-head attention* | |
 | $\mathbb{E}[\cdot]$ · how far a centred quantity lands from zero | mean · standard deviation | expectation, expected value, average; and never the letter $\sigma$, which NOTATION.md §4 reserves |
 | how many positions a coordinate takes to come back round | wavelength | period; frequency, which is $\omega_i$ — a different number |
 | the offset $k$ between two positions · what $\mathbf{M}_k$ does to a pair | shift (the `positional-encoding` widget's label, and the challenge's `shift()`) · rotation; *turn* only for the clock hands of the analogy | offset, displacement. *Settled by `en/37-codificacion-posicional.mdx` (COURSE-P11-08)* |
 | the line carrying a sublayer's input around it | residual connection, and *the residuals* for several | skip connection, shortcut |
+| the operation $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ that line performs (`la suma`) | the sum | the addition, the skip; *add* only inside the widget label <W>Add and layer norm</W>. *Settled by `en/38-bloque-transformer.mdx` (COURSE-P11-08)* |
 | training against raw text before any task | pre-training, to pre-train | prior training |
 | the vector the stack gives one position | contextual representation | contextual embedding — *embedding* names the static object |
 | BERT's objective | masked language modelling (MLM), expanded once per lesson | masked language model — the course spends `language model` on the next-token network, which BERT is not |
 | the token that replaces a hidden position | `[MASK]`, glossed once per lesson | any translation; unifying its brackets with `<EOS>`'s |
 | the two mask regimes, as adjectives | causal, bidirectional | unidirectional, left-to-right, non-causal |
+| what the causal mask does to a cell to the right of the diagonal (`tachar`) | to blank out, a blanked-out cell (the `self-attention-heatmap` widget's word, which draws those cells dashed) | cross out, hide, delete. *Settled by `en/39-encoder-decoder-masking.mdx` (COURSE-P11-08)* |
+| the part of a row the causal mask leaves, positions $1$ to $i$ (`el principio de la fila`) | the start of the row; `start` / `starts` in code | the prefix, the head of the row (*head* is an attention head). *Settled by `en/39-encoder-decoder-masking.mdx` (COURSE-P11-08)* |
 
 ### Where the distinctions change shape
 

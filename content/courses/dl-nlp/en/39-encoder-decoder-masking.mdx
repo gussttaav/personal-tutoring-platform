@@ -1,0 +1,457 @@
+---
+slug: encoder-decoder-masking
+title: "Writing is not reading: the decoder and its mask"
+block: 5
+order: 7
+minutes: 28
+summary: "Everything the block has built so far assumes the whole sentence is in front of it and all T positions are computed at once, and for half the architecture that is false: a model that writes doesn't have the result, it produces it. Training it in a single pass puts the answer right next to the position that has to guess it, and the fix is not a loop but one extra term: minus infinity added to the score, before the softmax, so that the exponential wipes it out of the numerator and the denominator at once. That leaves each row keeping its own start and normalising it again, so the first position takes the whole unit and no row stops summing to 1. With that in place, the decoder's second sublayer is the previous block's attention without a single change: queries from what is being written, keys and values from what was read, a rectangular map and no mask."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-menos-infinito
+    type: single
+    prompt: 'To blank out the future, $-\infty$ is added to the score *before* the softmax. What is wrong with leaving the softmax as it was and setting the leftover weights $\alpha_{ij}$ to zero afterwards?'
+    options:
+      - { id: a, text: 'The row stops summing to $1$. The softmax has already shared the unit out among the $T$ positions, so removing the ones on the right takes away their share, and what comes out is not a mixture but a shrunken mixture, shrunk by a different factor in each row.' }
+      - { id: b, text: 'The weights can''t be touched once they are computed: the softmax is not invertible, and without undoing it there is no way to recover the denominator to normalise again.' }
+      - { id: c, text: 'Nothing. They are the same operation written two ways, and that is in fact what implementations do, because a $-\infty$ inside an exponential raises an overflow warning.' }
+      - { id: d, text: 'It changes the order within the row: taking terms out of the denominator can stop the largest of the remaining cells from being the largest.' }
+    answer: a
+    explanation: '(a). With $-\infty$ the term disappears from the numerator *and* from its place in the denominator at once, so the cells that remain share out the whole unit; setting the weights to zero afterwards leaves the denominator as it was, and the row sums to whatever its start summed to ($0.085$ in the first row of the cell''s example, $0.871$ in the third). (b) invents a technical obstacle: changing an array is trivial, what fails is the arithmetic. (c) is false in both halves: they are not the same operation, and $\exp(-\infty)$ is $0$ without any warning. (d) confuses dividing with reordering: every surviving cell is divided by the *same* number, and dividing a whole row by a positive constant doesn''t change which entry is the largest.'
+    hint: 'Add up the four cells of a row in each of the two versions.'
+  - id: q-casillas-vivas
+    type: numeric
+    prompt: 'A decoder works on an output of $T = 6$ tokens. How many cells of its map $\mathbf{A}$ end up different from zero?'
+    answer: 21
+    tolerance: 0
+    unit: cells
+    explanation: 'Twenty-one. Row $i$ keeps $i$ cells, from $1$ to $i$, so that gives $1 + 2 + 3 + 4 + 5 + 6 = 6 \cdot 7 / 2 = 21$ of the $36$, a little over half. And there is a second count not to confuse with this one: all $36$ are still computed. The mask blanks out after multiplying, not instead of multiplying, so the cost is still the $T^{2}$ of <Leccion slug="adios-recurrencia">the lesson that said goodbye to recurrence</Leccion>; what the mask forbids is looking, and it saves nothing.'
+    hint: 'Count how many cells survive in each row and add them up.'
+  - id: q-tres-atenciones
+    type: multi
+    prompt: 'A full Transformer calls attention three times. Tick what is true of those three calls.'
+    options:
+      - { id: a, text: 'The encoder''s has a $T_x \times T_x$ map and no mask: the input sentence is complete from the start.' }
+      - { id: b, text: 'The decoder''s first one has a $T_y \times T_y$ map and carries the causal mask.' }
+      - { id: c, text: 'The encoder-decoder one has a $T_y \times T_x$ map, and it isn''t square because its two axes are two different sequences.' }
+      - { id: d, text: 'The encoder-decoder one is masked too: if position $4$ of the output can''t look at position $5$ of the output, it can''t look at position $5$ of the input either.' }
+    answer: [a, b, c]
+    explanation: 'The first three. (d) is the tempting one, and it confuses two futures that have nothing to do with each other: what the mask forbids is reading what *hasn''t been written yet*, and the input is not being written (it was read in full before starting). Position $5$ of the source exists from the decoder''s first step, as position $1$ does, so hiding it would throw information away for no reason at all. Notice too that the three calls are the *same* function with different arguments: what changes is who provides the queries, who provides the keys and values, and whether there is an $\mathbf{M}$ or not.'
+    hint: 'For each call, ask yourself which sequence goes in the rows and which goes in the columns.'
+  - id: q-genera-en-paralelo
+    type: boolean
+    prompt: 'With the mask in place, writing a translation of $T_y$ tokens takes a single pass through the decoder.'
+    answer: false
+    explanation: 'False, and telling the two things apart is half of what this lesson is about. *Training* is one pass: the correct output is known in full, it goes in shifted one position, and the mask makes row $i$ compute exactly what it would have computed with nothing to its right, so the $T_y$ rows come out of one matrix product and not out of $T_y$ waits. *Generating* is not: row $i$ needs the token $y_{i-1}$, and that token is the output of the previous pass, which hasn''t happened yet. That is $T_y$ passes, one per token. What the mask buys is training in parallel, not writing in parallel.'
+    hint: 'Where does the token that goes into row $i$ come from when there is no correct answer to copy?'
+challenges:
+  - id: ch-atencion-causal
+    prompt: |
+      Write `attention(Q, K, V, causal=False)`, the call that serves for the paper's three
+      attentions. `Q` has shape $(n_q, d_k)$, `K` shape $(n_k, d_k)$ and `V` shape
+      $(n_k, d_v)$, and *$n_q$ and $n_k$ need not be equal*: in encoder-decoder attention
+      there are $T_y$ queries and $T_x$ keys.
+
+      Return the pair `(output, A)`, in that order: the output, of shape $(n_q, d_v)$, and the
+      map of weights, of shape $(n_q, n_k)$, normalised by rows. The score is the dot product
+      of each query with each key divided by $\sqrt{d_k}$, with $d_k$ read off the shape of
+      `Q`.
+
+      With `causal=True`, cell $(i, j)$ with $j > i$ is $-\infty$ *before* the softmax. Don't
+      write into the arrays you receive.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def attention(Q, K, V, causal=False):
+          # your code here
+          pass
+    tests:
+      - name: "no mask, and with the rectangular map"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(2)
+          Q, K, V = rng.normal(size=(5, 8)), rng.normal(size=(7, 8)), rng.normal(size=(7, 6))
+          res = attention(Q, K, V)
+          assert res is not None, 'attention has to return (output, A), not print them'
+          assert isinstance(res, tuple) and len(res) == 2, 'return the pair (output, A), in that order'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert A.shape == (5, 7), 'one row per query and one column per key: here the map is not square'
+          assert Y.shape == (5, 6), 'the output is a mixture of values: d_v columns'
+          assert np.allclose(A.sum(axis=1), 1.0), 'each query shares one unit out among the keys'
+          E = Q @ K.T / np.sqrt(8)
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          assert np.allclose(A, Z / Z.sum(axis=1, keepdims=True)), 'divide by the square root of d_k, which is the number of columns of Q'
+      - name: "with the mask: nothing to the right of the diagonal, and the row still sums to 1"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          X = rng.normal(size=(6, 5))
+          res = attention(X, X, X, causal=True)
+          assert res is not None, 'attention has to return the pair (output, A)'
+          A = np.asarray(res[1])
+          assert np.abs(np.triu(A, 1)).max() == 0.0, 'everything to the right of the diagonal is exactly zero'
+          assert np.allclose(A.sum(axis=1), 1.0), 'and the row still sums to 1: the mask goes in BEFORE the softmax, not after'
+          assert np.allclose(A[0], np.eye(6)[0]), 'the first position has nothing behind it: it takes the whole unit'
+      - name: "masking is renormalising the start of the row"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          Q, K, V = rng.normal(size=(6, 4)), rng.normal(size=(6, 4)), rng.normal(size=(6, 3))
+          res, res_causal = attention(Q, K, V), attention(Q, K, V, causal=True)
+          assert res is not None and res_causal is not None, 'attention has to return the pair (output, A)'
+          free, causal = np.asarray(res[1]), np.asarray(res_causal[1])
+          for i in range(6):
+              start = free[i, :i + 1]
+              assert np.allclose(causal[i, :i + 1], start / start.sum()), 'the masked row is the start of the free one divided by what that start summed to'
+      - name: "the future doesn't leak"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(6)
+          X = rng.normal(size=(7, 5))
+          res = attention(X, X, X, causal=True)
+          assert res is not None, 'attention has to return the pair (output, A)'
+          before = np.asarray(res[0])
+          X2 = X.copy()
+          X2[4:] = rng.normal(size=(3, 5))
+          after = np.asarray(attention(X2, X2, X2, causal=True)[0])
+          assert np.abs(after[:4] - before[:4]).max() < 1e-12, 'rewriting positions 5, 6 and 7 cannot move what comes out at the first four'
+          assert np.abs(after[4] - before[4]).max() > 1e-6, 'and the fifth does have to move: it has been rewritten itself'
+      - name: "doesn't overflow and doesn't write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          Q, K, V = rng.normal(size=(5, 4)) * 40, rng.normal(size=(5, 4)) * 40, rng.normal(size=(5, 4))
+          copies = [Q.copy(), K.copy(), V.copy()]
+          res = attention(Q, K, V, causal=True)
+          assert res is not None, 'attention has to return the pair (output, A)'
+          assert np.isfinite(np.asarray(res[1])).all(), 'it overflows: subtract the maximum of each row before exponentiating'
+          assert np.isfinite(np.asarray(res[0])).all(), 'it overflows: subtract the maximum of each row before exponentiating'
+          assert all(np.array_equal(u, v) for u, v in zip([Q, K, V], copies)), "don't write into the arrays you receive: use np.where, which returns a copy"
+    solution: |
+      import numpy as np
+
+
+      def attention(Q, K, V, causal=False):
+          E = Q @ K.T / np.sqrt(Q.shape[1])           # (n_q, n_k)
+          if causal:
+              future = np.triu(np.ones(E.shape, dtype=bool), k=1)
+              E = np.where(future, -np.inf, E)        # np.where returns a copy
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          return A @ V, A
+    explanation: |
+      One line different from the challenge in <Leccion slug="self-attention">the lesson on
+      self-attention</Leccion>, and the line goes where it goes: *between* the score and the
+      softmax. Put after it (`A = np.where(future, 0.0, A)`), it passes the test on the zeros and
+      fails the one on the sums, which is why the two are in the same test.
+
+      Two details in the rest. `np.triu(..., k=1)` with `k=1` leaves the diagonal out: position
+      $i$ *can* look at itself, and with `k=0` the first row would be left without a single cell
+      and the softmax would divide by zero. And subtracting the maximum of each row is still
+      safe with the $-\infty$ inside, because cell $(i, i)$ is never blanked out: the row's
+      maximum is always a real number.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar and others'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Its §3.2.3 is your table of three calls, with the masking written as −∞ in the input of the softmax; its §3.1, the decoder with the output shifted one position. Why −∞ and not a zero afterwards, and the teacher forcing, are the lesson''s.'
+---
+
+{/* COURSE-P5-05: Block 5, Lesson 7. COURSE-P11-08: English translation. */}
+
+The sum and the layer norm of the previous lesson, on residual connections, wrap whatever is put
+inside them without asking what it is, so putting one layer on top of another is no longer the
+problem. The one left isn't about depth. Everything this block has built takes for granted that the
+sentence is whole and in front of it, and that the $T$ positions are computed at once, and for half
+the architecture that is false: a model that translates has no translation in front of it until it
+has written one. And if you train it by computing everything in one go (which is what dropping the
+recurrence won), the answer ends up sitting right next to the position that has to guess it.
+
+See it in <W>the cat drinks milk</W>, which is what the model would have to learn to write. If the
+four positions are computed at once and each one looks at all of them (which is exactly what the
+layer from <Leccion slug="self-attention">the lesson on self-attention</Leccion> does), the position
+that has to produce <W>drinks</W> is looking at <W>milk</W> while it produces it. Guessing with the
+answer in front of you goes very well: the loss falls to zero during training. When it really
+generates there is nothing to the right, because it hasn't been written yet, and the model hasn't
+learned to do anything else. This lesson forbids that look without giving up computing the $T$
+positions at once, and along the way it builds the sublayer that joins the paper's two columns.
+
+Go back to the self-attention grid and turn on the causal mask. It is the same sentence, with the
+same projections and the same calculation; the only thing that changes is that everything to the
+right of the diagonal disappears and the cells that are left share out among themselves the unit
+there was to share. Start with the first row, which is the extreme case: it has no one to look at
+but itself.
+
+<Explorable
+  id="self-attention-heatmap"
+  mask
+  caption="The same sentence with the mask on: half the grid goes, and no row stops summing to 1. Position 1 keeps 1.00 on itself, because there is nothing behind it."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+Masking is not a rule obeyed by the loop that writes: it is a $-\infty$ added to the score before
+the softmax, so that row $i$ computes the same thing whether or not anything exists after it.
+</Callout>
+
+## Blanking out the future inside the softmax
+
+The mask is a matrix the size of the grid, and its cells take only two values:
+
+$$
+M_{ij} = \begin{cases} 0 & \text{if } j \leq i, \\ -\infty & \text{if } j > i \end{cases}.
+$$
+
+With it, the attention call changes by one term and nothing else:
+
+$$
+\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}} + \mathbf{M}\right)\mathbf{V},
+$$
+
+with $\mathbf{M} \in \mathbb{R}^{T \times T}$ and the softmax by rows, as always. Nothing inside is
+touched: the three projections are the same, the divisor from <Leccion
+slug="scaled-dot-product">the lesson on the *scaled dot-product*</Leccion> is the same, and the heads
+from <Leccion slug="multi-head">the lesson on multi-head attention</Leccion> are the same (each one
+receives the same $\mathbf{M}$).
+
+Why $-\infty$ and not something else shows when you write out the whole weight:
+
+$$
+\alpha_{ij} = \frac{\exp\left(e_{ij} + M_{ij}\right)}{\sum_{m=1}^{T}\exp\left(e_{im} + M_{im}\right)},
+$$
+
+where $e_{ij}$ is the score already divided by $\sqrt{d_k}$. Since $\exp(-\infty) = 0$, a blanked-out
+cell disappears from the numerator *and* from its place in the denominator, both at once. That is
+what leaves nothing over: the unit the softmax shares out is shared out entirely among the cells
+that remain.
+
+The two alternatives that occur to anyone fail right there. Putting a $0$ in the *score* blanks out
+nothing: $\exp(0) = 1$ is a perfectly ordinary weight, and in the cell further down, row $0$ ends up
+giving the future $0.525$ of its weight. And computing the softmax as usual and setting the
+*weights* to zero afterwards leaves the denominator as it was, so the row sums to whatever its start
+summed to ($0.085$, $0.291$, $0.871$), and what comes out is no longer a mixture but a shrunken
+mixture, with a different factor in each row.
+
+### Masking is renormalising the start of the row
+
+There is a way of reading the mask that puts it in its place, and it comes out of the formula above
+in two steps. For $j \leq i$ the term $M_{ij}$ is $0$, so the numerator is the usual one and the only
+thing that changes is the denominator, which keeps the terms up to $i$. Divide top and bottom by the
+full sum $\sum_{m=1}^{T}\exp(e_{im})$ and the unmasked weights appear:
+
+$$
+\alpha^{\text{causal}}_{ij} = \frac{\exp\left(e_{ij}\right)}{\sum_{m \leq i}\exp\left(e_{im}\right)} = \frac{\alpha_{ij}}{\sum_{m \leq i}\alpha_{im}}, \qquad j \leq i.
+$$
+
+In other words: take the row that <Leccion slug="self-attention">self-attention</Leccion> computed,
+throw away the part on the right and divide what is left by what it summed to. Three things follow
+from that, and none of them needs another calculation. The order within what survives *doesn't
+change*, because all those cells are divided by the same number: the mask doesn't alter
+preferences, it withdraws candidates. Row $1$ is left with a single candidate and therefore with
+$\alpha_{11} = 1$, whether the model knows it or not. And the mask is not a second operation beside
+the softmax; it is the same softmax over fewer cells.
+
+### One pass instead of T
+
+We still have to say what goes into the decoder, because so far we've talked about what it can't
+look at and not about what it has in front of it. What goes in is the correct output *shifted one
+position*: row $i$ gets the token $y_{i-1}$, the one the model should have written at the previous
+step, and row $1$ gets <W>\<GO></W>, the symbol the decoder starts from, because before the first
+there is none. So row $i$ has $y_{<i}$ in front of it and has to produce $y_i$, which is precisely
+the distribution the previous block wrote,
+
+$$
+P\left(y_i \mid y_{<i}, x_{1:T_x}\right),
+$$
+
+one per row. That is the *teacher forcing* of <Leccion slug="seq2seq">the lesson on
+sequence-to-sequence models</Leccion>, with no change to the idea: the model is given the true token
+instead of the one it wrote. What changes is the price. There, the $T_y$ rows came out of $T_y$ steps
+of a recurrence; here they come out of one matrix product, and the mask is what makes that vertical
+bar tell the truth: without it, row $i$ would also be conditioning on $y_{i}$, $y_{i+1}$ and
+everything else.
+
+And now the two concessions, which go together. The mask makes *training* parallel, not generation:
+when it really writes there is no correct output to shift by one position, row $i$ needs the token
+the previous pass produced, and that is $T_y$ passes, one per token. The other is that the triangle
+saves not a single multiplication: the $T^{2}$ scores are computed in full and then more than half
+of them are blanked out. The mask is a prohibition, not an optimisation.
+
+## The sublayer that looks at the other column
+
+The decoder has three sublayers where the encoder has two, and the middle one is the only box in the
+whole paper that joins the two columns. It is the previous block's attention, whole, with the
+queries read from one place and the keys and values from another:
+
+$$
+\mathbf{Q} = \mathbf{X}^{\text{dec}}\mathbf{W}^Q, \qquad \mathbf{K} = \mathbf{X}^{\text{enc}}\mathbf{W}^K, \qquad \mathbf{V} = \mathbf{X}^{\text{enc}}\mathbf{W}^V,
+$$
+
+where $\mathbf{X}^{\text{dec}} \in \mathbb{R}^{T_y \times d_{\text{model}}}$ is what has been written
+so far and $\mathbf{X}^{\text{enc}} \in \mathbb{R}^{T_x \times d_{\text{model}}}$ is what the
+encoder left read. The superscripts on $\mathbf{X}$ say *which column* the matrix comes from; those
+on $\mathbf{W}$ still say which role each one projects, as they have since <Leccion
+slug="self-attention">the lesson on self-attention</Leccion>. Neither of the two counts layers.
+
+The shape of the map falls out on its own, and it is what gives away where this sublayer comes from:
+
+$$
+\mathbf{A} \in \mathbb{R}^{T_y \times T_x},
+$$
+
+rectangular, one row per position of the output and one column per position of the input. It is the
+grid of the previous block, the one from <Leccion slug="luong">the lesson on multiplicative
+attention</Leccion>, with the same two axes and the same row summing to $1$. What has changed since
+then is three things, and none of them is the operation: the score is the *scaled dot-product*
+instead of the alignment model, there are $h$ heads in parallel instead of one, and the query is no
+longer the state of a recurrent network but a row of a matrix that exists in full.
+
+There is no mask here, and it's worth saying why, because it sounds odd after the previous section.
+What is forbidden is reading what *hasn't been written yet*, and the input is not being written: it
+was read in full before starting. Position $T_x$ of the source is available from the first token of
+the output, as position $1$ is. (Real implementations do put another mask here, the padding
+mask, so that the filler positions of a batch don't count; it is the same mechanism applied to
+another problem, and it is outside this lesson.)
+
+With that, the paper's three calls to attention can be put in one table, and they are the three
+boxes that lit up in the diagram from <Leccion slug="adios-recurrencia">the lesson that said goodbye
+to recurrence</Leccion>:
+
+| Call | Queries | Keys and values | Shape of $\mathbf{A}$ | Mask? |
+|---|---|---|---|---|
+| encoder self-attention | $\mathbf{X}^{\text{enc}}$ | $\mathbf{X}^{\text{enc}}$ | $T_x \times T_x$ | no |
+| masked self-attention | $\mathbf{X}^{\text{dec}}$ | $\mathbf{X}^{\text{dec}}$ | $T_y \times T_y$ | yes, causal |
+| encoder-decoder attention | $\mathbf{X}^{\text{dec}}$ | $\mathbf{X}^{\text{enc}}$ | $T_y \times T_x$ | no |
+
+One function, three sets of arguments. And the decoder's three sublayers are wrapped in the line
+from the previous lesson, without a single exception: what went in is added and the result is
+normalised, three times.
+
+## The two attentions in NumPy
+
+The first cell is the mask on its own, over a grid of scores whose numbers I set by hand so that the
+sums can be followed by eye. Look at three things: row $0$, the column of sums, and what happens with
+the two ways of getting it wrong.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+E = np.array([[1.0, 2.0, 0.5, 3.0],          # scores already divided by the root of d_k
+              [0.5, 1.5, 2.5, 1.0],
+              [2.0, 0.0, 1.0, 0.5],
+              [1.0, 1.0, 2.0, 1.5]])
+T = len(E)
+future = np.triu(np.ones((T, T), dtype=bool), k=1)     # True where j > i
+
+
+def softmax_rows(S):
+    Z = np.exp(S - S.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+M = np.where(future, -np.inf, 0.0)
+with_mask = softmax_rows(E + M)                        # the paper's
+with_a_zero = softmax_rows(np.where(future, 0.0, E))   # blanking out with a 0 in the SCORE
+weights_to_zero = np.where(future, 0.0, softmax_rows(E))  # blanking out the WEIGHTS, already shared out
+
+for name, A in (("with -inf   ", with_mask),
+                ("with a 0    ", with_a_zero),
+                ("weights to 0", weights_to_zero)):
+    print(name, "row 0:", np.round(A[0], 3), " sums:", np.round(A.sum(axis=1), 3))
+
+# Masking is keeping the start of the row and normalising it again.
+free = softmax_rows(E)
+starts = np.where(future, 0.0, free)
+starts = starts / starts.sum(axis=1, keepdims=True)
+print("\\nthe mask is the renormalised start:", bool(np.allclose(with_mask, starts)))
+print("without the mask, row 0 gives the future:", round(float(free[0, 1:].sum()), 3))
+`} />
+
+The first three lines are the whole argument. With $-\infty$ row $0$ comes out `[1. 0. 0. 0.]` and
+all four sums are $1$. With a $0$ in the score the sums are $1$ as well, and that is the trap: the row
+shares out correctly, but it shares out among positions that shouldn't be there (the $0.525$ that
+goes to three columns of the future). With the weights blanked out afterwards, the sums drop to
+$0.085$, $0.291$, $0.871$ and $1$: four rows scaled four different ways, which is the worst of the
+three results even though it looks the most harmless.
+
+The second cell builds the decoder's two attentions and checks the only thing the mask promises.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(8)
+T_x, T_y, d_model, d_k, d_v = 7, 5, 16, 8, 8
+
+X_enc = rng.normal(size=(T_x, d_model))       # what the encoder left read
+X_dec = rng.normal(size=(T_y, d_model))       # what has been written so far
+Wq = rng.normal(size=(d_model, d_k)) * 0.5
+Wk = rng.normal(size=(d_model, d_k)) * 0.5
+Wv = rng.normal(size=(d_model, d_v)) * 0.5
+
+
+def attention(asking, answering, causal=False):
+    Q, K, V = asking @ Wq, answering @ Wk, answering @ Wv
+    E = Q @ K.T / np.sqrt(d_k)
+    if causal:
+        E = np.where(np.triu(np.ones(E.shape, dtype=bool), k=1), -np.inf, E)
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    A = Z / Z.sum(axis=1, keepdims=True)
+    return A @ V, A
+
+
+own, A_own = attention(X_dec, X_dec, causal=True)        # masked self-attention
+enc_dec, A_enc_dec = attention(X_dec, X_enc)             # encoder-decoder attention
+
+print("masked     : A", A_own.shape, " sums", np.round(A_own.sum(axis=1), 3))
+print("enc-dec    : A", A_enc_dec.shape, " sums", np.round(A_enc_dec.sum(axis=1), 3))
+print("live cells in the masked one:", int((A_own > 0).sum()), "of", A_own.size)
+
+# Rewrite the end of what has been written and see what moves of what came before.
+other = X_dec.copy()
+other[3:] = rng.normal(size=(T_y - 3, d_model))
+out_other, _ = attention(other, other, causal=True)
+print("\\nchange positions 4 and 5; do the first three move?",
+      round(float(np.abs(out_other[:3] - own[:3]).max()), 12))
+print("and the fourth?", round(float(np.abs(out_other[3] - own[3]).max()), 3))
+`} />
+
+The two maps have the table's shapes ($5 \times 5$ the masked one, $5 \times 7$ the encoder-decoder
+one) and all ten rows sum to $1$. Of the first one's $25$ cells, $15$ are left live, which is the
+count $T(T+1)/2$. And the last two lines are the property all of this exists for: rewriting positions
+$4$ and $5$ of the decoder moves what comes out at the first three by exactly $0.0$, while the fourth
+(which is one of the ones I rewrote) does move. Change `causal=True` to `causal=False` and run it
+again: that $0.0$ stops being one, and that is a model that has read what it hasn't written yet.
+
+## Test your intuition
+
+Four questions: why $-\infty$ and not a zero, how many cells survive, what carries a mask and what
+doesn't, and what really runs in parallel.
+
+<Quiz id="q-por-que-menos-infinito" />
+
+<Quiz id="q-casillas-vivas" />
+
+<Quiz id="q-tres-atenciones" />
+
+<Quiz id="q-genera-en-paralelo" />
+
+<CodeChallenge id="ch-atencion-causal" />
+
+---
+
+There is no box left in the drawing without a lesson behind it, except the one at the very top,
+which turns each row into a probability per vocabulary entry. What has never appeared in these seven
+lessons is the *numbers*: how many blocks are stacked, how wide they are, how many heads there are,
+which tables are shared and how many parameters it all adds up to. Each piece has been built with
+the widths the argument needed, and the paper chose particular ones.
+
+That is <Leccion slug="arquitectura-completa">the next lesson, on the paper's full
+architecture</Leccion>: Figure 1 box by box, with its sizes, set beside what we have built. It is the
+lesson that turns *Attention Is All You Need* into a text you can open and read from beginning to
+end, which was the promise the block started with.

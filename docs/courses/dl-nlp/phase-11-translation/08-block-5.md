@@ -410,8 +410,8 @@ which quotes five of its figures. Block 4's direction decision fixes 5.9's class
 - [x] 5.3 `scaled-dot-product`
 - [x] 5.4 `multi-head`
 - [x] 5.5 `codificacion-posicional`
-- [ ] 5.6 `bloque-transformer`
-- [ ] 5.7 `encoder-decoder-masking`
+- [x] 5.6 `bloque-transformer`
+- [x] 5.7 `encoder-decoder-masking`
 - [ ] 5.8 `arquitectura-completa`
 - [ ] 5.9 `proyecto-transformer`
 - [ ] 5.10 `bert-y-gpt`
@@ -459,6 +459,27 @@ applies is a **rotation**, the clock hands **turn** (AUTHORING.en.md §6 row); l
 quote $\mathbf{M}_k$ or RoPE reuse those words. The `positional-encoding` widget's three English em
 dashes were removed in `messages/en.json`, mirroring the Spanish fix. All numbers re-read in Pyodide:
 6.3 / 11.2 / 19.9 / 35 332.9, norm 4, error 1.08e-15, 12.272398, 16 / 15.314 / 12.272.
+**Decided in 5.6 (COURSE-P11-08): worked as an adapt, not the transpose in its row.** The Spanish was
+reworked after the triage (6a3fc3e: «Lo que la atención no puede calcular», a third `<PyCell>`,
+`q-para-que-el-perceptron`, Geva et al. as a fifth `reading`), and the new argument rests on Block 2's
+XOR phrases; the English takes `en/11`'s set verbatim, <W>it's good</W> / <W>it's bad</W> /
+<W>not good</W> / <W>not bad</W>. No answer moved. The 5.6 inventory above describes the version
+before that rework. Widget labels quoted in prose take `<W>` and the English label exactly
+(<W>Add and layer norm</W>, <W>Masked self-attention</W>), and `x + Sublayer(x)` is **the sum**
+(AUTHORING.en.md §1 and §6 now say so); 5.7 and 5.8 quote the same diagram and reuse both. All
+numbers re-read in Pyodide: 0.98 / 2.89, 0.0 / 1.889, 0.109 → 5.182e-07, 1.0001–1.8045, the XOR
+readout 1.00 ×3 / 0.00 before the ReLU and 1.00 ×4 after.
+**Decided in 5.7 (COURSE-P11-08): a clean transpose, as its row says.** The explorable shows 5.2's
+`the keys to this car are here` with the mask on (projections toggle hidden since ac591ba); its
+caption's two claims hold, `the` at 1.00 on itself and every row 1.00. *Tachar* is **blank out**,
+the widget's own word, and *el principio de la fila* is **the start of the row** (AUTHORING.en.md §6
+rows); 5.6's closing now says "blanking out" to match. The table's rows are the English widget
+labels in plain text (encoder self-attention, masked self-attention, encoder-decoder attention), and
+the encoder-decoder call is `enc_dec` in code, never `cross`; 5.8 quotes the same three calls.
+`<GO>` keeps its gloss, the symbol the decoder starts from. The opening was reworded so it doesn't
+echo 5.6's "token by token". All numbers re-read in Pyodide: 0.525, 0.085 / 0.291 / 0.871, 15 of 25,
+0.0; the challenge's solution passes 5/5, and the after-softmax variant fails the sums check as the
+explanation says.
 
 ## 5.11 and the notebooks
 

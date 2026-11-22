@@ -1,0 +1,695 @@
+---
+slug: por-que-un-perceptron-en-el-transformer
+title: "Por qué necesitamos un perceptrón en el Transformer, si ya tenemos la atención"
+date: "2026-11-17"
+minutes: 27
+summary: "En cada bloque del Transformer, después de la atención, hay un perceptrón de dos capas que casi nadie explica y que lleva dos tercios de los parámetros. Por qué la atención no puede hacer su trabajo, qué guarda que la atención no tiene dónde guardar, por qué tiene esa forma y qué se ha probado en su lugar, de las compuertas a la mezcla de expertos."
+draft: false
+reading:
+  - kind: paper
+    title: "Attention is Not All You Need: Pure Attention Loses Rank Doubly Exponentially with Depth"
+    authors: "Yihe Dong, Jean-Baptiste Cordonnier y Andreas Loukas"
+    year: "2021"
+    venue: "arXiv:2103.03404"
+    lang: en
+    url: "https://arxiv.org/abs/2103.03404"
+    note: "El título que todo el mundo recuerda. Merece la pena la sección 3, con tres subtítulos que resumen el artículo entero: la conexión residual es crucial, el perceptrón ayuda y el layer norm no hace nada."
+  - kind: paper
+    title: "Transformer Feed-Forward Layers Are Key-Value Memories"
+    authors: "Mor Geva, Roei Schuster, Jonathan Berant y Omer Levy"
+    year: "2021"
+    venue: "EMNLP 2021"
+    lang: en
+    url: "https://arxiv.org/abs/2012.14913"
+    note: "La lectura del perceptrón como memoria, comprobada a mano: qué textos encienden cada clave y qué palabras empuja cada valor, capa a capa, en un modelo de 16 capas."
+  - kind: paper
+    title: "Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space"
+    authors: "Mor Geva, Avi Caciularu, Kevin Ro Wang y Yoav Goldberg"
+    year: "2022"
+    venue: "EMNLP 2022"
+    lang: en
+    url: "https://arxiv.org/abs/2203.14680"
+    note: "La continuación: cada valor del perceptrón es una pequeña actualización sobre el vocabulario, y encender diez de ellos a mano reduce casi a la mitad el texto tóxico que genera GPT-2."
+  - kind: paper
+    title: "Locating and Editing Factual Associations in GPT"
+    authors: "Kevin Meng, David Bau, Alex Andonian y Yonatan Belinkov"
+    year: "2022"
+    venue: "NeurIPS 2022"
+    lang: en
+    url: "https://arxiv.org/abs/2202.05262"
+    note: "Dónde guarda un modelo de lenguaje que un sitio está en una ciudad: en los perceptrones de las capas intermedias. Y cómo cambiarlo con una sola actualización de rango uno sobre una matriz."
+  - kind: paper
+    title: "Augmenting Self-attention with Persistent Memory"
+    authors: "Sainbayar Sukhbaatar, Edouard Grave, Guillaume Lample y otros"
+    year: "2019"
+    venue: "arXiv:1907.01470"
+    lang: en
+    url: "https://arxiv.org/abs/1907.01470"
+    note: "Su sección 4.1 escribe el perceptrón como una atención sobre vectores fijos, y el resto del artículo lo sustituye por eso sin perder nada. Su ablación sin esos vectores es la prueba más directa de que hacen falta."
+  - kind: paper
+    title: "GLU Variants Improve Transformer"
+    authors: "Noam Shazeer"
+    year: "2020"
+    venue: "arXiv:2002.05202"
+    lang: en
+    url: "https://arxiv.org/abs/2002.05202"
+    note: "Cuatro páginas y una tabla de las que sale el perceptrón de casi todos los modelos actuales, con el ajuste de 2/3 para no añadir parámetros y una conclusión que no pretende explicar nada."
+  - kind: paper
+    title: "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity"
+    authors: "William Fedus, Barret Zoph y Noam Shazeer"
+    year: "2021"
+    venue: "JMLR"
+    lang: en
+    url: "https://arxiv.org/abs/2101.03961"
+    note: "La mezcla de expertos reducida a lo mínimo: muchos perceptrones por capa y uno solo por token. La figura 2 deja claro qué pieza del bloque se multiplica."
+  - kind: paper
+    title: "Memory Layers at Scale"
+    authors: "Vincent-Pierre Berges, Barlas Oğuz, Daniel Haziza y otros"
+    year: "2024"
+    venue: "arXiv:2412.09764"
+    lang: en
+    url: "https://arxiv.org/abs/2412.09764"
+    note: "La lectura de memoria llevada al extremo: sustituir el perceptrón de algunas capas por una tabla de millones de claves. Las ganancias más grandes están en las preguntas de hechos."
+  - kind: paper
+    title: "One Wide Feedforward is All You Need"
+    authors: "Telmo Pessoa Pires, António V. Lopes, Yannick Assogba y Hendra Setiawan"
+    year: "2023"
+    venue: "WMT 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2309.01826"
+    note: "Qué pasa si se comparten los perceptrones entre capas o se quitan del decoder, en traducción: se pierde poco, y si el que queda se ensancha, se gana. Una medida de cuánto se repiten entre sí."
+  - kind: paper
+    title: "MetaFormer Is Actually What You Need for Vision"
+    authors: "Weihao Yu, Mi Luo, Pan Zhou y otros"
+    year: "2022"
+    venue: "CVPR 2022"
+    lang: en
+    url: "https://arxiv.org/abs/2111.11418"
+    note: "El experimento al revés: quitar la atención, poner en su lugar un promedio de vecinos y dejar el perceptrón. En visión funciona, y eso dice algo de qué mitad del bloque es la reemplazable."
+areas: ["ia", "matematicas"]
+cover: "/blog/por-que-un-perceptron-en-el-transformer/dos-mitades.svg"
+tags: ["deep-learning", "llm", "nlp"]
+aiImages: true
+---
+
+{/*
+  BLOG-26 — Por qué necesitamos un perceptrón en el Transformer, si ya tenemos la atención.
+
+  Tesis: la atención decide DE DÓNDE se lee; el perceptrón por posiciones calcula con lo leído
+  y guarda lo que el modelo sabe. La conexión residual, y no el perceptrón, es lo que evita el
+  colapso de rango del título famoso. La forma (una capa oculta, ×4, ReLU) es en buena parte
+  convención; la función no: todas las variantes que han sobrevivido cambian su forma
+  (compuertas, expertos, memorias) y conservan un cálculo no lineal por posición.
+
+  Notación del curso dl-nlp (lecciones multi-head y bloque-transformer): filas = posiciones,
+  X ∈ R^{T×d_model}, FFN(X) = ReLU(X W1 + 1_T b1ᵀ) W2 + 1_T b2ᵀ, α^{(i)}_{ts}, W^V_i, W^O_i.
+  El artículo da por conocido el Transformer, pero no da por leído el curso: lo enlaza dos
+  veces (bloque-transformer, xor-y-capas-ocultas) y vuelve a hacer las cuentas que usa.
+
+  Sin experimentos propios (decisión de Gustavo, 2026-11-14): todo número es citado o sale de
+  una cuenta escrita en el cuerpo. Fuentes comprobadas el 2026-11-14 en arXiv (abs + html):
+    - Vaswani 2017 §3.3: «applied to each position separately and identically», «two
+      convolutions with kernel size 1», d_model = 512, d_ff = 2048.
+    - Dong 2021 (2103.03404): convergencia doblemente exponencial a rango 1 sin residual ni
+      perceptrón; §3.1 «Skip connections are crucial», §3.2 «MLP help» (constante de Lipschitz,
+      «tug-of-war», menos robustez), §3.3 «Layer normalization plays no role»; en BERT, ALBERT
+      y XLNet sin residual, el perceptrón no parece mitigar (sin reentrenar). La cota se
+      escribe aquí con las constantes agrupadas en c.
+    - Elhage 2021 (transformer-circuits.pub): modelos sólo de atención de 0-2 capas; 2 capas →
+      cabezas de inducción; «much less success in understanding MLP layers».
+    - Yun 2020 (1912.10077, ICLR): §4.1 cuantización y §4.3 asignación de valores por las
+      capas feed-forward, §4.2 asignación contextual por la atención.
+    - GPT-3 (2005.14165): d_ff = 4 d_model siempre; 96 capas, d_model 12 288; contexto 2048.
+    - LLaMA (2302.13971): SwiGLU, «2/3 4d instead of 4d as in PaLM». PaLM (2204.02311): d_ff
+      = 4 d_model con SwiGLU; capas en paralelo ≈ 15 % más rápido, algo peor a 8B, igual a 62B.
+    - Mixtral (2401.04088): dim 4096, hidden 14 336, 32 capas, 32 cabezas, 8 de clave/valor de
+      128, 8 expertos, top-2, 47B / 13B. Cuenta del cuerpo: atención 2·4096² + 2·4096·1024 =
+      41,9 M; expertos 8·3·4096·14 336 = 1 409 M; 97 %; total 46,7B con los embeddings
+      (2·32 000·4096), activos 12,9B: cuadra con lo publicado.
+    - FLOPs de la figura reparto-de-flops: ver scripts/figures/por-que-un-perceptron-en-el-transformer.
+    - Sukhbaatar 2019 (1907.01470): §4.1 ReLU → softmax y sin sesgos; mismo número de
+      parámetros si hay tantos vectores persistentes como unidades ReLU; enwik8 grande 114 M,
+      0,98 bpc = el de 209 M; N = 0 «performs poorly».
+    - Geva 2021 (2012.14913): modelo de 16 capas sobre WikiText-103, d = 1024, d_m = 4096; capas
+      1-9 patrones superficiales, 10-16 semánticos; 3,6 patrones por clave; acuerdo del valor
+      con la palabra siguiente ≈ 0 en 1-10, hasta 3,5 % desde la 11 (azar 0,0004 %); un ejemplo
+      enciende entre el 10 y el 50 % de las memorias; la salida de la capa difiere de la de
+      cada memoria en al menos ~68 % de los ejemplos.
+    - Geva 2022 (2203.14680): 10 vectores de valor (0,01 %), toxicidad 58,5 % → 30,8 %,
+      perplejidad 21,7 → 25,3.
+    - Dai 2022 (2104.08696, ACL): BERT-base-cased; suprimir −29,03 %, duplicar +31,17 %; sobre
+      todo en las capas de arriba.
+    - Meng 2022 (2202.05262, NeurIPS): GPT-2 XL y GPT-J; perceptrones de capas intermedias en
+      el último token del sujeto (efecto indirecto medio 6,6 % frente a 1,6 % de la atención
+      en ese token); ROME = actualización de rango uno de una matriz.
+    - Elhage 2022, Toy Models of Superposition (2209.10652): más rasgos que neuronas.
+    - Kaplan 2020 (2001.08361): «depends very weakly» de n_layer, n_heads y d_ff con N fijo;
+      figura 5: «only a few percent over a wide range of shapes»; (6, 4288) a un 3 % de (48, 1600).
+    - Hendrycks 2016 (1606.08415): GELU = x Φ(x).
+    - Shazeer 2020 (2002.05202): T5-base, sin sesgos, d_ff 3072 → 2048; log-perplejidad a
+      524 288 pasos ReLU 1,677, GELU 1,679, Swish 1,683, GLU 1,663, Bilinear 1,648, GEGLU
+      1,633, SwiGLU 1,636, ReGLU 1,645. Cita: «as all else, to divine benevolence».
+    - MoE: Shazeer 2017 (1701.06538) entre LSTM, hasta 137B; GShard (2006.16668) una de cada dos
+      capas, top-2, 600B; Switch (2101.03961) top-1, hasta 7× más rápido en preentrenamiento;
+      DeepSeekMoE (2401.06066) expertos finos + compartidos, 16B ≈ LLaMA2 7B con ~40 % del cálculo.
+    - Lample 2019 (1907.05242, NeurIPS): 512² ranuras; 12 capas + memoria > 24 capas, el doble
+      de rápido en inferencia. Berges 2024 (2412.09764): hasta 128B de parámetros de memoria,
+      1 billón de tokens; mejor que densos con más del doble de cálculo y que MoE igualados;
+      1,3B: NQ 7,76 → 20,78.
+    - Pires 2023 (2309.01826, WMT): Transformer Big, WMT22 en→de; SharedEncNoDec 60 % de los
+      parámetros, 35,6 → 35,3 BLEU, +22 % de velocidad; ancho 49 152 con los mismos parámetros:
+      36,5.
+    - Press 2020 (1911.03864, ACL): sandwich; WikiText-103 18,63 → 17,96; nada en traducción.
+    - Yu 2022 (2111.11418, CVPR): PoolFormer 82,1 %, +0,3 sobre DeiT-B con 35 % menos parámetros.
+      MLP-Mixer (2105.01601): «neither of them are necessary».
+*/}
+
+En el artículo que presentó el Transformer, la atención ocupa la mayor parte de la sección sobre la
+arquitectura, una figura propia y otra sección entera que justifica su coste. El perceptrón que va
+detrás de ella en cada bloque ocupa un párrafo: cinco frases y una ecuación. Esa proporción se ha heredado en casi todo lo que se ha escrito desde entonces, cursos
+incluidos, y es la contraria de la que dan los parámetros. En [GPT-3](https://arxiv.org/abs/2005.14165)
+dos de cada tres parámetros de cada bloque son de ese perceptrón; en
+[Mixtral](https://arxiv.org/abs/2401.04088), un modelo de 2024 que lo copia ocho veces por capa, el
+$97$ %.
+
+La pregunta de este artículo es para qué está, y no es retórica. La atención ya combina las
+posiciones del texto con pesos que dependen del contenido; una caja que trabaja cada posición por
+separado, con los mismos pesos para todas, parece lo menos Transformer del Transformer. La
+respuesta tiene cuatro partes: qué es lo que la atención no puede calcular, qué guarda el
+perceptrón que la atención no tiene dónde guardar, por qué tiene esta forma y no otra, y qué se ha
+probado en su lugar. Antes hay que despejar una pista falsa. El artículo con el título más
+famoso sobre el tema, [*Attention is not all you need*](https://arxiv.org/abs/2103.03404),
+demuestra algo cierto e importante, pero el protagonista de su demostración no es el perceptrón.
+
+## El bloque, con la notación de siempre
+
+Un texto de $T$ tokens entra en cada bloque como una matriz
+$\mathbf{X} \in \mathbb{R}^{T \times d_{\text{model}}}$, con una fila por posición. El bloque tiene
+dos subcapas, y cada una va envuelta en una suma y una normalización,
+$\text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right)$. Que la normalización vaya
+antes o después de la subcapa (los modelos actuales normalizan lo que entra) no cambia nada de lo
+que sigue. La primera subcapa es la atención multi-head,
+
+$$
+\text{MultiHead}(\mathbf{X}) = \text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O,
+\qquad
+\text{head}_i = \text{softmax}\left(\frac{\mathbf{X}\mathbf{W}^Q_i\left(\mathbf{X}\mathbf{W}^K_i\right)^{\top}}{\sqrt{d_k}}\right)\mathbf{X}\mathbf{W}^V_i,
+$$
+
+y la segunda es la que el artículo original llama FFN (*feed-forward network*, red sin
+recurrencia) y que aquí llamaré **perceptrón por posiciones**: un perceptrón de dos capas con una
+ReLU (*rectified linear unit*, $\max(0, \cdot)$ coordenada a coordenada) en medio,
+
+$$
+\text{FFN}(\mathbf{X}) = \text{ReLU}\left(\mathbf{X}\mathbf{W}_1 + \mathbf{1}_T\mathbf{b}_1^{\top}\right)\mathbf{W}_2 + \mathbf{1}_T\mathbf{b}_2^{\top},
+$$
+
+con $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$,
+$\mathbf{W}_2 \in \mathbb{R}^{d_{\text{ff}} \times d_{\text{model}}}$ y $\mathbf{1}_T$ una columna
+de $T$ unos, que repite cada sesgo una vez por fila. En el
+[artículo original](https://arxiv.org/abs/1706.03762), $d_{\text{model}} = 512$ y
+$d_{\text{ff}} = 2\,048$: la capa oculta es cuatro veces más ancha que el modelo.
+
+De la fórmula salen dos propiedades que definen la pieza. La primera es que $\mathbf{W}_1$ y
+$\mathbf{W}_2$ son las mismas para todas las filas, así que la fila $t$ de la salida depende sólo de
+la fila $t$ de la entrada. El artículo lo dice con dos frases: se aplica a cada posición «por
+separado y de forma idéntica», y es equivalente a dos convoluciones con núcleo de tamaño $1$. La
+segunda es que cada bloque tiene sus propias matrices. Seis bloques, seis perceptrones distintos.
+
+Con eso, el bloque reparte el trabajo en dos mitades que no se pisan. La atención es la única pieza
+que mueve información de una fila a otra; el perceptrón transforma cada fila sin poder mirar a las
+demás.
+
+<figure>
+  <img
+    src="/blog/por-que-un-perceptron-en-el-transformer/dos-mitades.svg"
+    alt="Dos paneles, cada uno con las mismas cinco filas de la matriz de entrada, una por posición del texto, apiladas de arriba abajo. A la izquierda, la atención: flechas que salen de las cinco filas convergen en la fila 3, que recibe una media ponderada de todas; es lo único del bloque que mueve información de una posición a otra. A la derecha, el perceptrón por posiciones: cada fila, sola, se ensancha de d_model a d_ff coordenadas, pasa por la ReLU y vuelve a d_model, sin flechas entre filas y con las mismas dos matrices, W1 y W2, para todas."
+    width="760"
+    height="280"
+  />
+  <figcaption>
+    Las dos subcapas de un bloque. La atención mezcla filas; el perceptrón mezcla las coordenadas
+    de cada fila. Ninguna de las dos hace el trabajo de la otra.
+  </figcaption>
+</figure>
+
+## La pista falsa del título famoso
+
+*Attention is not all you need*, de Dong, Cordonnier y Loukas
+(2021), estudia lo que pasa al apilar capas de atención y nada más: sin la suma alrededor, sin
+perceptrón y sin normalización. Su resultado se entiende mirando qué hace una cabeza con una fila.
+Los pesos $\alpha_{ts}$ que salen del *softmax* son positivos y suman $1$ en cada fila, así que la
+fila $t$ de la salida es una media ponderada de las filas de $\mathbf{X}\mathbf{W}^V$. Apilar capas
+es hacer medias de medias, y las medias de medias tienden a parecerse entre sí.
+
+Para medir cuánto, llamemos **residuo** de $\mathbf{X}$ a lo que le sobra para tener todas las
+filas iguales: $\operatorname{res}(\mathbf{X}) = \mathbf{X} - \mathbf{1}_T\mathbf{x}^{\top}$, con
+$\mathbf{x}$ el vector que deja esa diferencia lo más pequeña posible. Una matriz con todas las
+filas iguales tiene rango $1$, y un residuo pequeño quiere decir que todas las posiciones dicen casi
+lo mismo. El teorema central acota el residuo tras $L$ capas de atención pura, y agrupando sus
+constantes (dependen de las normas de las matrices de pesos, del número de cabezas y de $d_k$) en
+una sola $c$, queda
+
+$$
+\left\lVert \operatorname{res}\left(\mathbf{X}^{(L)}\right) \right\rVert \le c^{\frac{3^{L}-1}{2}}\, \left\lVert \operatorname{res}(\mathbf{X}) \right\rVert^{3^{L}}.
+$$
+
+El exponente es $3^{L}$: en cada capa el residuo se eleva, en el peor caso, al cubo. Con $c = 1$ y
+un residuo inicial de $0{,}5$, tras una capa la cota vale $0{,}125$; tras dos, $0{,}002$; tras tres,
+$7 \cdot 10^{-9}$. Por eso los autores la llaman convergencia *doblemente* exponencial. El cubo
+tiene una lectura intuitiva: filas parecidas producen puntuaciones parecidas, puntuaciones parecidas
+dan pesos casi uniformes, y pesos casi uniformes promedian todavía más. El parecido se alimenta a sí
+mismo.
+
+Lo interesante para este artículo es la sección siguiente, donde el artículo vuelve a poner las
+piezas que había quitado. Sus tres subtítulos lo resumen: la conexión residual es crucial, el
+perceptrón ayuda y la normalización no hace nada.
+
+- **La conexión residual** (*skip connection*, la suma $\mathbf{X} + \text{Sublayer}(\mathbf{X})$)
+  rompe la cota por completo. Con ella, entre los caminos que van de la entrada a la salida siempre
+  hay uno que no pasa por ninguna atención, y los autores muestran que hay infinitas elecciones de
+  pesos con las que el residuo no baja nunca, por muchas capas que se apilen.
+- **El perceptrón** entra en la cota como un factor más en la base: su constante de Lipschitz, que
+  es lo máximo que la función puede estirar una distancia. Cuanto más estira, más despacio converge
+  todo, pero la convergencia sigue siendo doblemente exponencial. Los autores lo describen como un
+  tira y afloja, y le ponen precio: estirar mucho hace al modelo más sensible a perturbaciones
+  pequeñas de la entrada. En los experimentos con BERT, ALBERT y XLNet a los que quitan las
+  conexiones residuales, el perceptrón no parece frenar el colapso, aunque ellos mismos advierten
+  que son modelos que no se reentrenaron sin ellas.
+- **La normalización** no influye: centrar y escalar las filas se puede escribir como multiplicar
+  la matriz y sumar a todas las filas un mismo vector, y ni multiplicar puede aumentar el rango ni
+  ese vector cambia el residuo.
+
+El título habla de la atención, y la conclusión, de la suma. El perceptrón sale en la demostración
+como un actor secundario, y el colapso de rango no es la razón de que esté ahí: la conexión residual
+lo evita sola. Hay más pruebas de que con la suma y sin perceptrón un Transformer ya hace cosas.
+[*A Mathematical Framework for Transformer Circuits*](https://transformer-circuits.pub/2021/framework/index.html),
+de Anthropic (2021), estudia a propósito modelos sólo de atención, y con dos capas aparecen las
+**cabezas de inducción** (*induction heads*): pares de cabezas que encuentran en el contexto una aparición anterior del
+token actual y copian el que vino después, una forma general de aprender del propio texto. Los
+autores eligen quitar el perceptrón porque, escriben, han tenido mucho menos éxito entendiéndolo.
+Es una forma honrada de decir que es la parte difícil.
+
+Así que la pregunta sigue en pie. Si la suma impide el colapso y la atención sola ya copia del
+contexto, ¿qué falta?
+
+## Lo que la atención no puede calcular
+
+Falta una operación concreta, y se ve abriendo el $\text{Concat}$. Llamemos $\alpha^{(i)}_{ts}$ al
+peso que la cabeza $i$ da a la posición $s$ al calcular la fila $t$, y $\mathbf{W}^O_i$ a las $d_v$
+filas de $\mathbf{W}^O$ que multiplican lo que devuelve esa cabeza. La fila $t$ de
+$\text{MultiHead}(\mathbf{X})$ es
+
+$$
+\sum_{i=1}^{h}\sum_{s=1}^{T}\alpha^{(i)}_{ts}\,\mathbf{x}_s\mathbf{W}^V_i\mathbf{W}^O_i,
+$$
+
+donde $\mathbf{x}_s$ es la fila $s$ de $\mathbf{X}$. Todo el *softmax* vive dentro de los $\alpha$,
+y lo que deciden los $\alpha$ es *de dónde* se lee. Lo que se hace con lo leído es otra cosa: una
+media ponderada de filas, cada una multiplicada por dos matrices. Con los pesos ya decididos, la
+fila $t$ es una función lineal de las filas de $\mathbf{X}$. La suma residual también es lineal. La
+normalización no lo es, pero sus parámetros, $\boldsymbol{\gamma}$ y $\boldsymbol{\beta}$, trabajan
+coordenada a coordenada: ninguno mira dos coordenadas a la vez.
+
+Un ejemplo pequeño enseña por qué eso es un problema. Toma cuatro frases, «está bien», «está mal»,
+«no está bien» y «no está mal», y supón que la atención ha hecho bien su trabajo: ha llevado a la
+fila de «bien» o «mal» la noticia de si hay un «no» delante. Esa fila tiene ahora dos coordenadas
+que importan, $n = -1$ si hay negación y $n = +1$ si no, y $p = +1$ para «bien» y $p = -1$ para
+«mal». El sentimiento de la frase es su producto, $n \cdot p$: «no» no tiene un signo propio, le da
+la vuelta al de la palabra que le sigue.
+
+Ninguna función afín de $(n, p)$ da ese producto en las cuatro esquinas. Si
+$a n + b p + c$ valiera $n p$, restando las dos frases sin negación saldría $2b = 2$, y restando
+las dos con negación, $2b = -2$. Es el XOR (*exclusive or*), el ejemplo con el que se enseña que
+una sola neurona no basta, y está entero dentro de una fila. Componer funciones lineales da otra
+función lineal, así que apilar más atención no lo arregla: los dos datos están juntos y la
+atención no tiene una pieza hecha para combinarlos.
+
+El perceptrón sí la tiene. Con dos unidades ocultas lo resuelve de forma exacta, porque para
+$n, p \in \{-1, +1\}$
+
+$$
+n\,p = 1 - \lvert n - p \rvert = 1 - \text{ReLU}(n - p) - \text{ReLU}(p - n).
+$$
+
+En términos de la fórmula del bloque, dos columnas de $\mathbf{W}_1$ que leen $n - p$ y $p - n$,
+dos filas de $\mathbf{W}_2$ que restan lo que sale de la ReLU, y un sesgo $\mathbf{b}_2$ que pone el
+$1$. La ReLU deja que la salida dependa de *si* una combinación de coordenadas es positiva, que es
+justo lo que ninguna función lineal hace. El curso de *deep learning* de esta web dedica a esto una
+sección de [la lección sobre el bloque del Transformer](/cursos/dl-nlp/bloque-transformer), con el
+cuadrado del XOR que se ve en [la lección sobre capas ocultas](/cursos/dl-nlp/xor-y-capas-ocultas).
+
+Hay una concesión que hacer. He razonado con los pesos ya decididos, y no vienen decididos: los
+$\alpha$ salen de $\mathbf{X}$, así que la atención entera sí es no lineal en lo que recibe, y una
+red entrenada puede sacarle partido. Pero esa no linealidad está puesta para elegir de dónde leer,
+y usarla para combinar las coordenadas de una misma fila es pedirle a una pieza el trabajo de otra.
+La teoría reparte los papeles igual. La demostración de que los Transformers son
+[aproximadores universales](https://arxiv.org/abs/1912.10077) de funciones entre secuencias (Yun y
+otros, 2020) usa la atención para una sola cosa, que cada posición sepa en qué contexto está, y
+deja al perceptrón todo lo demás: discretizar la entrada al principio y, al final, convertir cada
+combinación de fila y contexto en el valor de salida que toque. Las secciones de la demostración
+se titulan así: cuantización por las capas *feed-forward*, asignación contextual por la atención,
+asignación de valores por las capas *feed-forward*.
+
+La atención reúne; el perceptrón calcula.
+
+## Dónde están los parámetros y las operaciones
+
+Que es la pieza que calcula se nota en el reparto. Por bloque, la atención tiene cuatro matrices de
+$d_{\text{model}} \times d_{\text{model}}$ (las de consulta, clave y valor de todas las cabezas
+juntas, más $\mathbf{W}^O$) y el perceptrón, dos de $d_{\text{model}} \times d_{\text{ff}}$:
+
+$$
+\underbrace{2\, d_{\text{model}}\, d_{\text{ff}}}_{\text{perceptrón}} = 8\, d_{\text{model}}^{2}
+\quad\text{frente a}\quad
+\underbrace{4\, d_{\text{model}}^{2}}_{\text{atención}},
+\qquad\text{con } d_{\text{ff}} = 4\, d_{\text{model}}.
+$$
+
+Dos tercios del bloque, sin contar sesgos ni normalizaciones, que son vectores. GPT-3 mantiene
+$d_{\text{ff}} = 4\, d_{\text{model}}$ en todos sus tamaños, y en el mayor ($96$ bloques con
+$d_{\text{model}} = 12\,288$) eso son $1\,208$ millones de parámetros de perceptrón por bloque frente
+a $604$ de atención. Los modelos actuales cambian las matrices pero no la proporción: LLaMA usa tres
+matrices en lugar de dos y reduce $d_{\text{ff}}$ para que sumen lo mismo (la sección de alternativas
+vuelve sobre esto), y sus versiones posteriores comparten las claves y los valores entre grupos de
+cabezas ([GQA](https://arxiv.org/abs/2305.13245), *grouped-query attention*), que adelgaza la
+atención y engorda la proporción del perceptrón.
+
+Y luego está Mixtral, que tiene ocho perceptrones por bloque. Con $d_{\text{model}} = 4\,096$,
+$d_{\text{ff}} = 14\,336$, tres matrices por perceptrón y ocho cabezas de clave y valor de $128$
+coordenadas cada una, las cuentas de un bloque son
+
+$$
+\underbrace{8 \cdot 3 \cdot 4\,096 \cdot 14\,336}_{\text{perceptrones}} = 1\,409 \text{ M}
+\quad\text{frente a}\quad
+\underbrace{2 \cdot 4\,096^{2} + 2 \cdot 4\,096 \cdot 1\,024}_{\text{atención}} = 42 \text{ M}.
+$$
+
+El $97$ % del bloque. Multiplicado por los $32$ bloques y con las dos matrices de *embeddings*
+($32\,000$ palabras por $4\,096$ coordenadas, a la entrada y a la salida), salen unos $46\,700$
+millones de parámetros, los $47\,000$ millones que publica Mistral AI. Cada token usa sólo dos de
+los ocho perceptrones, y aun así el perceptrón es el $89$ % de los parámetros que usa cada token en
+cada bloque.
+
+Las operaciones cuentan una historia parecida con un matiz que depende de la longitud del texto.
+Para el token que está en la posición $T$, contando cada multiplicación seguida de suma como dos
+operaciones, una capa con $d_{\text{ff}} = 4\, d_{\text{model}}$ hace
+
+$$
+\underbrace{8\, d_{\text{model}}^{2}}_{\text{proyecciones } Q, K, V, O}
++ \underbrace{4\, T\, d_{\text{model}}}_{\text{puntuaciones y suma ponderada}}
++ \underbrace{16\, d_{\text{model}}^{2}}_{\text{perceptrón}}.
+$$
+
+El término de en medio es el único que crece con $T$: comparar la consulta con $T$ claves y sumar
+$T$ valores. Dividiendo, la parte del perceptrón es
+$4\, d_{\text{model}} / (6\, d_{\text{model}} + T)$: dos tercios para un texto corto, y la mitad
+exactamente cuando $T = 2\, d_{\text{model}}$.
+
+<figure>
+  <img
+    src="/blog/por-que-un-perceptron-en-el-transformer/reparto-de-flops.svg"
+    alt="Gráfica de líneas. En el eje horizontal, la posición del token en el texto, T, en escala logarítmica de 256 a 131 072. En el vertical, la fracción de las operaciones de una capa que hace el perceptrón por posiciones, de 0 a 100 %. Tres curvas, una por anchura del modelo: d_model igual a 768, a 4 096 y a 12 288. Las tres empiezan cerca de dos tercios, 67 %, y bajan al crecer T; cada una cruza el 50 % exactamente en T igual a dos veces d_model: en 1 536, en 8 192 y en 24 576. Con d_model igual a 768 y T igual a 131 072 el perceptrón queda en el 2 %; con 12 288, en el 24 %."
+    width="720"
+    height="330"
+  />
+  <figcaption>
+    La parte de las operaciones de una capa que hace el perceptrón, para el token en la posición
+    $T$, según la cuenta de arriba. El coste cuadrático de la atención, que es lo que más se
+    menciona de ella, sólo supera al perceptrón a partir de dos veces la anchura del modelo.
+  </figcaption>
+</figure>
+
+Para GPT-3 ese cruce está en $24\,576$ tokens, doce veces más que el contexto de $2\,048$ con el
+que se entrenó. Durante todo su entrenamiento, la parte del perceptrón en cada capa no bajó del
+$64$ %. Conviene leer bien la figura: son operaciones, no tiempo. Un modelo
+generando texto suele estar limitado por lo que tarda en leer de memoria los pesos y la caché de
+claves y valores, no por lo que tarda en multiplicar, y ese reparto es otro.
+
+Lo importante del reparto es lo que provoca. Cuando se ha querido dar más capacidad a un modelo sin
+pagarla en cada token, lo que se ha multiplicado es el perceptrón, y esa historia está en la
+penúltima sección.
+
+## Una memoria con las claves escritas en los pesos
+
+Para ver qué guardan esos parámetros conviene reescribir el perceptrón columna a columna. Llamemos
+$\mathbf{k}_j$ a la columna $j$ de $\mathbf{W}_1$ y $\mathbf{v}_j$ a la fila $j$ de
+$\mathbf{W}_2$. Para una fila $\mathbf{x}$,
+
+$$
+\text{FFN}(\mathbf{x}) = \sum_{j=1}^{d_{\text{ff}}} \text{ReLU}\left(\mathbf{x}\,\mathbf{k}_j + b_{1,j}\right)\mathbf{v}_j + \mathbf{b}_2^{\top}.
+$$
+
+Puesta así, tiene la misma forma que una cabeza de atención: comparar la entrada con unas claves,
+convertir las comparaciones en pesos y sumar unos valores con esos pesos. Las diferencias son tres,
+y las tres importan. En la atención las claves y los valores salen del texto, y en el perceptrón
+están guardados en los parámetros: son los mismos para cualquier texto. La atención tiene $T$
+claves, tantas como posiciones, y el perceptrón, $d_{\text{ff}}$. Y el *softmax* reparte una
+unidad de peso entre todas las claves, mientras que la ReLU no normaliza nada y deja muchas
+exactamente en cero.
+
+<figure>
+  <img
+    src="/blog/por-que-un-perceptron-en-el-transformer/memoria-clave-valor.svg"
+    alt="Dos filas con la misma estructura de izquierda a derecha: una entrada, unas claves con las que se compara, unos pesos y una suma de valores. Arriba, una cabeza de atención: la consulta de la fila t se compara con T claves que salen del propio texto, una por posición; el softmax convierte las T puntuaciones en pesos positivos que suman uno, y la salida es la suma de los T valores, también sacados del texto, con esos pesos. Abajo, el perceptrón por posiciones: la fila t se compara con d_ff claves guardadas en los parámetros, las columnas de W1, iguales para cualquier texto; la ReLU deja cada coeficiente en cero o en un número positivo, sin normalizar, y la salida es la suma de d_ff valores guardados en las filas de W2, con esos coeficientes. Muchos coeficientes son cero, y sus valores no entran en la suma."
+    width="760"
+    height="262"
+  />
+  <figcaption>
+    La misma suma de claves, pesos y valores. La atención consulta lo que hay en el texto; el
+    perceptrón consulta lo que aprendió durante el entrenamiento.
+  </figcaption>
+</figure>
+
+La equivalencia se ha tomado al pie de la letra. En
+[*Augmenting Self-attention with Persistent Memory*](https://arxiv.org/abs/1907.01470)
+(Sukhbaatar y otros, 2019), cambiar la ReLU por un *softmax* y quitar los sesgos convierte el
+perceptrón en una atención sobre $d_{\text{ff}}$ vectores fijos. Los autores dan el paso siguiente:
+quitan el perceptrón y añaden esos vectores, que llaman **memoria persistente**, a las claves y los
+valores de cada cabeza, junto a los del texto. Si hay tantos vectores como unidades tenía la ReLU,
+el número de parámetros es el mismo. En enwik8, un banco de pruebas que mide en bits por carácter
+cuánto comprime un modelo los primeros cien millones de bytes de la Wikipedia inglesa, su modelo de
+$114$ millones de parámetros iguala, con $0{,}98$, al mejor de entonces, que tenía $209$. Y la
+ablación que más dice está en la misma tabla: con cero vectores persistentes, es decir, con
+atención y sin nada que haga de perceptrón, el modelo funciona mal. La pieza se puede disfrazar de
+atención; lo que no se puede es quitar lo que guarda.
+
+Qué guarda se ha mirado de varias formas. [*Transformer Feed-Forward Layers Are Key-Value
+Memories*](https://arxiv.org/abs/2012.14913) (Geva y otros, 2021) toma un modelo de lenguaje de
+$16$ capas entrenado sobre WikiText-103, un corpus de artículos de la Wikipedia inglesa, con $d_{\text{model}} = 1\,024$ y
+$d_{\text{ff}} = 4\,096$, y para una muestra de claves busca los fragmentos de texto que más las
+encienden y le pide a personas que describan qué tienen en común. Toda clave tiene al menos un
+patrón reconocible, $3{,}6$ de media. En las capas $1$ a $9$ dominan los patrones superficiales,
+como terminar en una palabra concreta; en las capas $10$ a $16$, los semánticos, como hablar de un
+tema. Para los valores, proyectan cada $\mathbf{v}_j$ sobre el vocabulario y miran qué palabra
+empuja: en las capas de abajo casi nunca coincide con la palabra que sigue al texto que enciende su
+clave, y a partir de la capa $11$ coincide hasta en el $3{,}5$ % de los casos, frente a un
+$0{,}0004$ % por azar. Ninguna memoria trabaja sola: un ejemplo típico enciende entre el $10$ y el
+$50$ % de las $4\,096$, y lo que predice la capa entera es distinto de lo que predice cualquiera de
+ellas en al menos dos de cada tres ejemplos.
+
+La [continuación](https://arxiv.org/abs/2203.14680) (Geva y otros, 2022) lee cada término
+$\text{ReLU}(\cdot)\,\mathbf{v}_j$ como una pequeña actualización que sube la probabilidad de un
+grupo de palabras, a menudo un concepto reconocible. Y lo usa: encender a mano diez vectores de
+valor de GPT-2, el $0{,}01$ % del total, baja la proporción de continuaciones tóxicas del
+$58{,}5$ % al $30{,}8$ %, a cambio de subir la perplejidad (el exponente de la pérdida media por
+token, cuanto menor mejor) de $21{,}7$ a $25{,}3$.
+
+Otros dos trabajos buscan hechos concretos. [*Knowledge Neurons*](https://arxiv.org/abs/2104.08696)
+(Dai y otros, 2022) localiza en BERT, con un método de atribución por gradientes, las unidades
+ocultas del perceptrón que más influyen en que el modelo complete bien un hecho, y la mayoría están
+en las capas de arriba. Apagarlas baja la probabilidad de la respuesta correcta un $29$ % de media,
+y duplicar su activación la sube un $31$ %.
+[ROME](https://arxiv.org/abs/2202.05262) (*Rank-One Model Editing*, Meng y otros, 2022) va más
+lejos en GPT-2 XL y GPT-J. Primero estropea la entrada de frases como «la Torre Eiffel está en» y
+restaura los estados internos de uno en uno para ver cuáles devuelven la respuesta correcta: los
+decisivos son los perceptrones de las capas intermedias, en el último token del sujeto, con un
+efecto cuatro veces mayor que el de la atención en ese mismo token. Después edita uno de esos
+perceptrones, tratando su segunda matriz como una memoria asociativa lineal, con una actualización
+de rango uno: un solo producto exterior, y el modelo pasa a creer otra cosa sobre ese sujeto, de
+forma consistente al preguntarlo con otras palabras.
+
+Todo esto tiene un matiz que impide leerlo como una tabla de hechos con una fila por neurona. Las
+redes representan más rasgos que unidades tienen, solapándolos, lo que se conoce como
+[superposición](https://arxiv.org/abs/2209.10652), y por eso una misma unidad se enciende con cosas
+que no tienen nada que ver entre sí. Que cada clave de Geva responda a varios patrones es la misma
+observación vista desde dentro. La memoria es real, pero está repartida.
+
+## Por qué tiene esta forma
+
+Con las dos lecturas delante, la de la pieza que calcula y la de la memoria, se pueden revisar las
+decisiones del diseño una a una. Algunas tienen una razón; otras, sólo costumbre.
+
+**Una capa oculta.** Es el mínimo que rompe la linealidad, y con una basta en teoría: un perceptrón
+con una capa oculta lo bastante ancha aproxima cualquier función continua en un dominio acotado. El XOR de antes pedía una,
+no dos. Ninguno de los modelos citados en este artículo pone más de una capa oculta en el
+perceptrón; las mejoras que han cuajado vinieron de cambiar su anchura, su activación o cuántos hay,
+no su profundidad.
+
+**Más ancha que el modelo.** En la lectura de memoria, $d_{\text{ff}}$ es el número de ranuras; en
+la de cálculo, el número de rasgos nuevos que se pueden construir con cada fila, y en más
+dimensiones es más fácil que lo que hay que separar quede separado por un plano. Las dos lecturas
+piden ensanchar. Lo que ninguna pide es que sea cuatro veces: $2\,048 / 512$ es el número del
+artículo original, que no lo justifica, y GPT-3 lo mantuvo en todos sus tamaños. El estudio de
+[leyes de escala](https://arxiv.org/abs/2001.08361) de Kaplan y otros (2020) midió cuánto importa,
+y la respuesta es poco: con el número de parámetros fijo, la pérdida depende muy débilmente de
+$d_{\text{ff}}$, del número de capas y del de cabezas, y varía unos pocos puntos porcentuales a lo
+largo de un rango amplio de formas. Un modelo de $6$ capas y $d_{\text{model}} = 4\,288$ queda a un
+$3$ % de uno de $48$ capas y $1\,600$. El cuatro es una convención que funciona, no un óptimo.
+
+**De vuelta a $d_{\text{model}}$.** Esta no es una elección. La suma
+$\mathbf{X} + \text{FFN}(\mathbf{X})$ es casilla a casilla, así que lo que sale tiene que tener la
+anchura de lo que entró. El perceptrón sube a $d_{\text{ff}}$ para trabajar y baja para devolver.
+
+**Por posiciones.** Las mismas matrices para todas las filas hacen dos cosas. Que el número de
+parámetros no dependa de $T$, así que el mismo modelo lee una frase o un libro. Y que el
+perceptrón no compita con la atención: si pudiera mirar a las demás filas tendría que aprender
+también a mezclarlas, y la división del trabajo de la primera sección desaparecería. La sección
+siguiente enseña que esa independencia tiene además una consecuencia práctica muy grande, porque
+es la que permite enrutar cada token por su cuenta.
+
+## Lo que se ha probado en su lugar
+
+### Otra no linealidad, y una compuerta
+
+El primer cambio fue la activación. GPT y BERT sustituyeron la ReLU por la
+[GELU](https://arxiv.org/abs/1606.08415) (*Gaussian error linear unit*, 2016), que multiplica la
+entrada por la probabilidad de que una normal estándar quede por debajo de ella,
+$x\,\Phi(x)$: una ReLU suavizada, derivable en el cero y con un pequeño valle negativo.
+
+El cambio que se quedó llegó en 2020. En [*GLU Variants Improve
+Transformer*](https://arxiv.org/abs/2002.05202), Noam Shazeer (uno de los autores del Transformer)
+prueba perceptrones con una **compuerta** (*gate*): dos proyecciones de la entrada en lugar de una, una de
+ellas pasada por una activación, multiplicadas coordenada a coordenada antes de la segunda capa,
+
+$$
+\text{FFN}_{\text{SwiGLU}}(\mathbf{X}) = \left(\text{Swish}\left(\mathbf{X}\mathbf{W}_1\right) \odot \mathbf{X}\mathbf{V}\right)\mathbf{W}_2,
+$$
+
+con $\text{Swish}(z) = z\,\sigma(z)$, $\sigma$ la sigmoide y $\odot$ el producto casilla a casilla.
+Las variantes cambian la activación de la compuerta: ninguna (*bilinear*), una sigmoide (GLU, de
+*gated linear unit*), una ReLU (ReGLU), una GELU (GEGLU) o una Swish (SwiGLU). Hay tres matrices en
+lugar de dos, así que para no añadir parámetros Shazeer reduce $d_{\text{ff}}$ en un factor $2/3$,
+de $3\,072$ a $2\,048$ en su modelo. Estas son las pérdidas medias (el logaritmo de la perplejidad)
+que mide sobre T5-base al final del preentrenamiento:
+
+| perceptrón | ReLU | GELU | Swish | GLU | bilinear | ReGLU | SwiGLU | GEGLU |
+|---|---|---|---|---|---|---|---|---|
+| pérdida | $1{,}677$ | $1{,}679$ | $1{,}683$ | $1{,}663$ | $1{,}648$ | $1{,}645$ | $1{,}636$ | $1{,}633$ |
+
+Cambiar la activación sin compuerta no mueve nada, y todas las compuertas mejoran. La conclusión
+del artículo es célebre porque no explica nada: atribuye el éxito de las variantes, «como todo lo
+demás, a la benevolencia divina».
+
+Me atrevo con una lectura que el artículo no hace, y que sale del ejemplo de las cuatro frases. El
+sentimiento era un producto, $n \cdot p$. La ReLU lo calculaba con dos unidades y un truco; una
+compuerta bilineal lo calcula con una sola, porque multiplica dos proyecciones de la fila y una
+puede leer $n$ y la otra $p$. Lo que añade la compuerta es una forma directa de que una coordenada
+module a otra, que es exactamente la operación que la atención no tiene. Que la variante bilineal,
+sin activación de ningún tipo, gane a la ReLU encaja con esa lectura. No la demuestra.
+
+La práctica no esperó a la explicación. [PaLM](https://arxiv.org/abs/2204.02311) usa SwiGLU con $d_{\text{ff}} = 4\, d_{\text{model}}$,
+pagando los parámetros extra, y [LLaMA](https://arxiv.org/abs/2302.13971) la usa con
+$\tfrac{2}{3} \cdot 4\, d_{\text{model}}$, el ajuste de Shazeer. Buena parte de los modelos
+abiertos posteriores copian esa línea.
+
+### Muchos perceptrones, y uno por token
+
+La **mezcla de expertos** (MoE, *mixture of experts*) pone en cada capa varios perceptrones, los
+expertos, y una pequeña red, el enrutador (*router*), que decide cuáles usa cada token. Los
+parámetros crecen con el número de expertos y el cálculo por token sólo con los que se usan. Su
+historia en el lenguaje es una lista de en qué sitio del bloque se pone.
+
+- [Shazeer y otros (2017)](https://arxiv.org/abs/1701.06538) la colocan entre dos capas de una red
+  recurrente LSTM (*long short-term memory*), con hasta $137$ mil millones de parámetros.
+- [GShard](https://arxiv.org/abs/2006.16668) (2020) sustituye por expertos uno de cada dos
+  perceptrones de un Transformer, con dos expertos por token, y llega a $600$ mil millones.
+- [Switch Transformer](https://arxiv.org/abs/2101.03961) (2021) sustituye el perceptrón y deja un
+  solo experto por token, y en preentrenamiento llega a ser hasta siete veces más rápido que el
+  modelo denso con el mismo cálculo.
+- Mixtral (2024) sustituye todos los perceptrones por ocho expertos, dos por token, y
+  [DeepSeekMoE](https://arxiv.org/abs/2401.06066) (2024) los parte en muchos expertos pequeños y
+  aparta unos pocos que usan todos los tokens; su modelo de 16 mil millones de parámetros iguala a
+  LLaMA 2 7B con un $40$ % de su cálculo.
+
+En todos, lo que se multiplica es el perceptrón. Hay una razón estructural, además de la de los
+parámetros: como el perceptrón trabaja cada fila por separado, cada token puede ir a un experto
+distinto sin que nada más cambie. La atención no admite ese reparto con la misma facilidad, porque
+su trabajo consiste en mezclar filas.
+
+### Una memoria de verdad
+
+Si el perceptrón es una memoria, se puede probar a construirla a propósito.
+[*Large Memory Layers with Product Keys*](https://arxiv.org/abs/1907.05242) (Lample y otros, 2019)
+sustituye el perceptrón de algunas capas por una tabla de $512^2$, unas $262\,000$ ranuras de clave
+y valor, de las que cada token lee sólo las que más se le parecen, y organiza las claves como
+producto de dos conjuntos pequeños para que encontrarlas sea barato. Un modelo de $12$ capas con
+memoria supera a uno de $24$ sin ella, y es el doble de rápido en inferencia.
+[*Memory Layers at Scale*](https://arxiv.org/abs/2412.09764) (Berges y otros, 2024) lleva la idea
+a hasta $128$ mil millones de parámetros de memoria y un billón de tokens de entrenamiento. Supera a
+modelos densos que gastan más del doble de cálculo y a mezclas de expertos igualadas en cálculo y
+en parámetros, y las ganancias son mayores donde la lectura de memoria dice que deberían serlo: en
+las preguntas de hechos. En su modelo de $1{,}3$ mil millones, el acierto en Natural Questions, un banco de preguntas reales
+hechas al buscador de Google, pasa del $7{,}8$ % al $20{,}8$ %.
+
+### Quitarlo, compartirlo o cambiarlo de sitio
+
+Quitarlo sin poner nada en su lugar ya ha salido dos veces: la ablación sin memoria persistente
+funciona mal, y los modelos sólo de atención se estudian por ser más fáciles de entender, no por ser
+mejores. Las otras dos pruebas dicen más.
+
+Compartirlo: [*One Wide Feedforward is All You Need*](https://arxiv.org/abs/2309.01826) (Pires y
+otros, 2023) prueba en traducción del inglés al alemán qué pasa con menos perceptrones. Usar uno
+solo para las seis capas del encoder y ninguno en el decoder deja el modelo en el $60$ % de los
+parámetros, un $22$ % más rápido traduciendo, y le cuesta $0{,}3$ puntos de BLEU (*bilingual evaluation
+understudy*, la métrica que cuenta los fragmentos en común con una traducción de referencia), de
+$35{,}6$ a $35{,}3$. Si ese perceptrón compartido se ensancha hasta recuperar los parámetros
+originales, sube a $36{,}5$: mejor que el modelo de partida. Los perceptrones de capas distintas se
+repiten bastante entre sí, al menos en traducción; lo que no sale bien es quedarse sin ninguno.
+
+Cambiarlo de sitio: el [Transformer sándwich](https://arxiv.org/abs/1911.03864) (Press y otros,
+2020) prueba a reordenar las subcapas sin cambiar cuántas hay, y los mejores órdenes ponen más
+atención abajo y más perceptrón arriba. En WikiText-103 la perplejidad baja de $18{,}63$ a
+$17{,}96$ sin coste en parámetros ni en tiempo, aunque en traducción no se nota. PaLM va por otro
+camino, y calcula las dos subcapas en paralelo sobre la misma entrada normalizada,
+$\mathbf{X} + \text{FFN}(\text{LayerNorm}(\mathbf{X})) + \text{MultiHead}(\text{LayerNorm}(\mathbf{X}))$, que
+entrena un $15$ % más rápido a gran escala porque las primeras multiplicaciones de las dos se pueden
+fusionar. Pierde un poco de calidad a $8$ mil millones de parámetros y nada a $62$.
+
+### El experimento al revés
+
+La prueba más llamativa no toca el perceptrón, sino la otra mitad.
+[MetaFormer](https://arxiv.org/abs/2111.11418) (Yu y otros, 2022) toma un Transformer de visión y
+sustituye la atención por lo más tonto que se le ocurre: un promedio de cada parche de la imagen
+con sus vecinos (*pooling*), sin un solo parámetro. Mantiene la suma, la normalización y el
+perceptrón. El resultado, PoolFormer, acierta el $82{,}1$ % en ImageNet, el banco clásico de clasificación de imágenes, $0{,}3$ puntos más que
+DeiT-B, un Transformer de visión de referencia, con un $35$ % menos de parámetros. Unos meses antes,
+[MLP-Mixer](https://arxiv.org/abs/2105.01601) había sustituido la atención por otro perceptrón que
+mezcla posiciones, y sus autores concluyeron que ni las convoluciones ni la atención son
+necesarias.
+
+Hay que leerlo con cuidado: es visión, no lenguaje. En una imagen los vecinos dicen casi todo de un
+parche, y en un texto la palabra que importa puede estar a dos páginas, que es lo que un promedio
+de vecinos no puede ir a buscar y la atención sí. Pero el experimento enseña qué se ha mantenido
+en todas las variantes de este artículo, en visión y en lenguaje: la forma de mezclar posiciones
+ha cambiado mucho, y el perceptrón que transforma cada posición, nunca ha faltado.
+
+## Lo que queda
+
+El Transformer tiene dos mitades porque hay dos trabajos. Uno es decidir de dónde leer, que
+depende del texto y es lo que hace la atención. El otro es hacer algo con lo leído: combinar
+coordenadas de una misma fila de una forma que ninguna media ponderada alcanza, como en el XOR de
+las cuatro frases, y traer lo que el modelo aprendió y no está en el texto. Ése es el perceptrón,
+una atención cuyas claves y valores están escritos en los pesos. La conexión residual, que suele
+quedar en tercer lugar en las explicaciones, es la que impide que el apilado colapse.
+
+De su forma, casi todo es convención: el cuatro, la ReLU, que haya uno por bloque. Las variantes
+que han sobrevivido lo han cambiado todo menos una cosa. Le han puesto compuertas, lo han
+multiplicado en expertos, lo han convertido en una tabla de millones de ranuras, lo han compartido
+y lo han cambiado de sitio, y en todas sigue habiendo, en cada capa, un cálculo no lineal que
+trabaja cada posición por separado.
+
+Así que la próxima vez que un diagrama del Transformer dibuje la atención en grande y una cajita
+con las letras FFN encima, conviene recordar el reparto real. La atención le dio nombre a la
+arquitectura. El perceptrón se lleva dos tercios de los parámetros y la mayor parte de las
+operaciones, y es donde el modelo guarda lo que sabe.

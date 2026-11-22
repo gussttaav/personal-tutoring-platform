@@ -1,0 +1,630 @@
+---
+slug: latencia-en-asistentes-de-voz
+title: "Why a voice assistant takes so long to answer, and where the milliseconds go"
+date: "2026-11-24"
+minutes: 26
+summary: "Between two people, the silence before a reply lasts about 200 milliseconds; a well-built voice assistant takes over a second, and with a tool in the loop, several. What happens between the moment you stop talking and the moment you hear the answer, what each step costs according to published figures, why tools, RAG and MCP multiply the wait, and the techniques that hide or shorten it."
+draft: false
+reading:
+  - kind: paper
+    title: "Universals and cultural variation in turn-taking in conversation"
+    authors: "Tanya Stivers, N. J. Enfield, Penelope Brown and others"
+    year: "2009"
+    venue: "PNAS"
+    lang: en
+    url: "https://www.pnas.org/doi/10.1073/pnas.0903616106"
+    note: "Ten languages on five continents, the same kind of question in each, and the time to the answer measured on video. Figure 2 is the whole comparison: from Japanese, the fastest, to Danish, the slowest, is under half a second."
+  - kind: paper
+    title: "From text to talk: Harnessing conversational corpora for humane and diversity-aware language technology"
+    authors: "Mark Dingemanse and Andreas Liesenfeld"
+    year: "2022"
+    venue: "ACL 2022"
+    lang: en
+    url: "https://aclanthology.org/2022.acl-long.385/"
+    note: "Repeats Stivers' measurement over every turn transition in 24 languages, Spanish among them. Figure 4 shows each language's distribution, and appendix A.1 checks that yes/no questions give much the same picture."
+  - kind: paper
+    title: "Timing in turn-taking and its implications for processing models of language"
+    authors: "Stephen C. Levinson and Francisco Torreira"
+    year: "2015"
+    venue: "Frontiers in Psychology"
+    lang: en
+    url: "https://www.frontiersin.org/articles/10.3389/fpsyg.2015.00731/full"
+    note: "The underlying puzzle: preparing a word takes about 600 ms and a simple sentence 1.5 s, yet the gap between turns is 200 ms. Section 6 explains how it fits: the reply is prepared while the other person is still talking."
+  - kind: blog
+    title: "A Guide to Core Latency in AI Voice Agents (Cascaded Edition)"
+    authors: "Phil Bredeson (Twilio)"
+    year: "2025"
+    venue: "Twilio"
+    lang: en
+    url: "https://www.twilio.com/en-us/blog/developers/best-practices/guide-core-latency-ai-voice-agents"
+    note: "A voice assistant's latency budget by component, with a target and a limit for each, and the basis of this post's interactive figure. The speech-to-text section explains why end-of-turn detection tends to be the slowest step."
+  - kind: paper
+    title: "Stream RAG: Instant and Accurate Spoken Dialogue Systems with Streaming Tool Usage"
+    authors: "Siddhant Arora, Haidar Khan, Kai Sun and others"
+    year: "2025"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2510.02044"
+    note: "What a search costs in a system that listens and speaks, and how to bring it forward by launching it while the user is still talking. Table 3 breaks the wait down: writing the query, searching and generating the answer."
+  - kind: paper
+    title: "Full-Duplex-Bench-v3: Benchmarking Tool Use for Full-Duplex Voice Agents Under Real-World Disfluency"
+    authors: "Guan-Ting Lin, Chen Chen, Zhehuai Chen and Hung-yi Lee"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2604.04847"
+    note: "Six voice assistants with tools, faced with real human speech full of hesitations and corrections. Table 6 separates first sound, tool call and the answer with the data; section 6.2 shows what happens when a call goes out too early."
+  - kind: paper
+    title: "EVA-Bench: A New End-to-end Framework for Evaluating Voice Agents"
+    authors: "Tara Bogavelli, Gabrielle Gauthier Melançon, Katrina Stankiewicz and others"
+    year: "2026"
+    venue: "EMNLP 2026 (Findings)"
+    lang: en
+    url: "https://arxiv.org/abs/2605.13841"
+    note: "Twelve voice assistants, cascaded and speech-to-speech, in whole conversations with tools. Table 27 gives each one's mean latency with and without tools, and appendix E.4.3 explains why none of them can aim for 200 ms."
+  - kind: paper
+    title: "Hiding Tool Latency in On-Device Cascaded Voice Agent through Speculative Execution"
+    authors: "Kyudan Jung, Hyunsin Park, Yoonhyung Lee and others"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2610.07641"
+    note: "Speculative execution on a phone: searches go out on the half-finished transcript and their results wait in a cache. Five pages; table 1 has the median and the 99th percentile with and without speculation."
+  - kind: paper
+    title: "Heartbeat Thinking: Speculative Reasoning and Tool Execution While Listening in Realtime Voice Agents"
+    authors: "Zhenyu Zhang, Kewei Fu, Yongqi Tong and others"
+    year: "2026"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2610.26233"
+    note: "A model that thinks every half second about what it has heard so far and fires off tools before the user finishes. Table 5 compares when the right call and the answer arrive against three cascaded systems."
+  - kind: paper
+    title: "Moshi: a speech-text foundation model for real-time dialogue"
+    authors: "Alexandre Défossez, Laurent Mazaré, Manu Orsini and others"
+    year: "2024"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2410.00037"
+    note: "The first open model that listens and speaks at the same time. Its introduction is the best explanation of why a cascade of three models is slow and loses information; section 3.4.4 describes how it decides when to speak."
+areas: ["ia"]
+cover: "/blog/latencia-en-asistentes-de-voz/la-cadena.en.svg"
+tags: ["llm", "agentes", "rendimiento", "rag"]
+aiImages: true
+---
+
+{/*
+  BLOG-27: Why a voice assistant takes so long to answer, and where the milliseconds go.
+  English version of content/blog/es/latencia-en-asistentes-de-voz.mdx; the Spanish file's header
+  holds the author notes (thesis, the invented Arce clinic, every cited number and where it comes
+  from). The interactive figure reads the same constants as the prose
+  (src/features/blog/figures/latency-budget/model.ts) and its English strings live under
+  blog.figures.latencyBudget in messages/en.json.
+
+  The alt of each <img> is the English aria-label written by
+  scripts/figures/latencia-en-asistentes-de-voz/make_svgs.py: change one, change the other.
+*/}
+
+Arce Dental, an invented dental practice, answers its phone with a voice assistant. A patient calls
+and asks:
+
+> Have you got anything on Thursday afternoon for a clean?
+
+Nothing happens. Two seconds go by, then three. Unsure whether the line has dropped, the patient
+says "hello?" at the very moment the assistant starts to answer. They end up talking over each
+other; the assistant hears the "hello?", stops to listen and starts again from the top. The answer
+was right: there was a slot at five. The conversation wasn't.
+
+In a text chat, that wait would have gone unnoticed. While the model checks the diary, the screen
+shows three bouncing dots, and whoever is typing knows a reply is on its way. On the phone, silence
+has no dots. All the patient knows about the assistant is what she hears, and what she hears is
+three seconds of nothing, in the kind of exchange where people normally reply within a fraction of
+a second.
+
+This post is about those seconds. It looks at where they come from, what each step costs between
+the moment the patient stops talking and the moment she hears the answer, why checking the diary,
+searching documents or calling an external server multiplies the wait, and what can be done to
+claw the time back. Every figure comes from a published source, linked where it appears. None of
+them was measured here.
+
+## How long a person takes to answer
+
+In 2009, a team of linguists recorded spontaneous conversations in
+[ten languages](https://www.pnas.org/doi/10.1073/pnas.0903616106) across five continents, from
+Japanese and Danish to Tzeltal in Mexico and Yélî Dnye in Papua New Guinea. In each one they looked
+for the same moment: a yes/no question and its answer. They timed the gap from the end of the
+question to the start of the answer, counting a gesture such as a nod as an answer too. Across the
+whole set, the mean was 208 milliseconds. The most common gap in each language fell between 0 and
+200 ms, and the most common overall was exactly 0: the answer begins the instant the question ends.
+
+Cultures differ, but only slightly. Japanese speakers in the sample answered after 7 ms on average;
+Danish speakers, after 469. Every language's mean landed within about 250 ms of the overall mean,
+roughly the length of a syllable.
+
+Stivers' study looked only at yes/no questions, and Spanish wasn't among its ten languages. In
+2022, Mark Dingemanse and Andreas Liesenfeld [repeated the measurement](https://aclanthology.org/2022.acl-long.385/)
+on every change of speaker in two-person conversations in 24 languages, Spanish and Catalan
+included (the Spanish data came from phone calls). Across 674,223 transitions the mean was 59 ms,
+and almost half of all turns (46%) began slightly before the previous one had ended. A recent study
+of Peninsular Spanish, based on [four recordings](https://doi.org/10.58859/resla.869), points the
+same way: in the two everyday conversations, the next speaker started a median of 37 to 55 ms
+before the other had finished; in two TV panel shows, 258 to 380 ms before.
+
+Gaps this short puzzle anyone who studies how speech is produced, because speaking is slow. Naming
+a picture, a single word, takes about 600 ms from seeing it to starting to say it; describing a
+simple scene such as "the boy kicks the ball" takes around 1.5 seconds. Levinson and Torreira
+[sum up the problem](https://www.frontiersin.org/articles/10.3389/fpsyg.2015.00731/full) neatly: if
+the gap between turns is 200 ms and preparing a reply takes 600 to 1,500, the reply must be
+prepared while the other person is still talking. The experiments they cite bear this out.
+Listeners start planning what to say as soon as they can, sometimes a second or more before the
+other person finishes, and they predict when that will be from what is being said and how.
+
+So people don't answer quickly because they think quickly, but because they don't wait. They listen
+and prepare at the same time, and when the other person stops, the reply is almost ready. That's
+the bar conversation sets, and almost nothing in a voice assistant works this way by default: each
+step waits for the previous one to finish. Callers have never heard of these numbers, but they have
+lived by them all their lives, and a one-second silence sounds to them like hesitation, like not
+having been understood, or like a dropped call.
+
+## What happens between speaking and hearing the answer
+
+The most common way to build a voice assistant is a chain of three models, usually called a
+*cascade*: one turns speech into text, a language model writes the reply, and a third turns that
+reply back into speech. Between them sit the network, buffers, and a component that decides when
+the user has finished speaking. The alternative, a single model that both listens and speaks, gets
+its own section further down.
+
+<figure>
+  <img
+    src="/blog/latencia-en-asistentes-de-voz/la-cadena.en.svg"
+    alt="The chain of a cascaded voice assistant, in five steps from left to right, with Twilio's target under each. Microphone and network in, 95 ms: the voice reaches the server. End of turn and speech to text, 350 ms: the system decides the user has finished while the transcript is closed. Language model, 375 ms to the first token. Speech synthesis, 100 ms to the first audio. Way back and hops between services, 195 ms. Below the model, dashed, tools, RAG and MCP servers, each one another round before answering. A proportional bar splits the 1,115 ms total."
+    width="760"
+    height="300"
+  />
+  <figcaption>
+    One turn in a cascade, with Twilio's budget under each step. The clock starts when the user
+    stops speaking; anything that happens while they talk, such as transcription, costs nothing as
+    long as it finishes in time.
+  </figcaption>
+</figure>
+
+For numbers on each step, the most useful reference I know of is
+[Twilio's guide](https://www.twilio.com/en-us/blog/developers/best-practices/guide-core-latency-ai-voice-agents)
+to latency in voice assistants, from November 2025. Twilio sells the telephony infrastructure many
+of these assistants run on, and it publishes a budget by component with two figures for each: a
+target (the median a newly launched assistant should reach without any special tricks) and an upper
+limit. The overall target, from the moment the user stops speaking to the moment the reply reaches
+their ear, is 1,115 ms, with a limit of 1,400. That's more than five times the human gap, but it's
+a sensible starting point, not a poor result.
+
+### The network and the audio
+
+Speech leaves the microphone in packets. [Opus](https://datatracker.ietf.org/doc/html/rfc6716), the
+codec most used for voice over the internet, cuts it into frames of 2.5 to 60 ms, and its
+specification calls 20 ms a good choice for most applications. A frame has to fill up before it can
+be sent, and the codec needs a little audio ahead of it to compress well. Then comes the journey. In
+Twilio's guide that's 40 ms from the device to the first server, 30 in the jitter buffer (packets
+don't arrive at a steady pace, so the buffer holds them briefly to play them back evenly) and 25 to
+decode. That makes 95 ms before the server has even heard the end of the sentence.
+
+And the journey isn't made only once. Twilio counts at least ten network trips in a turn: the voice
+on the way in, the voice on the way back, and eight hops between services, because speech
+recognition, the language model and speech synthesis are usually three providers in three places.
+Each hop adds little if the services are close together and quite a lot if they aren't. Light in
+optical fibre travels about 200 km per millisecond, and Madrid is some 6,000 km in a straight line
+from the US east coast. That's a physical minimum of 30 ms one way and 60 ms there and back, and
+cables never run in a straight line.
+
+### Knowing you have finished
+
+The clock starts when the user stops speaking, but the system doesn't know that at that instant.
+People pause mid-sentence to think, to breathe, to find a word. If the assistant answers at the
+first pause, it interrupts; if it waits too long, it seems slow. Deciding when a turn is over is
+called *endpointing* or *turn detection*, and Twilio's guide is blunt about it: it's usually the
+slowest part of the whole chain, because it's tuned not to cut anyone off.
+
+The simplest approach is a silence timer. A voice activity detector (VAD), a small model that tells
+speech from background noise, marks the moment the speech stops, and once the silence outlasts a
+threshold, the turn is declared over. According to Twilio, most defaults sit around 500 ms.
+OpenAI's voice API uses the same value in its
+[example configuration](https://developers.openai.com/api/docs/guides/realtime-vad), and some
+systems wait 700 or 800. Lowering the threshold is risky, the guide warns: an assistant that cuts
+people off mid-sentence is worse than a slow one.
+
+Half a second of silence is more than twice the entire human gap, and the timer only starts once
+the speech has stopped. The obvious improvement is to stop merely counting silence and pay
+attention to what was said and how. "Thursday afternoon, for a clean" sounds finished; "Thursday
+afternoon, or else..." doesn't. That's what end-of-turn models do, and today they come in two
+kinds:
+
+- Those that read the transcript. LiveKit, an open platform for building voice assistants, has one
+  built on a small language model (Qwen2.5 with 500 million parameters) that estimates the
+  probability that the sentence is complete. The version it released in December 2025 cuts people
+  off 39% less often than its predecessor.
+- Those that listen to the audio. [Smart Turn](https://github.com/pipecat-ai/smart-turn), from
+  Pipecat, another open platform, starts from the Whisper Tiny encoder, has about 8 million
+  parameters, takes up 8 MB and runs in about 10 ms on some CPUs. Because it works on the audio, it
+  can use intonation and rhythm, which say a great deal about whether someone has finished and
+  which a transcript loses.
+
+LiveKit's documentation shows nicely what one of these models buys you. Without it, the assistant
+waits between 0.5 and 3 seconds of silence; with its detector, between 0.3 and 2.5, and the model
+decides where in that range to land. In the [latest version](https://livekit.com/blog/turn-detector-v1-1),
+from November 2026, which listens to the audio and also reads what the assistant said last,
+detecting the end of a turn in English takes 462 ms if you accept cutting the user off in 5% of
+turns. The trade-off is right there in that sentence: neither number means anything without the
+other. The sooner you decide, the more often you cut someone off.
+
+### Turning speech into text
+
+While the user is speaking, automatic speech recognition (ASR) transcribes as it goes. If it works
+in streaming mode, emitting text as the audio arrives rather than waiting for the whole recording,
+nearly all of its work happens during the sentence, and at the end it only has to confirm the last
+few words. That's why Twilio puts recognition and end-of-turn detection on the same line of the
+budget, with a 350 ms target and a 500 ms limit: they happen together, and what you're mostly
+waiting for is the decision that the turn is over.
+
+Not every recognition model works this way. OpenAI's Whisper was trained on chunks of up to 30
+seconds, each containing a complete sentence, and it wasn't designed to transcribe on the fly. It
+can be forced to, as [Whisper-Streaming](https://arxiv.org/abs/2307.14743) does: re-transcribe the
+accumulated audio every so often and accept only the part on which two consecutive passes agree.
+But the result, in the paper that introduces it, is an average latency of 3.3 seconds in English.
+For a conversation, recognition has to be built for streaming from the start.
+
+### The model: the first token
+
+With the turn closed and the transcript complete, the language model receives the text and starts
+writing. What matters here isn't how long it takes to write the whole reply, but how long it takes
+to write the first word, because that word can already go to speech. This is measured as time to
+first token (TTFT), and Twilio's target is 375 ms, with a limit of 750.
+
+That time has two parts. First, the model reads everything it receives in one go: the system
+instructions, the descriptions of the tools it can use, the conversation so far and the latest
+sentence. This reading step is called *prefill*, and it grows with the length of the input. Then
+the model generates the first token, and the rest one at a time after it. A long conversation with
+long instructions slows down the first token of every turn, however short the user's sentence.
+
+The most effective weapon against prefill is prompt caching: the provider keeps the result of
+having read the start of a text, and the next request that begins the same way skips that work. In
+the table Anthropic used to [launch its own](https://claude.com/blog/prompt-caching), chatting with
+a 100,000-token book went from 11.5 to 2.4 seconds to the first token, and a 10,000-token prompt
+from 1.6 to 1.1. In voice, where the instructions and the tools are the same on every turn, caching
+is close to mandatory, with one condition: the fixed part goes first and whatever changes goes
+last, because the cache only helps with an identical beginning.
+
+The other part of the first token is reasoning. Models that think before answering generate
+reasoning tokens first, which the user never hears, and the first token of the answer arrives only
+after all of them. Artificial Analysis, which measures the speed of models from the main
+providers, makes the distinction explicit: its "time to first answer token" includes the reasoning
+time. In text, a model that thinks for ten seconds before answering can be worth the wait. In
+voice, those ten seconds are silence. That's why voice assistants use fast models with little or no
+reasoning, and would rather have a small model that answers now than a large one that answers
+better in four seconds.
+
+### From text to speech
+
+Speech synthesis, or text-to-speech (TTS), takes text and returns audio. What counts is the time
+to the first chunk of audio, because the rest plays while it's still being generated: Twilio's
+target is 100 ms, with a limit of 250. It's the cheapest step in the chain, as long as it doesn't
+wait for the whole reply.
+
+The usual approach is not to feed it individual tokens, since the intonation of a sentence depends
+on the whole sentence, but to collect what the model writes and send each sentence as soon as it's
+complete. A Salesforce team that built a complete assistant from scratch and
+[documented every step](https://arxiv.org/abs/2603.05413) calls this sentence buffer the critical
+piece of the system: it's what lets the first sentence play while the model writes the second.
+
+### Adding it up
+
+With Twilio's targets, the sum goes like this: 95 ms of network on the way in, 350 to close the
+turn and the transcript, 375 to the first token, 100 to the first audio, and 195 for the way back
+and the hops between services, which is what's left to reach the total of 1,115. A real assistant
+looks much the same: Salesforce's, running on cloud services, had medians of 402 ms for
+recognition, 457 for the first token and 221 for synthesis.
+
+What stands out is where the time goes. The language model, which anyone would point to as the slow
+part, takes a third. Almost another third is spent waiting for the user to finish, and the rest is
+network and synthesis. No single step is expensive on its own; the cost comes from having them in a
+queue.
+
+## Overlapping instead of waiting
+
+If each step waited for the previous one to finish completely, none of this would work.
+Recognition would wait for the whole recording, the model would write the complete reply before
+passing it to speech, and the speech would be generated in full before it started to play. Each
+step would take as long as its entire job, and the total would run to several seconds.
+
+What lets a cascade fit into a second is the same thing that lets a person fit into 200 ms: each
+step starts before the previous one ends. Recognition transcribes while the user talks. The model
+starts writing as soon as it has the text, and its first sentence heads off to synthesis before it
+writes the second. Synthesis starts sending audio before it finishes the sentence. What adds up
+isn't the durations but the time each step takes to start producing something.
+
+Beyond that, the techniques for saving time are well known. OpenAI's guide to
+[latency](https://developers.openai.com/api/docs/guides/latency-optimization) arranges them into
+seven principles, which in voice translate like this: use a faster model, write shorter replies,
+send less input (or the same input, cached), make fewer calls in a row, run the remaining ones in
+parallel, make the wait feel shorter, and don't use a language model for what doesn't need one,
+such as saying "you're welcome". Voice adds one more: put the three services close together, in the
+same region or on the same machine, because every hop between them is a round trip.
+
+## When the user interrupts
+
+People interrupt each other in conversation. If the assistant is halfway through explaining the
+different kinds of clean and the patient says "OK, OK, Thursday at five", it has to stop talking
+there and then. This is called *barge-in*, and it has more consequences than you might think.
+
+Stopping isn't only a matter of no longer playing audio. Twilio's guide lists four things to do:
+flush the audio that has been sent but not yet played, stop the model that is still writing, cancel
+any tools in progress, and clean up the conversation history. The last one is the least obvious.
+The model writes faster than anyone speaks, so when the patient interrupts, the text of the reply
+is usually well ahead of the audio. If the history keeps the whole reply, the model will believe on
+the next turn that it said things the patient never heard. OpenAI's voice API has a message for
+exactly this: it [truncates a reply](https://developers.openai.com/api/docs/api-reference/realtime-client-events/conversation/item/truncate)
+at the millisecond of the interruption and deletes the text that was never spoken, so that nothing
+the user hasn't heard stays in the context.
+
+Interruptions also test end-of-turn detection from the other side. An "uh-huh" while the assistant
+is speaking isn't an interruption; it's how people show they're still listening. A system that
+falls silent at every "uh-huh" is as awkward as one that never stops.
+
+## When the model has to go and look something up
+
+So far, the assistant has answered with what it already knows. But the Arce patient isn't asking
+about anything the model knows: she's asking about Thursday's diary. To answer, the model has to
+check it, and that's where the sums above stop holding. Twilio's guide admits as much from the
+outset: its numbers cover the core latency of the chain, and it deliberately leaves out the spikes
+caused by tools and reasoning.
+
+### A tool is another full round
+
+When a model uses a tool, it doesn't run it itself. It writes a request in a fixed format, for
+example "check the diary for Thursday from 15:00 to 20:00", and the program around it runs the
+request and hands back the result. With the result in hand, the model makes a second call and
+writes the reply. That brings three costs that a cascade without tools never pays:
+
+1. Writing the request. The model can't run half of it: the tool needs the complete request, with
+   all its arguments. So you wait for the first token and for every other token of the request too.
+2. Running it. However long the tool takes: a few milliseconds for a query against a local
+   database, seconds for a document search with re-ranking.
+3. Starting again. The model receives the result and has to read it, along with everything before
+   it, before writing the reply: another first token, with a longer input.
+
+The Meta and Carnegie Mellon University team behind [Stream RAG](https://arxiv.org/abs/2510.02044)
+measured these parts in a spoken dialogue system built on Qwen2.5 with 7 billion parameters and a
+search tool. The median time to write the query was 0.59 s; the search, including re-ranking the
+results, took 2.78 s; and starting to generate the answer afterwards took 2.52 s. Without the tool,
+the model took 1.34 s to start answering; with it, 5.90 s. The tool improved the answers a great
+deal, from 11.1% of questions answered correctly to 26.3%, because the model stopped making things
+up. But it more than quadrupled the wait.
+
+The picture is the same in complete systems. [EVA-Bench](https://arxiv.org/abs/2605.13841), an
+evaluation of twelve voice assistants in whole conversations with tools, measured each one's mean
+latency on turns with a tool call and on turns without. Every one was slower with a tool. The
+difference ranged from 0.15 s, for a cascade with a fast open model, to 5.6 s; OpenAI's
+GPT-Realtime-1.5 went from 1.0 to 2.4 s. The authors' speed score also gives those turns more
+leeway, to allow for the time the tool takes.
+
+### RAG: searching before asking
+
+Document search, known as RAG (retrieval-augmented generation, covered in depth in
+[another post](/en/blog/de-rag-a-rag-agentico)), can be set up in two ways, and in voice the
+difference matters.
+
+In the classic form, the search isn't one of the model's tools. The program takes the user's
+transcript, uses it to find the most similar passages, and hands them to the model along with the
+question. There's no first call to write a query: the query is the user's own sentence. The only
+cost is the search itself, and it can be tiny. A
+[voice assistant for telecoms](https://arxiv.org/abs/2508.04721) that searched a local vector index
+(an index that finds the most similar texts without comparing against all of them, as
+[this post](/en/blog/indices-vectoriales) explains) spent 8 ms on average on the search, less than
+a single network hop.
+
+In the agentic form, the model decides whether to search, what to search for, and whether to search
+again based on what it found. That's more flexible, but every search is one more tool call, with
+its three costs. An agentic RAG that runs three searches in a row pays for three rounds.
+
+Both forms carry a cost that doesn't show up in the search itself: the passages found are added to
+the input, and the model has to read them before the first token. Five passages of five hundred
+tokens add 2,500 tokens of prefill to every turn, and because they change with every question, the
+prompt cache can't help. When what you're looking up is small and fixed (the clinic's opening
+hours, its prices, its policies), it's sometimes better not to search at all and to put everything
+in the instructions, where it does get cached. That's the idea behind
+[cache-augmented generation](/en/blog/cuando-no-hace-falta-buscar).
+
+### MCP: the tool is on another machine
+
+MCP (Model Context Protocol) is the open protocol through which a model connects to tools offered
+by another program, an MCP server, instead of having them built into the assistant itself. The
+[specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports) defines
+two ways of talking to that server. With stdio, the assistant launches it as another process on the
+same machine and they talk over standard input and output, with no network involved. With
+Streamable HTTP, the server lives elsewhere and every message is an HTTP request.
+
+The convenience of MCP is that the clinic can connect its assistant to the server of the booking
+software it already uses, without writing the integration. The cost is that every call to a remote
+tool is at least one network round trip on top of whatever the tool itself takes. If the server is
+on another continent, that's at least 60 ms per call from physics alone. If the connection isn't
+open yet, it has to be set up first: one trip for the TCP connection and another for TLS encryption
+before the request goes out. And up to the November 2025 revision of the protocol, a new session
+also began with a handshake, the `initialize` message, which the July 2026 revision
+[removed](https://modelcontextprotocol.io/specification/2026-07-28/changelog) when it made the
+protocol stateless.
+
+There's a second, less visible cost. The assistant asks the server for its list of tools and passes
+it to the model on every turn, with each tool's name, description and parameters. A server with
+forty tools means a lot of prefill tokens on every sentence the user says, even if only one tool is
+used. The same 2026 revision asks servers to return the list in a fixed order, precisely so that
+the model's prompt cache can reuse it.
+
+### Several tools in a row
+
+The worst case isn't one tool but several that depend on each other. "Have you got anything on
+Thursday afternoon? And if so, can you book it for me?" is at least two: check the diary, then,
+using the result, make the booking. The second can't start until the first has finished, and each
+is a full round. Agents that chain five or six calls in text without anyone noticing add up, in
+voice, to fifteen seconds of silence.
+
+The figure below lets you do these sums yourself. It starts from Twilio's turn, which adds up to
+its 1,115 ms, and lets you change how the end of the turn is decided, add a search before the
+model, add up to three tools in a row, and move the tool to a remote MCP server. Every time in it
+comes from this post's sources.
+
+<PostFigure
+  id="latency-budget"
+  caption="One voice turn, with the clock starting when the user stops speaking. The solid green line marks when they start hearing the answer; the dashed one, when there is a filler phrase, the first sound. The dashed grey lines are the references: the average gap between people, 59 ms over every turn and 208 ms on yes/no questions, and Twilio's target. The times are Twilio's targets for the basic chain, Stream RAG's medians for writing a query and searching with re-ranking, and 60 ms as the physical minimum for each round trip to another continent."
+  height={900}
+/>
+
+With one tool that takes as long as Stream RAG's search, the answer arrives at 4.5 seconds. With
+three in a row, it takes more than 11. Bringing end-of-turn detection down from 800 to 350 ms wins
+back almost half a second, which is a lot on a turn without tools and very little on one with
+three. Once tools are involved, what weighs most is how many rounds you make.
+
+## How to hide the wait
+
+There are two ways to make an unavoidable wait feel shorter: say something in the meantime, or
+start earlier. Both are in the figure above.
+
+### The filler phrase
+
+The oldest is to do what a receptionist would: "one moment, let me check". The model first writes a
+short phrase, which goes off to speech synthesis, and then the request to the tool, which runs
+while the phrase plays. Twilio's guide mentions this as the way to mask delays from the model and
+the tools, and the figure shows what it does: the first sound drops back to the 1,115 ms of the
+turn without tools, even though the answer with the data still arrives every bit as late.
+
+It works because the patient now knows she's been heard and that something is happening, which is
+exactly what was missing in the opening example. But it has a clear limit. A filler phrase buys a
+few seconds, not ten, and if it comes on every turn the assistant sounds like someone who can't
+answer anything without looking it up. There's also a less obvious risk: a model that speaks before
+it knows what it's going to do may commit to something it then fails to deliver. In the evaluation
+in [Full-Duplex-Bench-v3](https://arxiv.org/abs/2604.04847), a benchmark for voice assistants with
+tools, Ultravox, an open voice model, was the fastest to produce a first sound (3.88 s on average)
+but the slowest to reach the tool call (6.01 s). 88% of its replies opened with a filler phrase,
+and in almost half of its turns it started speaking before the user had finished.
+
+### Starting before they finish
+
+The other way is the one people use: don't wait for the end of the sentence. If, halfway through
+"Have you got anything on Thursday afternoon for...", it's already clear that Thursday's diary needs
+checking, the lookup can go out at that point, on the half-finished transcript, and its result can
+be ready by the time the patient stops. If the sentence turns out to ask for something else, the
+result is thrown away. This is called *speculative execution*, and since 2025 several studies have
+measured it.
+
+- Stream RAG launches searches on the partial transcript at regular intervals, or lets the model
+  itself decide when to launch a new one, and cuts the time spent waiting for the search by around
+  20%. Its authors point out that, with synthetic audio, they didn't count end-of-turn detection,
+  and that with human speech, which leaves more silence at the end, the saving is larger.
+- A Qualcomm team did the same [on a phone](https://arxiv.org/abs/2610.07641), with a 3-billion
+  parameter model, web searches, and the results kept in a cache that the model draws on when the
+  transcript closes. The median fell from 5.79 to 4.60 s and the 99th percentile (the time exceeded
+  by only one answer in a hundred) from 19.8 to 15.1 s. With a search of about ten seconds, the
+  answer went from 17 s to 8.
+- [Heartbeat Thinking](https://arxiv.org/abs/2610.26233) takes the idea further: a model reviews
+  what it has heard every half second and fires off whatever tools it can already call while the
+  user is still talking. On average, the right call went out 4.4 seconds before the user finished,
+  and the answer arrived 4.4 s after the end, against 8.1 s for the best cascade without
+  speculation.
+
+In the figure, the early-start box assumes the request is clear one second before the user
+finishes, which by these studies' standards is cautious. With a 2.78 s tool, that wins back almost
+a second and a half: the one second of head start plus the time the turn used to take to close.
+
+### What should not be hidden
+
+Speculation has a price, and it isn't only the searches that get thrown away. People correct
+themselves mid-sentence ("Thursday, no, sorry, Friday"), and a tool launched too early can lock in
+the wrong value. Full-Duplex-Bench-v3 studied this with recordings of real people who hesitate and
+correct themselves. In one of its examples, an assistant searched for trips to the destination the
+user had corrected moments earlier, because the call had gone out 2.3 seconds before they finished speaking.
+Even the best system evaluated handled no more than 59% of the self-correction cases well, and the
+cascade, 18%. In Heartbeat Thinking, 4% of the recordings ended up using outdated results.
+
+Hence the rule all of these studies follow: only speculate with tools that read. Checking
+Thursday's diary on the off chance does no harm; booking Thursday at five on the off chance does.
+Tools that change something wait until the user has finished, and often until they've confirmed.
+
+## Models that listen and speak
+
+The cascade has a problem that has nothing to do with time: turning speech into text throws away
+everything that isn't text. A questioning tone, hesitation, irony, background noise, whether the
+speaker is a child. And the language model can't express any of that in its reply either, because
+it only writes words. The alternative is a single model that takes audio in and gives audio out,
+usually called *speech-to-speech*.
+
+The clearest example is [Moshi](https://arxiv.org/abs/2410.00037), from Kyutai, a French lab,
+published in 2024. Besides being a single model, it's *full-duplex*: it listens and speaks at the
+same time, continuously, as on a phone call, instead of taking turns. It's always generating audio,
+which is sometimes speech and sometimes silence, and it decides for itself when to speak, with no
+separate end-of-turn detector. Its theoretical latency is 160 ms, 80 for the audio frame it works
+with and 80 more of margin, and in practice 200: the human gap. The voice APIs from OpenAI and
+Google are also a single model that takes and returns audio, although they don't publish the
+details, and OpenAI's, for one, still decides the turn with a separate detector.
+
+Does that solve the problem? For conversation without tools, largely yes: in EVA-Bench, the
+speech-to-speech systems answered the most turns on time, with mean latencies of 1 to 1.3 seconds
+without tools, against 2.2 to 4.3 for the cascades evaluated. But with tools, the tool still takes
+as long as ever, and the model still has to write the request and read the result. In
+Full-Duplex-Bench-v3, where the tools were simulated and answered instantly, the speech-to-speech
+models took between 4.3 and 8.4 seconds on average to deliver the data, and the cascade 10.1.
+Faster, but a long way from 200 ms.
+
+There are costs of another kind too. With a cascade you can choose each piece (the best recogniser
+for the caller's language, the language model that's best with tools, the voice the clinic prefers)
+and read what the model wrote, and check it, before it's spoken. A speech-to-speech model is more
+of a black box, harder to evaluate, and usually leaves less to choose from. The price of that
+freedom shows up in EVA-Bench as well: the three most accurate cascades averaged more than 5
+seconds on turns with tools.
+
+## How to measure it
+
+If there's one practical recommendation to take from all these sources, it's to measure each step
+separately, and with percentiles. The mean hides what the user actually remembers, which is the
+time they waited six seconds. Look at the median (what happens to the typical user) and at a high
+percentile, the 95th or 99th (what happens once in twenty or once in a hundred turns). In a chain
+of steps in a row, the high percentiles of each step can add up at the worst possible moment.
+Salesforce's assistant shows it: its model had a median of 337 ms to the first token, but the
+first request, with the server still cold, took 4.3 seconds.
+
+Measuring means putting a timestamp on every boundary: when the user stopped speaking according to
+the audio, when the turn was closed, when the first token arrived, when the first audio left, when
+it started to play. The first two aren't the same thing, and the gap between them is the price of
+end-of-turn detection, the number people most often forget. And all of it should be measured with
+real speech over the real network: the studies above that use synthetic audio warn that human
+speech leaves more silence at the end of a sentence, and that this changes the sums.
+
+The figures in this post can't be compared with one another without care: each source starts and
+stops the clock in a different place, some include the network and some don't, some measure the
+first sound and others the answer with the data. What they all share is the structure: where the
+time goes and what multiplies it.
+
+## Takeaways
+
+- **The bar is below 200 ms.** That's the average gap on yes/no questions, and across every change
+  of speaker the mean drops to 59 ms, with almost half of all turns overlapping. No current
+  assistant comes close, least of all with tools. A well-built cascade lands around one second
+  without them; a sensible starting target, according to Twilio, is 1,115 ms.
+- **The slowest step is usually deciding that the user has finished.** A half-second silence timer
+  eats almost half the budget; an end-of-turn model that hears intonation and reads the words cuts
+  it down, at the cost of interrupting someone now and then.
+- **It all fits because the steps overlap**: streaming recognition, a model that starts writing as
+  soon as it has the full text, sentences that go to speech the moment they're complete. A step
+  that waits to finish before producing anything breaks the whole budget.
+- **Every tool is another round**: write the request, run it, read again. With one, the answer
+  slips to several seconds; with several in a row, to more than ten. A RAG that searches with the
+  user's sentence before calling the model saves the first part; an agentic one pays it on every
+  search.
+- **A remote MCP server adds network time and tokens**: a round trip per call, more if the
+  connection has to be opened, and the tool list read on every turn. A nearby server and a short
+  list, in a fixed order and cached, bring that down to almost nothing.
+- **The wait that remains can be hidden in two ways**: a filler phrase so the first sound arrives
+  on time, and starting the search on the half-finished sentence so the data arrives sooner. Use
+  the second only with tools that read, because people correct themselves.
+- **Speech-to-speech models** get close to 200 ms in conversation, but with tools they still pay
+  for every round, and they're harder to choose and to evaluate than a cascade.
+
+Had the Arce patient heard "one moment, let me check" a second after she stopped talking, and had
+the diary lookup gone out the moment she said "Thursday afternoon", the answer would have come a
+couple of seconds later, with no silence in between and no "hello?". It isn't a conversation
+between two people, but it's close enough that nobody hangs up.

@@ -1,0 +1,658 @@
+---
+slug: bloque-transformer
+title: "Stacking without losing what lies below"
+block: 5
+order: 6
+minutes: 32
+summary: 'The attention layer is complete, and the paper puts six of them one on top of another. Composing six functions multiplies six derivatives, which is exactly the calculation Block 3 came to grief on, so stacking is not repeating: each sublayer needs something around it. It is two things, and both fit in one line. The sum (the sublayer returns what it computed plus what came into it) opens a path from the output to the input that crosses no matrix, and along the way forces d_model to be a single number across the whole model, which is what the multi-head output projection was for. The layer norm centres each row with its own coordinates, without looking at the other positions or at the other sentences in the batch. And the second sublayer is the position-wise perceptron, which looks like plumbing and is the piece that computes: with its weights already decided, attention delivers a linear combination of what it reads, and bringing a "not" and a "good" together in one row is Block 2''s XOR, which asks for a hidden layer. That is why it carries twice the parameters of the attention.'
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-anade-la-suma
+    type: single
+    prompt: 'Each sublayer is wrapped in $\mathbf{x} + \text{Sublayer}(\mathbf{x})$. When you compose $N$ blocks and differentiate, what appears that was not in Block 3''s calculation?'
+    options:
+      - { id: a, text: 'A term equal to $\mathbf{I}$: among the paths joining the output to the input there is one that crosses no sublayer, and its factor depends on no parameter.' }
+      - { id: b, text: 'One factor fewer per block: the sum replaces one of the sublayer''s two multiplications, so the product has half as many factors and takes half as long to die out.' }
+      - { id: c, text: 'A diagonal Jacobian, because adding is a coordinate-by-coordinate operation and that cancels the cross derivatives between different coordinates.' }
+      - { id: d, text: 'Nothing new in the derivative. What the sum fixes is the forward pass; the gradient is still the product of the $N$ Jacobians of the sublayers.' }
+    answer: a
+    explanation: '(a). Differentiating $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ gives $\mathbf{I}$ plus the sublayer''s Jacobian, and multiplying $N$ brackets of that form splits the product into $2^{N}$ terms, one for each way of choosing, in each bracket, the identity or the sublayer. One of those $2^{N}$ chooses the identity $N$ times. (b) invents an arithmetic: the sum removes no factor from the product, it adds a term inside each factor. (c) confuses the operation with its Jacobian: the sum is indeed coordinate by coordinate, and that is why its Jacobian is $\mathbf{I}$, but the Jacobian of the sublayer beside it has no reason to be diagonal, and it isn''t. (d) splits in two something that is one thing: the backward pass is the forward pass travelled in reverse, so a term that crosses no matrix in the forward pass crosses none in the backward pass either.'
+    hint: 'Differentiate $\mathbf{x} + \text{Sublayer}(\mathbf{x})$ with respect to $\mathbf{x}$ and look at the two terms that come out.'
+  - id: q-anchura-constante
+    type: single
+    prompt: 'What does the fact that its output is added to its own input demand of a sublayer?'
+    options:
+      - { id: a, text: 'That it returns exactly the shape it received, $T \times d_{\text{model}}$. That is what $\mathbf{W}^O$ was for, and it is what forces $d_{\text{model}}$ to be a single number from the bottom of the model to the top.' }
+      - { id: b, text: 'That it is linear: adding its own input to a non-linear function leaves an expression that can no longer be differentiated on both sides.' }
+      - { id: c, text: 'That its parameters are of the same size as those of the previous sublayer, so that the two sums work at comparable scales.' }
+      - { id: d, text: 'That it does not change the scale of what it receives. The sublayer itself takes care of that, which is why the layer norm goes before the sum and not after it.' }
+    answer: a
+    explanation: '(a), and it is a constraint on shapes before it is anything else: $\mathbf{X}$ and $\text{Sublayer}(\mathbf{X})$ are added entry by entry, so the sublayer is forbidden from returning another width. Each one makes its round trip (the attention drops to $d_v$ per head and $\mathbf{W}^O$ brings it back, the perceptron rises to $d_{\text{ff}}$ and $\mathbf{W}_2$ brings it back), and the model''s width is the same in the first layer and in the sixth. (b) is false at the root: adding is differentiable, and the sublayer is still what it was. (c) confuses shape with scale; nothing forces two sublayers to have similar parameters. (d) gives the sublayer a job that the box after it does, and also inverts the paper''s order, which normalises the sum once it has been made.'
+    hint: 'What do two matrices have to satisfy to be added?'
+  - id: q-que-eje-normaliza
+    type: multi
+    prompt: 'The block''s layer norm normalises each row with its own $d_{\text{model}}$ coordinates. Tick what is true of the output at position $t$.'
+    options:
+      - { id: a, text: 'It does not change if what is at another position of the same sentence changes.' }
+      - { id: b, text: 'It does not change if a different sentence enters the same batch.' }
+      - { id: c, text: 'It does not change if the sentence gets longer or shorter.' }
+      - { id: d, text: 'It still has mean $0$ and standard deviation $1$ after $\boldsymbol{\gamma}$ and $\boldsymbol{\beta}$ are applied, since they only redistribute the coordinates within the row.' }
+    answer: [a, b, c]
+    explanation: 'The first three, and all three come from the same thing: $\mu_t$ and $s_t$ are computed from the $d_{\text{model}}$ numbers of row $t$ and from no others, so neither the other positions, nor the other sentences in the batch, nor $T$ enter the calculation. That is what keeps the claim of <Leccion slug="adios-recurrencia">the lesson that said goodbye to recurrence</Leccion> standing: the boxes that mix positions are still the three attention ones and no more. (d) is false, and it is worth seeing slowly: $\boldsymbol{\gamma}$ multiplies coordinate by coordinate and $\boldsymbol{\beta}$ adds, so the row comes out with whatever mean and scale those two vectors decide, which is exactly what they are there for. Normalising to mean $0$ and deviation $1$ is an intermediate step, not the output.'
+    hint: 'Which numbers go into $\mu_t$ and $s_t$, and which do not?'
+  - id: q-para-que-el-perceptron
+    type: single
+    prompt: 'In the phrase <W>not bad</W>, attention has already brought to the row of <W>bad</W> the news that there is a <W>not</W> in front. Why is the position-wise perceptron still needed?'
+    options:
+      - { id: a, text: 'Because, with the attention weights already decided, what reaches the row is a linear combination of rows, and the sentiment is an XOR of two of its coordinates: it takes a non-linearity that looks at both at once.' }
+      - { id: b, text: 'Because attention cannot write into the row of <W>bad</W> anything that comes from another position, and carrying that information there is the position-wise perceptron''s job.' }
+      - { id: c, text: 'Because the softmax is linear, and the block needs at least one non-linear function somewhere.' }
+      - { id: d, text: 'Because the layer norm erases the coordinate the attention brought, and the perceptron rebuilds it from the others.' }
+    answer: a
+    explanation: '(a). Attention does its part: it leaves in the same row whether there is a <W>not</W> and whether the evaluative word is <W>good</W> or <W>bad</W>. But those are the two coordinates of Block 2''s square, and no affine function separates its diagonals, because <W>not</W> brings no sign of its own: it flips the other one. (b) inverts the division of labour: mixing positions is the only thing attention does, and the position-wise perceptron cannot do it, because each row goes through it alone. (c) is false: the softmax is not linear, but its non-linearity decides where to read from, not what is done with what is read. (d) invents an effect: the layer norm centres the row and divides all of it by one and the same number, and what each coordinate carried is still there.'
+    hint: 'Write the four phrases with two coordinates, whether there is a <W>not</W> and whether the word is <W>good</W>, and look for where that square has turned up before.'
+  - id: q-donde-estan-los-parametros
+    type: numeric
+    prompt: 'With $d_{\text{model}} = 512$ and $d_{\text{ff}} = 2\,048$, how many parameters do the two matrices of the position-wise perceptron have, not counting the biases?'
+    answer: 2097152
+    tolerance: 0
+    unit: parameters
+    explanation: 'Two million, ninety-seven thousand, one hundred and fifty-two: $512 \cdot 2\,048$ on the way up plus $2\,048 \cdot 512$ on the way down, that is, $2 d_{\text{model}} d_{\text{ff}}$. What to take away is the comparison. The four matrices of multi-head attention add up to $4 d_{\text{model}}^{2} = 1\,048\,576$, so the box that looks like plumbing carries twice the parameters of the box that gives the architecture its name. And those parameters are the same at every position: making the sentence longer adds not one.'
+    hint: 'There are two matrices, one going up and one going down, and both have the same two widths.'
+  - id: q-normalizar-antes-de-sumar
+    type: boolean
+    prompt: 'Normalising the sublayer''s output and adding the input afterwards, $\mathbf{x} + \text{LayerNorm}\left(\text{Sublayer}(\mathbf{x})\right)$, is a different operation from the paper''s.'
+    answer: true
+    explanation: 'True, and the three versions in circulation are worth keeping apart. The paper writes $\text{LayerNorm}\left(\mathbf{x} + \text{Sublayer}(\mathbf{x})\right)$: first add, then normalise, so the normalisation also applies to the term that came from below. The variant in the question normalises only what the sublayer produced and leaves $\mathbf{x}$ untouched, so the identity path stays completely clean. In exchange, the input to the next layer is no longer normalised, which was the reason for putting the box there. And the third, the one almost every implementation uses today, is $\mathbf{x} + \text{Sublayer}\left(\text{LayerNorm}(\mathbf{x})\right)$: normalise what goes into the sublayer. All three are reasonable and all three give different models; this lesson derives the first, which is the paper''s.'
+    hint: 'Write the two expressions and ask yourself what the normalisation is applied to in each.'
+challenges:
+  - id: ch-bloque-transformer
+    prompt: |
+      Assemble the whole block from the lesson's two pieces.
+
+      `layer_norm(X, gamma, beta, eps=1e-5)` receives `X` of shape $(T, d_{\text{model}})$ and returns
+      another of the same shape: each row centred with its own mean $\mu_t$ and divided by
+      $\sqrt{s_t^{2} + \varepsilon}$, with $s_t$ the standard deviation of that same row, and then
+      multiplied coordinate by coordinate by `gamma` and added to `beta`.
+
+      `block(X, attention, p)` applies the two sublayers. `attention` is a function that receives `X`
+      and returns something of the same shape; `p` is a dictionary with `W1` of shape
+      $(d_{\text{model}}, d_{\text{ff}})$, `b1` of $(d_{\text{ff}},)$, `W2` of
+      $(d_{\text{ff}}, d_{\text{model}})$, `b2` of $(d_{\text{model}},)$ and the four vectors
+      `gamma1`, `beta1`, `gamma2`, `beta2`, all of $(d_{\text{model}},)$.
+
+      Each sublayer is wrapped the same way: what went in is added to what came out, and the result
+      is normalised. The second sublayer is the position-wise perceptron,
+      $\text{ReLU}(\mathbf{X}\mathbf{W}_1 + \mathbf{b}_1)\mathbf{W}_2 + \mathbf{b}_2$.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def layer_norm(X, gamma, beta, eps=1e-5):
+          # your code here
+          pass
+
+
+      def block(X, attention, p):
+          # your code here
+          pass
+    tests:
+      - name: "each row comes out centred and with deviation 1"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          X = rng.normal(loc=5.0, scale=3.0, size=(6, 10))
+          Y = layer_norm(X, np.ones(10), np.zeros(10))
+          assert Y is not None, 'layer_norm has to return the matrix, not print it'
+          Y = np.asarray(Y)
+          assert Y.shape == X.shape, 'one row per position and one column per coordinate come out, as they went in'
+          assert np.abs(Y.mean(axis=1)).max() < 1e-8, 'each row is centred with ITS mean, not the mean of the whole matrix'
+          assert np.abs(Y.std(axis=1) - 1.0).max() < 1e-4, 'and divided by the standard deviation of that same row'
+      - name: "gamma and beta come after normalising"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          X = rng.normal(size=(4, 8)) * 7.0
+          Y = layer_norm(X, np.full(8, 2.0), np.full(8, 5.0))
+          assert Y is not None, 'layer_norm has to return the matrix, not print it'
+          Y = np.asarray(Y)
+          assert np.abs(Y.mean(axis=1) - 5.0).max() < 1e-6, 'beta is added at the end: the mean of the row ends up equal to beta'
+          assert np.abs(Y.std(axis=1) - 2.0).max() < 1e-4, 'gamma multiplies what is already normalised: the deviation ends up equal to gamma'
+      - name: "a row does not depend on the others"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(6)
+          X = rng.normal(size=(5, 12))
+          g, b = rng.normal(size=12), rng.normal(size=12)
+          Y = layer_norm(X, g, b)
+          assert Y is not None, 'layer_norm has to return the matrix, not print it'
+          Y = np.asarray(Y)
+          X2 = X.copy()
+          X2[4] += 100.0
+          Y2 = np.asarray(layer_norm(X2, g, b))
+          assert np.abs(Y2[0] - Y[0]).max() < 1e-12, 'row 0 cannot move because row 4 was touched: normalise by rows, not by columns'
+      - name: "the block matches the reference"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          T, d, dff = 5, 8, 16
+          X = rng.normal(size=(T, d))
+          M = rng.normal(size=(d, d))
+          attention = lambda Z: np.tanh(Z @ M)
+          p = {"W1": rng.normal(size=(d, dff)), "b1": rng.normal(size=dff),
+               "W2": rng.normal(size=(dff, d)), "b2": rng.normal(size=d),
+               "gamma1": rng.normal(size=d), "beta1": rng.normal(size=d),
+               "gamma2": rng.normal(size=d), "beta2": rng.normal(size=d)}
+          def ln(Z, g, be, eps=1e-5):
+              mu, s = Z.mean(axis=1, keepdims=True), Z.std(axis=1, keepdims=True)
+              return g * (Z - mu) / np.sqrt(s ** 2 + eps) + be
+          H = ln(X + attention(X), p["gamma1"], p["beta1"])
+          ref = ln(H + np.maximum(0.0, H @ p["W1"] + p["b1"]) @ p["W2"] + p["b2"], p["gamma2"], p["beta2"])
+          Y = block(X, attention, p)
+          assert Y is not None, 'block has to return the matrix, not print it'
+          Y = np.asarray(Y)
+          assert Y.shape == (T, d), 'the block returns the shape it receives: that is what lets it be stacked'
+          assert np.allclose(Y, ref), 'first the wrapped attention, and the position-wise perceptron after it, on what came out of the first'
+      - name: "the sum is really there"
+        code: |
+          import numpy as np
+          T, d, dff = 4, 6, 12
+          rng = np.random.default_rng(8)
+          X = rng.normal(size=(T, d))
+          p = {"W1": np.zeros((d, dff)), "b1": np.zeros(dff),
+               "W2": np.zeros((dff, d)), "b2": np.zeros(d),
+               "gamma1": np.ones(d), "beta1": np.zeros(d),
+               "gamma2": np.ones(d), "beta2": np.zeros(d)}
+          Y = block(X, lambda Z: np.zeros_like(Z), p)
+          assert Y is not None, 'block has to return the matrix, not print it'
+          Y = np.asarray(Y)
+          once = layer_norm(X, np.ones(d), np.zeros(d))
+          assert once is not None, 'layer_norm has to return the matrix, not print it'
+          expected = layer_norm(np.asarray(once), np.ones(d), np.zeros(d))
+          assert np.abs(Y).max() > 1e-3, 'with both sublayers returning zeros the block has to return X normalised, not zeros: what went in is not being added'
+          assert np.allclose(Y, np.asarray(expected)), 'with the sublayers at zero all that is left is normalising what went in twice'
+    solution: |
+      import numpy as np
+
+
+      def layer_norm(X, gamma, beta, eps=1e-5):
+          mu = X.mean(axis=1, keepdims=True)          # (T, 1): one mean per row
+          s = X.std(axis=1, keepdims=True)            # (T, 1): one deviation per row
+          return gamma * (X - mu) / np.sqrt(s ** 2 + eps) + beta
+
+
+      def block(X, attention, p):
+          X = layer_norm(X + attention(X), p["gamma1"], p["beta1"])
+          hidden = np.maximum(0.0, X @ p["W1"] + p["b1"])
+          X = layer_norm(X + hidden @ p["W2"] + p["b2"], p["gamma2"], p["beta2"])
+          return X
+    explanation: |
+      The two `keepdims=True` are half the exercise: without them `mu` comes out with shape
+      $(T,)$, NumPy aligns it against the *last* dimension of `X` and the subtraction happens by
+      columns, which is exactly the operation this lesson rules out. With `keepdims=True` the
+      shape is $(T, 1)$ and each row takes its own number.
+
+      The other mistake the tests check for is writing the second sublayer on the original `X`
+      instead of on the one that came out of the first. The two sublayers run in series, not in
+      parallel: what the attention left normalised is what the position-wise perceptron
+      receives, and what gets added back to it is that same thing and not the block's input.
+      Notice too that `gamma` and `beta` come in *after* the division; put before it, the
+      normalisation would erase them both.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar and others'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Its §3.1 gives the LayerNorm(x + Sublayer(x)) wrapper and the N = 6 stack; its §3.3, the position-wise perceptron with d_ff = 2048. Each in one sentence: why the sum rescues the stacking that sank Block 3 is yours to work out.'
+  - kind: paper
+    title: 'Layer Normalization'
+    authors: 'Ba, Kiros and Hinton'
+    year: '2016'
+    venue: 'arXiv:1607.06450'
+    lang: en
+    url: 'https://arxiv.org/abs/1607.06450'
+    note: 'Normalises each example with its own units instead of with the batch column, and for your very reasons: it works in recurrent networks and keeps no statistics to answer a single sentence. It is tested on RNNs, not on a Transformer.'
+  - kind: paper
+    title: 'Identity Mappings in Deep Residual Networks'
+    authors: 'He, Zhang, Ren and Sun'
+    year: '2016'
+    venue: 'arXiv:1603.05027'
+    lang: en
+    url: 'https://arxiv.org/abs/1603.05027'
+    note: 'Analyses what you derive here: with the identity connection the gradient carries a term that goes straight down between blocks and never cancels. On image networks, and it wants the identity after the sum too, which the Transformer lacks.'
+  - kind: paper
+    title: 'On Layer Normalization in the Transformer Architecture'
+    authors: 'Xiong, Yang, He and others'
+    year: '2020'
+    venue: 'arXiv:2002.04745'
+    lang: en
+    url: 'https://arxiv.org/abs/2002.04745'
+    note: 'Answers what the lesson leaves open: normalising before the sublayer (pre-norm) rather than after keeps the gradient healthy at the start and removes the learning-rate warm-up. The paper''s post-norm needs it. Measured, not proved.'
+  - kind: paper
+    title: 'Transformer Feed-Forward Layers Are Key-Value Memories'
+    authors: 'Geva, Schuster, Berant and Levy'
+    year: '2020'
+    venue: 'arXiv:2012.14913'
+    lang: en
+    url: 'https://arxiv.org/abs/2012.14913'
+    note: 'Looks at what the position-wise perceptron''s parameters store: each column of W1 fires on a pattern in the text, and its row of W2 pushes towards the words that usually follow it. It studies language models, not an encoder.'
+---
+
+{/* COURSE-P5-05: Block 5, Lesson 6. COURSE-P11-08: English translation. */}
+
+Attention is now missing nothing: it has its three projections, its divisor, its heads and, since
+the previous lesson on positional encoding, rows that know where they are. What doesn't exist yet is
+a layer that can be put *on top of another*. And the paper puts six, with what leaves each one
+serving as the input to the next.
+
+Repeating an operation that already works six times sounds like doing nothing, and it is exactly
+where Block 3 came to grief. There, what was repeated was a step of the recurrence, and composing a
+function with itself multiplies derivatives: a product of many similar factors goes to zero or blows
+up, and what came in at the bottom doesn't reach the top. A Transformer's depth is set not by the
+sentence but by the layers, and there are six however long the text grows. But six products are
+still six products. This lesson is what has to be put around a sublayer for that calculation to come
+out differently, and it is two things.
+
+Go back to the diagram from <Leccion slug="adios-recurrencia">the lesson that said goodbye to
+recurrence</Leccion> and look at the boxes it left unexplained. Five of the fifteen are called
+<W>Add and layer norm</W>, and from each one a line runs down the outside of its column and comes
+back in below the sublayer that box closes. Click one: that line is half of what the box adds.
+
+<Explorable
+  id="transformer-architecture"
+  caption='Five "Add and layer norm" boxes and five lines that go round a sublayer on the outside, one for each. Turn on the marker and none of the five lights up: the ones that mix positions are still the three attention boxes.'
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+A sublayer doesn't replace what it receives: it adds to it, and that untouched term is the path by
+which what is at the bottom reaches the top, however many layers there are in between.
+</Callout>
+
+## No sublayer replaces what it receives
+
+The residual connection is the line in the drawing written in symbols, and there is nothing more to
+it than this:
+
+$$
+\mathbf{X} + \text{Sublayer}(\mathbf{X}),
+$$
+
+where $\text{Sublayer}$ is a slot (like Block 2's $\varphi$ or the previous block's $a$) filled by
+multi-head attention in the first sublayer and by the position-wise perceptron in the second. The
+interesting part is in its derivative. Stack the $T$ rows of $\mathbf{X}$ one below another, as in
+<Leccion slug="por-que-falla-el-mlp">the lesson on why the MLP (multilayer perceptron) fails on
+sequences</Leccion>, and call that column $\mathbf{x} \in \mathbb{R}^{T \cdot d_{\text{model}}}$.
+Differentiating a sum is differentiating each term:
+
+$$
+\frac{\partial\left(\mathbf{x} + \text{Sublayer}(\mathbf{x})\right)}{\partial\mathbf{x}} = \mathbf{I} + \frac{\partial\,\text{Sublayer}(\mathbf{x})}{\partial\mathbf{x}}.
+$$
+
+That is everything. The sublayer's Jacobian depends on its parameters and can be worth anything,
+even zero; the other term is the identity and depends on nothing. And since the chain rule from
+<Leccion slug="regla-de-la-cadena">its lesson</Leccion> turns a composition into a product of
+Jacobians, stacking $N$ blocks multiplies $N$ brackets like this one, each with its identity inside.
+
+<Details summary="Two blocks, multiplied">
+
+With two blocks, and subscripts to tell each one's sublayer apart, the product opens up like this:
+
+$$
+\left(\mathbf{I} + \frac{\partial\,\text{Sublayer}_2}{\partial\mathbf{x}}\right)\left(\mathbf{I} + \frac{\partial\,\text{Sublayer}_1}{\partial\mathbf{x}}\right) = \mathbf{I} + \frac{\partial\,\text{Sublayer}_1}{\partial\mathbf{x}} + \frac{\partial\,\text{Sublayer}_2}{\partial\mathbf{x}} + \frac{\partial\,\text{Sublayer}_2}{\partial\mathbf{x}}\frac{\partial\,\text{Sublayer}_1}{\partial\mathbf{x}}.
+$$
+
+Four terms: one that crosses no sublayer, two that cross one and one that crosses both. With $N$
+blocks there are $2^{N}$, one for each way of choosing in each bracket between the identity and the
+sublayer, and among them there is always exactly one that crosses nothing.
+
+</Details>
+
+In <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion> there were no
+brackets: each factor was a bare product and the only path between step $1$ and step $T$ crossed
+them all. The LSTM answered by opening an additive path alongside. The residual connection is that
+same idea with depth in the place of time: what gets stacked here is not positions, it is layers.
+
+That settles the previous lesson's debt. Positional encoding is added *once*, at the very bottom,
+and no box afterwards recalls where each token was: the term equal to $\mathbf{I}$ is what carries
+it to the top.
+
+### One width from the bottom to the top
+
+The sum brings a hidden constraint: $\mathbf{X}$ and $\text{Sublayer}(\mathbf{X})$ are added entry
+by entry, so the sublayer is forbidden from returning any shape other than $T \times d_{\text{model}}$.
+Neither of the two respects it inside, and both make the return trip: multi-head attention drops to
+$d_v$ per head and $\mathbf{W}^O$ brings it back (the job
+<Leccion slug="multi-head">the lesson on multi-head attention</Leccion> flagged it for), and the
+position-wise perceptron rises to $d_{\text{ff}}$ and comes back down.
+
+That turns $d_{\text{model}}$ into the only number to be chosen for the whole model. In Block 2's
+multilayer perceptron each layer had its width $d_l$ and could narrow at will; here, if one layer
+changed width, the next would have nothing to add it to. The paper's $512$ are the same in the first
+layer and in the sixth, and that rigidity is the price of stacking.
+
+## Each row is normalised with its own coordinates
+
+The sum creates a problem of its own: if every sublayer adds without taking anything away, what
+flows grows layer by layer, and <Leccion slug="scaled-dot-product">the lesson on the *scaled
+dot-product*</Leccion> has already measured what happens to a softmax when large numbers reach it.
+The scale has to go back to where it was after each sum, and that is the layer norm.
+
+Let's fix the row at position $t$, with its $d_{\text{model}}$ coordinates $x_{t1}, \dots,
+x_{t\,d_{\text{model}}}$. Its mean and its standard deviation are those of these numbers and of no
+others:
+
+$$
+\mu_t = \frac{1}{d_{\text{model}}}\sum_{j} x_{tj}, \qquad s_t = \sqrt{\frac{1}{d_{\text{model}}}\sum_{j}\left(x_{tj} - \mu_t\right)^{2}}.
+$$
+
+With them the row is centred and scaled, and then two learned vectors come in, $\boldsymbol{\gamma}$
+and $\boldsymbol{\beta}$, both of $d_{\text{model}}$ coordinates:
+
+$$
+\hat{x}_{tj} = \frac{x_{tj} - \mu_t}{\sqrt{s_t^{2} + \varepsilon}}, \qquad \text{LayerNorm}(\mathbf{x}_t) = \boldsymbol{\gamma} \odot \hat{\mathbf{x}}_t + \boldsymbol{\beta}.
+$$
+
+$\varepsilon$ is a small constant ($10^{-5}$ in almost every implementation) that avoids dividing by
+zero if a row has all its coordinates equal. The other two seem to undo the normalisation, and in
+part they do: leaving every row with mean $0$ and deviation $1$ is a condition nobody asked for, and
+$\boldsymbol{\gamma}$ and $\boldsymbol{\beta}$ give that freedom back as parameters. They can't undo
+it completely: $\mu_t$ and $s_t$ change from row to row, and these two vectors are the same in all of
+them.
+
+### Why the row and not the batch
+
+Averaging across the row is a decision, and the alternative is the opposite one: normalising each
+coordinate down the column, which is batch normalisation. On sequences it fails in three places.
+What came out at position $t$ would depend on which other sentences had landed in the same batch; it
+would depend on $T$ and on what was at the other positions, including the padding positions, which say
+nothing; and you would have to store statistics from training to answer a single sentence later.
+
+With the row none of the three appears, because $\mu_t$ and $s_t$ come from row $t$ and nothing
+else. One consequence is worth keeping: the <W>Add and layer norm</W> box *doesn't mix positions*, and that is
+why the claim of <Leccion slug="adios-recurrencia">the lesson that said goodbye to
+recurrence</Leccion> (three of the fifteen boxes look beyond their own row) still stands now that we
+know what the other twelve do.
+
+## The sublayer that looks at no other position
+
+The second sublayer is still missing: the one the paper calls FFN (feed-forward network) and this
+course calls the position-wise perceptron (the two names are the same box). Inside, it is Block 2's
+multilayer perceptron with two layers and a ReLU in between, applied to one row at a time:
+
+$$
+\text{FFN}(\mathbf{X}) = \text{ReLU}\left(\mathbf{X}\mathbf{W}_1 + \mathbf{1}_T\mathbf{b}_1^{\top}\right)\mathbf{W}_2 + \mathbf{1}_T\mathbf{b}_2^{\top},
+$$
+
+with $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$ and $\mathbf{W}_2 \in
+\mathbb{R}^{d_{\text{ff}} \times d_{\text{model}}}$, and with the subscript naming which of the two
+layers it is. $\mathbf{1}_T$ is Block 2's column of ones, which here repeats the bias once per
+position instead of once per example, and the ReLU is the paper's $\max(0, \cdot)$.
+
+The two matrices are *the same for every position*: row $3$ and row $300$ go through the same
+parameters, so the sublayer has no way of finding out which one it is transforming. That is what
+<W>position-wise</W> means, and what keeps it out of the boxes that mix.
+
+### What attention cannot compute
+
+A box that doesn't look at the other positions needs a reason to be there, and the reason lies in
+what attention does *not* do. Let's write $\alpha^{(i)}_{ts}$ for the weight head $i$ gives position $s$
+when computing row $t$, and $\mathbf{W}^O_i$ for the $d_v$ rows of $\mathbf{W}^O$ that multiply what
+that head returns. Opening up the $\text{Concat}$ of <Leccion slug="multi-head">the lesson on
+multi-head attention</Leccion>, row $t$ of $\text{MultiHead}(\mathbf{X})$ is
+
+$$
+\sum_{i=1}^{h}\sum_{s=1}^{T}\alpha^{(i)}_{ts}\,\mathbf{x}_s\mathbf{W}^V_i\mathbf{W}^O_i.
+$$
+
+The softmax lives entirely inside the $\alpha$, and what the $\alpha$ decide is *where* to read from.
+What is done with what was read is another matter: a weighted average of rows, each passed through
+two matrices. With the weights already decided, row $t$ is a linear function of the rows of
+$\mathbf{X}$. So is the sum of the first section. The layer norm is non-linear, but it has no
+parameters with which to learn a combination: it centres the row, divides all of it by one and the
+same number, and $\boldsymbol{\gamma}$ and $\boldsymbol{\beta}$ work coordinate by coordinate. None
+of its parameters looks at two coordinates at once.
+
+Go back to the four phrases of <Leccion slug="xor-y-capas-ocultas">the lesson on XOR and hidden
+layers</Leccion>: <W>it's good</W>, <W>it's bad</W>, <W>not good</W> and <W>not bad</W>. Here
+<W>not</W> and <W>good</W> occupy different rows, and bringing to the row of <W>good</W> the news that
+there is a <W>not</W> in front is attention's job. But once it has brought it, that row holds the two
+coordinates of that lesson's square, and that lesson showed that no single neuron separates its
+diagonals: <W>not</W> brings no sign of its own, it flips that of the word after it. Composing
+linear functions gives another linear function, so stacking more attention doesn't fix it. The two
+facts are together, and attention has no piece made for combining them.
+
+The position-wise perceptron is the hidden layer that square asked for, put in every block and
+applied to every row. Its ReLU lets the output depend on *whether* a combination of coordinates is
+positive, which is what no linear function does, and its $d_{\text{ff}}$ units are new coordinates,
+in which the square stops being an XOR.
+
+Attention gathers; the position-wise perceptron computes.
+
+The concession: I have argued with the weights already decided, and they don't come decided. The
+$\alpha$ come from $\mathbf{X}$, so attention as a whole is non-linear in what it receives, and
+nothing stops a trained network from making use of that. But that non-linearity is there to choose
+where to read from, and using it to combine the coordinates of one row is asking one piece to do
+another's job.
+
+That it is the piece that computes shows in how the parameters are split, which is not the way the
+drawing suggests. With $d_{\text{model}} = 512$ and $d_{\text{ff}} = 2\,048$:
+
+$$
+2 d_{\text{model}} d_{\text{ff}} = 2\,097\,152 \quad\text{against}\quad 4 d_{\text{model}}^{2} = 1\,048\,576.
+$$
+
+On the left the two matrices of the position-wise perceptron, on the right the four of the
+attention added together: the box that looks like plumbing carries twice the parameters of the one
+that gives the architecture its name. Neither number mentions $T$.
+
+### The whole block, in two lines
+
+With the three pieces in place, an encoder block is the same line twice:
+
+$$
+\text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right),
+$$
+
+with $\text{MultiHead}$ in the slot the first time and $\text{FFN}$ the second, and with the output
+of the first serving as the $\mathbf{X}$ of the second. Biases and normalisation vectors included,
+that is $3\,150\,336$ parameters per block, and the paper's encoder stacks $N = 6$: some $18.9$
+million, none of them dependent on the length of the text.
+
+And now the concession. The paper normalises *after* adding, and that leaves the layer norm on top
+of the identity path: the term equal to $\mathbf{I}$ is inside the bracket, but what leaves the box
+has also been through a normalisation, so the clean path of the first section isn't quite so clean.
+Almost every implementation today writes
+$\mathbf{X} + \text{Sublayer}\left(\text{LayerNorm}(\mathbf{X})\right)$ (normalise what *goes into*
+the sublayer and leave the sum untouched), which is what is known as *pre-norm*. Which one trains
+better is outside this course; that they are two different operations is not.
+
+## The three pieces in NumPy
+
+The first cell is the layer norm over five positions. Look at three things: the mean and standard
+deviation of each row, what $\boldsymbol{\gamma}$ and $\boldsymbol{\beta}$ give back, and what
+happens to row $0$ when row $4$ is touched.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(7)
+X = rng.normal(loc=3.0, scale=2.0, size=(5, 8))   # 5 positions, d_model = 8
+
+
+def layer_norm(X, gamma, beta, eps=1e-5):
+    mu = X.mean(axis=1, keepdims=True)            # one mean per row
+    s = X.std(axis=1, keepdims=True)              # one deviation per row
+    return gamma * (X - mu) / np.sqrt(s**2 + eps) + beta
+
+
+gamma, beta = np.ones(8), np.zeros(8)
+Y = layer_norm(X, gamma, beta)
+
+print("in   mean per row:", np.round(X.mean(axis=1), 3))
+print("     deviation   :", np.round(X.std(axis=1), 3))
+print("out  mean per row:", np.round(Y.mean(axis=1), 3))
+print("     deviation   :", np.round(Y.std(axis=1), 3))
+
+Z = layer_norm(X, np.full(8, 4.0), np.full(8, -1.0))
+print("\\nwith gamma = 4 and beta = -1:", np.round(Z.mean(axis=1), 3), np.round(Z.std(axis=1), 3))
+
+# Touch ONLY row 4 and look at what happens to row 0.
+X2 = X.copy()
+X2[4] += 10.0
+by_columns = lambda M: (M - M.mean(axis=0)) / M.std(axis=0)
+print("\\ntouch row 4; how far row 0 moves")
+print("  normalising by rows   :",
+      round(float(np.abs(layer_norm(X2, gamma, beta)[0] - Y[0]).max()), 12))
+print("  normalising by columns:",
+      round(float(np.abs(by_columns(X2)[0] - by_columns(X)[0]).max()), 3))
+`} />
+
+The five rows go in with means between $0.98$ and $2.89$ and come out with mean $0$ and deviation
+$1$; with $\boldsymbol{\gamma} = 4$ and $\boldsymbol{\beta} = -1$ they come out with mean $-1$ and
+deviation $4$, which is what those two vectors mean. The last two lines are the previous section
+checked: touching row $4$ moves row $0$ by $0.0$ by rows and by $1.889$ by columns.
+
+The second measures what the sum does, and to see it alone I take the layer norm and the attention
+out of the block: what is left is $12$ position-wise perceptrons, one on top of another, with and
+without the line that goes round them. I have set the scale of the matrices low on purpose, $0.15$:
+at the start, a sublayer is a small correction.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(0)
+T, d_model, d_ff, N = 8, 16, 32, 12
+
+matrices = [(rng.normal(size=(d_model, d_ff)) * 0.15,
+             rng.normal(size=(d_ff, d_model)) * 0.15) for _ in range(N)]
+
+
+def stack(X, n, with_sum):
+    for W1, W2 in matrices[:n]:
+        sub = np.maximum(0.0, X @ W1) @ W2        # the position-wise perceptron
+        X = X + sub if with_sum else sub
+    return X
+
+
+X = rng.normal(size=(T, d_model))
+h = 1e-5
+Xh = X.copy()
+Xh[0, 0] += h                                     # move ONE coordinate of row 0
+
+print("layers   with the sum   without the sum")
+for n in (1, 2, 4, 6, 8, 12):
+    on = np.linalg.norm((stack(Xh, n, True) - stack(X, n, True)) / h)
+    off = np.linalg.norm((stack(Xh, n, False) - stack(X, n, False)) / h)
+    print(f"{n:6d}   {on:12.4f}   {off:15.3e}")
+`} />
+
+Each number is a derivative measured by a numerical probe: how far the whole output moves when a
+single coordinate of the input is pushed. Without the sum it falls from $0.109$ with one layer to
+$5.182 \times 10^{-7}$ with twelve, because it is a product of twelve small factors: seven orders
+of magnitude, and with twelve layers, not twelve thousand. With the sum it stays between $1.00$ and
+$1.80$ the whole way: the term that crosses no matrix is worth $1$, and the rest only correct it.
+
+The third puts the position-wise perceptron to the test with the XOR phrases, lengthened with filler
+words between the <W>not</W> and the evaluative word. I have set the attention head by hand: the last
+position reads all of them equally and copies, into a free coordinate, the one that marks whether a
+word is <W>not</W>. Then I try to read the sentiment off that last row with a single neuron, fitted
+with `np.linalg.lstsq` (the weights with the least mean squared error, computed in one go), first on
+the row as it is and then on the row passed through the perceptron's first layer and its ReLU. As in the
+previous cell, I take the layer norm out to see the piece alone, and I draw $\mathbf{W}_1$ and
+$\mathbf{b}_1$ at random: only the readout is fitted.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(3)
+d_model, d_ff = 8, 32
+
+# Coordinate 0: "this word is not". Coordinate 1: +1 if it is good, -1 if it is bad.
+# Coordinate 2: free, the attention writes it. The rest: filler (it's, really, today...).
+def phrase():
+    negated, good = rng.random() < 0.5, rng.random() < 0.5
+    filler = rng.normal(size=(rng.integers(1, 4), d_model)) * 0.5
+    filler[:, :3] = 0.0
+    not_row = np.eye(d_model)[[0]] if negated else np.zeros((0, d_model))
+    evaluative = np.zeros((1, d_model))
+    evaluative[0, 1] = 1.0 if good else -1.0
+    return np.vstack([not_row, filler, evaluative]), negated, good
+
+# The head: the last position reads all of them equally and copies their coordinate 0 into 2.
+W_VO = np.zeros((d_model, d_model))
+W_VO[0, 2] = 1.0
+
+def last_row(X):
+    alpha = np.full(len(X), 1 / len(X))         # the weights of the last row
+    return X[-1] + alpha @ X @ W_VO             # the sum: x_t + MultiHead(X)_t
+
+data = [phrase() for _ in range(800)]
+H = np.array([last_row(X) for X, _, _ in data])
+neg = np.array([n for _, n, _ in data])
+pos = np.array([g for _, _, g in data])
+y = (pos != neg).astype(float)                  # 1 if the phrase speaks well
+
+W1, b1 = rng.normal(size=(d_model, d_ff)), rng.normal(size=d_ff)
+readouts = {"the row as it is": H,
+            "after the ReLU": np.maximum(0.0, H @ W1 + b1)}
+
+kinds = [(False, True), (False, False), (True, True), (True, False)]
+labels = ["it's good", "it's bad", "not good", "not bad"]
+widths = (11, 10, 10, 9)
+print(" " * 18 + "".join(f"{s:>{w}s}" for s, w in zip(labels, widths)))
+for name, F in readouts.items():
+    F = np.hstack([F, np.ones((len(F), 1))])    # column of ones: the bias
+    w = np.linalg.lstsq(F[:500], y[:500], rcond=None)[0]
+    ok = ((F @ w > 0.5) == (y > 0.5))[500:]     # hits on 300 unseen phrases
+    n, g = neg[500:], pos[500:]
+    hits = [ok[(n == a) & (g == c)].mean() for a, c in kinds]
+    print(f"{name:18s}" + "".join(f"{x:{w}.2f}" for x, w in zip(hits, widths)))
+`} />
+
+Each number is the fraction of phrases of that kind the neuron classifies correctly, out of $300$ it
+didn't see while being fitted. On the row as it is, it gets every one of three kinds right and none
+of <W>not bad</W>: that is the most a straight line can get out of the corners of an XOR, leaving one
+out. After the ReLU it gets all four, with a first layer that has learned nothing. Thirty-two random units
+already give the readout coordinates in which the square separates; training $\mathbf{W}_1$ is
+choosing which ones.
+
+## Test your intuition
+
+Six questions: what the sum adds to the derivative, what it demands of the sublayer, which numbers
+go into normalising a row, what the position-wise perceptron is for, where its parameters are and
+what changes when the layer norm is moved.
+
+<Quiz id="q-que-anade-la-suma" />
+
+<Quiz id="q-anchura-constante" />
+
+<Quiz id="q-que-eje-normaliza" />
+
+<Quiz id="q-para-que-el-perceptron" />
+
+<Quiz id="q-donde-estan-los-parametros" />
+
+<Quiz id="q-normalizar-antes-de-sumar" />
+
+<CodeChallenge id="ch-bloque-transformer" />
+
+---
+
+The block is complete and stackable, and with that *one* of the drawing's two columns is finished.
+Look at it again: the one on the right has three sublayers where the left has two, the middle one
+receives an arrow that crosses over from the other column, and the bottom one is called
+<W>Masked self-attention</W>: <W>masked</W> is a word that has not come up in these six lessons.
+
+The three things are the same thing, and it is what separates reading a text from writing one. An
+encoder can look at the whole sentence because it has it in front of it; a decoder produces the
+output token by token, and while writing the fourth it cannot look at the fifth, which doesn't exist
+yet. That is <Leccion slug="encoder-decoder-masking">the next lesson, on the encoder, the decoder and
+the masks</Leccion>, and the good news is that it doesn't touch a single line of what we have so far:
+blanking out the future is done by adding to the grid of scores a matrix of zeros and minus
+infinities before the softmax.

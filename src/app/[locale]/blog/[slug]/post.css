@@ -1526,3 +1526,281 @@ html:has(.post-archive-drawer) {
     transition: none;
   }
 }
+
+/* BLOG-27 — interactive figures (`<PostFigure>`, src/features/blog/figures/). The frame
+   reserves its height in the server HTML (inline `min-height`), so the post does not reflow
+   when the client-only figure arrives. Everything inside is scoped by class: the prose rules
+   above (`.post-content p`, `li`…) would otherwise reach the figure's own text. */
+.post-content .post-figure {
+  margin: 2rem 0 2.5rem;
+}
+
+.post-content .post-figure__body {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-container);
+  padding: 1rem;
+}
+
+.post-content .post-figure__skeleton {
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, var(--surface-lowest) 0%, var(--surface-low) 50%, var(--surface-lowest) 100%);
+  opacity: 0.6;
+}
+
+.post-content .post-figure__error {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  background: var(--error-bg);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.post-content .post-figure__caption {
+  margin: 0.65rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* ── latency-budget ─────────────────────────────────────────────────────────────── */
+
+.post-content .lb {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.post-content .lb-presets,
+.post-content .lb-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.post-content .lb-chip {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-variant);
+  background: var(--surface-lowest);
+  color: var(--text-muted);
+}
+
+.post-content .lb-chip[aria-pressed="true"] {
+  background: var(--green-container);
+  border-color: var(--green-container);
+  color: #04140d;
+}
+
+.post-content .lb-chip:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.post-content .lb-chip:focus-visible,
+.post-content .lb-toggle input:focus-visible,
+.post-content .lb-range:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.post-content .lb-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.75rem;
+}
+
+.post-content .lb-readout__item {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-content .lb-readout__label {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.post-content .lb-readout__value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.post-content .lb-readout__item--answer .lb-readout__value {
+  color: var(--green);
+}
+
+.post-content .lb-readout__note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.post-content .lb-timeline {
+  width: 100%;
+}
+
+.post-content .lb-timeline svg {
+  display: block;
+}
+
+.post-content .lb-axis-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.post-content .lb-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.post-content .lb-zero {
+  stroke: var(--text-dim);
+  stroke-width: 1;
+}
+
+.post-content .lb-tick,
+.post-content .lb-lane {
+  fill: var(--text-muted);
+}
+
+.post-content .lb-ref {
+  stroke: var(--text-dim);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+/* The halo is the frame's own background, so a reference line that has to pass behind a
+   label (three close lines on a phone) disappears there instead of striking the text. */
+.post-content .lb-ref-label {
+  fill: var(--text-dim);
+  paint-order: stroke;
+  stroke: var(--surface-container);
+  stroke-width: 7px;
+  stroke-linejoin: round;
+}
+
+.post-content .lb-mark {
+  stroke: var(--green);
+  stroke-width: 2;
+}
+
+.post-content .lb-mark--first {
+  stroke-dasharray: 4 3;
+  stroke-width: 1.5;
+}
+
+.post-content .lb-bar {
+  stroke: none;
+}
+
+.post-content .lb-bar--speech { fill: var(--surface-highest); }
+.post-content .lb-bar--net { fill: var(--border-variant); }
+.post-content .lb-bar--listen { fill: var(--warning); }
+.post-content .lb-bar--model { fill: var(--green); }
+.post-content .lb-bar--call { fill: var(--green-container); }
+.post-content .lb-bar--voice { fill: var(--text-muted); }
+.post-content .lb-bar--tool { fill: var(--error); }
+
+.post-content .lb-bar--filler {
+  fill-opacity: 0.45;
+  stroke: var(--green);
+  stroke-dasharray: 3 2;
+}
+
+.post-content .lb-bar--speculative {
+  stroke: var(--text-dim);
+  stroke-dasharray: 3 2;
+}
+
+.post-content .lb-hatch-bg { fill: var(--surface-high); }
+.post-content .lb-hatch-line { stroke: var(--text-dim); stroke-width: 2; }
+
+.post-content .lb-bar-label {
+  fill: var(--green-on);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.post-content .lb-bar-label--light {
+  fill: var(--text);
+}
+
+.post-content .lb-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem 1.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.post-content .lb-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.post-content .lb-control[aria-disabled="true"] .lb-control__label {
+  opacity: 0.55;
+}
+
+.post-content .lb-control__label {
+  color: var(--text-muted);
+}
+
+.post-content .lb-control__label--split {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.post-content .lb-control__value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.post-content .lb-control__note {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.post-content .lb-range {
+  width: 100%;
+  accent-color: var(--green);
+}
+
+.post-content .lb-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.post-content .lb-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.post-content .lb-toggle[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.post-content .lb-toggle input {
+  margin-top: 0.2rem;
+  accent-color: var(--green);
+}

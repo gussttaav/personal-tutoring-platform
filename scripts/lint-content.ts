@@ -15,6 +15,7 @@
  *                      would typeset the text between two of them as a formula).
  * COURSE-C2-P3-01 — + a `<RepoLink tag>` must have its lesson locale's shape (`b5-lN` in
  *                    `es/`, `en-b5-lN` in `en/`), beside the crosslink pass.
+ * BLOG-27     — + every `<PostFigure id>` in a post names a registered figure.
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the
@@ -51,6 +52,7 @@ import {
   lessonCounts,
 } from "@/lib/courses/budget";
 import { validateAllBlogContent } from "@/lib/blog/registry";
+import { validatePostFigureIds } from "@/lib/blog/validate-post-figures";
 import { validateCurrencyDollars } from "@/lib/content/validate-currency-dollar";
 import { DEFAULT_CONTENT_ROOT, collectMdxFiles } from "@/lib/courses/content-files";
 import { validateAllContent } from "@/lib/courses/registry";
@@ -76,6 +78,8 @@ try {
   // BLOG-01: the blog's only build-time contract is its frontmatter — there is no
   // budget, notation or voice pass for posts, so nothing joins Phase 2 below.
   validateAllBlogContent();
+  // BLOG-27: a post's `<PostFigure id>` must name a registered figure.
+  validatePostFigureIds();
   validateExplorableIds();
   validatePyCellFlags();
   validateQuizRefs();
