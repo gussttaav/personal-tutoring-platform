@@ -1070,6 +1070,86 @@
       "moreTopics": "+{count} temas",
       "fewerTopics": "Menos temas",
       "clear": "Quitar filtros"
+    },
+    "figures": {
+      "common": {
+        "error": "Esta figura interactiva no se ha podido cargar."
+      },
+      "latencyBudget": {
+        "ms": "{value} ms",
+        "seconds": "{value} s",
+        "aria": "Cronograma de un turno de voz: el primer sonido llega a los {first} ms de que el usuario deje de hablar y la respuesta, a los {answer} ms.",
+        "axis": "Tiempo desde que el usuario deja de hablar. Las barras rayadas empiezan antes, mientras aún habla.",
+        "presets": {
+          "label": "Casos de ejemplo",
+          "chat": "Solo conversación",
+          "rag": "Con RAG",
+          "tool": "Una herramienta",
+          "agent": "Tres herramientas por MCP"
+        },
+        "readout": {
+          "firstSound": "Primer sonido",
+          "answer": "Respuesta con el dato",
+          "vsTarget": "Respuesta: {ratio} × el objetivo de 1115 ms. Primer sonido: {human} × el hueco medio entre dos personas en preguntas de sí o no."
+        },
+        "refs": {
+          "allTurns": "personas, todos los turnos (59 ms)",
+          "human": "personas, preguntas de sí o no (208 ms)",
+          "target": "objetivo de Twilio (1115 ms)"
+        },
+        "lanes": {
+          "user": "Usuario",
+          "network": "Red",
+          "listen": "Fin de turno",
+          "model": "Modelo",
+          "tool": "Herramientas",
+          "voice": "Voz"
+        },
+        "bars": {
+          "speech": "habla",
+          "listen": "¿ha terminado?",
+          "search": "búsqueda",
+          "callGen": "llamada {n}",
+          "toolRun": "herramienta {n}",
+          "ttft": "primer token",
+          "filler": "frase puente",
+          "tts": "voz"
+        },
+        "listen": {
+          "label": "Cómo se decide que el usuario ha terminado",
+          "model": "Modelo de fin de turno (350 ms)",
+          "silence500": "Silencio fijo de 500 ms",
+          "silence800": "Silencio fijo de 800 ms"
+        },
+        "search": {
+          "label": "Buscar en documentos antes de llamar al modelo (RAG)",
+          "none": "No",
+          "local": "Índice vectorial local (8 ms)",
+          "rerank": "Con reordenación (2,78 s)"
+        },
+        "tools": {
+          "label": "Llamadas a herramientas, una detrás de otra"
+        },
+        "toolMs": {
+          "label": "Lo que tarda cada herramienta",
+          "local": "Consulta local (8 ms)",
+          "rerank": "Búsqueda con reordenación (2,78 s)"
+        },
+        "host": {
+          "label": "Dónde está la herramienta",
+          "note": "Remoto quiere decir en otro continente: al menos 60 ms por cada ida y vuelta.",
+          "inProcess": "En el mismo proceso",
+          "mcpOpen": "Servidor MCP remoto, conexión abierta",
+          "mcpFresh": "Servidor MCP remoto, conexión nueva"
+        },
+        "filler": {
+          "label": "Decir antes una frase puente («un momento, lo miro»)"
+        },
+        "speculative": {
+          "label": "Empezar la primera búsqueda mientras el usuario habla",
+          "note": "Supone que la petición ya se entiende un segundo antes de que termine."
+        }
+      }
     }
   },
   "courses": {
